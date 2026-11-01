@@ -7352,30 +7352,85 @@ if (totalCount === 0) {
     return true;
   },
 
-  resolveSectionTarget(rawTarget, sections) {
-    if (!rawTarget || rawTarget === 'NEXT') return 'NEXT';
+  _normalizeSmartText(str) {
+    if (!str) return '';
+    return String(str)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/^(muc|phan|section|cau|part)\s*(\d+|[ivx]+)?[\.\:\-\s]*/i, '')
+      .replace(/^ban\s+[\.\:\-\s]*/i, '')
+      .replace(/[^\w\s]/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  },
+
+  _isSmartTextMatch(haystack, needle) {
+    if (!haystack || !needle) return false;
+    const h = this._normalizeSmartText(haystack);
+    const n = this._normalizeSmartText(needle);
+    if (!h || !n) return false;
+    if (h === n) return true;
+    if (h.length >= 3 && n.length >= 3) {
+      if (h.includes(n) || n.includes(h)) return true;
+    }
+    const wordsH = h.split(' ').filter(w => w.length >= 2);
+    const wordsN = n.split(' ').filter(w => w.length >= 2);
+    if (wordsH.length >= 2 && wordsN.length >= 2) {
+      const common = wordsH.filter(w => wordsN.includes(w));
+      if (common.length >= Math.min(wordsH.length, wordsN.length) * 0.7) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  resolveSectionTarget(rawTarget, sections, optText = null) {
+    if (!rawTarget && !optText) return null;
     let targetVal = rawTarget;
     if (typeof rawTarget === 'object' && rawTarget !== null) {
       if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT') return 'SUBMIT';
       targetVal = rawTarget.target || rawTarget.action;
     }
     if (targetVal === 'SUBMIT') return 'SUBMIT';
-    if (targetVal === 'NEXT') return 'NEXT';
+    if (targetVal === 'NEXT' && !optText) return 'NEXT';
 
-    // Parse dạng số nguyên trực tiếp (0, 1, 2...)
-    const parsed = parseInt(targetVal, 10);
-    if (!isNaN(parsed) && parsed >= 0 && parsed < sections.length && String(parsed) === String(targetVal)) {
-      return parsed;
+    // 1. Parse dạng số nguyên trực tiếp (0, 1, 2...)
+    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+      const parsed = parseInt(targetVal, 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed < sections.length && String(parsed) === String(targetVal)) {
+        return parsed;
+      }
     }
 
-    // Khớp theo ID của Section hoặc headerQuestionId
-    const secIdx = sections.findIndex(sec => String(sec.id) === String(targetVal) || String(sec.headerQuestionId) === String(targetVal));
-    if (secIdx !== -1) return secIdx;
+    // 2. Khớp theo ID của Section hoặc headerQuestionId
+    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+      const secIdx = sections.findIndex(sec => String(sec.id) === String(targetVal) || String(sec.headerQuestionId) === String(targetVal));
+      if (secIdx !== -1) return secIdx;
+    }
 
-    // Khớp nếu target là một question ID thuộc Section nào đó
-    for (let sIdx = 0; sIdx < sections.length; sIdx++) {
-      const foundQ = sections[sIdx].questions.some(q => String(q.id) === String(targetVal));
-      if (foundQ) return sIdx;
+    // 3. Khớp nếu target là một question ID thuộc Section nào đó
+    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+      for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+        const foundQ = sections[sIdx].questions.some(q => String(q.id) === String(targetVal));
+        if (foundQ) return sIdx;
+      }
+    }
+
+    // 4. Smart Name / Title Matching:
+    // NẾU TARGET CHƯA MATCH: Tìm Section có tiêu đề tương đồng với targetVal hoặc optText
+    const matchQueries = [];
+    if (targetVal && typeof targetVal === 'string' && targetVal !== 'NEXT' && targetVal !== 'SUBMIT') {
+      matchQueries.push(targetVal);
+    }
+    if (optText && typeof optText === 'string') {
+      matchQueries.push(optText);
+    }
+
+    for (const query of matchQueries) {
+      const matchIdx = sections.findIndex(sec => this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query)));
+      if (matchIdx !== -1) return matchIdx;
     }
 
     return null;
@@ -7419,40 +7474,58 @@ if (totalCount === 0) {
     // 3. Đánh giá Điều Hướng Rẽ Nhánh 2 Tầng (2-Tier Routing)
     // Tầng 1: Option-level routing trong Section
     let branchAction = null;
+    let selectedOptionText = null;
     for (const q of (curSec.questions || [])) {
-      if (['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type) && q.logic && q.logic.enabled && q.logic.options) {
+      if (['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type)) {
         const ans = session.answers ? session.answers[q.id] : undefined;
-        if (ans !== undefined && ans !== null) {
-          if (q.logic.options[ans] !== undefined) {
-            branchAction = q.logic.options[ans];
-            break;
-          } else if (q.options) {
-            const optIdx = q.options.findIndex(o => String(o).trim() === String(ans).trim());
-            if (optIdx !== -1 && q.logic.options[optIdx] !== undefined) {
-              branchAction = q.logic.options[optIdx];
-              break;
+        if (ans !== undefined && ans !== null && String(ans).trim() !== '') {
+          let optText = String(ans).trim();
+          if (q.options && q.options.length > 0) {
+            const numAns = parseInt(ans, 10);
+            if (!isNaN(numAns) && q.options[numAns] !== undefined && String(numAns) === String(ans)) {
+              optText = q.options[numAns].trim();
             }
+          }
+          if (q.logic && q.logic.enabled && q.logic.options) {
+            if (q.logic.options[ans] !== undefined) {
+              branchAction = q.logic.options[ans];
+              selectedOptionText = optText;
+              break;
+            } else if (q.options) {
+              const optIdx = q.options.findIndex(o => String(o).trim() === String(ans).trim());
+              if (optIdx !== -1 && q.logic.options[optIdx] !== undefined) {
+                branchAction = q.logic.options[optIdx];
+                selectedOptionText = optText;
+                break;
+              }
+            }
+          } else {
+            if (!selectedOptionText) selectedOptionText = optText;
           }
         }
       }
     }
 
+    let resolved = null;
     if (branchAction) {
-      const resolved = this.resolveSectionTarget(branchAction, sections);
-      if (resolved === 'SUBMIT') {
-        await this.submitSurvey();
-        return;
-      }
-      if (typeof resolved === 'number') {
-        session.sectionHistory = session.sectionHistory || [];
-        session.sectionHistory.push(curSectionIdx);
-        session.currentSectionIndex = resolved;
-        this._saveActiveSessionToStorage();
-        if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
-        return;
-      }
+      resolved = this.resolveSectionTarget(branchAction, sections, selectedOptionText);
+    } else if (selectedOptionText) {
+      resolved = this.resolveSectionTarget(null, sections, selectedOptionText);
+    }
+
+    if (resolved === 'SUBMIT') {
+      await this.submitSurvey();
+      return;
+    }
+    if (typeof resolved === 'number') {
+      session.sectionHistory = session.sectionHistory || [];
+      session.sectionHistory.push(curSectionIdx);
+      session.currentSectionIndex = resolved;
+      this._saveActiveSessionToStorage();
+      if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+      return;
     }
 
     // Tầng 2: Section defaultAction
@@ -7470,6 +7543,56 @@ if (totalCount === 0) {
         if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+        return;
+      }
+    }
+
+    // Tầng 3: Chống trôi tự do sang các phân đoạn của những tiểu ban khác
+    const branchSectionIndices = new Set();
+    for (let s = 0; s < curSectionIdx; s++) {
+      const prevSec = sections[s];
+      for (const q of (prevSec.questions || [])) {
+        if (!['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type)) continue;
+        const qBranchSet = new Set();
+        if (q.logic && q.logic.enabled && q.logic.options) {
+          Object.values(q.logic.options).forEach(t => {
+            const r = this.resolveSectionTarget(t, sections);
+            if (typeof r === 'number') qBranchSet.add(r);
+          });
+        }
+        if (q.options && Array.isArray(q.options)) {
+          q.options.forEach(opt => {
+            const r = this.resolveSectionTarget(null, sections, opt);
+            if (typeof r === 'number') qBranchSet.add(r);
+          });
+        }
+        if (qBranchSet.has(curSectionIdx) && qBranchSet.size >= 2) {
+          qBranchSet.forEach(idx => branchSectionIndices.add(idx));
+          break;
+        }
+      }
+      if (branchSectionIndices.size > 0) break;
+    }
+
+    if (branchSectionIndices.has(curSectionIdx)) {
+      let nextCommonSecIdx = -1;
+      for (let s = curSectionIdx + 1; s < sections.length; s++) {
+        if (!branchSectionIndices.has(s)) {
+          nextCommonSecIdx = s;
+          break;
+        }
+      }
+      if (nextCommonSecIdx !== -1) {
+        session.sectionHistory = session.sectionHistory || [];
+        session.sectionHistory.push(curSectionIdx);
+        session.currentSectionIndex = nextCommonSecIdx;
+        this._saveActiveSessionToStorage();
+        if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+        return;
+      } else {
+        await this.submitSurvey();
         return;
       }
     }
@@ -7635,21 +7758,84 @@ if (totalCount === 0) {
     }
 
     // 4. Đánh giá Điều hướng Rẽ nhánh 2 tầng (2-Tier Routing)
-    const resolveTarget = (rawTarget) => {
-      if (!rawTarget || rawTarget === 'NEXT') return 'NEXT';
+    const resolveTarget = (rawTarget, optText = null) => {
+      if (!rawTarget && !optText) return null;
       let targetVal = rawTarget;
       if (typeof rawTarget === 'object' && rawTarget !== null) {
         if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT') return 'SUBMIT';
         targetVal = rawTarget.target || rawTarget.action;
       }
       if (targetVal === 'SUBMIT') return 'SUBMIT';
-      if (targetVal === 'NEXT') return 'NEXT';
-      const parsed = parseInt(targetVal, 10);
-      if (!isNaN(parsed) && parsed >= 0 && parsed < session.questions.length && String(parsed) === String(targetVal)) return parsed;
-      const foundIdx = session.questions.findIndex(item => String(item.id) === String(targetVal));
-      if (foundIdx !== -1) return foundIdx;
+      if (targetVal === 'NEXT' && !optText) return 'NEXT';
+
+      // 1. Kiểm tra số index trực tiếp (ví dụ: '14' hoặc 14)
+      if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+        const parsed = parseInt(targetVal, 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed < session.questions.length && String(parsed) === String(targetVal)) {
+          return parsed;
+        }
+      }
+
+      // 2. Kiểm tra theo ID UUID trực tiếp trong session.questions
+      if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+        const foundIdx = session.questions.findIndex(item => String(item.id) === String(targetVal));
+        if (foundIdx !== -1) return foundIdx;
+      }
+
+      // 3. Khớp theo Section Header ID hoặc Section ID trong buildSurveySections
+      if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+        const sections = this.buildSurveySections(session.questions);
+        const foundSec = sections.find(sec => String(sec.id) === String(targetVal) || String(sec.headerQuestionId) === String(targetVal));
+        if (foundSec) {
+          const headerIdx = session.questions.findIndex(item => String(item.id) === String(foundSec.headerQuestionId || foundSec.id));
+          if (headerIdx !== -1) return headerIdx;
+          if (foundSec.questions && foundSec.questions.length > 0) {
+            const firstQIdx = session.questions.findIndex(item => String(item.id) === String(foundSec.questions[0].id));
+            if (firstQIdx !== -1) return firstQIdx;
+          }
+        }
+      }
+
+      // 4. Smart Name / Title Matching:
+      // NẾU TARGET CHƯA MATCH: Tìm Section Header hoặc câu hỏi có tiêu đề tương đồng với targetVal hoặc optText
+      const matchQueries = [];
+      if (targetVal && typeof targetVal === 'string' && targetVal !== 'NEXT' && targetVal !== 'SUBMIT') {
+        matchQueries.push(targetVal);
+      }
+      if (optText && typeof optText === 'string') {
+        matchQueries.push(optText);
+      }
+
+      for (const query of matchQueries) {
+        // Ưu tiên 4a: Tìm trong các câu hỏi SECTION_HEADER trước
+        const secHeaderIdx = session.questions.findIndex(item => 
+          item.type === 'SECTION_HEADER' && (this._isSmartTextMatch(item.content, query) || this._isSmartTextMatch(item.title, query))
+        );
+        if (secHeaderIdx !== -1) return secHeaderIdx;
+
+        // Ưu tiên 4b: Tìm trong các câu hỏi thông thường
+        const qIdx = session.questions.findIndex(item => 
+          item.type !== 'SECTION_HEADER' && this._isSmartTextMatch(item.content, query)
+        );
+        if (qIdx !== -1) return qIdx;
+      }
+
       return null;
     };
+
+    // Xác định đáp án người dùng vừa chọn (cho câu hiện tại)
+    let selectedOptionText = null;
+    if (['SINGLE_CHOICE', 'DROPDOWN'].includes(curQ.type)) {
+      if (ans !== undefined && ans !== null && String(ans).trim() !== '') {
+        selectedOptionText = String(ans).trim();
+        if (curQ.options && curQ.options.length > 0) {
+          const numAns = parseInt(ans, 10);
+          if (!isNaN(numAns) && curQ.options[numAns] !== undefined && String(numAns) === String(ans)) {
+            selectedOptionText = curQ.options[numAns].trim();
+          }
+        }
+      }
+    }
 
     let branchAction = null;
     if (['SINGLE_CHOICE', 'DROPDOWN'].includes(curQ.type) && curQ.logic && curQ.logic.enabled && curQ.logic.options) {
@@ -7663,7 +7849,13 @@ if (totalCount === 0) {
       branchAction = curQ.logic.default_action;
     }
 
-    const resolvedBranch = resolveTarget(branchAction);
+    let resolvedBranch = null;
+    if (branchAction) {
+      resolvedBranch = resolveTarget(branchAction, selectedOptionText);
+    } else if (selectedOptionText && ['SINGLE_CHOICE', 'DROPDOWN'].includes(curQ.type)) {
+      resolvedBranch = resolveTarget(null, selectedOptionText);
+    }
+
     if (resolvedBranch === 'SUBMIT') {
       await this.submitSurvey();
       return;
@@ -7684,27 +7876,92 @@ if (totalCount === 0) {
     const isSectionEnd = (nextQuestionIdx >= session.questions.length) || (session.questions[nextQuestionIdx] && session.questions[nextQuestionIdx].type === 'SECTION_HEADER');
     if (isSectionEnd && curQ.type !== 'SECTION_HEADER') {
       let currentSectionHeader = null;
+      let currentSectionHeaderIdx = -1;
       for (let i = session.currentIndex; i >= 0; i--) {
         if (session.questions[i].type === 'SECTION_HEADER') {
           currentSectionHeader = session.questions[i];
+          currentSectionHeaderIdx = i;
           break;
         }
       }
+
+      // Bước 1: Ưu tiên default_action được cấu hình tường minh của phân đoạn hiện tại
       if (currentSectionHeader && currentSectionHeader.logic && currentSectionHeader.logic.default_action) {
-        const resolvedSectionAction = resolveTarget(currentSectionHeader.logic.default_action);
-        if (resolvedSectionAction === 'SUBMIT') {
-          await this.submitSurvey();
-          return;
+        const defAction = currentSectionHeader.logic.default_action;
+        if (defAction && defAction !== 'NEXT') {
+          const resolvedSectionAction = resolveTarget(defAction);
+          if (resolvedSectionAction === 'SUBMIT') {
+            await this.submitSurvey();
+            return;
+          }
+          if (typeof resolvedSectionAction === 'number') {
+            session.history = session.history || [];
+            session.history.push(session.currentIndex);
+            session.currentIndex = resolvedSectionAction;
+            this._saveActiveSessionToStorage();
+            this.triggerPacingLock();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+            return;
+          }
         }
-        if (typeof resolvedSectionAction === 'number') {
-          session.history = session.history || [];
-          session.history.push(session.currentIndex);
-          session.currentIndex = resolvedSectionAction;
-          this._saveActiveSessionToStorage();
-          this.triggerPacingLock();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
-          return;
+      }
+
+      // Bước 2: Chống trôi tự do sang các phân đoạn của những tiểu ban khác
+      if (currentSectionHeaderIdx !== -1) {
+        const branchSecHeaderIndices = new Set();
+        // Tìm câu hỏi rẽ nhánh đứng trước currentSectionHeaderIdx
+        for (let i = 0; i < currentSectionHeaderIdx; i++) {
+          const q = session.questions[i];
+          if (!['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type)) continue;
+
+          const qBranchTargets = new Set();
+          if (q.logic && q.logic.enabled && q.logic.options) {
+            Object.values(q.logic.options).forEach(t => {
+              const res = resolveTarget(t);
+              if (typeof res === 'number') qBranchTargets.add(res);
+            });
+          }
+          if (q.options && Array.isArray(q.options)) {
+            q.options.forEach(opt => {
+              const res = resolveTarget(null, opt);
+              if (typeof res === 'number' && session.questions[res] && session.questions[res].type === 'SECTION_HEADER') {
+                qBranchTargets.add(res);
+              }
+            });
+          }
+
+          if (qBranchTargets.has(currentSectionHeaderIdx) && qBranchTargets.size >= 2) {
+            qBranchTargets.forEach(idx => branchSecHeaderIndices.add(idx));
+            break;
+          }
+        }
+
+        if (branchSecHeaderIndices.has(currentSectionHeaderIdx)) {
+          // Phân đoạn hiện tại là một nhánh rẽ!
+          // Tìm Section Header đầu tiên phía sau currentSectionHeaderIdx mà KHÔNG thuộc branchSecHeaderIndices
+          let nextSafeHeaderIdx = -1;
+          for (let i = session.currentIndex + 1; i < session.questions.length; i++) {
+            if (session.questions[i].type === 'SECTION_HEADER' && !branchSecHeaderIndices.has(i)) {
+              nextSafeHeaderIdx = i;
+              break;
+            }
+          }
+
+          if (nextSafeHeaderIdx !== -1) {
+            session.history = session.history || [];
+            session.history.push(session.currentIndex);
+            session.currentIndex = nextSafeHeaderIdx;
+            this._saveActiveSessionToStorage();
+            this.triggerPacingLock();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+            return;
+          } else {
+            // Không có phân đoạn chung nào sau các nhánh -> Nộp bài!
+            await this.submitSurvey();
+            return;
+          }
         }
       }
     }

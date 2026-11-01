@@ -292,9 +292,19 @@ class FormParserService {
                   options = rawOpts.map(opt => {
                     const optVal = Array.isArray(opt) ? String(opt[0] || '').trim() : String(opt || '').trim();
                     if (Array.isArray(opt)) {
-                      // Trích xuất điều hướng: opt[2] (action) hoặc opt[3] (target)
+                      // Trích xuất điều hướng: opt[2] (action) hoặc opt[3]/opt[4] (target)
                       const rawAction = opt[2];
-                      const rawTarget = opt[3] !== undefined ? opt[3] : null;
+                      let rawTarget = (opt[3] !== undefined && opt[3] !== null && opt[3] !== '') ? opt[3] : (opt[4] !== undefined && opt[4] !== null && opt[4] !== '' ? opt[4] : null);
+
+                      if (!rawTarget) {
+                        for (let i = 2; i < opt.length; i++) {
+                          const el = opt[i];
+                          if ((typeof el === 'number' && el > 1000) || (typeof el === 'string' && el.length >= 4 && !/^(true|false)$/i.test(el))) {
+                            rawTarget = el;
+                            break;
+                          }
+                        }
+                      }
 
                       if (rawAction !== undefined && rawAction !== null && rawAction !== '' && rawAction !== 0) {
                         let actionStr = rawAction;
@@ -306,7 +316,7 @@ class FormParserService {
                         hasLogic = true;
                         logicOptions[optVal] = {
                           action: actionStr,
-                          target: rawTarget ? String(rawTarget) : null
+                          target: (actionStr === 'SUBMIT_FORM' || actionStr === 'NEXT_PAGE' || actionStr === 'RESTART_FORM') ? null : (rawTarget ? String(rawTarget) : null)
                         };
                       } else if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
                         hasLogic = true;
@@ -452,44 +462,34 @@ class FormParserService {
                 try {
                   let defaultAction = null;
                   let targetSection = null;
-                  let secData = qData || (Array.isArray(item[4]) ? item[4][0] : null) || item[5];
-                  while (Array.isArray(secData) && secData.length === 1 && Array.isArray(secData[0])) {
-                    secData = secData[0];
-                  }
 
-                  if (secData) {
-                    if (Array.isArray(secData)) {
-                      let act = null;
-                      let tgt = null;
-                      for (const el of secData) {
-                        if (el === 1 || el === 2 || el === 3 || el === 4 || el === '1' || el === '2' || el === '3' || el === '4') {
-                          act = el;
-                        } else if (typeof el === 'string' && el.length > 0) {
-                          tgt = el;
-                        }
-                      }
-                      if (!act) {
-                        act = (secData[0] !== undefined && secData[0] !== null) ? secData[0] : ((secData[2] !== undefined && secData[2] !== null) ? secData[2] : null);
-                        tgt = tgt || ((secData[1] !== undefined && secData[1] !== null) ? secData[1] : ((secData[3] !== undefined && secData[3] !== null) ? secData[3] : null));
-                      }
+                  const flat = [];
+                  const walk = (x) => {
+                    if (Array.isArray(x)) {
+                      for (const itm of x) walk(itm);
+                    } else if (x !== null && x !== undefined) {
+                      flat.push(x);
+                    }
+                  };
+                  walk([qData, item[4], item[5]]);
 
-                      if (act !== null && act !== undefined && act !== '' && act !== 0) {
-                        let actStr = act;
-                        if (act === 1 || act === '1') actStr = 'NEXT_PAGE';
-                        else if (act === 2 || act === '2') actStr = 'GO_TO_PAGE';
-                        else if (act === 3 || act === '3') actStr = 'SUBMIT_FORM';
-                        else if (act === 4 || act === '4') actStr = 'RESTART_FORM';
-                        defaultAction = actStr;
-                        targetSection = tgt ? String(tgt) : null;
-                      }
-                    } else if (typeof secData === 'object') {
-                      defaultAction = secData.goToAction || secData.action || null;
-                      targetSection = secData.goToSectionId || secData.target || null;
+                  for (const val of flat) {
+                    if (val === 1 || val === '1') {
+                      if (!defaultAction) defaultAction = 'NEXT_PAGE';
+                    } else if (val === 2 || val === '2') {
+                      if (!defaultAction) defaultAction = 'GO_TO_PAGE';
+                    } else if (val === 3 || val === '3') {
+                      defaultAction = 'SUBMIT_FORM';
+                    } else if (val === 4 || val === '4') {
+                      defaultAction = 'RESTART_FORM';
+                    } else if ((typeof val === 'number' && val > 1000) || (typeof val === 'string' && val.length >= 4 && !/^(true|false)$/i.test(val))) {
+                      if (!targetSection) targetSection = String(val);
                     }
                   }
+
                   if (defaultAction || targetSection) {
                     logic = {
-                      default_action: defaultAction,
+                      default_action: defaultAction || (targetSection ? 'GO_TO_PAGE' : 'NEXT_PAGE'),
                       target: targetSection
                     };
                   }
@@ -541,6 +541,10 @@ class FormParserService {
               options: options && options.length > 0 ? options : null
             };
 
+            if (item[0] !== undefined && item[0] !== null) {
+              qObj.origin_id = String(item[0]);
+            }
+
             if (qDesc) qObj.description = qDesc;
             if (logic) qObj.logic = logic;
             if (minLabel) qObj.min_label = minLabel;
@@ -572,6 +576,11 @@ class FormParserService {
       } catch (err) {
         console.warn('[FormParserService] Không thể parse FB_PUBLIC_LOAD_DATA_ JSON:', err.message);
       }
+    }
+
+    // Ánh xạ Branching Logic đích đến đúng order_index của Section Header / Câu hỏi
+    if (questions.length > 0) {
+      this._resolveAndMapBranchingTargets(questions);
     }
 
     // Tạo link embed an toàn
@@ -876,6 +885,7 @@ class FormParserService {
           is_required: isRequired,
           options: (options && options.length > 0) ? options : null
         };
+        if (item.itemId) qObj.origin_id = String(item.itemId);
 
         if (itemDesc) qObj.description = itemDesc;
         if (logic) qObj.logic = logic;
@@ -929,6 +939,7 @@ class FormParserService {
           columns: columns.length > 0 ? columns : null,
           rows: rows.length > 0 ? rows : null
         };
+        if (item.itemId) qObj.origin_id = String(item.itemId);
 
         if (itemDesc) qObj.description = itemDesc;
         questions.push(qObj);
@@ -941,9 +952,15 @@ class FormParserService {
 
         let logic = null;
         if (goToAction || goToSectionId) {
+          let actStr = goToAction;
+          if (goToAction === 'SUBMIT_FORM') actStr = 'SUBMIT_FORM';
+          else if (goToAction === 'NEXT_SECTION') actStr = 'NEXT_PAGE';
+          else if (goToAction === 'RESTART_FORM') actStr = 'RESTART_FORM';
+          else if (goToSectionId || goToAction === 'GO_TO_PAGE') actStr = 'GO_TO_PAGE';
+
           logic = {
-            default_action: goToAction,
-            target: goToSectionId
+            default_action: actStr || 'GO_TO_PAGE',
+            target: goToSectionId ? String(goToSectionId) : null
           };
         }
 
@@ -954,6 +971,7 @@ class FormParserService {
           is_required: 0,
           options: null
         };
+        if (item.itemId) qObj.origin_id = String(item.itemId);
 
         if (itemDesc) qObj.description = itemDesc;
         if (logic) qObj.logic = logic;
@@ -969,10 +987,16 @@ class FormParserService {
           is_required: 0,
           options: null
         };
+        if (item.itemId) qObj.origin_id = String(item.itemId);
 
         if (itemDesc) qObj.description = itemDesc;
         questions.push(qObj);
       }
+    }
+
+    // Ánh xạ Branching Logic đích đến đúng order_index của Section Header / Câu hỏi
+    if (questions.length > 0) {
+      this._resolveAndMapBranchingTargets(questions);
     }
 
     // Embed URL
@@ -2200,12 +2224,95 @@ class FormParserService {
       options: options && options.length > 0 ? options : null
     };
 
+    const qId = q.id || q.Id || q.questionId || q.QuestionId || questionInfoObj?.Id || questionInfoObj?.id || null;
+    if (qId !== null && qId !== undefined && qId !== '') {
+      res.origin_id = String(qId);
+    }
+
     if (subtitle) res.description = subtitle;
     if (placeholder) res.placeholder = placeholder;
     if (minLabel) res.min_label = minLabel;
     if (maxLabel) res.max_label = maxLabel;
     if (rows && rows.length > 0) res.rows = rows;
     if (columns && columns.length > 0) res.columns = columns;
+
+    // Trích xuất Branching Logic cho câu hỏi Choice (SINGLE_CHOICE / DROPDOWN)
+    if (questionType === 'SINGLE_CHOICE' || questionType === 'DROPDOWN') {
+      const rawChoices = (Array.isArray(q.choices) && q.choices.length > 0)
+        ? q.choices
+        : (questionInfoObj && Array.isArray(questionInfoObj.Choices) ? questionInfoObj.Choices : []);
+
+      const rawRules = q.branchRules || q.BranchRules || questionInfoObj?.BranchRules || questionInfoObj?.branchRules || [];
+      const rulesList = Array.isArray(rawRules) ? rawRules : [];
+
+      const logicOptions = {};
+      let hasLogic = false;
+
+      rawChoices.forEach((c, idx) => {
+        const optLabel = getChoiceLabel(c);
+        if (!optLabel) return;
+
+        let target = c.nextQuestionId ?? c.NextQuestionId ?? c.branchTo ?? c.BranchTo ?? c.targetQuestionId ?? c.TargetQuestionId ?? c.target ?? c.Target ?? null;
+
+        if (target === null || target === undefined || target === '') {
+          const choiceId = c.id ?? c.Id;
+          for (const rule of rulesList) {
+            if (!rule || typeof rule !== 'object') continue;
+            const rChoiceId = rule.ChoiceId ?? rule.choiceId ?? rule.SourceChoiceId ?? rule.sourceChoiceId;
+            const rIdx = rule.OptionIndex ?? rule.optionIndex ?? rule.ChoiceIndex ?? rule.choiceIndex;
+            const rVal = rule.SourceValue ?? rule.sourceValue ?? rule.Choice ?? rule.choice;
+
+            const matchId = choiceId !== undefined && rChoiceId !== undefined && String(choiceId) === String(rChoiceId);
+            const matchIdx = rIdx !== undefined && Number(rIdx) === idx;
+            const matchVal = rVal !== undefined && String(rVal).trim().toLowerCase() === optLabel.toLowerCase();
+
+            if (matchId || matchIdx || matchVal) {
+              target = rule.NextQuestionId ?? rule.nextQuestionId ?? rule.TargetQuestionId ?? rule.targetQuestionId ?? rule.BranchTo ?? rule.branchTo ?? rule.NextQuestion ?? rule.nextQuestion;
+              break;
+            }
+          }
+        }
+
+        if (target !== null && target !== undefined && target !== '') {
+          hasLogic = true;
+          const tgtStr = String(target).trim();
+          if (tgtStr === '-1' || tgtStr.toLowerCase() === 'submit' || tgtStr.toLowerCase() === 'endofform') {
+            logicOptions[optLabel] = {
+              action: 'SUBMIT_FORM',
+              target: null
+            };
+          } else {
+            logicOptions[optLabel] = {
+              action: 'GO_TO_PAGE',
+              target: tgtStr
+            };
+          }
+        }
+      });
+
+      if (hasLogic) {
+        res.logic = res.logic || {};
+        res.logic.enabled = true;
+        res.logic.options = logicOptions;
+      }
+    }
+
+    // Trích xuất điều hướng mặc định cho SECTION_HEADER trong Microsoft Forms
+    if (questionType === 'SECTION_HEADER') {
+      const nextQId = q.nextQuestionId ?? q.NextQuestionId ?? questionInfoObj?.NextQuestionId ?? questionInfoObj?.nextQuestionId ?? null;
+      if (nextQId !== null && nextQId !== undefined && nextQId !== '') {
+        const tgtStr = String(nextQId).trim();
+        if (tgtStr === '-1' || tgtStr.toLowerCase() === 'submit' || tgtStr.toLowerCase() === 'endofform') {
+          res.logic = res.logic || {};
+          res.logic.default_action = 'SUBMIT_FORM';
+          res.logic.target = null;
+        } else {
+          res.logic = res.logic || {};
+          res.logic.default_action = 'GO_TO_PAGE';
+          res.logic.target = tgtStr;
+        }
+      }
+    }
 
     // Trích xuất validation cho câu hỏi Microsoft Forms
     const validation = this._extractValidationRule({
@@ -2394,6 +2501,7 @@ class FormParserService {
             }
 
             if (questions.length > 0) {
+              this._resolveAndMapBranchingTargets(questions);
               return {
                 source: 'MICROSOFT_FORM',
                 title,
@@ -2493,6 +2601,10 @@ class FormParserService {
 
       for (const group of groupedMatrix.values()) {
         questions.push(group);
+      }
+
+      if (questions.length > 0) {
+        this._resolveAndMapBranchingTargets(questions);
       }
     }
 
@@ -2949,6 +3061,11 @@ class FormParserService {
       }
     }
 
+    // Ánh xạ Branching Logic đích đến đúng order_index của Section Header / Câu hỏi
+    if (questions.length > 0) {
+      this._resolveAndMapBranchingTargets(questions);
+    }
+
     return {
       source: 'SMART_PASTE',
       title: title || 'Khảo sát mới',
@@ -3108,6 +3225,295 @@ class FormParserService {
       is_required: isRequired,
       options: cleanOptions
     };
+  }
+
+  /**
+   * Hậu xử lý và ánh xạ toàn diện Branching Logic (Rẽ nhánh điều hướng)
+   * Chuẩn hóa các target từ Google Section ID, Microsoft Question ID, hoặc Tên phân đoạn
+   * về đúng order_index của Section Header / Câu hỏi đích trong danh sách questions của VibeSurvey.
+   */
+  _resolveAndMapBranchingTargets(questions) {
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return questions;
+    }
+
+    // 1. Thu thập danh sách Section Headers và lập các bản đồ chỉ mục
+    const sectionHeaders = [];
+    const originIdMap = new Map();
+    const orderIndexMap = new Map();
+
+    for (const q of questions) {
+      if (!q) continue;
+      if (q.origin_id !== undefined && q.origin_id !== null && q.origin_id !== '') {
+        originIdMap.set(String(q.origin_id).trim(), q);
+      }
+      if (q.order_index !== undefined && q.order_index !== null) {
+        orderIndexMap.set(Number(q.order_index), q);
+      }
+      if (q.type === 'SECTION_HEADER') {
+        sectionHeaders.push(q);
+      }
+    }
+
+    // Helper chuẩn hóa chuỗi để so sánh linh hoạt (bỏ dấu tiếng Việt, ký tự đặc biệt, khoảng trắng thừa)
+    const cleanFuzzy = (str) => {
+      if (!str || typeof str !== 'string') return '';
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\w\s]/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const cleanStrict = (str) => {
+      if (!str || typeof str !== 'string') return '';
+      return str.toLowerCase().replace(/\s+/g, ' ').trim();
+    };
+
+    // Helper tìm câu hỏi / phân đoạn đích
+    const findTargetQuestion = (rawTarget, optLabel) => {
+      // 1. Kiểm tra rawTarget trực tiếp
+      if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
+        const targetStr = String(rawTarget).trim();
+
+        // 1.1 Khớp theo origin_id (Google Section ID, Microsoft Question ID)
+        if (originIdMap.has(targetStr)) {
+          return originIdMap.get(targetStr);
+        }
+
+        // 1.2 Khớp nếu rawTarget là số thứ tự order_index hợp lệ
+        const numTgt = parseInt(targetStr, 10);
+        if (!isNaN(numTgt) && orderIndexMap.has(numTgt)) {
+          return orderIndexMap.get(numTgt);
+        }
+
+        // 1.3 Khớp theo tiêu đề Section Header
+        const targetStrict = cleanStrict(targetStr);
+        const targetFuzzy = cleanFuzzy(targetStr);
+
+        for (const sec of sectionHeaders) {
+          const secContent = sec.content || '';
+          const secStrict = cleanStrict(secContent);
+          const secFuzzy = cleanFuzzy(secContent);
+
+          if (secStrict === targetStrict || secFuzzy === targetFuzzy) {
+            return sec;
+          }
+          if (targetFuzzy.length >= 3 && (secFuzzy.includes(targetFuzzy) || targetFuzzy.includes(secFuzzy))) {
+            return sec;
+          }
+        }
+      }
+
+      // 2. Nếu chưa tìm được bằng rawTarget, thử khớp với optLabel (nhãn của lựa chọn)
+      if (optLabel && typeof optLabel === 'string') {
+        const optStrict = cleanStrict(optLabel);
+        const optFuzzy = cleanFuzzy(optLabel);
+
+        // 2.1 Khớp chính xác hoàn toàn với tiêu đề Section
+        for (const sec of sectionHeaders) {
+          const secContent = sec.content || '';
+          if (cleanStrict(secContent) === optStrict || cleanFuzzy(secContent) === optFuzzy) {
+            return sec;
+          }
+        }
+
+        // 2.2 Tên Section chứa tên lựa chọn (ví dụ: optLabel = "Truyền thông", sec.content = "Tiểu ban Truyền thông")
+        if (optFuzzy.length >= 3) {
+          for (const sec of sectionHeaders) {
+            const secFuzzy = cleanFuzzy(sec.content || '');
+            if (secFuzzy.includes(optFuzzy)) {
+              return sec;
+            }
+          }
+        }
+
+        // 2.3 Tên lựa chọn chứa tên Section (ví dụ: optLabel = "Chuyển đến phần Thông tin liên hệ", sec.content = "Thông tin liên hệ")
+        for (const sec of sectionHeaders) {
+          const secFuzzy = cleanFuzzy(sec.content || '');
+          if (secFuzzy.length >= 3 && optFuzzy.includes(secFuzzy)) {
+            return sec;
+          }
+        }
+      }
+
+      return null;
+    };
+
+    // Helper kiểm tra hành động kết thúc nộp bài
+    const isSubmitAction = (action, target) => {
+      const actStr = String(action || '').toUpperCase();
+      const tgtStr = String(target || '').toUpperCase();
+      return (
+        actStr === 'SUBMIT_FORM' ||
+        actStr === 'SUBMIT' ||
+        actStr === '3' ||
+        tgtStr === 'SUBMIT' ||
+        tgtStr === 'SUBMIT_FORM' ||
+        tgtStr === '-1' ||
+        tgtStr === 'ENDOFFORM'
+      );
+    };
+
+    // Helper kiểm tra hành động chuyển sang trang tiếp theo
+    const isNextPageAction = (action, target) => {
+      const actStr = String(action || '').toUpperCase();
+      const tgtStr = String(target || '').toUpperCase();
+      return (
+        actStr === 'NEXT_PAGE' ||
+        actStr === 'NEXT_SECTION' ||
+        actStr === 'NEXT' ||
+        actStr === '1' ||
+        tgtStr === 'NEXT'
+      );
+    };
+
+    // Helper kiểm tra hành động làm lại từ đầu
+    const isRestartAction = (action) => {
+      const actStr = String(action || '').toUpperCase();
+      return actStr === 'RESTART_FORM' || actStr === 'RESTART' || actStr === '4';
+    };
+
+    // 2. Duyệt từng câu hỏi để xử lý Branching Logic
+    for (const q of questions) {
+      if (!q) continue;
+
+      // A. Xử lý cho câu hỏi Choice có logic.options
+      if (['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type)) {
+        // Tự động suy luận logic rẽ nhánh nếu các lựa chọn khớp với các Section Headers
+        if ((!q.logic || !q.logic.options) && Array.isArray(q.options) && q.options.length >= 2 && sectionHeaders.length >= 2) {
+          const inferredOptions = {};
+          let matchedCount = 0;
+          const matchedSecOrders = new Set();
+
+          for (let i = 0; i < q.options.length; i++) {
+            const opt = q.options[i];
+            const matchedSec = findTargetQuestion(null, opt);
+            if (matchedSec && matchedSec.order_index !== q.order_index) {
+              inferredOptions[opt] = {
+                action: 'GO_TO_PAGE',
+                target: matchedSec.order_index
+              };
+              matchedCount++;
+              matchedSecOrders.add(matchedSec.order_index);
+            }
+          }
+
+          // Nếu có ít nhất 2 options trỏ đến 2 phân đoạn khác nhau -> Kích hoạt logic tự động
+          if (matchedCount >= 2 && matchedSecOrders.size >= 2) {
+            q.logic = q.logic || {};
+            q.logic.enabled = true;
+            q.logic.options = inferredOptions;
+          }
+        }
+
+        // Xử lý và chuẩn hóa các logic.options hiện có
+        if (q.logic && q.logic.options && typeof q.logic.options === 'object') {
+          const resolvedOptions = {};
+
+          for (const [key, rawRule] of Object.entries(q.logic.options)) {
+            if (!rawRule) continue;
+
+            let rawAction = typeof rawRule === 'object' ? rawRule.action : rawRule;
+            let rawTarget = typeof rawRule === 'object' ? rawRule.target : null;
+
+            // Nếu rawRule là chuỗi đơn (ví dụ: "SUBMIT" hoặc "5" hoặc ID)
+            if (typeof rawRule === 'string') {
+              if (isSubmitAction(rawRule, rawRule)) {
+                rawAction = 'SUBMIT_FORM';
+                rawTarget = null;
+              } else if (isNextPageAction(rawRule, rawRule)) {
+                rawAction = 'NEXT_PAGE';
+                rawTarget = null;
+              } else {
+                rawAction = 'GO_TO_PAGE';
+                rawTarget = rawRule;
+              }
+            }
+
+            if (isSubmitAction(rawAction, rawTarget)) {
+              resolvedOptions[key] = {
+                action: 'SUBMIT_FORM',
+                target: null
+              };
+              continue;
+            }
+
+            if (isRestartAction(rawAction)) {
+              resolvedOptions[key] = {
+                action: 'RESTART_FORM',
+                target: null
+              };
+              continue;
+            }
+
+            // Tìm câu hỏi / Section Header đích
+            const targetQ = findTargetQuestion(rawTarget, key);
+            if (targetQ) {
+              resolvedOptions[key] = {
+                action: 'GO_TO_PAGE',
+                target: targetQ.order_index
+              };
+            } else if (isNextPageAction(rawAction, rawTarget)) {
+              resolvedOptions[key] = {
+                action: 'NEXT_PAGE',
+                target: null
+              };
+            } else if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
+              const numVal = parseInt(rawTarget, 10);
+              resolvedOptions[key] = {
+                action: 'GO_TO_PAGE',
+                target: !isNaN(numVal) ? numVal : String(rawTarget)
+              };
+            }
+          }
+
+          if (Object.keys(resolvedOptions).length > 0) {
+            q.logic.enabled = true;
+            q.logic.options = resolvedOptions;
+
+            // Đồng bộ thêm cả key theo số thứ tự (index 0, 1, 2) nếu có mảng options
+            if (Array.isArray(q.options)) {
+              q.options.forEach((optText, optIdx) => {
+                if (resolvedOptions[optText] && resolvedOptions[optIdx] === undefined) {
+                  resolvedOptions[optIdx] = resolvedOptions[optText];
+                }
+              });
+            }
+          }
+        }
+      }
+
+      // B. Xử lý điều hướng cuối phân đoạn của SECTION_HEADER
+      if (q.type === 'SECTION_HEADER' && q.logic) {
+        const rawDefAction = q.logic.default_action || q.logic.action;
+        const rawTarget = q.logic.target;
+
+        if (isSubmitAction(rawDefAction, rawTarget)) {
+          q.logic.default_action = 'SUBMIT_FORM';
+          q.logic.target = null;
+        } else if (isRestartAction(rawDefAction)) {
+          q.logic.default_action = 'RESTART_FORM';
+          q.logic.target = null;
+        } else if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
+          const targetQ = findTargetQuestion(rawTarget, null);
+          if (targetQ) {
+            q.logic.default_action = 'GO_TO_PAGE';
+            q.logic.target = targetQ.order_index;
+          } else if (isNextPageAction(rawDefAction, rawTarget)) {
+            q.logic.default_action = 'NEXT_PAGE';
+            q.logic.target = null;
+          }
+        } else if (isNextPageAction(rawDefAction, null)) {
+          q.logic.default_action = 'NEXT_PAGE';
+          q.logic.target = null;
+        }
+      }
+    }
+
+    return questions;
   }
 }
 

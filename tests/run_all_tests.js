@@ -103,6 +103,12 @@ const testSuites = [
     name: 'Tầng 15: Push Notification Engine & Mobile Hybrid Suite',
     description: 'Kiểm tra Bảng push_subscriptions, API subscribe-push, Realtime Broadcast Alert, Rung chuông & Popup',
     file: 'test_push_notifications.js'
+  },
+  {
+    id: 16,
+    name: 'Tầng 16: Stepper Routing, Smart Branching & Anti-Bleed Suite',
+    description: 'Kiểm tra điều hướng Single-Question Stepper, Smart Name/Title Matching, UUID/Index & Chống trôi tự do sang tiểu ban khác',
+    file: 'test_stepper_routing_and_smart_branching.js'
   }
 ];
 

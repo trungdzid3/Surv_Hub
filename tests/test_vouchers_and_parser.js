@@ -832,6 +832,294 @@ Hàng: Quán A, Quán B | Cột: Giao hàng tận nơi, Chỗ đậu xe, Wi-Fi m
     assert.strictEqual(parsed.questions[11].is_required, 0);
   });
 
+  // ==========================================
+  // KHOI 6: BRANCHING LOGIC & DIEU HUONG PHAN DOAN
+  // ==========================================
+  console.log('\n--- KHOI 6: BRANCHING LOGIC & DIEU HUONG PHAN DOAN ---');
+
+  await runTest('13. Google Forms: Boc tach Branching Logic, Google Section ID & Dieu huong cuoi phan doan', async () => {
+    // Mau Google Forms HTML co 3 phan:
+    // Phan 1: Cau hoi re nhanh (Item ID 100) voi 2 lua chon:
+    //   - "Ban Truyen thong" -> re nhanh den Section 2 (Item ID 200)
+    //   - "Ket thuc som" -> re nhanh den Submit (Action 3)
+    // Phan 2: Section Header (Item ID 200, "Tieu ban Truyen thong")
+    //   - Dieu huong mac dinh cua Section 2: re nhanh den Submit (Action 3)
+    //   - Cau hoi 2: "Kinh nghiem truyen thong?" (Item ID 201)
+    // Phan 3: Section Header (Item ID 300, "Thong tin bo sung")
+    const mockGoogleBranchingHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta property="og:title" content="Khao sat Tuyen thanh vien CLB - Google Forms">
+        <meta property="og:description" content="Khao sat phan luong tieu ban">
+      </head>
+      <body>
+        <script>
+          var FB_PUBLIC_LOAD_DATA_ = [null, [
+            "Mô tả khảo sát",
+            [
+              [100, "Bạn muốn ứng tuyển vào tiểu ban nào?", null, 2, [
+                [1001, [
+                  ["Ban Truyền thông", null, 2, 200],
+                  ["Kết thúc sớm", null, 3]
+                ], 1]
+              ]],
+              [200, "Tiểu ban Truyền thông", "Dành cho ứng viên truyền thông", 8, [
+                [null, null, 3]
+              ]],
+              [201, "Link portfolio của bạn?", null, 0, [[2001, null, 1]]],
+              [300, "Thông tin bổ sung", null, 8, [
+                [null, null, 1]
+              ]],
+              [301, "Bạn có câu hỏi gì thêm không?", null, 1, [[3001, null, 0]]]
+            ],
+            null, null, null, null, null,
+            "Khao sat Tuyen thanh vien CLB"
+          ]];
+        </script>
+      </body>
+      </html>
+    `;
+
+    const result = formParserService.parseGoogleFormsHtml(mockGoogleBranchingHtml, 'https://docs.google.com/forms/d/e/1FAIpQLScBranching/viewform');
+    assert.strictEqual(result.questions.length, 5);
+
+    // Cau 1 (order_index = 1): SINGLE_CHOICE co logic rẽ nhánh
+    const q1 = result.questions[0];
+    assert.strictEqual(q1.order_index, 1);
+    assert.strictEqual(q1.type, 'SINGLE_CHOICE');
+    assert(q1.logic && q1.logic.enabled, 'Cau 1 phai bat logic');
+    assert(q1.logic.options['Ban Truyền thông'], 'Phai co logic cho Ban Truyền thông');
+
+    // Section 2 (Tiểu ban Truyền thông) co order_index = 2
+    assert.strictEqual(q1.logic.options['Ban Truyền thông'].action, 'GO_TO_PAGE');
+    assert.strictEqual(q1.logic.options['Ban Truyền thông'].target, 2);
+
+    // "Kết thúc sớm" -> SUBMIT_FORM
+    assert.strictEqual(q1.logic.options['Kết thúc sớm'].action, 'SUBMIT_FORM');
+    assert.strictEqual(q1.logic.options['Kết thúc sớm'].target, null);
+
+    // Section Header 2 (order_index = 2): Co dieu huong cuoi phan doan den SUBMIT_FORM
+    const sec2 = result.questions[1];
+    assert.strictEqual(sec2.order_index, 2);
+    assert.strictEqual(sec2.type, 'SECTION_HEADER');
+    assert(sec2.logic, 'Section 2 phai co logic dieu huong');
+    assert.strictEqual(sec2.logic.default_action, 'SUBMIT_FORM');
+    assert.strictEqual(sec2.logic.target, null);
+
+    // Section Header 3 (order_index = 4): Co dieu huong NEXT_PAGE
+    const sec3 = result.questions[3];
+    assert.strictEqual(sec3.order_index, 4);
+    assert.strictEqual(sec3.type, 'SECTION_HEADER');
+    assert(sec3.logic, 'Section 3 phai co logic');
+    assert.strictEqual(sec3.logic.default_action, 'NEXT_PAGE');
+  });
+
+  await runTest('14. Microsoft Forms: Boc tach Branching Logic (nextQuestionId, BranchRules, Section Header) & Tu dong khop theo ten phan doan', async () => {
+    // Mau Microsoft Forms runtimeForms:
+    // Cau 1 (id: "q_dep"): Choice co nextQuestionId va branchRules:
+    //   - "Hợp tác - Đối ngoại" -> nextQuestionId: "sec_external"
+    //   - "Sự kiện" -> nextQuestionId: "sec_event"
+    //   - "Nộp đơn ngay" -> nextQuestionId: -1 (Submit)
+    // Phân đoạn 2 (id: "sec_external", title: "Tiểu ban Hợp tác - Đối ngoại")
+    //   - Cau hoi con (id: "q_ext_1"): "Kinh nghiệm đàm phán của bạn?"
+    // Phân đoạn 3 (id: "sec_event", title: "Tiểu ban Sự kiện")
+    //   - nextQuestionId: -1 (Submit sau khi xong phần sự kiện)
+    //   - Cau hoi con (id: "q_ev_1"): "Kinh nghiệm chạy sự kiện?"
+    const mockMsBranchingHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Đơn đăng ký CLB - Microsoft Forms</title>
+      </head>
+      <body>
+        <script>
+          var runtimeForms = {
+            title: "Đơn đăng ký CLB",
+            questions: [
+              {
+                id: "q_dep",
+                title: "Chọn ban bạn muốn tham gia",
+                type: "Question.Choice",
+                required: true,
+                choices: [
+                  { displayText: "Hợp tác - Đối ngoại", nextQuestionId: "sec_external" },
+                  { displayText: "Sự kiện", nextQuestionId: "sec_event" },
+                  { displayText: "Nộp đơn ngay", nextQuestionId: -1 }
+                ]
+              },
+              {
+                id: "sec_external",
+                title: "Tiểu ban Hợp tác - Đối ngoại",
+                type: "Question.Page",
+                nextQuestionId: "sec_event"
+              },
+              {
+                id: "q_ext_1",
+                title: "Kinh nghiệm đàm phán tài trợ?",
+                type: "Question.TextField",
+                required: true
+              },
+              {
+                id: "sec_event",
+                title: "Tiểu ban Sự kiện",
+                type: "Question.Page",
+                nextQuestionId: -1
+              },
+              {
+                id: "q_ev_1",
+                title: "Quy mô sự kiện lớn nhất bạn từng tham gia?",
+                type: "Question.TextField",
+                required: false
+              }
+            ]
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    const result = formParserService.parseMicrosoftFormsHtml(mockMsBranchingHtml, 'https://forms.office.com/r/MockMsBranching');
+    assert.strictEqual(result.questions.length, 5);
+
+    // Cau 1 (order_index = 1): SINGLE_CHOICE
+    const q1 = result.questions[0];
+    assert.strictEqual(q1.order_index, 1);
+    assert.strictEqual(q1.type, 'SINGLE_CHOICE');
+    assert(q1.logic && q1.logic.enabled, 'Cau 1 phai bat logic');
+
+    // Section "Tiểu ban Hợp tác - Đối ngoại" nam o order_index = 2
+    assert.strictEqual(q1.logic.options['Hợp tác - Đối ngoại'].action, 'GO_TO_PAGE');
+    assert.strictEqual(q1.logic.options['Hợp tác - Đối ngoại'].target, 2);
+
+    // Section "Tiểu ban Sự kiện" nam o order_index = 4
+    assert.strictEqual(q1.logic.options['Sự kiện'].action, 'GO_TO_PAGE');
+    assert.strictEqual(q1.logic.options['Sự kiện'].target, 4);
+
+    // "Nộp đơn ngay" -> SUBMIT_FORM
+    assert.strictEqual(q1.logic.options['Nộp đơn ngay'].action, 'SUBMIT_FORM');
+    assert.strictEqual(q1.logic.options['Nộp đơn ngay'].target, null);
+
+    // Section Header "sec_external" (order_index = 2): re nhanh den Section "sec_event" (order_index = 4)
+    const secExt = result.questions[1];
+    assert.strictEqual(secExt.order_index, 2);
+    assert.strictEqual(secExt.type, 'SECTION_HEADER');
+    assert(secExt.logic, 'Phan doan External phai co logic');
+    assert.strictEqual(secExt.logic.default_action, 'GO_TO_PAGE');
+    assert.strictEqual(secExt.logic.target, 4);
+
+    // Section Header "sec_event" (order_index = 4): nextQuestionId la -1 -> SUBMIT_FORM
+    const secEvent = result.questions[3];
+    assert.strictEqual(secEvent.order_index, 4);
+    assert.strictEqual(secEvent.type, 'SECTION_HEADER');
+    assert(secEvent.logic, 'Phan doan Event phai co logic');
+    assert.strictEqual(secEvent.logic.default_action, 'SUBMIT_FORM');
+    assert.strictEqual(secEvent.logic.target, null);
+  });
+
+  await runTest('15. Smart Text / Auto-Inference: Tu dong suy luan re nhanh khi ten lua chon khop voi ten Phan doan', async () => {
+    const rawSmartTextWithSections = `
+Khảo sát Tuyển dụng Ban Chấp Hành
+Mô tả: Phân luồng câu hỏi theo ban chuyên môn
+
+Câu 1. Bạn đăng ký dự tuyển vào ban nào? *
+A. Ban Truyền thông
+B. Ban Kỹ thuật
+C. Ban Nhân sự
+
+Mục: Ban Truyền thông
+Mô tả: Phần dành riêng cho ứng viên Truyền thông
+
+Câu 2. Bạn thành thạo phần mềm thiết kế nào?
+- Photoshop
+- Illustrator
+- Premiere
+
+Mục: Ban Kỹ thuật
+Mô tả: Phần dành riêng cho ứng viên Kỹ thuật
+
+Câu 3. Ngôn ngữ lập trình bạn sử dụng tốt nhất?
+- JavaScript
+- Python
+- Golang
+
+Mục: Ban Nhân sự
+Mô tả: Phần dành riêng cho ứng viên Nhân sự
+
+Câu 4. Kỹ năng giải quyết xung đột nhóm của bạn?
+- Tốt
+- Khá
+- Cần học hỏi
+    `.trim();
+
+    // Trong Smart Text, "Mục: ..." duoc nhan dien hoac can kiem thu logic tu dong khop
+    // Gia lap mot danh sach cau hoi co chua Section Header va Choice
+    const customQuestions = [
+      {
+        order_index: 1,
+        type: 'SINGLE_CHOICE',
+        content: 'Bạn đăng ký dự tuyển vào ban nào?',
+        is_required: 1,
+        options: ['Ban Truyền thông', 'Ban Kỹ thuật', 'Ban Nhân sự']
+      },
+      {
+        order_index: 2,
+        type: 'SECTION_HEADER',
+        content: 'Tiểu ban Truyền thông',
+        is_required: 0,
+        options: null
+      },
+      {
+        order_index: 3,
+        type: 'SHORT_TEXT',
+        content: 'Kinh nghiệm thiết kế của bạn?',
+        is_required: 1,
+        options: null
+      },
+      {
+        order_index: 4,
+        type: 'SECTION_HEADER',
+        content: 'Tiểu ban Kỹ thuật',
+        is_required: 0,
+        options: null
+      },
+      {
+        order_index: 5,
+        type: 'SHORT_TEXT',
+        content: 'Ngôn ngữ lập trình ưa thích?',
+        is_required: 1,
+        options: null
+      },
+      {
+        order_index: 6,
+        type: 'SECTION_HEADER',
+        content: 'Tiểu ban Nhân sự',
+        is_required: 0,
+        options: null
+      },
+      {
+        order_index: 7,
+        type: 'SHORT_TEXT',
+        content: 'Kỹ năng làm việc nhóm?',
+        is_required: 1,
+        options: null
+      }
+    ];
+
+    const resolved = formParserService._resolveAndMapBranchingTargets(customQuestions);
+    const q1 = resolved[0];
+
+    assert(q1.logic && q1.logic.enabled, 'Cau 1 phai tu dong kich hoat branching logic vi cac lua chon khop cac phan doan');
+    assert.strictEqual(q1.logic.options['Ban Truyền thông'].action, 'GO_TO_PAGE');
+    assert.strictEqual(q1.logic.options['Ban Truyền thông'].target, 2);
+
+    assert.strictEqual(q1.logic.options['Ban Kỹ thuật'].action, 'GO_TO_PAGE');
+    assert.strictEqual(q1.logic.options['Ban Kỹ thuật'].target, 4);
+
+    assert.strictEqual(q1.logic.options['Ban Nhân sự'].action, 'GO_TO_PAGE');
+    assert.strictEqual(q1.logic.options['Ban Nhân sự'].target, 6);
+  });
+
   console.log('\n===============================================================');
   console.log(`TAT CA ${passedTests}/${totalTests} BAI KIEM THU DA VUOT QUA XUAT SAC!`);
   console.log('===============================================================\n');
