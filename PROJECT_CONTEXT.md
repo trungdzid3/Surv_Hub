@@ -2237,3 +2237,27 @@ c:\Users\Lenovo\Downloads\Linh\
 - Toàn bộ các file sửa đổi đều đã kiểm tra cú pháp thành công (`node -c`).
 - Bộ kiểm thử tự hành 15/15 Suites (`npm test`): **100% PASS** (22.30s).
 - Sổ cái kế toán kép Ledger Stream đối soát chuẩn xác, cân bằng 100%.
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: TÍCH HỢP GEMINI 3.5 FLASH LITE MULTI-KEY SENTINEL (THÁNG 11/2026)
+
+### 1. Kiến Trúc Cân Bằng Tải & Dự Phòng Tự Động (Multi-Key Load Balancing & Auto Failover)
+- **Tập hợp 3 API Keys dự phòng**:
+  + Key 1: `...hsFEM4` (Primary)
+  + Key 2: `...ag5rcI` (Backup 1)
+  + Key 3: `...aajOk` (Backup 2)
+- **Cố định Model**: Duy nhất `gemini-3.5-flash-lite` với cấu hình Structured Output JSON, `temperature: 0.1` để suy luận chính xác, tiết kiệm token tối đa.
+- **Dịch vụ triển khai**: [geminiSentinelService.js](file:///c:/Users/Lenovo/Downloads/Linh/server/services/geminiSentinelService.js)
+  + Thuật toán Round-Robin: Xoay vòng lượt gọi giữa 3 key nhằm nhân 3 hạn mức miễn phí (Triple Free Tier Quota).
+  + Tự động Failover: Khi một key gặp mã lỗi `429 Too Many Requests` hoặc `503`, hệ thống tự động chuyển tiếp ngay sang key kế tiếp trong danh sách mà không gián đoạn dịch vụ.
+
+### 2. Phối Hợp 2 Lớp Kiểm Duyệt
+- Tích hợp mượt mà với [forumSentinelService.js](file:///c:/Users/Lenovo/Downloads/Linh/server/services/forumSentinelService.js):
+  + Lớp 1 (Local Regex / Heuristic): Quét trước với chi phí 0 token, bắt rác thô và các chiêu trò phân tách khoảng trắng.
+  + Lớp 2 (Gemini 3.5 Flash Lite): Phân tích ngữ nghĩa chuyên sâu khi gặp câu có ngữ cảnh nhạy cảm hoặc khi nhận báo cáo vi phạm từ người dùng.
+
+### 3. Nghiệm Thu & Đồng Bộ
+- Bổ sung 3 test cases vào `tests/test_forum_community.js` (26/26 tests PASS 100%).
+- Chạy toàn diện 15/15 Test Suites (`npm test`): 100% PASS (18.43s).
+- Đồng bộ Android Capacitor hoàn tất (`npm run sync:android`).

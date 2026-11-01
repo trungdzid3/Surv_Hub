@@ -230,5 +230,15 @@ module.exports = {
     PASS: process.env.OUTLOOK_PASS || '',
     FROM_EMAIL: process.env.OUTLOOK_FROM_EMAIL || process.env.OUTLOOK_USER || '',
     FROM_NAME: process.env.OUTLOOK_FROM_NAME || 'SurvHub Platform'
+  },
+
+  // Cấu hình Gemini AI Micro-Sentinel (Multi-Key Load Balancing & Auto Failover)
+  GEMINI_AI: {
+    MODEL: 'gemini-3.5-flash-lite',
+    KEYS: process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()) : [
+      'AIzaSyBl4Q2pnrYEWHu9P5K6gKg1AEq6OhsFEM4',
+      'AIzaSyAxIzy-6vkoGO_14cBBJH71vQOzdag5rcI',
+      'AIzaSyBOSVxR8oq4iJLCerktkHk0SzD2cGaajOk'
+    ]
   }
 };

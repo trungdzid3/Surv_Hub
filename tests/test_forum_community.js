@@ -3,6 +3,8 @@
  * Task 2.1 - Backend API & Database Verification
  */
 
+process.env.NODE_ENV = 'test';
+
 const assert = require('node:assert');
 const crypto = require('node:crypto');
 const app = require('../server/app');
@@ -93,7 +95,7 @@ async function runAllTests() {
       const dataEdu = await resEdu.json();
       tokenEdu = dataEdu.token;
       idEdu = dataEdu.user.id;
-      db.prepare('UPDATE users SET is_student_verified = 1, student_karma = 100 WHERE id = ?').run(idEdu);
+      db.prepare("UPDATE users SET is_student_verified = 1, student_karma = 100, account_tier = 'STUDENT' WHERE id = ?").run(idEdu);
 
       // 4. Normal Respondent
       const resNorm = await fetch(`${baseUrl}/auth/register`, {
@@ -620,6 +622,40 @@ async function runAllTests() {
       assert.strictEqual(resAdmin.status, 200);
       const dataAdmin = await resAdmin.json();
       assert.strictEqual(dataAdmin.post.is_hidden, true);
+    });
+
+    // =========================================================================
+    // CAC TEST MO RONG: GEMINI 3.5 FLASH LITE SENTINEL (MULTI-KEY LOAD BALANCING)
+    // =========================================================================
+    const geminiSentinelService = require('../server/services/geminiSentinelService');
+
+    await runTest('Gemini 3.5 Flash Lite: Nhan dien link tra hinh chinh xac bang AI', async () => {
+      const res = await geminiSentinelService.auditContent(
+        'Nho moi nguoi dien khao sat giup minh gap',
+        'Cac ban vao f o r m s . g l e / a b c 1 2 3 giup minh nhe'
+      );
+      assert.strictEqual(res.violation, true);
+      assert.strictEqual(res.model, 'gemini-3.5-flash-lite');
+      assert.ok(res.key_suffix, 'Phai co key_suffix duoc su dung');
+    });
+
+    await runTest('Gemini 3.5 Flash Lite: Khong bat nham cuoc trao doi hop le thuan tuy', async () => {
+      const res = await geminiSentinelService.auditContent(
+        'Kinh nghiem lap trinh va xu ly chuoi',
+        'Khi nhap du lieu form nguoi dung, ban nen xoa dau cach thua de database dong nhat.'
+      );
+      assert.strictEqual(res.violation, false);
+      assert.strictEqual(res.flag, 'CLEAN');
+    });
+
+    await runTest('Gemini 3.5 Flash Lite: Co che Round-Robin va xoay vong 3 API Keys', async () => {
+      const initialIndex = geminiSentinelService.currentKeyIndex;
+      const key1 = geminiSentinelService.getNextKey();
+      const key2 = geminiSentinelService.getNextKey();
+      const key3 = geminiSentinelService.getNextKey();
+      assert.notStrictEqual(key1, key2, 'Key 1 va Key 2 phai khac nhau');
+      assert.notStrictEqual(key2, key3, 'Key 2 va Key 3 phai khac nhau');
+      assert.strictEqual(geminiSentinelService.keys.length, 3, 'He thong phai du 3 API keys backup');
     });
 
     console.log('\n===============================================================');

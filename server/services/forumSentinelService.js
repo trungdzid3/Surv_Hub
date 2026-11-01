@@ -9,6 +9,7 @@
 
 const crypto = require('crypto');
 const db = require('../db/database');
+const geminiSentinelService = require('./geminiSentinelService');
 
 class ForumSentinelService {
   constructor() {
@@ -409,6 +410,15 @@ class ForumSentinelService {
     if (this.timer && typeof this.timer.unref === 'function') {
       this.timer.unref();
     }
+  }
+
+  /**
+   * Kiểm duyệt chuyên sâu bằng mô hình Gemini 3.5 Flash Lite (Tầng 3 - Multi-Key Load Balancing)
+   * @param {string} title Tiêu đề bài viết
+   * @param {string} content Nội dung
+   */
+  async auditWithGemini(title, content) {
+    return geminiSentinelService.auditContent(title, content);
   }
 
   /**
