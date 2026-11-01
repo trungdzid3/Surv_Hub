@@ -2144,3 +2144,29 @@ c:\Users\Lenovo\Downloads\Linh\
 - Bổ sung 4 bài test kiểm thử mở rộng cho Sentinel và Shadowban vào `tests/test_forum_community.js` (23/23 tests PASS).
 - Chạy toàn diện 15/15 Test Suites (`npm test`): **100% PASS** (22.89s).
 - Đồng bộ toàn vẹn tài nguyên sang Android: `npm run sync:android`.
+
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: TỰ ĐỘNG RE-RENDER TỨC THÌ KHI ĐỔI QUYỀN ADMIN & TINH CHỈNH 2 ICON 3D THẺ BENTO (THÁNG 11/2026)
+
+### 1. Cơ Chế Tự Động Re-render Tức Thì Khi Đổi Góc Nhìn & Gói Tài Khoản (Admin Instant Re-render)
+- **Vấn đề đã xử lý**: Khi Quản trị viên chuyển đổi Chế độ (`RESPONDENT` <-> `CREATOR` <-> `ADMIN`) hoặc Phân khúc (`PERSONAL` <-> `STUDENT` <-> `ENTERPRISE`), giao diện màn hình hiện tại không tự cập nhật mà bắt buộc người dùng phải reload F5 hoặc chuyển tab thủ công.
+- **Giải pháp triển khai trong `public/app.js`**:
+  + Chuyển `switchAdminMode(mode)` thành phương thức bất đồng bộ `async switchAdminMode(mode)`.
+  + Bổ sung từ khóa `await` khi gọi `this.switchAdminTier('PERSONAL', true)` và `this.switchAdminTier('ENTERPRISE', true)`.
+  + Tự động kích hoạt `await this.navigate(this.state.currentTab)` sau khi cập nhật mode, giúp re-render toàn diện giao diện màn hình hiện tại (`#app-root`, Navigation bar, Bottom dock, phân quyền làm bài / xem trước, số dư 2 cột / 3 cột).
+  + Nâng cấp `switchAdminTier(tier, silent)`: Khi người dùng chọn đổi phân khúc trực tiếp (`!silent`), hệ thống tự động gọi `await this.navigate(this.state.currentTab)` để phản hồi ngay lập tức.
+  + Bảo vệ trình soạn thảo: Nếu đang ở tab `create-survey`, ưu tiên gọi `this.refreshStudioSidebarView()` để cập nhật phân khúc và bảng giá mà không làm mất câu hỏi đang soạn thảo dở.
+
+### 2. Định Vị & Cân Đối Kích Thước 2 Icon Pure Vector SVG 3D Thẻ Bento (Ví & Rút Tiền)
+- **Vấn đề đã xử lý**: Icon ví da và xu & voucher bị trôi xuống góc dưới bên phải và bị che lấp bởi các nút bấm thao tác ("Đổi thưởng / Rút tiền", "Nạp Credit").
+- **Giải pháp triển khai**:
+  + **Thẻ Point (Sunset Orange)**: Đưa icon ví da 3D (`wallet_3d_master.svg`) lên góc trên bên phải với class `absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-75 dark:opacity-50 drop-shadow-sm`, hiển thị 2 thẻ ATM thò lên trên và quai ví bên phải, kích thước bề thế và cân đối.
+  + **Thẻ Credit (Modern Obsidian/White)**: Đưa cụm xu 4 tầng & voucher `%` 3D (`coins_coupon_3d_master.svg`) lên góc trên bên phải với class `absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-90 dark:opacity-75 drop-shadow-sm`, màu sắc vàng kim và voucher tươi sáng rõ nét, nằm hoàn toàn phía trên nút CTA Nạp Credit.
+  + Tăng phiên bản cache-buster trong `public/index.html` lên `4.7.6_<timestamp>` để trình duyệt của người dùng cập nhật ngay lập tức.
+
+### 3. Kiểm Chuẩn Chất Lượng & Đồng Bộ
+- Chạy kiểm tra cú pháp: `node -c public/app.js` đạt chuẩn (exit code 0).
+- Chạy toàn diện 15/15 Test Suites (`npm test`): **100% PASS** (24.70s).
+- Đồng bộ toàn vẹn tài nguyên sang Android: `npm run sync:android`.

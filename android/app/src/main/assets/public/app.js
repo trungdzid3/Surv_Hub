@@ -2256,39 +2256,57 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     return this.switchAdminMode(mode);
   },
 
-  switchAdminMode(mode) {
+  async switchAdminMode(mode) {
     this.haptic('medium');
     this.state.adminViewMode = mode;
     this.state.adminMode = mode;
     localStorage.setItem('survhub_admin_view_mode', mode);
-    this.renderNavigation();
-    this.renderUserProfileDropdown();
 
     if (mode === 'RESPONDENT') {
       this.showToast('Đã chuyển sang góc nhìn Người Điền (Đáp Viên)', 'info');
       // Người điền chỉ là Người Điền Thường (PERSONAL) hoặc Sinh Viên (STUDENT), tuyệt đối không nhận Doanh Nghiệp
       if (this.state.currentUser && this.state.currentUser.account_tier === 'ENTERPRISE') {
-        this.switchAdminTier('PERSONAL', true);
+        await this.switchAdminTier('PERSONAL', true);
       }
+      this.renderNavigation();
+      this.renderUserProfileDropdown();
+
       if (['admin-overview', 'admin-payouts', 'admin-fraud'].includes(this.state.currentTab)) {
-        this.navigate('surveys');
-      } else if (this.state.currentTab === 'profile') {
-        this.renderProfileView(document.getElementById('app-root'));
+        await this.navigate('surveys');
+      } else if (this.state.currentTab === 'create-survey') {
+        if (!this.refreshStudioSidebarView()) {
+          await this.navigate('create-survey');
+        }
+      } else {
+        await this.navigate(this.state.currentTab);
       }
     } else if (mode === 'CREATOR') {
       this.showToast('Đã chuyển sang góc nhìn Doanh Nghiệp', 'info');
       // Tự động chuyển gói tài khoản sang Doanh Nghiệp (ENTERPRISE) nhưng tắt toast thứ 2 để không bị thông báo kép
-      this.switchAdminTier('ENTERPRISE', true);
+      await this.switchAdminTier('ENTERPRISE', true);
+      this.renderNavigation();
+      this.renderUserProfileDropdown();
+
       if (['admin-overview', 'admin-payouts', 'admin-fraud'].includes(this.state.currentTab)) {
-        this.navigate('creator-surveys');
-      } else if (this.state.currentTab === 'profile') {
-        this.state.profileTab = 'ENTERPRISE';
-        this.renderProfileView(document.getElementById('app-root'));
+        await this.navigate('creator-surveys');
+      } else if (this.state.currentTab === 'create-survey') {
+        if (!this.refreshStudioSidebarView()) {
+          await this.navigate('create-survey');
+        }
+      } else {
+        await this.navigate(this.state.currentTab);
       }
     } else {
       this.showToast('Đã quay lại góc nhìn Quản Trị Viên (Toàn quyền)', 'info');
-      if (this.state.currentTab === 'profile') {
-        this.renderProfileView(document.getElementById('app-root'));
+      this.renderNavigation();
+      this.renderUserProfileDropdown();
+
+      if (this.state.currentTab === 'create-survey') {
+        if (!this.refreshStudioSidebarView()) {
+          await this.navigate('create-survey');
+        }
+      } else {
+        await this.navigate(this.state.currentTab);
       }
     }
   },
@@ -2317,14 +2335,17 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         }
 
         this.renderUserProfileDropdown();
-        if (this.state.currentTab === 'create-survey') {
-          if (!this.refreshStudioSidebarView()) {
-            this.renderCreateSurveyView(document.getElementById('app-root'));
+        this.renderNavigation();
+
+        // Chỉ tự động điều phối re-render tab khi đổi tier trực tiếp (không ở chế độ silent)
+        if (!silent) {
+          if (this.state.currentTab === 'create-survey') {
+            if (!this.refreshStudioSidebarView()) {
+              await this.navigate('create-survey');
+            }
+          } else {
+            await this.navigate(this.state.currentTab);
           }
-        } else if (this.state.currentTab === 'profile') {
-          this.renderProfileView(document.getElementById('app-root'));
-        } else if (this.state.currentTab === 'admin-overview') {
-          this.renderAdminOverviewView(document.getElementById('app-root'));
         }
       }
     } catch (err) {
@@ -7941,7 +7962,7 @@ if (totalCount === 0) {
           
           <!-- THẺ 1: POINT CỦA BẠN (SUNSET ORANGE GRADIENT CARD) -->
           <div class="rounded-3xl p-6 sm:p-7 text-white flex flex-col justify-between shadow-sm relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 min-h-[260px]">
-            ${!isStudent ? '<img src="/assets/3d/wallet_3d_master.svg" class="absolute right-1.5 sm:right-3 top-1.5 sm:top-2.5 w-38 sm:w-44 h-auto object-contain pointer-events-none select-none z-0 opacity-40 dark:opacity-20 drop-shadow-sm" alt="3D Orange Wallet" />' : ''}
+            ${!isStudent ? '<img src="/assets/3d/wallet_3d_master.svg" class="absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-75 dark:opacity-50 drop-shadow-sm" alt="3D Orange Wallet" />' : ''}
             <!-- Nội dung Thẻ Point -->
             <div class="relative z-10">
               <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-xs text-white border border-white/25 shadow-2xs">
@@ -7989,7 +8010,7 @@ if (totalCount === 0) {
 
           <!-- THẺ 2: CREDIT CỦA BẠN (WHITE MODERN CARD) -->
           <div class="bg-white dark:bg-[#18181B] rounded-3xl p-6 sm:p-7 border border-stone-200/80 dark:border-stone-800 shadow-sm flex flex-col justify-between relative overflow-hidden min-h-[260px]">
-            ${!isStudent ? '<img src="/assets/3d/coins_coupon_3d_master.svg" class="absolute -right-2 sm:-right-4 top-1 sm:top-2.5 w-36 sm:w-44 h-auto object-contain pointer-events-none select-none z-0 opacity-40 dark:opacity-20" alt="3D Coins and Coupon" />' : ''}
+            ${!isStudent ? '<img src="/assets/3d/coins_coupon_3d_master.svg" class="absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-90 dark:opacity-75 drop-shadow-sm" alt="3D Coins and Coupon" />' : ''}
             <!-- Nội dung Thẻ Credit -->
             <div class="relative z-10">
               <div class="flex items-center gap-2">
