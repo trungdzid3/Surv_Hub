@@ -71,6 +71,7 @@ class SurveyRepository {
       rows: rows,
       columns: columns,
       logic: logic,
+      logic_json: q.logic_json || (logic ? JSON.stringify(logic) : null),
       validation: validation,
       min_label: q.min_label || null,
       max_label: q.max_label || null,
@@ -172,6 +173,254 @@ class SurveyRepository {
   }
 
   /**
+   * Lay danh sach cau hoi cua khao sat theo surveyId
+   * Dam bao parse logic_json va tra ve q.validation va q.logic day du
+   * @param {string} surveyId ID khao sat
+   * @param {boolean} isOwnerOrAdmin Co kem thong tin bao mat khong
+   * @returns {Array<Object>}
+   */
+  getQuestionsBySurveyId(surveyId, isOwnerOrAdmin = false) {
+    return this.findQuestionsBySurveyId(surveyId, isOwnerOrAdmin);
+  }
+
+  /**
+   * Helper xay dung ban do chuyen doi ID (ID Map) cho danh sach cau hoi
+   * Anh xa cac ma dinh danh cu (oldId, index 0-based, orderIndex 1-based, sectionId) sang newUUID
+   * @param {Array<Object>} questionsData Danh sach cau hoi dau vao
+   * @returns {{ preparedQuestions: Array<Object>, idMap: Map<string, string> }}
+   */
+  _buildQuestionIdMap(questionsData) {
+    if (!Array.isArray(questionsData) || questionsData.length === 0) {
+      return { preparedQuestions: [], idMap: new Map() };
+    }
+
+    const preparedQuestions = questionsData.map((q, index) => ({
+      q,
+      qId: crypto.randomUUID(),
+      index,
+      orderIndex: index + 1
+    }));
+
+    const idMap = new Map();
+
+    // 1. Dang ky newUUID tro ve chinh no
+    preparedQuestions.forEach(({ qId }) => {
+      idMap.set(qId, qId);
+    });
+
+    // 2. Dang ky cac oldId tuong minh tu q.id va cac truong dinh danh dac biet
+    preparedQuestions.forEach(({ q, qId, index, orderIndex }) => {
+      if (q.id !== undefined && q.id !== null && q.id !== '') {
+        const strId = String(q.id).trim();
+        idMap.set(strId, qId);
+      }
+      const extraIdFields = ['section_id', 'sectionId', 'page_id', 'pageId', 'pageBreakId', 'tempId', 'temp_id', 'key', 'qId', 'qid'];
+      for (const field of extraIdFields) {
+        if (q[field] !== undefined && q[field] !== null && q[field] !== '') {
+          idMap.set(String(q[field]).trim(), qId);
+        }
+      }
+      // Dinh dang index va order index co tien to
+      idMap.set(`index:${index}`, qId);
+      idMap.set(`order:${orderIndex}`, qId);
+      idMap.set(`q_${index}`, qId);
+      idMap.set(`q_${orderIndex}`, qId);
+      idMap.set(`order_${orderIndex}`, qId);
+    });
+
+    // 3. Dang ky 0-based index so: "0", "1", "2"... (Studio va Runner deu mac dinh 0-based index)
+    preparedQuestions.forEach(({ qId, index }) => {
+      idMap.set(String(index), qId);
+    });
+
+    // 4. Dang ky 1-based order index (khi khong trung lap voi 0-based index, vi du cau cuoi cung = questionsData.length)
+    preparedQuestions.forEach(({ qId, orderIndex }) => {
+      const orderStr = String(orderIndex);
+      if (!idMap.has(orderStr)) {
+        idMap.set(orderStr, qId);
+      }
+    });
+
+    return { preparedQuestions, idMap };
+  }
+
+  /**
+   * Helper cap nhat cac target trong logic_json sang newUUID
+   * @param {Object} logicObj Doi tuong logic cua cau hoi
+   * @param {Map<string, string>} idMap Ban do chuyen doi ID
+   * @param {number} questionsCount Tong so cau hoi
+   * @returns {Object} logicObj sau khi da cap nhat target
+   */
+  _remapLogicTargets(logicObj, idMap, questionsCount) {
+    if (!logicObj || typeof logicObj !== 'object') return logicObj;
+
+    const remapTargetValue = (rawTarget) => {
+      if (rawTarget === null || rawTarget === undefined) return rawTarget;
+
+      // Neu la Object (vi du: { action: 'GO_TO_PAGE', target: 'q_15' } hoac { target: '...' })
+      if (typeof rawTarget === 'object') {
+        if (Array.isArray(rawTarget)) {
+          return rawTarget.map(item => remapTargetValue(item));
+        }
+        const cloned = { ...rawTarget };
+        if (cloned.target !== undefined && cloned.target !== null) {
+          cloned.target = remapTargetValue(cloned.target);
+        }
+        if (cloned.target_id !== undefined && cloned.target_id !== null) {
+          cloned.target_id = remapTargetValue(cloned.target_id);
+        }
+        if (cloned.goToSectionId !== undefined && cloned.goToSectionId !== null) {
+          cloned.goToSectionId = remapTargetValue(cloned.goToSectionId);
+        }
+        if (cloned.action !== undefined && cloned.action !== null) {
+          const actStr = String(cloned.action).trim().toUpperCase();
+          const keywords = ['NEXT', 'NEXT_PAGE', 'SUBMIT', 'SUBMIT_FORM', 'RESTART_FORM', 'PREV', 'PREVIOUS', 'GO_TO_PAGE'];
+          if (!keywords.includes(actStr) && idMap.has(String(cloned.action).trim())) {
+            cloned.action = idMap.get(String(cloned.action).trim());
+          }
+        }
+        return cloned;
+      }
+
+      const str = String(rawTarget).trim();
+      const upper = str.toUpperCase();
+
+      // Cac tu khoa dieu huong he thong can giu nguyen
+      const bypassKeywords = ['NEXT', 'NEXT_PAGE', 'SUBMIT', 'SUBMIT_FORM', 'RESTART_FORM', 'PREV', 'PREVIOUS'];
+      if (bypassKeywords.includes(upper)) {
+        return rawTarget;
+      }
+
+      // 1. Khop truc tiep voi idMap (oldId, explicit string, UUID)
+      if (idMap.has(str)) {
+        return idMap.get(str);
+      }
+
+      // 2. Kiem tra so nguyen (0-based index hoac 1-based order)
+      const num = parseInt(str, 10);
+      if (!isNaN(num) && String(num) === str) {
+        if (num >= 0 && num < questionsCount && idMap.has(`index:${num}`)) {
+          return idMap.get(`index:${num}`);
+        }
+        if (num >= 1 && num <= questionsCount && idMap.has(`order:${num}`)) {
+          return idMap.get(`order:${num}`);
+        }
+      }
+
+      // 3. Kiem tra dinh dang q_15 hoac order_15
+      if (str.startsWith('q_') || str.startsWith('order_')) {
+        const suffixNum = parseInt(str.replace(/^(q_|order_)/, ''), 10);
+        if (!isNaN(suffixNum)) {
+          if (suffixNum >= 0 && suffixNum < questionsCount && idMap.has(`index:${suffixNum}`)) {
+            return idMap.get(`index:${suffixNum}`);
+          }
+          if (suffixNum >= 1 && suffixNum <= questionsCount && idMap.has(`order:${suffixNum}`)) {
+            return idMap.get(`order:${suffixNum}`);
+          }
+        }
+      }
+
+      return rawTarget;
+    };
+
+    // 1. Options branching: logicObj.options
+    if (logicObj.options && typeof logicObj.options === 'object') {
+      const updatedOptions = {};
+      for (const [key, val] of Object.entries(logicObj.options)) {
+        updatedOptions[key] = remapTargetValue(val);
+      }
+      logicObj.options = updatedOptions;
+    }
+
+    // 2. Default action / Section target: logicObj.default_action
+    if (logicObj.default_action !== undefined && logicObj.default_action !== null) {
+      logicObj.default_action = remapTargetValue(logicObj.default_action);
+    }
+
+    // 3. Truong target / target_id / goToSectionId truc tiep
+    if (logicObj.target !== undefined && logicObj.target !== null) {
+      logicObj.target = remapTargetValue(logicObj.target);
+    }
+    if (logicObj.target_id !== undefined && logicObj.target_id !== null) {
+      logicObj.target_id = remapTargetValue(logicObj.target_id);
+    }
+    if (logicObj.goToSectionId !== undefined && logicObj.goToSectionId !== null) {
+      logicObj.goToSectionId = remapTargetValue(logicObj.goToSectionId);
+    }
+
+    // 4. Mang rules neu co
+    if (Array.isArray(logicObj.rules)) {
+      logicObj.rules = logicObj.rules.map(rule => {
+        if (!rule || typeof rule !== 'object') return rule;
+        const updatedRule = { ...rule };
+        if (updatedRule.target !== undefined) updatedRule.target = remapTargetValue(updatedRule.target);
+        if (updatedRule.target_id !== undefined) updatedRule.target_id = remapTargetValue(updatedRule.target_id);
+        if (updatedRule.destination !== undefined) updatedRule.destination = remapTargetValue(updatedRule.destination);
+        return updatedRule;
+      });
+    }
+
+    return logicObj;
+  }
+
+  /**
+   * Helper xu ly mot cau hoi truoc khi insert vao DB
+   */
+  _processQuestionForInsert(q, qId, i, idMap, questionsCount) {
+    const rowsJson = q.rows && Array.isArray(q.rows) ? JSON.stringify(q.rows) : (q.rows_json || null);
+    const colsJson = q.columns && Array.isArray(q.columns) ? JSON.stringify(q.columns) : (q.columns_json || null);
+    const optionsJson = q.options ? JSON.stringify(q.options) : (q.options_json || colsJson || null);
+
+    let logicObj = null;
+    if (q.logic) {
+      try {
+        logicObj = typeof q.logic === 'string' ? JSON.parse(q.logic) : { ...q.logic };
+      } catch (e) {
+        logicObj = {};
+      }
+    } else if (q.logic_json) {
+      try { logicObj = JSON.parse(q.logic_json); } catch (e) {}
+    }
+
+    if (q.validation) {
+      logicObj = logicObj || {};
+      try {
+        logicObj.validation = typeof q.validation === 'string' ? JSON.parse(q.validation) : q.validation;
+      } catch (e) {
+        logicObj.validation = q.validation;
+      }
+    }
+
+    // Cap nhat lai cac target trong logicObj bang ID Map
+    if (logicObj && Object.keys(logicObj).length > 0) {
+      logicObj = this._remapLogicTargets(logicObj, idMap, questionsCount);
+    }
+
+    const logicJson = logicObj && Object.keys(logicObj).length > 0 ? JSON.stringify(logicObj) : null;
+    const isReq = (q.is_required !== undefined && (q.is_required === 0 || q.is_required === false)) ? 0 : 1;
+
+    return {
+      qId,
+      orderIndex: i + 1,
+      type: q.type,
+      content: q.content ? q.content.trim() : '',
+      optionsJson,
+      rowsJson,
+      colsJson,
+      logicJson,
+      isReq,
+      minLabel: q.min_label || null,
+      maxLabel: q.max_label || null,
+      imageUrl: q.image_url || null,
+      videoUrl: q.video_url || null,
+      isAttentionCheck: q.is_attention_check ? 1 : 0,
+      expectedAnswer: q.expected_answer || null,
+      isScreener: q.is_screener ? 1 : 0,
+      qualifyingAnswer: q.qualifying_answer || null
+    };
+  }
+
+  /**
    * Luu ban nhap khao sat (Draft) kem danh sach cau hoi
    * Luon dam bao luu truong validation vao logic_json (logicObj.validation = q.validation)
    * @param {Object} surveyData Du lieu khao sat (status tu dong la DRAFT)
@@ -252,52 +501,32 @@ class SurveyRepository {
         surveyData.voucher_total_slots || 0
       );
 
-      for (let i = 0; i < questionsData.length; i++) {
-        const q = questionsData[i];
-        const qId = crypto.randomUUID();
-        const rowsJson = q.rows && Array.isArray(q.rows) ? JSON.stringify(q.rows) : (q.rows_json || null);
-        const colsJson = q.columns && Array.isArray(q.columns) ? JSON.stringify(q.columns) : (q.columns_json || null);
-        const optionsJson = q.options ? JSON.stringify(q.options) : (q.options_json || colsJson || null);
-        let logicObj = null;
-        if (q.logic) {
-          try {
-            logicObj = typeof q.logic === 'string' ? JSON.parse(q.logic) : { ...q.logic };
-          } catch(e) {
-            logicObj = {};
-          }
-        } else if (q.logic_json) {
-          try { logicObj = JSON.parse(q.logic_json); } catch(e) {}
-        }
-        if (q.validation) {
-          logicObj = logicObj || {};
-          try {
-            logicObj.validation = typeof q.validation === 'string' ? JSON.parse(q.validation) : q.validation;
-          } catch (e) {
-            logicObj.validation = q.validation;
-          }
-        }
-        const logicJson = logicObj && Object.keys(logicObj).length > 0 ? JSON.stringify(logicObj) : null;
-        const isReq = (q.is_required !== undefined && (q.is_required === 0 || q.is_required === false)) ? 0 : 1;
+      // Xay dung ban do chuyen doi ID (ID Map) anh xa oldId/orderIndex sang newUUID de chong mo coi logic target
+      const { preparedQuestions, idMap } = this._buildQuestionIdMap(questionsData);
+
+      for (let i = 0; i < preparedQuestions.length; i++) {
+        const { q, qId } = preparedQuestions[i];
+        const processed = this._processQuestionForInsert(q, qId, i, idMap, preparedQuestions.length);
 
         insertQuestionStmt.run(
-          qId,
+          processed.qId,
           surveyId,
-          i + 1,
-          q.type,
-          q.content ? q.content.trim() : '',
-          optionsJson,
-          rowsJson,
-          colsJson,
-          logicJson,
-          isReq,
-          q.min_label || null,
-          q.max_label || null,
-          q.image_url || null,
-          q.video_url || null,
-          q.is_attention_check ? 1 : 0,
-          q.expected_answer || null,
-          q.is_screener ? 1 : 0,
-          q.qualifying_answer || null
+          processed.orderIndex,
+          processed.type,
+          processed.content,
+          processed.optionsJson,
+          processed.rowsJson,
+          processed.colsJson,
+          processed.logicJson,
+          processed.isReq,
+          processed.minLabel,
+          processed.maxLabel,
+          processed.imageUrl,
+          processed.videoUrl,
+          processed.isAttentionCheck,
+          processed.expectedAnswer,
+          processed.isScreener,
+          processed.qualifyingAnswer
         );
       }
 
@@ -310,6 +539,13 @@ class SurveyRepository {
       db.exec('ROLLBACK');
       throw err;
     }
+  }
+
+  /**
+   * Alias giao dich tao khao sat (createSurveyTransaction)
+   */
+  createSurveyTransaction(surveyData, questionsData = []) {
+    return this.createSurvey(surveyData, questionsData);
   }
 
   /**
@@ -338,52 +574,32 @@ class SurveyRepository {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `);
 
-          for (let i = 0; i < newQuestions.length; i++) {
-            const q = newQuestions[i];
-            const qId = q.id || crypto.randomUUID();
-            const rowsJson = q.rows && Array.isArray(q.rows) ? JSON.stringify(q.rows) : (q.rows_json || null);
-            const colsJson = q.columns && Array.isArray(q.columns) ? JSON.stringify(q.columns) : (q.columns_json || null);
-            const optionsJson = q.options ? JSON.stringify(q.options) : (q.options_json || colsJson || null);
-            let logicObj = null;
-        if (q.logic) {
-          try {
-            logicObj = typeof q.logic === 'string' ? JSON.parse(q.logic) : { ...q.logic };
-          } catch(e) {
-            logicObj = {};
-          }
-        } else if (q.logic_json) {
-          try { logicObj = JSON.parse(q.logic_json); } catch(e) {}
-        }
-        if (q.validation) {
-          logicObj = logicObj || {};
-          try {
-            logicObj.validation = typeof q.validation === 'string' ? JSON.parse(q.validation) : q.validation;
-          } catch (e) {
-            logicObj.validation = q.validation;
-          }
-        }
-        const logicJson = logicObj && Object.keys(logicObj).length > 0 ? JSON.stringify(logicObj) : null;
-            const isReq = (q.is_required !== undefined && (q.is_required === 0 || q.is_required === false)) ? 0 : 1;
+          // Xay dung ban do chuyen doi ID (ID Map) anh xa oldId/orderIndex sang newUUID de chong mo coi logic target
+          const { preparedQuestions, idMap } = this._buildQuestionIdMap(newQuestions);
+
+          for (let i = 0; i < preparedQuestions.length; i++) {
+            const { q, qId } = preparedQuestions[i];
+            const processed = this._processQuestionForInsert(q, qId, i, idMap, preparedQuestions.length);
 
             insertQ.run(
-              qId,
+              processed.qId,
               id,
-              i + 1,
-              q.type,
-              q.content ? q.content.trim() : '',
-              optionsJson,
-              rowsJson,
-              colsJson,
-              logicJson,
-              isReq,
-              q.min_label || null,
-              q.max_label || null,
-              q.image_url || null,
-              q.video_url || null,
-              q.is_attention_check ? 1 : 0,
-              q.expected_answer || null,
-              q.is_screener ? 1 : 0,
-              q.qualifying_answer || null
+              processed.orderIndex,
+              processed.type,
+              processed.content,
+              processed.optionsJson,
+              processed.rowsJson,
+              processed.colsJson,
+              processed.logicJson,
+              processed.isReq,
+              processed.minLabel,
+              processed.maxLabel,
+              processed.imageUrl,
+              processed.videoUrl,
+              processed.isAttentionCheck,
+              processed.expectedAnswer,
+              processed.isScreener,
+              processed.qualifyingAnswer
             );
           }
         }
@@ -411,6 +627,13 @@ class SurveyRepository {
       db.exec('ROLLBACK');
       throw err;
     }
+  }
+
+  /**
+   * Alias giao dich cap nhat khao sat (updateSurveyTransaction)
+   */
+  updateSurveyTransaction(id, updates = {}, newQuestions = null) {
+    return this.updateSurvey(id, updates, newQuestions);
   }
 
   /**
