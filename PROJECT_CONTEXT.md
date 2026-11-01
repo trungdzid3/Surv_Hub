@@ -170,12 +170,26 @@ c:\Users\Lenovo\Downloads\Linh\
   - Đồng bộ Capacitor Android (`npm run sync:android`) thành công.
   - Nâng cache-buster lên `v=4.7.8_realtime_stats` trong `public/index.html`.
 
-- **Kiểm Chuẩn & Bảo Toàn Hệ Thống**:
-  - Cú pháp `node -c public/app.js` đạt mã 0 (PASS 100%).
-  - Toàn bộ 15 tầng kiểm thử tự hành (`npm test`) đạt 15/15 Suites PASS (100.0%, 23.39 giây).
-  - Đồng bộ Capacitor Android (`npm run sync:android`) thành công.
-  - Tăng cache-buster lên `4.7.5_1793470000` trong `public/index.html`.
-  - Bảo toàn `survey-platform.code-workspace`.
+### H. Nâng Cấp Bóc Tách Khoảng Số & Tái Thiết Kế Studio Question Card Tinh Gọn (v4.7.9)
+- **Nâng Cấp Bóc Tách Dải Số Chuẩn Microsoft Forms & Google Forms**:
+  - Giải quyết triệt để lỗi mất dải số giới hạn (ví dụ `Số phải nằm trong khoảng từ 20000000 ~ 202700000` bị fallback ép về `IS_NUMBER` "Giá trị phải là một số").
+  - Mở rộng hàm `extractNumberRange` nhận diện đa dạng mẫu câu tiếng Việt/Anh: "số phải nằm trong khoảng từ X ~ Y", "trong khoảng X ~ Y", "X đến Y", "X ~ Y", mảng JSON, thuộc tính JSON `Value1/Value2`, `Operand1/Operand2`, `Min/Max`.
+  - Nâng cấp `formParserService._parseMicrosoftQuestion` quét đệ quy cấu trúc JSON lồng nhau (`questionInfo.Validation.Restrictions`, `rawRestrictions`, `placeholder`, `description`), truyền `rawQuestion` toàn diện vào `_extractValidationRule`.
+  - Khắc phục lỗi fallback `IS_NUMBER` chạy trước khi phân tích placeholder; luôn ưu tiên trích xuất dải số `BETWEEN` khi tìm thấy khoảng số trong ngữ cảnh câu hỏi.
+- **Tái Thiết Kế Studio Question Card Gọn Gàng, Tinh Tế (Minimalist Modern)**:
+  - Loại bỏ hoàn toàn khối card lồng card 3 tầng cồng kềnh `Giới hạn (Restrictions)` chiếm diện tích.
+  - Khi không có giới hạn: Không hiển thị hộp xám thừa; chỉ hiển thị nút chip `+ Thêm giới hạn` ở footer khi cần.
+  - Khi có giới hạn: Hiển thị thanh ngang Single-Row Inline Bar nhỏ gọn (cao 32px) gồm Icon khiên, Dropdown loại giới hạn, Dropdown điều kiện, Ô Min ~ Max, nút `[x]` gỡ bỏ nhanh.
+  - Footer Question Card được tinh gọn:
+    * Bỏ checkbox "Câu trả lời dài" trùng lặp.
+    * Thay checkbox dài "Câu hỏi sàng lọc đối tượng (Auto-Screener)" bằng nút chip `[Sàng lọc]` gọn gàng.
+    * Nhóm nút thao tác bên phải: Icon Copy, Icon Trash, Vạch ngăn, Switch Bắt buộc mượt mà.
+  - Header Question Card: Ẩn badge giới hạn cồng kềnh khi card đang mở chỉnh sửa, giữ thanh tiêu đề thoáng đãng.
+- **Kiểm Chuẩn & Bảo Toàn**:
+  - `node -c server/services/formParserService.js`, `node -c public/app.js` đạt PASS 100%.
+  - Bộ kiểm thử tự hành 15 tầng (`npm test`) đạt 15/15 Suites PASS (100%).
+  - Đồng bộ Capacitor Android assets hoàn tất.
+
 
 ### H. Phân Hệ Khảo Sát Đề Xuất (Surveys View Bento Redesign - v4.7.0)
 - **Biểu đồ Đường Trực Quan Xu Hướng Sàn (Interactive SVG Trends Chart)**:

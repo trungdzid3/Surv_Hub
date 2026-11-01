@@ -44,10 +44,35 @@ assert.strictEqual(gfValidation.max, 20270000);
 console.log('PASS: Google Forms vType 1 with earlyRange returns BETWEEN!');
 
 // 3. Test parseSmartText with range line
-const text = '1. Tuổi\nSố phải nằm trong khoảng từ 18 đến 60\n2. SĐT\nGiá trị phải là một số';
+const text = '1. Tuổi\nSố phải nằm trong khoảng từ 18 đến 60\n2. SĐT\nGiá trị phải là một số\n3. Mã số sinh viên *\nSố phải nằm trong khoảng từ 20000000 ~ 202700000';
 const parsed = formParserService.parseSmartText(text);
 assert.strictEqual(parsed.questions[0].validation?.rule, 'BETWEEN');
 assert.strictEqual(parsed.questions[0].validation?.min, 18);
 assert.strictEqual(parsed.questions[0].validation?.max, 60);
 assert.strictEqual(parsed.questions[1].validation?.rule, 'IS_NUMBER');
-console.log('PASS: parseSmartText with range and is_number passed!');
+assert.strictEqual(parsed.questions[2].validation?.rule, 'BETWEEN');
+assert.strictEqual(parsed.questions[2].validation?.min, 20000000);
+assert.strictEqual(parsed.questions[2].validation?.max, 202700000);
+assert.strictEqual(parsed.questions[2].placeholder, 'Số phải nằm trong khoảng từ 20000000 ~ 202700000');
+console.log('PASS: parseSmartText with exact user range passed!');
+
+// 4. Test Microsoft Forms nested questionInfo Validation.Restrictions
+const msQuestion = {
+  type: 'Question.TextField',
+  title: 'Mã số sinh viên',
+  required: true,
+  questionInfo: JSON.stringify({
+    Validation: {
+      Restrictions: [
+        { Type: 1, Operator: 7, Operand1: '20000000', Operand2: '202700000' }
+      ]
+    }
+  })
+};
+const parsedMs = formParserService._parseMicrosoftQuestion(msQuestion, 3);
+assert.strictEqual(parsedMs.validation?.rule, 'BETWEEN');
+assert.strictEqual(parsedMs.validation?.min, 20000000);
+assert.strictEqual(parsedMs.validation?.max, 202700000);
+assert.strictEqual(parsedMs.placeholder, 'Số phải nằm trong khoảng từ 20000000 ~ 202700000');
+console.log('PASS: Microsoft Forms nested Validation.Restrictions passed!');
+

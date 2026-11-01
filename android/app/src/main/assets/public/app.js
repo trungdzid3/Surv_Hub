@@ -166,12 +166,10 @@ const RestrictionEngine = {
       }
     }
 
-    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2
+    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2, value1/value2
     const jsonPropPatterns = [
-      /(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-      /(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-      /(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-      /(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
+      /(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
     ];
     for (const pat of jsonPropPatterns) {
       const m = str.match(pat);
@@ -184,8 +182,8 @@ const RestrictionEngine = {
       }
     }
 
-    // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ..." hoặc "nằm trong khoảng từ ... đến ..."
-    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between|từ)\s*(\d+(?:[.,]\d+)?)\s*(?:đến|den|to|và|va|and|~|-|–|—)\s*(\d+(?:[.,]\d+)?)/i);
+    // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ...", "trong khoảng ... đến ...", "từ ... ~ ..."
+    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between|từ)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|và|va|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i);
     if (explicitRangeMatch) {
       const n1 = parseFloat(explicitRangeMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(explicitRangeMatch[2].replace(/,/g, ''));
@@ -198,7 +196,7 @@ const RestrictionEngine = {
     const normalized = str
       .replace(/[\uFF5E\u223C\u02DC]/g, '~')
       .replace(/[\u2013\u2014\u2212]/g, '-')
-      .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
       .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
 
     const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
@@ -560,12 +558,10 @@ window.RestrictionEngine = {
       }
     }
 
-    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2
+    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2, value1/value2
     const jsonPropPatterns = [
-      /(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-      /(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-      /(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-      /(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
+      /(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
     ];
     for (const pat of jsonPropPatterns) {
       const m = str.match(pat);
@@ -578,8 +574,8 @@ window.RestrictionEngine = {
       }
     }
 
-    // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ..." hoặc "nằm trong khoảng từ ... đến ..."
-    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between|từ)\s*(\d+(?:[.,]\d+)?)\s*(?:đến|den|to|và|va|and|~|-|–|—)\s*(\d+(?:[.,]\d+)?)/i);
+    // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ...", "trong khoảng ... đến ...", "từ ... ~ ..."
+    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between|từ)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|và|va|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i);
     if (explicitRangeMatch) {
       const n1 = parseFloat(explicitRangeMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(explicitRangeMatch[2].replace(/,/g, ''));
@@ -592,7 +588,7 @@ window.RestrictionEngine = {
     const normalized = str
       .replace(/[\uFF5E\u223C\u02DC]/g, '~')
       .replace(/[\u2013\u2014\u2212]/g, '-')
-      .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
       .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
 
     const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
@@ -12537,53 +12533,60 @@ if (totalCount === 0) {
         </div>
 
         <!-- Question Footer: Duplicate, Trash, Required Switch, Screener & Branching -->
-        <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center justify-between gap-3 text-xs" onclick="event.stopPropagation()">
+        <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2.5 text-xs" onclick="event.stopPropagation()">
           
-          <!-- Screener & Logic Branching option toggles -->
-          <div class="flex flex-wrap items-center gap-4">
-            <label class="flex items-center gap-1.5 cursor-pointer text-stone-600 dark:text-stone-400 select-none">
-              <input type="checkbox" ${q.is_screener ? 'checked' : ''} onchange="VibeApp.toggleStudioScreener(${qIdx}, this.checked)" class="rounded text-orange-600 focus:ring-orange-500">
-              <span class="font-medium text-[11px]">Câu hỏi sàng lọc đối tượng (Auto-Screener)</span>
-            </label>
-
-            ${['SHORT_TEXT', 'PARAGRAPH'].includes(q.type) ? `
-              <label class="flex items-center gap-1.5 cursor-pointer text-stone-600 dark:text-stone-400 hover:text-orange-600 select-none transition-colors">
-                <input type="checkbox" ${q.type === 'PARAGRAPH' ? 'checked' : ''} onchange="VibeApp.toggleStudioLongAnswer(${qIdx}, this.checked)" class="rounded text-orange-600 focus:ring-orange-500">
-                <span class="font-medium text-[11px]">Câu trả lời dài</span>
-              </label>
-            ` : ''}
-
-            ${['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type) ? `
-              <label class="flex items-center gap-1.5 cursor-pointer text-stone-600 dark:text-stone-400 hover:text-orange-600 select-none transition-colors">
-                <input type="checkbox" ${q.logic && q.logic.enabled ? 'checked' : ''} onchange="VibeApp.toggleStudioLogicBranching(${qIdx}, this.checked)" class="rounded text-orange-600 focus:ring-orange-500">
-                <span class="font-medium text-[11px]">Chuyển tới câu hỏi/phần dựa trên câu trả lời (Rẽ nhánh)</span>
-              </label>
-            ` : ''}
-          </div>
-
-          <!-- Actions toolbar -->
-          <div class="flex items-center gap-3">
-            <button type="button" onclick="event.stopPropagation(); VibeApp.duplicateBuilderQuestion(${qIdx})" class="p-1.5 text-stone-500 hover:text-orange-600 transition-colors flex items-center gap-1" title="Nhân đôi câu hỏi (Duplicate)">
-              <i data-lucide="copy" class="w-4 h-4"></i>
-              <span class="text-[11px] hidden sm:inline">Nhân đôi</span>
+          <!-- Tùy chọn ngữ cảnh tinh gọn (Chips/Badges) -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <!-- Chip Sàng lọc đối tượng -->
+            <button type="button" 
+                    onclick="event.stopPropagation(); VibeApp.toggleStudioScreener(${qIdx}, ${!q.is_screener})" 
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${q.is_screener ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60 shadow-2xs' : 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800'}">
+              <i data-lucide="filter" class="w-3 h-3"></i>
+              <span>Sàng lọc</span>
             </button>
 
-            ${list.length > 1 ? `
-              <button type="button" onclick="event.stopPropagation(); VibeApp.removeBuilderQuestion(${qIdx})" class="p-1.5 text-stone-500 hover:text-red-600 transition-colors flex items-center gap-1" title="Xóa câu hỏi này (Trash)">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                <span class="text-[11px] hidden sm:inline">Xóa</span>
+            <!-- Nếu là Short Text / Paragraph và chưa có validation: nút thêm giới hạn -->
+            ${['SHORT_TEXT', 'PARAGRAPH'].includes(q.type) && (!valObj || !valObj.type || valObj.type === 'NONE') ? `
+              <button type="button" 
+                      onclick="event.stopPropagation(); VibeApp.setStudioQuestionValidationType(${qIdx}, 'NUMBER')" 
+                      class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="shield" class="w-3 h-3"></i>
+                <span>Thêm giới hạn</span>
               </button>
             ` : ''}
 
-            <span class="h-4 w-px bg-stone-200 dark:bg-stone-700 mx-1"></span>
+            <!-- Nếu là Single Choice / Dropdown: Chip Rẽ nhánh logic -->
+            ${['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type) ? `
+              <button type="button" 
+                      onclick="event.stopPropagation(); VibeApp.toggleStudioLogicBranching(${qIdx}, ${!(q.logic && q.logic.enabled)})" 
+                      class="px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${q.logic && q.logic.enabled ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60 shadow-2xs' : 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800'}">
+                <i data-lucide="git-fork" class="w-3 h-3"></i>
+                <span>Rẽ nhánh</span>
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- Actions toolbar: Nhân đôi, Xóa, Bắt buộc -->
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="event.stopPropagation(); VibeApp.duplicateBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-orange-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Nhân đôi câu hỏi">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+
+            ${list.length > 1 ? `
+              <button type="button" onclick="event.stopPropagation(); VibeApp.removeBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Xóa câu hỏi">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+
+            <span class="h-3.5 w-px bg-stone-200 dark:bg-stone-800 mx-1"></span>
 
             <!-- Required Switch -->
-            <div id="req-toggle-wrap-${qIdx}" onclick="event.stopPropagation(); VibeApp.toggleStudioRequired(${qIdx}, ${!isReq})" class="flex items-center gap-2 cursor-pointer select-none">
-              <span class="font-bold text-stone-700 dark:text-stone-300 text-[11px]">
-                ${['CHOICE_GRID', 'CHECKBOX_GRID'].includes(q.type) ? 'Yêu cầu trong mỗi hàng' : 'Bắt buộc'}
+            <div id="req-toggle-wrap-${qIdx}" onclick="event.stopPropagation(); VibeApp.toggleStudioRequired(${qIdx}, ${!isReq})" class="flex items-center gap-1.5 cursor-pointer select-none">
+              <span class="font-semibold text-stone-600 dark:text-stone-400 text-[11px]">
+                ${['CHOICE_GRID', 'CHECKBOX_GRID'].includes(q.type) ? 'Yêu cầu mỗi hàng' : 'Bắt buộc'}
               </span>
-              <button id="req-btn-${qIdx}" type="button" class="w-9 h-5 rounded-full transition-colors relative focus:outline-none p-0.5 pointer-events-none ${isReq ? 'bg-orange-600' : 'bg-stone-300 dark:bg-stone-700'}">
-                <span class="block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 transform ${isReq ? 'translate-x-4' : 'translate-x-0'}"></span>
+              <button id="req-btn-${qIdx}" type="button" class="w-8 h-4.5 rounded-full transition-colors relative focus:outline-none p-0.5 pointer-events-none ${isReq ? 'bg-orange-600' : 'bg-stone-300 dark:bg-stone-700'}">
+                <span class="block w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform duration-200 transform ${isReq ? 'translate-x-3.5' : 'translate-x-0'}"></span>
               </button>
             </div>
           </div>
@@ -12846,11 +12849,11 @@ if (totalCount === 0) {
       }
 
       return `
-        <div class="space-y-3">
+        <div>
           <input type="text" disabled value="" 
                  id="studio-preview-input-${qIdx}"
                  placeholder="${this.escapeHtml(previewPlaceholder)}"
-                 class="w-full p-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900/50 text-stone-400 dark:text-stone-500 text-xs sm:text-sm font-medium cursor-not-allowed">
+                 class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200/80 dark:border-stone-700/60 bg-stone-50/50 dark:bg-stone-900/30 text-stone-400 dark:text-stone-500 text-xs sm:text-sm font-medium cursor-not-allowed">
         </div>
         ${this.renderStudioQuestionValidationConfig(q, qIdx)}
       `;
@@ -12878,11 +12881,11 @@ if (totalCount === 0) {
       }
 
       return `
-        <div class="space-y-3">
-          <textarea disabled rows="3"
+        <div>
+          <textarea disabled rows="2"
                     id="studio-preview-input-${qIdx}"
                     placeholder="${this.escapeHtml(previewPlaceholder)}"
-                    class="w-full p-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900/50 text-stone-400 dark:text-stone-500 text-xs sm:text-sm font-medium cursor-not-allowed resize-none"></textarea>
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200/80 dark:border-stone-700/60 bg-stone-50/50 dark:bg-stone-900/30 text-stone-400 dark:text-stone-500 text-xs sm:text-sm font-medium cursor-not-allowed resize-none"></textarea>
         </div>
         ${this.renderStudioQuestionValidationConfig(q, qIdx)}
       `;
@@ -13505,6 +13508,8 @@ if (totalCount === 0) {
     }
 
     const valType = val.type || 'NONE';
+    if (valType === 'NONE') return '';
+
     const hasMin = val.min !== undefined && val.min !== null && String(val.min).trim() !== '';
     const hasMax = val.max !== undefined && val.max !== null && String(val.max).trim() !== '';
     let valRule = val.rule ? String(val.rule).toUpperCase() : '';
@@ -13519,7 +13524,6 @@ if (totalCount === 0) {
     }
     const valMin = hasMin ? val.min : (detectedRange ? detectedRange.min : '');
     const valMax = hasMax ? val.max : (detectedRange ? detectedRange.max : '');
-    const autoPlaceholder = this.generateValidationPlaceholder(val);
 
     const valTypeMap = {
       NONE: 'Không giới hạn',
@@ -13540,22 +13544,23 @@ if (totalCount === 0) {
     };
 
     return `
-      <div class="mt-3 p-3.5 bg-stone-50 dark:bg-stone-900/60 rounded-xl border border-stone-200 dark:border-stone-800 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-1.5 text-xs font-bold text-stone-700 dark:text-stone-300">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-orange-600"></i>
-            <span>Giới hạn (Restrictions):</span>
+      <div class="mt-2.5 px-3 py-1.5 bg-stone-50/90 dark:bg-stone-900/70 rounded-xl border border-stone-200/80 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="flex items-center gap-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 shrink-0">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>Giới hạn:</span>
           </div>
-          <!-- Custom Dropdown Validation Type -->
+
+          <!-- Dropdown Loại giới hạn -->
           <div class="relative">
             <button type="button" 
                     id="val-type-btn-${qIdx}"
                     onclick="event.stopPropagation(); VibeApp.toggleCustomDropdown('val-type-menu-${qIdx}', 'val-type-icon-${qIdx}', event)"
-                    class="custom-dropdown-trigger h-7 px-2.5 text-xs font-medium bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-700 dark:text-stone-200 hover:border-orange-500 flex items-center justify-between gap-1.5 cursor-pointer shadow-2xs">
+                    class="custom-dropdown-trigger h-7 px-2 text-xs font-semibold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-700 dark:text-stone-200 hover:border-orange-500 flex items-center justify-between gap-1 cursor-pointer shadow-2xs">
               <span>${valTypeMap[valType] || 'Không giới hạn'}</span>
-              <i data-lucide="chevron-down" id="val-type-icon-${qIdx}" class="custom-dropdown-icon w-3 h-3 text-stone-400 shrink-0 transition-transform duration-200 pointer-events-none"></i>
+              <i data-lucide="chevron-down" id="val-type-icon-${qIdx}" class="custom-dropdown-icon w-3 h-3 text-stone-400 shrink-0 pointer-events-none"></i>
             </button>
-            <div id="val-type-menu-${qIdx}" class="custom-dropdown-menu hidden absolute right-0 top-[calc(100%+4px)] z-50 w-36 bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-xl shadow-2xl p-1 space-y-0.5 text-left">
+            <div id="val-type-menu-${qIdx}" class="custom-dropdown-menu hidden absolute left-0 top-[calc(100%+4px)] z-50 w-36 bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-xl shadow-2xl p-1 space-y-0.5 text-left">
               ${Object.entries(valTypeMap).map(([typeKey, typeLabel]) => {
                 const isCur = valType === typeKey;
                 return `
@@ -13569,19 +13574,16 @@ if (totalCount === 0) {
               }).join('')}
             </div>
           </div>
-        </div>
 
-        ${valType === 'NUMBER' ? `
-          <div class="pt-2 border-t border-stone-200/70 dark:border-stone-800 flex flex-wrap items-center gap-2 text-xs">
-            <span class="text-[11px] font-bold text-stone-500">Điều kiện:</span>
-            <!-- Custom Dropdown Validation Rule Number -->
+          ${valType === 'NUMBER' ? `
+            <!-- Dropdown Điều kiện Số -->
             <div class="relative">
               <button type="button" 
                       id="val-rule-btn-${qIdx}"
                       onclick="event.stopPropagation(); VibeApp.toggleCustomDropdown('val-rule-menu-${qIdx}', 'val-rule-icon-${qIdx}', event)"
-                      class="custom-dropdown-trigger h-7 px-2 text-xs font-medium bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-700 dark:text-stone-200 hover:border-orange-500 flex items-center justify-between gap-1.5 cursor-pointer shadow-2xs">
+                      class="custom-dropdown-trigger h-7 px-2 text-xs font-semibold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-700 dark:text-stone-200 hover:border-orange-500 flex items-center justify-between gap-1 cursor-pointer shadow-2xs">
                 <span>${valRuleNumberMap[valRule] || 'Là số'}</span>
-                <i data-lucide="chevron-down" id="val-rule-icon-${qIdx}" class="custom-dropdown-icon w-3 h-3 text-stone-400 shrink-0 transition-transform duration-200 pointer-events-none"></i>
+                <i data-lucide="chevron-down" id="val-rule-icon-${qIdx}" class="custom-dropdown-icon w-3 h-3 text-stone-400 shrink-0 pointer-events-none"></i>
               </button>
               <div id="val-rule-menu-${qIdx}" class="custom-dropdown-menu hidden absolute left-0 top-[calc(100%+4px)] z-50 w-36 bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-xl shadow-2xl p-1 space-y-0.5 text-left">
                 ${Object.entries(valRuleNumberMap).map(([ruleKey, ruleLabel]) => {
@@ -13599,58 +13601,54 @@ if (totalCount === 0) {
             </div>
 
             ${valRule === 'BETWEEN' ? `
-              <div class="flex items-center gap-1.5 flex-wrap">
+              <div class="flex items-center gap-1.5">
                 <input type="number" value="${valMin}" 
                        onclick="event.stopPropagation()"
                        oninput="VibeApp.setStudioQuestionValidationRange(${qIdx}, this.value, document.getElementById('val-max-${qIdx}') ? document.getElementById('val-max-${qIdx}').value : '')"
                        id="val-min-${qIdx}"
                        placeholder="Min"
-                       class="w-32 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none">
-                <span class="text-stone-400 text-xs">đến</span>
+                       class="w-24 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none font-mono">
+                <span class="text-stone-400 text-xs font-semibold">~</span>
                 <input type="number" value="${valMax}" 
                        onclick="event.stopPropagation()"
                        oninput="VibeApp.setStudioQuestionValidationRange(${qIdx}, document.getElementById('val-min-${qIdx}') ? document.getElementById('val-min-${qIdx}').value : '', this.value)"
                        id="val-max-${qIdx}"
                        placeholder="Max"
-                       class="w-32 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none">
+                       class="w-24 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none font-mono">
               </div>
             ` : ''}
 
             ${valRule === 'GREATER_THAN' ? `
               <div class="flex items-center gap-1.5">
-                <span class="text-stone-400 text-xs">></span>
+                <span class="text-stone-400 text-xs font-semibold">></span>
                 <input type="number" value="${valMin}" 
                        onclick="event.stopPropagation()"
                        oninput="VibeApp.setStudioQuestionValidationRange(${qIdx}, this.value, null)"
                        placeholder="Min"
-                       class="w-28 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none">
+                       class="w-24 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none font-mono">
               </div>
             ` : ''}
 
             ${valRule === 'LESS_THAN' ? `
               <div class="flex items-center gap-1.5">
-                <span class="text-stone-400 text-xs"><</span>
+                <span class="text-stone-400 text-xs font-semibold"><</span>
                 <input type="number" value="${valMax}" 
                        onclick="event.stopPropagation()"
                        oninput="VibeApp.setStudioQuestionValidationRange(${qIdx}, null, this.value)"
                        placeholder="Max"
-                       class="w-28 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none">
+                       class="w-24 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none font-mono">
               </div>
             ` : ''}
-          </div>
-        ` : ''}
+          ` : ''}
 
-        ${valType === 'LENGTH' ? `
-          <div class="pt-2 border-t border-stone-200/70 dark:border-stone-800 flex flex-wrap items-center gap-2 text-xs">
-            <span class="text-[11px] font-bold text-stone-500">Quy tắc độ dài:</span>
-            <!-- Custom Dropdown Validation Rule Length -->
+          ${valType === 'LENGTH' ? `
             <div class="relative">
               <button type="button" 
                       id="val-len-rule-btn-${qIdx}"
                       onclick="event.stopPropagation(); VibeApp.toggleCustomDropdown('val-len-rule-menu-${qIdx}', 'val-len-rule-icon-${qIdx}', event)"
-                      class="custom-dropdown-trigger h-7 px-2 text-xs font-medium bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-700 dark:text-stone-200 hover:border-orange-500 flex items-center justify-between gap-1.5 cursor-pointer shadow-2xs">
+                      class="custom-dropdown-trigger h-7 px-2 text-xs font-semibold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-700 dark:text-stone-200 hover:border-orange-500 flex items-center justify-between gap-1 cursor-pointer shadow-2xs">
                 <span>${valRuleLengthMap[valRule] || 'Tối đa ký tự'}</span>
-                <i data-lucide="chevron-down" id="val-len-rule-icon-${qIdx}" class="custom-dropdown-icon w-3 h-3 text-stone-400 shrink-0 transition-transform duration-200 pointer-events-none"></i>
+                <i data-lucide="chevron-down" id="val-len-rule-icon-${qIdx}" class="custom-dropdown-icon w-3 h-3 text-stone-400 shrink-0 pointer-events-none"></i>
               </button>
               <div id="val-len-rule-menu-${qIdx}" class="custom-dropdown-menu hidden absolute left-0 top-[calc(100%+4px)] z-50 w-36 bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-xl shadow-2xl p-1 space-y-0.5 text-left">
                 ${Object.entries(valRuleLengthMap).map(([lenKey, lenLabel]) => {
@@ -13669,17 +13667,18 @@ if (totalCount === 0) {
             <input type="number" value="${valMin || valMax}" 
                    onclick="event.stopPropagation()"
                    oninput="VibeApp.setStudioQuestionValidationRange(${qIdx}, this.value, this.value)"
-                   placeholder="Số ký tự (VD: 100)"
-                   class="w-28 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none">
-          </div>
-        ` : ''}
+                   placeholder="Số ký tự"
+                   class="w-20 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none font-mono">
+          ` : ''}
+        </div>
 
-        ${valType !== 'NONE' ? `
-          <div class="pt-1 text-[11px] text-stone-500 flex items-center gap-1.5">
-            <span>Gợi ý mẫu:</span>
-            <span id="validation-preview-${qIdx}" class="italic text-stone-700 dark:text-stone-300 font-medium">"${autoPlaceholder}"</span>
-          </div>
-        ` : ''}
+        <!-- Nút gỡ giới hạn (X) -->
+        <button type="button" 
+                onclick="event.stopPropagation(); VibeApp.setStudioQuestionValidationType(${qIdx}, 'NONE')" 
+                class="p-1 rounded-md text-stone-400 hover:text-red-500 hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-colors shrink-0" 
+                title="Gỡ giới hạn này">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
       </div>
     `;
   },

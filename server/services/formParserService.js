@@ -1184,11 +1184,15 @@ class FormParserService {
       }
     }
 
-    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2
+    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2, value1/value2
     const propPairs = [
       {
-        min: /["']?(?:min|minValue|lowerBound|restrictionValue1|restrictionOperand1|operand1)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-        max: /["']?(?:max|maxValue|upperBound|restrictionValue2|restrictionOperand2|operand2)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
+        min: /["']?(?:min|minValue|lowerBound|restrictionValue1|restrictionOperand1|operand1|value1|val1|firstValue)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+        max: /["']?(?:max|maxValue|upperBound|restrictionValue2|restrictionOperand2|operand2|value2|val2|secondValue)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
+      },
+      {
+        min: /["']?(?:max|maxValue|upperBound|restrictionValue2|restrictionOperand2|operand2|value2|val2|secondValue)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+        max: /["']?(?:min|minValue|lowerBound|restrictionValue1|restrictionOperand1|operand1|value1|val1|firstValue)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
       }
     ];
     for (const pair of propPairs) {
@@ -1203,8 +1207,8 @@ class FormParserService {
       }
     }
 
-    // 3. Bắt trọn mẫu tiếng Việt: "số phải nằm trong khoảng từ ... đến ...", "nằm trong khoảng từ ... đến ...", "khoảng từ ... đến ..."
-    const vnPattern = /(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*từ|khoang\s*tu|between)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|và|va|to|and|~|-)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
+    // 3. Bắt trọn mẫu tiếng Việt & tự nhiên: "số phải nằm trong khoảng từ ... đến ...", "trong khoảng ... đến ...", "từ ... ~ ..."
+    const vnPattern = /(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between|từ)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|và|va|to|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
     const vnMatch = text.match(vnPattern);
     if (vnMatch) {
       const n1 = parseFloat(vnMatch[1].replace(/,/g, ''));
@@ -1218,7 +1222,7 @@ class FormParserService {
     const normalized = text
       .replace(/[\uFF5E\u223C\u02DC]/g, '~')
       .replace(/[\u2013\u2014\u2212]/g, '-')
-      .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
       .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
 
     const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
@@ -1237,8 +1241,8 @@ class FormParserService {
    * Helper trích xuất các quy tắc giới hạn (Validation / Restrictions)
    * Áp dụng cho cả Microsoft Forms (q.questionInfo, Subtitle, Placeholder, Restrictions) và Google Forms
    */
-  _extractValidationRule({ title = '', subtitle = '', placeholder = '', description = '', questionInfoObj = null, rawRestrictions = null, rawValidationArray = null }) {
-    const allContextText = `${title || ''} ${subtitle || ''} ${placeholder || ''} ${description || ''} ${questionInfoObj ? JSON.stringify(questionInfoObj) : ''} ${rawRestrictions ? JSON.stringify(rawRestrictions) : ''}`;
+  _extractValidationRule({ title = '', subtitle = '', placeholder = '', description = '', questionInfoObj = null, rawRestrictions = null, rawValidationArray = null, rawQuestion = null }) {
+    const allContextText = `${title || ''} ${subtitle || ''} ${placeholder || ''} ${description || ''} ${questionInfoObj ? JSON.stringify(questionInfoObj) : ''} ${rawRestrictions ? JSON.stringify(rawRestrictions) : ''} ${rawQuestion ? JSON.stringify(rawQuestion) : ''}`;
     const earlyRange = this.extractNumberRange(allContextText);
 
     // 1. Nếu có rawValidationArray từ Google Forms (FB_PUBLIC_LOAD_DATA_ qData[4])
@@ -1418,69 +1422,55 @@ class FormParserService {
       }
     }
 
-    // 2. Thu thập và bóc tách cấu trúc Restrictions từ Microsoft Forms
+    // 2. Thu thập và bóc tách cấu trúc Restrictions từ Microsoft Forms & Google Forms
     const restrictionsList = [];
-    if (questionInfoObj) {
-      const qRestrictions = questionInfoObj.Restrictions !== undefined ? questionInfoObj.Restrictions : (
-        questionInfoObj.restrictions !== undefined ? questionInfoObj.restrictions : (
-          questionInfoObj.Restriction !== undefined ? questionInfoObj.Restriction : (
-            questionInfoObj.restriction !== undefined ? questionInfoObj.restriction : null
-          )
-        )
-      );
-
-      if (Array.isArray(qRestrictions)) {
-        restrictionsList.push(...qRestrictions);
-      } else if (typeof qRestrictions === 'string') {
+    const collectRestrictions = (target, depth = 0) => {
+      if (!target || depth > 4) return;
+      if (typeof target === 'string') {
         try {
-          const parsedR = JSON.parse(qRestrictions);
-          if (Array.isArray(parsedR)) restrictionsList.push(...parsedR);
-          else if (parsedR && typeof parsedR === 'object') restrictionsList.push(parsedR);
+          const parsed = JSON.parse(target);
+          collectRestrictions(parsed, depth + 1);
         } catch (e) {
-          const parsedObj = this._safeParseJsonOrObject(qRestrictions);
-          if (Array.isArray(parsedObj)) restrictionsList.push(...parsedObj);
-          else if (parsedObj && typeof parsedObj === 'object') restrictionsList.push(parsedObj);
+          const parsed = this._safeParseJsonOrObject(target);
+          if (parsed && typeof parsed === 'object') collectRestrictions(parsed, depth + 1);
         }
-      } else if (qRestrictions && typeof qRestrictions === 'object') {
-        restrictionsList.push(qRestrictions);
+        return;
       }
-
-      if (
-        questionInfoObj.RestrictionOperator !== undefined || questionInfoObj.restrictionOperator !== undefined ||
-        questionInfoObj.RestrictionType !== undefined || questionInfoObj.restrictionType !== undefined ||
-        questionInfoObj.Operator !== undefined || questionInfoObj.operator !== undefined ||
-        questionInfoObj.Rule !== undefined || questionInfoObj.rule !== undefined ||
-        questionInfoObj.Min !== undefined || questionInfoObj.min !== undefined ||
-        questionInfoObj.Max !== undefined || questionInfoObj.max !== undefined ||
-        questionInfoObj.Operand1 !== undefined || questionInfoObj.operand1 !== undefined ||
-        questionInfoObj.Operand2 !== undefined || questionInfoObj.operand2 !== undefined ||
-        questionInfoObj.Parameters !== undefined || questionInfoObj.parameters !== undefined ||
-        questionInfoObj.Operands !== undefined || questionInfoObj.operands !== undefined ||
-        questionInfoObj.MinValue !== undefined || questionInfoObj.minValue !== undefined ||
-        questionInfoObj.MaxValue !== undefined || questionInfoObj.maxValue !== undefined ||
-        questionInfoObj.lowerBound !== undefined || questionInfoObj.LowerBound !== undefined ||
-        questionInfoObj.upperBound !== undefined || questionInfoObj.UpperBound !== undefined
-      ) {
-        restrictionsList.push(questionInfoObj);
+      if (Array.isArray(target)) {
+        for (const item of target) collectRestrictions(item, depth + 1);
+        return;
       }
-    }
+      if (typeof target === 'object') {
+        if (target.Restrictions) collectRestrictions(target.Restrictions, depth + 1);
+        if (target.restrictions) collectRestrictions(target.restrictions);
+        if (target.Validation) collectRestrictions(target.Validation, depth + 1);
+        if (target.validation) collectRestrictions(target.validation);
+        if (target.Rules) collectRestrictions(target.Rules, depth + 1);
+        if (target.rules) collectRestrictions(target.rules);
+        if (target.CustomProperties) collectRestrictions(target.CustomProperties, depth + 1);
+        if (target.customProperties) collectRestrictions(target.customProperties);
 
-    if (rawRestrictions) {
-      if (Array.isArray(rawRestrictions)) {
-        restrictionsList.push(...rawRestrictions);
-      } else if (typeof rawRestrictions === 'string') {
-        try {
-          const parsedR = JSON.parse(rawRestrictions);
-          if (Array.isArray(parsedR)) restrictionsList.push(...parsedR);
-          else if (parsedR && typeof parsedR === 'object') restrictionsList.push(parsedR);
-        } catch (e) {
-          const parsedObj = this._safeParseJsonOrObject(rawRestrictions);
-          if (Array.isArray(parsedObj)) restrictionsList.push(...parsedObj);
-          else if (parsedObj && typeof parsedObj === 'object') restrictionsList.push(parsedObj);
+        const hasOp = target.RestrictionOperator !== undefined || target.restrictionOperator !== undefined ||
+          target.Operator !== undefined || target.operator !== undefined ||
+          target.Rule !== undefined || target.rule !== undefined || target.op !== undefined;
+        const hasType = target.RestrictionType !== undefined || target.restrictionType !== undefined ||
+          target.Type !== undefined || target.type !== undefined;
+        const hasVal = target.RestrictionValue1 !== undefined || target.Operand1 !== undefined ||
+          target.Value1 !== undefined || target.Min !== undefined || target.min !== undefined ||
+          target.Operands !== undefined || target.operands !== undefined;
+        if (hasOp || (hasType && hasVal) || target.Type === 1 || target.type === 1 || target.type === 'NUMBER') {
+          restrictionsList.push(target);
         }
-      } else if (typeof rawRestrictions === 'object') {
-        restrictionsList.push(rawRestrictions);
       }
+    };
+
+    if (questionInfoObj) collectRestrictions(questionInfoObj);
+    if (rawRestrictions) collectRestrictions(rawRestrictions);
+    if (rawQuestion) {
+      if (rawQuestion.restrictions) collectRestrictions(rawQuestion.restrictions);
+      if (rawQuestion.Restrictions) collectRestrictions(rawQuestion.Restrictions);
+      if (rawQuestion.validation) collectRestrictions(rawQuestion.validation);
+      if (rawQuestion.Validation) collectRestrictions(rawQuestion.Validation);
     }
 
     // Helper trích xuất giá trị toán hạng val1 và val2 từ một restriction object
@@ -1488,42 +1478,16 @@ class FormParserService {
       let v1 = undefined;
       let v2 = undefined;
 
-      // 1. Quét các trường đơn lẻ
-      if (r.RestrictionValue1 !== undefined) v1 = r.RestrictionValue1;
-      else if (r.restrictionValue1 !== undefined) v1 = r.restrictionValue1;
-      else if (r.RestrictionOperand1 !== undefined) v1 = r.RestrictionOperand1;
-      else if (r.restrictionOperand1 !== undefined) v1 = r.restrictionOperand1;
-      else if (r.Min !== undefined) v1 = r.Min;
-      else if (r.min !== undefined) v1 = r.min;
-      else if (r.MinValue !== undefined) v1 = r.MinValue;
-      else if (r.minValue !== undefined) v1 = r.minValue;
-      else if (r.lowerBound !== undefined) v1 = r.lowerBound;
-      else if (r.LowerBound !== undefined) v1 = r.LowerBound;
-      else if (r.Operand1 !== undefined) v1 = r.Operand1;
-      else if (r.operand1 !== undefined) v1 = r.operand1;
-      else if (r.Value !== undefined) v1 = r.Value;
-      else if (r.value !== undefined) v1 = r.value;
-      else if (r.Value1 !== undefined) v1 = r.Value1;
-      else if (r.value1 !== undefined) v1 = r.value1;
+      const getVal1 = (obj) => obj.RestrictionValue1 ?? obj.restrictionValue1 ?? obj.RestrictionOperand1 ?? obj.restrictionOperand1 ??
+        obj.Min ?? obj.min ?? obj.MinValue ?? obj.minValue ?? obj.lowerBound ?? obj.LowerBound ??
+        obj.Operand1 ?? obj.operand1 ?? obj.Value1 ?? obj.value1 ?? obj.Value ?? obj.value ?? obj.FirstValue ?? obj.firstValue;
+      const getVal2 = (obj) => obj.RestrictionValue2 ?? obj.restrictionValue2 ?? obj.RestrictionOperand2 ?? obj.restrictionOperand2 ??
+        obj.Max ?? obj.max ?? obj.MaxValue ?? obj.maxValue ?? obj.upperBound ?? obj.UpperBound ??
+        obj.Operand2 ?? obj.operand2 ?? obj.Value2 ?? obj.value2 ?? obj.SecValue ?? obj.secValue ??
+        obj.SecondaryValue ?? obj.secondaryValue ?? obj.SecondValue ?? obj.secondValue;
 
-      if (r.RestrictionValue2 !== undefined) v2 = r.RestrictionValue2;
-      else if (r.restrictionValue2 !== undefined) v2 = r.restrictionValue2;
-      else if (r.RestrictionOperand2 !== undefined) v2 = r.RestrictionOperand2;
-      else if (r.restrictionOperand2 !== undefined) v2 = r.restrictionOperand2;
-      else if (r.Max !== undefined) v2 = r.Max;
-      else if (r.max !== undefined) v2 = r.max;
-      else if (r.MaxValue !== undefined) v2 = r.MaxValue;
-      else if (r.maxValue !== undefined) v2 = r.maxValue;
-      else if (r.upperBound !== undefined) v2 = r.upperBound;
-      else if (r.UpperBound !== undefined) v2 = r.UpperBound;
-      else if (r.Operand2 !== undefined) v2 = r.Operand2;
-      else if (r.operand2 !== undefined) v2 = r.operand2;
-      else if (r.SecValue !== undefined) v2 = r.SecValue;
-      else if (r.secValue !== undefined) v2 = r.secValue;
-      else if (r.SecondaryValue !== undefined) v2 = r.SecondaryValue;
-      else if (r.secondaryValue !== undefined) v2 = r.secondaryValue;
-      else if (r.Value2 !== undefined) v2 = r.Value2;
-      else if (r.value2 !== undefined) v2 = r.value2;
+      v1 = getVal1(r);
+      v2 = getVal2(r);
 
       // 2. Quét r.Operands / r.operands
       const rawOps = r.Operands !== undefined ? r.Operands : r.operands;
@@ -1566,12 +1530,17 @@ class FormParserService {
           if (v1 === undefined && params[0] !== undefined) v1 = params[0];
           if (v2 === undefined && params[1] !== undefined) v2 = params[1];
         } else if (params && typeof params === 'object') {
-          if (v1 === undefined) {
-            v1 = params.Min ?? params.min ?? params.MinValue ?? params.minValue ?? params.lowerBound ?? params.LowerBound ?? params.Operand1 ?? params.operand1 ?? params.Value ?? params.value ?? params.Value1 ?? params.value1;
-          }
-          if (v2 === undefined) {
-            v2 = params.Max ?? params.max ?? params.MaxValue ?? params.maxValue ?? params.upperBound ?? params.UpperBound ?? params.Operand2 ?? params.operand2 ?? params.SecValue ?? params.secValue ?? params.SecondaryValue ?? params.secondaryValue ?? params.Value2 ?? params.value2;
-          }
+          if (v1 === undefined) v1 = getVal1(params);
+          if (v2 === undefined) v2 = getVal2(params);
+        }
+      }
+
+      // 4. Nếu vẫn thiếu toán hạng, quét chính r qua extractNumberRange
+      if (v1 === undefined || v2 === undefined) {
+        const rRange = this.extractNumberRange(r);
+        if (rRange) {
+          if (v1 === undefined) v1 = rRange.min;
+          if (v2 === undefined) v2 = rRange.max;
         }
       }
 
@@ -1818,26 +1787,6 @@ class FormParserService {
       }
     }
 
-    if (earlyRange) {
-      return {
-        type: 'NUMBER',
-        rule: 'BETWEEN',
-        min: earlyRange.min,
-        max: earlyRange.max,
-        placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
-        error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
-      };
-    }
-
-    if (fallbackIsNumber) {
-      return {
-        type: 'NUMBER',
-        rule: 'IS_NUMBER',
-        placeholder: 'Giá trị phải là một số',
-        error_message: 'Giá trị phải là một số'
-      };
-    }
-
     // 3. Phân tích trực tiếp từ Placeholder (Đặc thù tự động của Microsoft Forms khi thiết lập Restrictions)
     if (placeholder && typeof placeholder === 'string') {
       const trimmedPlaceholder = placeholder.trim();
@@ -1892,9 +1841,9 @@ class FormParserService {
       }
 
       // 3.5 Nhỏ hơn hoặc bằng từ Placeholder
-      const phLte = trimmedPlaceholder.match(/(?:nhỏ\s*hơn\s*hoặc\s*bằng|bé\s*hơn\s*hoặc\s*bằng|less\s*than\s*or\s*equal\s*to|at\s*most|<=)\s*([0-9.,]+)/i);
+      const phLte = trimmedPlaceholder.match(/(?:nhỏ\s*hơn\s*hoặc\s*bằng|less\s*than\s*or\s*equal\s*to|at\s*most|<=)\s*([0-9.,]+)/i);
       if (phLte) {
-        const maxVal = parseFloat(phLte[1].replace(/,/g, '')) || 0;
+        const maxVal = parseFloat(phLte[1].replace(/,/g, '')) || 100;
         return {
           type: 'NUMBER',
           rule: 'LESS_THAN_OR_EQUAL',
@@ -1905,9 +1854,9 @@ class FormParserService {
       }
 
       // 3.6 Nhỏ hơn từ Placeholder
-      const phLt = trimmedPlaceholder.match(/(?:nhỏ\s*hơn|bé\s*hơn|less\s*than|<)\s*([0-9.,]+)/i);
+      const phLt = trimmedPlaceholder.match(/(?:nhỏ\s*hơn|less\s*than|<)\s*([0-9.,]+)/i);
       if (phLt) {
-        const maxVal = parseFloat(phLt[1].replace(/,/g, '')) || 0;
+        const maxVal = parseFloat(phLt[1].replace(/,/g, '')) || 100;
         return {
           type: 'NUMBER',
           rule: 'LESS_THAN',
@@ -1916,6 +1865,38 @@ class FormParserService {
           error_message: `Giá trị phải nhỏ hơn ${maxVal}`
         };
       }
+    }
+
+    if (earlyRange) {
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: earlyRange.min,
+        max: earlyRange.max,
+        placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
+        error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
+      };
+    }
+
+    const lateRange = this.extractNumberRange(allContextText);
+    if (lateRange) {
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: lateRange.min,
+        max: lateRange.max,
+        placeholder: `Số phải nằm trong khoảng từ ${lateRange.min} ~ ${lateRange.max}`,
+        error_message: `Số phải nằm trong khoảng từ ${lateRange.min} đến ${lateRange.max}`
+      };
+    }
+
+    if (fallbackIsNumber) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
     }
 
     // 4. Phân tích ngữ cảnh văn bản (Text / Subtitle / Placeholder / Title / Description)
@@ -2202,7 +2183,14 @@ class FormParserService {
       ''
     ).trim();
 
-    const rawRestrictions = q.restrictions || q.Restrictions || q.restriction || q.Restriction || questionInfoObj?.Restrictions || questionInfoObj?.restrictions || null;
+    const rawRestrictions = q.restrictions || q.Restrictions || q.restriction || q.Restriction ||
+      q.validation || q.Validation || q.rules || q.Rules || q.rule || q.Rule ||
+      questionInfoObj?.Restrictions || questionInfoObj?.restrictions ||
+      questionInfoObj?.Validation?.Restrictions || questionInfoObj?.validation?.restrictions ||
+      questionInfoObj?.Validation || questionInfoObj?.validation ||
+      questionInfoObj?.Rules || questionInfoObj?.rules ||
+      questionInfoObj?.Restriction || questionInfoObj?.restriction ||
+      questionInfoObj?.CustomProperties || questionInfoObj?.customProperties || null;
 
     const res = {
       order_index: orderIndex,
@@ -2226,14 +2214,15 @@ class FormParserService {
       placeholder,
       description: subtitle,
       questionInfoObj,
-      rawRestrictions
+      rawRestrictions,
+      rawQuestion: q
     });
 
     if (validation) {
       res.validation = validation;
       res.logic = res.logic || {};
       res.logic.validation = validation;
-      if (!res.placeholder && validation.placeholder) {
+      if (validation.placeholder) {
         res.placeholder = validation.placeholder;
       }
     }
