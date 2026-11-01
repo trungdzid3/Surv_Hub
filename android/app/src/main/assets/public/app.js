@@ -9,81 +9,104 @@ const RestrictionEngine = {
 
     const type = String(restriction.type).toUpperCase();
     if (type === 'EMAIL') {
-      const msg = 'Vui lòng nhập địa chỉ email hợp lệ (vd: name@example.com)';
+      const defaultErr = restriction.error_message || 'Vui lòng nhập địa chỉ email hợp lệ';
+      const placeholder = restriction.placeholder || 'Vui lòng nhập email';
       return {
-        placeholder: 'Vui lòng nhập email',
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
-          return { valid: isValid, error: isValid ? '' : msg };
+          return { valid: isValid, error: isValid ? '' : defaultErr };
         }
       };
     }
 
     if (type === 'NUMBER') {
       const rule = String(restriction.rule || 'IS_NUMBER').toUpperCase();
-      const min = (restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '') ? parseFloat(restriction.min) : 20000000;
-      const max = (restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '') ? parseFloat(restriction.max) : 20270000;
 
       if (rule === 'BETWEEN') {
-        const msg = `Số phải nằm trong khoảng từ ${min} đến ${max}`;
+        const hasMin = restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '' && !isNaN(Number(restriction.min));
+        const hasMax = restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '' && !isNaN(Number(restriction.max));
+        if (hasMin && hasMax) {
+          const min = parseFloat(restriction.min);
+          const max = parseFloat(restriction.max);
+          const defaultErr = restriction.error_message || `Số phải nằm trong khoảng từ ${min} đến ${max}`;
+          const placeholder = `Số phải nằm trong khoảng từ ${min} ~ ${max}`;
+          return {
+            placeholder: placeholder,
+            defaultError: defaultErr,
+            validate: (val) => {
+              if (!val || String(val).trim() === '') return { valid: true };
+              const n = Number(String(val).trim());
+              if (isNaN(n) || String(val).trim() === '') {
+                return { valid: false, error: 'Giá trị phải là một số' };
+              }
+              const isValid = n >= min && n <= max;
+              return { valid: isValid, error: isValid ? '' : defaultErr };
+            }
+          };
+        }
+
+        // Nếu restriction KHÔNG có hoặc chỉ có 1 vế:
+        // Trả về placeholder: 'Giá trị phải là một số' và validate kiểm tra số hợp lệ (IS_NUMBER).
+        const defaultErr = restriction.error_message || 'Giá trị phải là một số';
+        const placeholder = 'Giá trị phải là một số';
         return {
-          placeholder: `Số phải nằm trong khoảng từ ${min} ~ ${max}`,
-          defaultError: msg,
+          placeholder: placeholder,
+          defaultError: defaultErr,
           validate: (val) => {
             if (!val || String(val).trim() === '') return { valid: true };
-            const n = Number(String(val).trim());
-            if (isNaN(n) || String(val).trim() === '') {
-              return { valid: false, error: 'Giá trị phải là một số' };
-            }
-            const isValid = n >= min && n <= max;
-            return { valid: isValid, error: isValid ? '' : msg };
+            const isValid = !isNaN(Number(String(val).trim())) && String(val).trim() !== '';
+            return { valid: isValid, error: isValid ? '' : defaultErr };
           }
         };
       }
 
       if (rule === 'GREATER_THAN') {
         const minVal = (restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '') ? parseFloat(restriction.min) : 0;
-        const msg = `Số phải lớn hơn ${minVal}`;
+        const defaultErr = restriction.error_message || `Số phải lớn hơn ${minVal}`;
+        const placeholder = restriction.placeholder || defaultErr;
         return {
-          placeholder: msg,
-          defaultError: msg,
+          placeholder: placeholder,
+          defaultError: defaultErr,
           validate: (val) => {
             if (!val || String(val).trim() === '') return { valid: true };
             const n = Number(String(val).trim());
             if (isNaN(n) || String(val).trim() === '') return { valid: false, error: 'Giá trị phải là một số' };
             const isValid = n > minVal;
-            return { valid: isValid, error: isValid ? '' : msg };
+            return { valid: isValid, error: isValid ? '' : defaultErr };
           }
         };
       }
 
       if (rule === 'LESS_THAN') {
         const maxVal = (restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '') ? parseFloat(restriction.max) : 100;
-        const msg = `Số phải nhỏ hơn ${maxVal}`;
+        const defaultErr = restriction.error_message || `Số phải nhỏ hơn ${maxVal}`;
+        const placeholder = restriction.placeholder || defaultErr;
         return {
-          placeholder: msg,
-          defaultError: msg,
+          placeholder: placeholder,
+          defaultError: defaultErr,
           validate: (val) => {
             if (!val || String(val).trim() === '') return { valid: true };
             const n = Number(String(val).trim());
             if (isNaN(n) || String(val).trim() === '') return { valid: false, error: 'Giá trị phải là một số' };
             const isValid = n < maxVal;
-            return { valid: isValid, error: isValid ? '' : msg };
+            return { valid: isValid, error: isValid ? '' : defaultErr };
           }
         };
       }
 
       // Mặc định IS_NUMBER
-      const msg = 'Giá trị phải là một số';
+      const defaultErr = restriction.error_message || 'Giá trị phải là một số';
+      const placeholder = restriction.placeholder || defaultErr;
       return {
-        placeholder: msg,
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           const isValid = !isNaN(Number(String(val).trim())) && String(val).trim() !== '';
-          return { valid: isValid, error: isValid ? '' : msg };
+          return { valid: isValid, error: isValid ? '' : defaultErr };
         }
       };
     }
@@ -92,33 +115,100 @@ const RestrictionEngine = {
       const rule = String(restriction.rule || 'MAX_LENGTH').toUpperCase();
       const limit = parseInt(restriction.min || restriction.max || restriction.length || 100, 10) || 100;
       const isMin = rule === 'MIN_LENGTH';
-      const msg = isMin ? `Số ký tự phải có ít nhất ${limit} ký tự` : `Số ký tự không được vượt quá ${limit} ký tự`;
+      const defaultErr = restriction.error_message || (isMin ? `Số ký tự phải có ít nhất ${limit} ký tự` : `Số ký tự không được vượt quá ${limit} ký tự`);
+      const placeholder = restriction.placeholder || defaultErr;
       return {
-        placeholder: msg,
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           const len = String(val).length;
           const isValid = isMin ? len >= limit : len <= limit;
-          return { valid: isValid, error: isValid ? '' : msg };
+          return { valid: isValid, error: isValid ? '' : defaultErr };
         }
       };
     }
 
     if (type === 'URL') {
-      const msg = 'Vui lòng nhập đường dẫn URL hợp lệ (bắt đầu bằng http:// hoặc https://)';
+      const defaultErr = restriction.error_message || 'Vui lòng nhập đường dẫn URL hợp lệ';
+      const placeholder = restriction.placeholder || 'Vui lòng nhập URL hợp lệ';
       return {
-        placeholder: 'Vui lòng nhập URL (VD: https://example.com)',
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           const isValid = /^https?:\/\/.+/i.test(String(val).trim());
-          return { valid: isValid, error: isValid ? '' : msg };
+          return { valid: isValid, error: isValid ? '' : defaultErr };
         }
       };
     }
 
     return { placeholder: '', defaultError: '', validate: () => ({ valid: true }) };
+  },
+
+  inferValidationFromTitle(title, description = '') {
+    const text = `${title || ''} ${description || ''}`.trim().toLowerCase();
+    if (!text) return null;
+
+    // 1. Email ("Email", "Email HUST", "Thư điện tử", ...)
+    if (/\b(email|e-mail|thư điện tử|thu dien tu)\b/i.test(text) || text.includes('email') || text.includes('thư điện tử') || text.includes('thu dien tu')) {
+      return {
+        type: 'EMAIL',
+        rule: 'EMAIL',
+        placeholder: 'Vui lòng nhập email',
+        error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
+      };
+    }
+
+    // 2. Dải số cụ thể (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
+    const rangeMatch = text.match(/(\d+)\s*(?:~|-|đến)\s*(\d+)/i);
+    if (rangeMatch) {
+      const min = parseFloat(rangeMatch[1]);
+      const max = parseFloat(rangeMatch[2]);
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: min,
+        max: max,
+        placeholder: 'Số phải nằm trong khoảng từ ' + min + ' ~ ' + max,
+        error_message: 'Số phải nằm trong khoảng từ ' + min + ' đến ' + max
+      };
+    }
+
+    // 3. Mã số sinh viên ("Mã số sinh viên", "MSSV", "Số thẻ sinh viên", ...)
+    if (/\b(mssv|mã số sinh viên|ma so sinh vien|số thẻ sinh viên|so the sinh vien|mã sinh viên|ma sinh vien)\b/i.test(text) ||
+        text.includes('mssv') || text.includes('mã số sinh viên') || text.includes('ma so sinh vien') || text.includes('số thẻ sinh viên') || text.includes('so the sinh vien') || text.includes('mã sinh viên')) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
+    // 3. Số điện thoại ("Số điện thoại", "SĐT", "Điện thoại", ...)
+    if (/\b(số điện thoại|so dien thoai|sđt|sdt|điện thoại|dien thoai|phone|hotline)\b/i.test(text) ||
+        text.includes('số điện thoại') || text.includes('so dien thoai') || text.includes('sđt') || text.includes('sdt') || text.includes('điện thoại') || text.includes('dien thoai')) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
+    // 4. Website ("Website", "URL", "Trang web", ...)
+    if (/\b(website|url|trang web|link web)\b/i.test(text) ||
+        text.includes('website') || text.includes('url') || text.includes('trang web') || text.includes('link web')) {
+      return {
+        type: 'URL',
+        rule: 'URL',
+        placeholder: 'Vui lòng nhập URL hợp lệ',
+        error_message: 'Vui lòng nhập đường dẫn URL hợp lệ'
+      };
+    }
+
+    return null;
   }
 };
 if (typeof window !== 'undefined') {
@@ -233,83 +323,104 @@ window.RestrictionEngine = {
 
     const type = String(restriction.type).toUpperCase();
     if (type === 'EMAIL') {
-      const msg = 'Vui lòng nhập email';
+      const defaultErr = restriction.error_message || 'Vui lòng nhập địa chỉ email hợp lệ';
+      const placeholder = restriction.placeholder || 'Vui lòng nhập email';
       return {
-        placeholder: msg,
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
-          return { valid: isValid, error: isValid ? '' : msg };
+          return { valid: isValid, error: isValid ? '' : defaultErr };
         }
       };
     }
 
     if (type === 'NUMBER') {
       const rule = String(restriction.rule || 'IS_NUMBER').toUpperCase();
-      const min = (restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '') ? parseFloat(restriction.min) : null;
-      const max = (restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '') ? parseFloat(restriction.max) : null;
 
       if (rule === 'BETWEEN') {
-        const minVal = min !== null ? min : 20000000;
-        const maxVal = max !== null ? max : 20270000;
-        const msg = `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`;
+        const hasMin = restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '' && !isNaN(Number(restriction.min));
+        const hasMax = restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '' && !isNaN(Number(restriction.max));
+        if (hasMin && hasMax) {
+          const minVal = parseFloat(restriction.min);
+          const maxVal = parseFloat(restriction.max);
+          const defaultErr = restriction.error_message || `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`;
+          const placeholder = `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`;
+          return {
+            placeholder: placeholder,
+            defaultError: defaultErr,
+            validate: (val) => {
+              if (!val || String(val).trim() === '') return { valid: true };
+              const n = Number(String(val).trim());
+              if (isNaN(n) || String(val).trim() === '') {
+                return { valid: false, error: 'Giá trị phải là một số' };
+              }
+              const isValid = n >= minVal && n <= maxVal;
+              return { valid: isValid, error: isValid ? '' : defaultErr };
+            }
+          };
+        }
+
+        // Nếu restriction KHÔNG có hoặc chỉ có 1 vế:
+        // Trả về placeholder: 'Giá trị phải là một số' và validate kiểm tra số hợp lệ (IS_NUMBER).
+        const defaultErr = restriction.error_message || 'Giá trị phải là một số';
+        const placeholder = 'Giá trị phải là một số';
         return {
-          placeholder: msg,
-          defaultError: msg,
+          placeholder: placeholder,
+          defaultError: defaultErr,
           validate: (val) => {
             if (!val || String(val).trim() === '') return { valid: true };
-            const n = Number(String(val).trim());
-            if (isNaN(n) || String(val).trim() === '') {
-              return { valid: false, error: 'Giá trị phải là một số' };
-            }
-            const isValid = n >= minVal && n <= maxVal;
-            return { valid: isValid, error: isValid ? '' : msg };
+            const isValid = !isNaN(Number(String(val).trim())) && String(val).trim() !== '';
+            return { valid: isValid, error: isValid ? '' : defaultErr };
           }
         };
       }
 
       if (rule === 'GREATER_THAN') {
         const minVal = min !== null ? min : 0;
-        const msg = `Số phải lớn hơn ${minVal}`;
+        const defaultErr = restriction.error_message || `Số phải lớn hơn ${minVal}`;
+        const placeholder = restriction.placeholder || defaultErr;
         return {
-          placeholder: msg,
-          defaultError: msg,
+          placeholder: placeholder,
+          defaultError: defaultErr,
           validate: (val) => {
             if (!val || String(val).trim() === '') return { valid: true };
             const n = Number(String(val).trim());
             if (isNaN(n) || String(val).trim() === '') return { valid: false, error: 'Giá trị phải là một số' };
             const isValid = n > minVal;
-            return { valid: isValid, error: isValid ? '' : msg };
+            return { valid: isValid, error: isValid ? '' : defaultErr };
           }
         };
       }
 
       if (rule === 'LESS_THAN') {
         const maxVal = max !== null ? max : 100;
-        const msg = `Số phải nhỏ hơn ${maxVal}`;
+        const defaultErr = restriction.error_message || `Số phải nhỏ hơn ${maxVal}`;
+        const placeholder = restriction.placeholder || defaultErr;
         return {
-          placeholder: msg,
-          defaultError: msg,
+          placeholder: placeholder,
+          defaultError: defaultErr,
           validate: (val) => {
             if (!val || String(val).trim() === '') return { valid: true };
             const n = Number(String(val).trim());
             if (isNaN(n) || String(val).trim() === '') return { valid: false, error: 'Giá trị phải là một số' };
             const isValid = n < maxVal;
-            return { valid: isValid, error: isValid ? '' : msg };
+            return { valid: isValid, error: isValid ? '' : defaultErr };
           }
         };
       }
 
       // Mặc định IS_NUMBER
-      const msg = 'Giá trị phải là một số';
+      const defaultErr = restriction.error_message || 'Giá trị phải là một số';
+      const placeholder = restriction.placeholder || defaultErr;
       return {
-        placeholder: msg,
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           const isValid = !isNaN(Number(String(val).trim())) && String(val).trim() !== '';
-          return { valid: isValid, error: isValid ? '' : msg };
+          return { valid: isValid, error: isValid ? '' : defaultErr };
         }
       };
     }
@@ -318,38 +429,105 @@ window.RestrictionEngine = {
       const rule = String(restriction.rule || 'MAX_LENGTH').toUpperCase();
       const limit = parseInt(restriction.min || restriction.max || 100, 10) || 100;
       const isMin = rule === 'MIN_LENGTH';
-      const msg = isMin ? `Độ dài ký tự tối thiểu là ${limit}` : `Độ dài ký tự tối đa là ${limit}`;
+      const defaultErr = restriction.error_message || (isMin ? `Độ dài ký tự tối thiểu là ${limit}` : `Độ dài ký tự tối đa là ${limit}`);
+      const placeholder = restriction.placeholder || defaultErr;
       return {
-        placeholder: msg,
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           const len = String(val).length;
           const isValid = isMin ? len >= limit : len <= limit;
-          return { valid: isValid, error: isValid ? '' : msg };
+          return { valid: isValid, error: isValid ? '' : defaultErr };
         }
       };
     }
 
     if (type === 'URL') {
-      const msg = 'Vui lòng nhập URL hợp lệ';
+      const defaultErr = restriction.error_message || 'Vui lòng nhập đường dẫn URL hợp lệ';
+      const placeholder = restriction.placeholder || 'Vui lòng nhập URL hợp lệ';
       return {
-        placeholder: msg,
-        defaultError: msg,
+        placeholder: placeholder,
+        defaultError: defaultErr,
         validate: (val) => {
           if (!val || String(val).trim() === '') return { valid: true };
           try {
             const parsed = new URL(String(val).trim());
             const isValid = parsed.protocol === 'http:' || parsed.protocol === 'https:';
-            return { valid: isValid, error: isValid ? '' : msg };
+            return { valid: isValid, error: isValid ? '' : defaultErr };
           } catch {
-            return { valid: false, error: msg };
+            return { valid: false, error: defaultErr };
           }
         }
       };
     }
 
     return { placeholder: '', defaultError: '', validate: () => ({ valid: true }) };
+  },
+
+  inferValidationFromTitle(title, description = '') {
+    const text = `${title || ''} ${description || ''}`.trim().toLowerCase();
+    if (!text) return null;
+
+    // 1. Email ("Email", "Email HUST", "Thư điện tử", ...)
+    if (/\b(email|e-mail|thư điện tử|thu dien tu)\b/i.test(text) || text.includes('email') || text.includes('thư điện tử') || text.includes('thu dien tu')) {
+      return {
+        type: 'EMAIL',
+        rule: 'EMAIL',
+        placeholder: 'Vui lòng nhập email',
+        error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
+      };
+    }
+
+    // 2. Dải số cụ thể (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
+    const rangeMatch = text.match(/(\d+)\s*(?:~|-|đến)\s*(\d+)/i);
+    if (rangeMatch) {
+      const min = parseFloat(rangeMatch[1]);
+      const max = parseFloat(rangeMatch[2]);
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: min,
+        max: max,
+        placeholder: 'Số phải nằm trong khoảng từ ' + min + ' ~ ' + max,
+        error_message: 'Số phải nằm trong khoảng từ ' + min + ' đến ' + max
+      };
+    }
+
+    // 3. Mã số sinh viên ("Mã số sinh viên", "MSSV", "Số thẻ sinh viên", ...)
+    if (/\b(mssv|mã số sinh viên|ma so sinh vien|số thẻ sinh viên|so the sinh vien|mã sinh viên|ma sinh vien)\b/i.test(text) ||
+        text.includes('mssv') || text.includes('mã số sinh viên') || text.includes('ma so sinh vien') || text.includes('số thẻ sinh viên') || text.includes('so the sinh vien') || text.includes('mã sinh viên')) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
+    // 3. Số điện thoại ("Số điện thoại", "SĐT", "Điện thoại", ...)
+    if (/\b(số điện thoại|so dien thoai|sđt|sdt|điện thoại|dien thoai|phone|hotline)\b/i.test(text) ||
+        text.includes('số điện thoại') || text.includes('so dien thoai') || text.includes('sđt') || text.includes('sdt') || text.includes('điện thoại') || text.includes('dien thoai')) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
+    // 4. Website ("Website", "URL", "Trang web", ...)
+    if (/\b(website|url|trang web|link web)\b/i.test(text) ||
+        text.includes('website') || text.includes('url') || text.includes('trang web') || text.includes('link web')) {
+      return {
+        type: 'URL',
+        rule: 'URL',
+        placeholder: 'Vui lòng nhập URL hợp lệ',
+        error_message: 'Vui lòng nhập đường dẫn URL hợp lệ'
+      };
+    }
+
+    return null;
   }
 };
 
@@ -6221,6 +6399,49 @@ if (totalCount === 0) {
             const isReq = q.is_required !== 0 && q.is_required !== false;
             const currentAns = session.answers ? session.answers[q.id] : undefined;
 
+            let restrictionBadgeHtml = '';
+            if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT'].includes(q.type)) {
+              let valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+              const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+              if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+                const inf = engine.inferValidationFromTitle(q.content);
+                if (inf) valObj = inf;
+              }
+              if (valObj && valObj.type && valObj.type !== 'NONE') {
+                let badgeText = '';
+                const vType = String(valObj.type).toUpperCase();
+                if (vType === 'EMAIL') {
+                  badgeText = 'Email';
+                } else if (vType === 'NUMBER') {
+                  const vRule = String(valObj.rule || 'IS_NUMBER').toUpperCase();
+                  const hasMin = valObj.min !== undefined && valObj.min !== null && String(valObj.min).trim() !== '';
+                  const hasMax = valObj.max !== undefined && valObj.max !== null && String(valObj.max).trim() !== '';
+                  if (vRule === 'BETWEEN' && hasMin && hasMax) {
+                    badgeText = `Số: ${valObj.min} ~ ${valObj.max}`;
+                  } else if (vRule === 'GREATER_THAN' && hasMin) {
+                    badgeText = `Số > ${valObj.min}`;
+                  } else if (vRule === 'LESS_THAN' && hasMax) {
+                    badgeText = `Số < ${valObj.max}`;
+                  } else {
+                    badgeText = 'Số';
+                  }
+                } else if (vType === 'URL') {
+                  badgeText = 'URL';
+                } else if (vType === 'LENGTH') {
+                  const vRule = String(valObj.rule || 'MAX_LENGTH').toUpperCase();
+                  const bLen = valObj.min || valObj.max || 100;
+                  badgeText = vRule === 'MIN_LENGTH' ? `Ký tự ≥ ${bLen}` : `Ký tự ≤ ${bLen}`;
+                }
+                if (badgeText) {
+                  restrictionBadgeHtml = `
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60 select-none">
+                      ${badgeText}
+                    </span>
+                  `;
+                }
+              }
+            }
+
             return `
               <div id="question-card-${q.id}" class="bento-card p-6 sm:p-7 space-y-4 bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm transition-all">
                 <div>
@@ -6229,6 +6450,7 @@ if (totalCount === 0) {
                       <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-orange-50 dark:bg-stone-800 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-stone-700">
                         ${typeLabels[q.type] || 'Khảo sát'}
                       </span>
+                      ${restrictionBadgeHtml}
                       ${isReq ? `
                         <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-900/40">
                           * Bắt buộc
@@ -6375,15 +6597,25 @@ if (totalCount === 0) {
     // 3. TRẢ LỜI NGẮN (SHORT_TEXT)
     if (q.type === 'SHORT_TEXT') {
       const textVal = currentAnswer || '';
-      const validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
-      let placeholder = 'Nhập câu trả lời ngắn của bạn...';
-      const engine = (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : (typeof window !== 'undefined' ? window.RestrictionEngine : null));
-      if (engine && validation) {
+      let validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+      const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+      if ((!validation || !validation.type || validation.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+        const inferred = engine.inferValidationFromTitle(q.content);
+        if (inferred) {
+          validation = inferred;
+          q.validation = inferred;
+        }
+      }
+
+      let placeholder = 'Nhập câu trả lời của bạn';
+      if (engine && validation && validation.type && validation.type !== 'NONE') {
         const meta = engine.getMeta(validation);
         if (meta && meta.placeholder) placeholder = meta.placeholder;
+        else if (validation.placeholder) placeholder = validation.placeholder;
       } else if (validation?.placeholder) {
         placeholder = validation.placeholder;
       }
+
       return `
         <div class="space-y-2">
           <!-- oninput="VibeApp.updateOpenText('${q.id}', this.value)" -->
@@ -6394,7 +6626,6 @@ if (totalCount === 0) {
                  onchange="VibeApp.updateOpenText('${q.id}', this.value)"
                  placeholder="${placeholder.replace(/"/g, '&quot;')}"
                  class="w-full p-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors">
-          <p class="text-[11px] text-stone-400 font-medium">${placeholder}</p>
         </div>
       `;
     }
@@ -6402,15 +6633,25 @@ if (totalCount === 0) {
     // 4. ĐOẠN VĂN (PARAGRAPH / OPEN_TEXT)
     if (['PARAGRAPH', 'OPEN_TEXT'].includes(q.type)) {
       const textVal = currentAnswer || '';
-      const validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
-      let placeholder = 'Nhập câu trả lời chi tiết của bạn...';
-      const engine = (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : (typeof window !== 'undefined' ? window.RestrictionEngine : null));
-      if (engine && validation) {
+      let validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+      const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+      if ((!validation || !validation.type || validation.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+        const inferred = engine.inferValidationFromTitle(q.content);
+        if (inferred) {
+          validation = inferred;
+          q.validation = inferred;
+        }
+      }
+
+      let placeholder = 'Nhập câu trả lời của bạn';
+      if (engine && validation && validation.type && validation.type !== 'NONE') {
         const meta = engine.getMeta(validation);
         if (meta && meta.placeholder) placeholder = meta.placeholder;
+        else if (validation.placeholder) placeholder = validation.placeholder;
       } else if (validation?.placeholder) {
         placeholder = validation.placeholder;
       }
+
       return `
         <div class="space-y-2">
           <textarea id="survey-answer-input-${q.id}"
@@ -6420,7 +6661,6 @@ if (totalCount === 0) {
                     rows="4"
                     placeholder="${placeholder.replace(/"/g, '&quot;')}"
                     class="w-full p-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-medium leading-relaxed transition-colors">${textVal}</textarea>
-          <p class="text-[11px] text-stone-400 font-medium">${placeholder}</p>
         </div>
       `;
     }
@@ -6429,7 +6669,7 @@ if (totalCount === 0) {
     if (q.type === 'DROPDOWN') {
       const opts = q.options || [];
       const hasAnswer = currentAnswer && opts.includes(currentAnswer);
-      const displayLabel = hasAnswer ? currentAnswer : '-- Nhấp để chọn đáp án --';
+      const displayLabel = hasAnswer ? currentAnswer : 'Chọn câu trả lời của bạn';
       const ddMenuId = `dropdown-q-${q.id}-menu`;
       const ddLabelId = `dropdown-q-${q.id}-label`;
       const ddIconId = `dropdown-q-${q.id}-icon`;
@@ -6801,8 +7041,15 @@ if (totalCount === 0) {
   // ==================== XÁC THỰC ĐỊNH DẠNG RÀNG BUỘC (RESTRICTION VALIDATION) ====================
   validateQuestionInput(q, val) {
     if (!q) return { valid: true };
-    const validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
-    const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (this.RestrictionEngine || null);
+    let validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+    const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (this.RestrictionEngine || (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null));
+    if ((!validation || !validation.type || validation.type === 'NONE') && ['SHORT_TEXT', 'PARAGRAPH'].includes(q.type) && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+      const inferred = engine.inferValidationFromTitle(q.content);
+      if (inferred) {
+        validation = inferred;
+        q.validation = inferred;
+      }
+    }
     if (!validation || !engine) return { valid: true };
     const meta = engine.getMeta(validation);
     if (meta && typeof meta.validate === 'function') {
@@ -11688,6 +11935,52 @@ if (totalCount === 0) {
       const typeInfo = this.getStudioQuestionTypeInfo(q.type);
       const isReq = q.is_required !== 0 && q.is_required !== false;
 
+      let restrictionBadgeHtml = '';
+      if (['SHORT_TEXT', 'PARAGRAPH'].includes(q.type)) {
+        let valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+        const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+        if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+          const inf = engine.inferValidationFromTitle(q.content);
+          if (inf) valObj = inf;
+        }
+
+        if (valObj && valObj.type && valObj.type !== 'NONE') {
+          let badgeText = '';
+          const vType = String(valObj.type).toUpperCase();
+          if (vType === 'EMAIL') {
+            badgeText = 'Email';
+          } else if (vType === 'NUMBER') {
+            const vRule = String(valObj.rule || 'IS_NUMBER').toUpperCase();
+            const hasMin = valObj.min !== undefined && valObj.min !== null && String(valObj.min).trim() !== '';
+            const hasMax = valObj.max !== undefined && valObj.max !== null && String(valObj.max).trim() !== '';
+            if (vRule === 'BETWEEN' && hasMin && hasMax) {
+              badgeText = `Số: ${valObj.min} ~ ${valObj.max}`;
+            } else if (vRule === 'GREATER_THAN' && hasMin) {
+              badgeText = `Số > ${valObj.min}`;
+            } else if (vRule === 'LESS_THAN' && hasMax) {
+              badgeText = `Số < ${valObj.max}`;
+            } else {
+              badgeText = 'Số';
+            }
+          } else if (vType === 'URL') {
+            badgeText = 'URL';
+          } else if (vType === 'LENGTH') {
+            const vRule = String(valObj.rule || 'MAX_LENGTH').toUpperCase();
+            const bLen = valObj.min || valObj.max || 100;
+            badgeText = vRule === 'MIN_LENGTH' ? `Ký tự ≥ ${bLen}` : `Ký tự ≤ ${bLen}`;
+          }
+
+          if (badgeText) {
+            restrictionBadgeHtml = `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800/60 text-orange-700 dark:text-orange-300 text-[10px] font-bold tracking-tight shrink-0 shadow-2xs select-none" title="Ràng buộc: ${badgeText}">
+                <i data-lucide="shield-alert" class="w-2.5 h-2.5"></i>
+                <span>[${badgeText}]</span>
+              </span>
+            `;
+          }
+        }
+      }
+
       return `
       <!-- Question Card #${qIdx + 1} (Google Forms Style) -->
       <div id="studio-q-card-${qIdx}" 
@@ -11786,6 +12079,7 @@ if (totalCount === 0) {
                    autocomplete="off" spellcheck="false"
                    placeholder="Nhập tiêu đề câu hỏi..."
                    class="flex-1 p-2 bg-transparent border-0 border-b border-stone-200 dark:border-stone-800 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:border-orange-600 focus:outline-none transition-colors">
+            ${restrictionBadgeHtml}
           </div>
 
           <!-- Menu Chọn 1 trong 12 định dạng chuẩn Google Forms -->
@@ -11890,6 +12184,13 @@ if (totalCount === 0) {
               <input type="checkbox" ${q.is_screener ? 'checked' : ''} onchange="VibeApp.toggleStudioScreener(${qIdx}, this.checked)" class="rounded text-orange-600 focus:ring-orange-500">
               <span class="font-medium text-[11px]">Câu hỏi sàng lọc đối tượng (Auto-Screener)</span>
             </label>
+
+            ${['SHORT_TEXT', 'PARAGRAPH'].includes(q.type) ? `
+              <label class="flex items-center gap-1.5 cursor-pointer text-stone-600 dark:text-stone-400 hover:text-orange-600 select-none transition-colors">
+                <input type="checkbox" ${q.type === 'PARAGRAPH' ? 'checked' : ''} onchange="VibeApp.toggleStudioLongAnswer(${qIdx}, this.checked)" class="rounded text-orange-600 focus:ring-orange-500">
+                <span class="font-medium text-[11px]">Câu trả lời dài</span>
+              </label>
+            ` : ''}
 
             ${['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type) ? `
               <label class="flex items-center gap-1.5 cursor-pointer text-stone-600 dark:text-stone-400 hover:text-orange-600 select-none transition-colors">
@@ -12164,11 +12465,28 @@ if (totalCount === 0) {
 
     // 2. Trả lời ngắn
     if (q.type === 'SHORT_TEXT') {
-      const val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
-      const ph = val?.placeholder || (val ? this.generateValidationPlaceholder(val) : '') || 'Văn bản câu trả lời ngắn (1 dòng)';
+      let val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+      const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+      if ((!val || !val.type || val.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+        const inf = engine.inferValidationFromTitle(q.content);
+        if (inf) {
+          val = inf;
+          q.validation = inf;
+        }
+      }
+
+      let previewPlaceholder = 'Nhập câu trả lời của bạn';
+      if (val && val.type && val.type !== 'NONE') {
+        const meta = engine ? engine.getMeta(val) : null;
+        previewPlaceholder = (meta && meta.placeholder) || this.generateValidationPlaceholder(val) || val.placeholder || 'Nhập câu trả lời của bạn';
+      }
+
       return `
-        <div class="p-3 bg-stone-50 dark:bg-stone-900/60 rounded-xl border border-dashed border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 italic text-[11px]">
-          ${this.escapeHtml(ph)}
+        <div class="space-y-3">
+          <input type="text" disabled value="" 
+                 id="studio-preview-input-${qIdx}"
+                 placeholder="${this.escapeHtml(previewPlaceholder)}"
+                 class="w-full p-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900/50 text-stone-400 dark:text-stone-500 text-xs sm:text-sm font-medium cursor-not-allowed">
         </div>
         ${this.renderStudioQuestionValidationConfig(q, qIdx)}
       `;
@@ -12176,11 +12494,28 @@ if (totalCount === 0) {
 
     // 3. Đoạn văn
     if (q.type === 'PARAGRAPH') {
-      const val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
-      const ph = val?.placeholder || (val ? this.generateValidationPlaceholder(val) : '') || 'Văn bản câu trả lời dài (Nhiều dòng tự do)';
+      let val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+      const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+      if ((!val || !val.type || val.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+        const inf = engine.inferValidationFromTitle(q.content);
+        if (inf) {
+          val = inf;
+          q.validation = inf;
+        }
+      }
+
+      let previewPlaceholder = 'Nhập câu trả lời của bạn';
+      if (val && val.type && val.type !== 'NONE') {
+        const meta = engine ? engine.getMeta(val) : null;
+        previewPlaceholder = (meta && meta.placeholder) || this.generateValidationPlaceholder(val) || val.placeholder || 'Nhập câu trả lời của bạn';
+      }
+
       return `
-        <div class="p-4 bg-stone-50 dark:bg-stone-900/60 rounded-xl border border-dashed border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 italic text-[11px]">
-          ${this.escapeHtml(ph)}
+        <div class="space-y-3">
+          <textarea disabled rows="3"
+                    id="studio-preview-input-${qIdx}"
+                    placeholder="${this.escapeHtml(previewPlaceholder)}"
+                    class="w-full p-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900/50 text-stone-400 dark:text-stone-500 text-xs sm:text-sm font-medium cursor-not-allowed resize-none"></textarea>
         </div>
         ${this.renderStudioQuestionValidationConfig(q, qIdx)}
       `;
@@ -12583,9 +12918,50 @@ if (totalCount === 0) {
     }
   },
 
+  toggleStudioLongAnswer(qIdx, isLong) {
+    this.haptic('light');
+    const q = this.state.builderQuestions && this.state.builderQuestions[qIdx];
+    if (!q) return;
+    q.type = isLong ? 'PARAGRAPH' : 'SHORT_TEXT';
+    this.refreshStudioQuestionsView();
+  },
+
   updateBuilderQuestionContent(qIdx, val) {
     if (this.state.builderQuestions && this.state.builderQuestions[qIdx]) {
-      this.state.builderQuestions[qIdx].content = val;
+      const q = this.state.builderQuestions[qIdx];
+      q.content = val;
+
+      if (['SHORT_TEXT', 'PARAGRAPH'].includes(q.type)) {
+        const curType = q.validation?.type;
+        if (!curType || curType === 'NONE') {
+          const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+          if (engine && typeof engine.inferValidationFromTitle === 'function') {
+            const inferred = engine.inferValidationFromTitle(val);
+            if (inferred) {
+              q.validation = { ...inferred };
+              if (!q.logic) q.logic = {};
+              q.logic.validation = { ...inferred };
+
+              const activeEl = typeof document !== 'undefined' ? document.activeElement : null;
+              const isCurrentInput = activeEl && activeEl.matches && activeEl.matches(`input[oninput*="updateBuilderQuestionContent(${qIdx}"]`);
+              const selStart = isCurrentInput ? activeEl.selectionStart : null;
+              const selEnd = isCurrentInput ? activeEl.selectionEnd : null;
+
+              this.refreshStudioQuestionsView();
+
+              if (isCurrentInput) {
+                const newInputs = document.querySelectorAll(`input[oninput*="updateBuilderQuestionContent(${qIdx}"]`);
+                if (newInputs && newInputs[0]) {
+                  newInputs[0].focus();
+                  if (selStart !== null && selEnd !== null) {
+                    try { newInputs[0].setSelectionRange(selStart, selEnd); } catch (e) {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
 
@@ -12704,9 +13080,12 @@ if (totalCount === 0) {
     if (v.type === 'NUMBER') {
       const rule = v.rule || 'IS_NUMBER';
       if (rule === 'BETWEEN') {
-        const min = (v.min !== undefined && v.min !== null && String(v.min).trim() !== '') ? v.min : '20000000';
-        const max = (v.max !== undefined && v.max !== null && String(v.max).trim() !== '') ? v.max : '20270000';
-        return `Số phải nằm trong khoảng từ ${min} ~ ${max}`;
+        const hasMin = v.min !== undefined && v.min !== null && String(v.min).trim() !== '';
+        const hasMax = v.max !== undefined && v.max !== null && String(v.max).trim() !== '';
+        if (hasMin && hasMax) {
+          return `Số phải nằm trong khoảng từ ${v.min} ~ ${v.max}`;
+        }
+        return 'Giá trị phải là một số';
       }
       if (rule === 'GREATER_THAN') {
         const min = (v.min !== undefined && v.min !== null && String(v.min).trim() !== '') ? v.min : '0';
@@ -12735,7 +13114,7 @@ if (totalCount === 0) {
     const valRule = val.rule || (valType === 'NUMBER' ? 'IS_NUMBER' : (valType === 'LENGTH' ? 'MAX_LENGTH' : ''));
     const valMin = (val.min !== undefined && val.min !== null) ? val.min : '';
     const valMax = (val.max !== undefined && val.max !== null) ? val.max : '';
-    const autoPlaceholder = val.placeholder || this.generateValidationPlaceholder(val);
+    const autoPlaceholder = this.generateValidationPlaceholder(val);
 
     const valTypeMap = {
       NONE: 'Không giới hạn',
@@ -12820,14 +13199,14 @@ if (totalCount === 0) {
                        onclick="event.stopPropagation()"
                        oninput="VibeApp.setStudioQuestionValidationRange(${qIdx}, this.value, document.getElementById('val-max-${qIdx}') ? document.getElementById('val-max-${qIdx}').value : '')"
                        id="val-min-${qIdx}"
-                       placeholder="Min (VD: 20000000)"
+                       placeholder="Min"
                        class="w-32 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none">
                 <span class="text-stone-400 text-xs">đến</span>
                 <input type="number" value="${valMax}" 
                        onclick="event.stopPropagation()"
                        oninput="VibeApp.setStudioQuestionValidationRange(${qIdx}, document.getElementById('val-min-${qIdx}') ? document.getElementById('val-min-${qIdx}').value : '', this.value)"
                        id="val-max-${qIdx}"
-                       placeholder="Max (VD: 20270000)"
+                       placeholder="Max"
                        class="w-32 h-7 px-2 text-xs rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 focus:border-orange-500 focus:outline-none">
               </div>
             ` : ''}
@@ -12932,8 +13311,7 @@ if (totalCount === 0) {
     if (!q.validation) q.validation = { type: 'NUMBER' };
     q.validation.rule = rule;
     if (rule === 'BETWEEN') {
-      if (!q.validation.min) q.validation.min = '20000000';
-      if (!q.validation.max) q.validation.max = '20270000';
+      // Người tạo tự nhập min và max, không tự gán cứng mặc định
     } else if (rule === 'GREATER_THAN') {
       if (!q.validation.min) q.validation.min = '0';
     } else if (rule === 'LESS_THAN') {
@@ -12957,6 +13335,10 @@ if (totalCount === 0) {
     const previewEl = document.getElementById(`validation-preview-${qIdx}`);
     if (previewEl) {
       previewEl.textContent = `"${q.validation.placeholder}"`;
+    }
+    const inputPreview = document.getElementById(`studio-preview-input-${qIdx}`);
+    if (inputPreview) {
+      inputPreview.placeholder = q.validation.placeholder || 'Nhập câu trả lời của bạn';
     }
   },
 

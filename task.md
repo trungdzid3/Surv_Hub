@@ -98,3 +98,24 @@
   - [ ] Thiết lập 3 cronjobs định kỳ: quét `expires_at` đóng bài & hoàn tiền, hạ ghim sau 7 ngày, làm mới 30 lượt free ngày 01 đầu tháng; backup SQLite hằng ngày lên Object Storage.
   - [ ] Cập nhật Google OAuth redirect URIs, `APP_URL` và Capacitor Android; chạy song song Render 1-2 tuần làm fallback.
 
+
+
+## Giai Đoạn Chuẩn Hóa Ràng Buộc Định Dạng & Nhận Diện Rõ Ràng (Microsoft Forms SSOT)
+
+- [x] 12. **Chuẩn Hóa Nhận Diện & Hiển Thị Minh Bạch Ràng Buộc Định Dạng (Microsoft Forms SSOT)**
+  - [x] **Task 12.1: Backend Parser & Repository Specialist (Subagent Backend)**
+    + Phạm vi sở hữu file độc quyền: `server/services/formParserService.js`, `server/repositories/surveyRepository.js`.
+    + Đảm bảo cơ chế `_extractValidationRule` tự động suy luận và bóc tách đầy đủ các ràng buộc: Email, Mã số sinh viên (Between 20000000 ~ 20270000), Số điện thoại (Là số), URL, Độ dài.
+    + Đảm bảo `surveyRepository.js` và `surveyController.js` luôn lưu trữ và trả về trường `validation` và `logic` đầy đủ cho từng câu hỏi qua API `GET /api/surveys/:id`.
+  - [x] **Task 12.2: Frontend UI/UX Studio & Runner Specialist (Subagent Frontend)**
+    + Phạm vi sở hữu file độc quyền: `public/app.js`.
+    + Bổ sung `inferValidationFromTitle` vào `RestrictionEngine`: Tự động nhận diện từ khóa (Email HUST -> `Vui lòng nhập email`, Mã số sinh viên -> `Số phải nằm trong khoảng từ 20000000 ~ 20270000`, Số điện thoại -> `Giá trị phải là một số`, Dropdown -> `Chọn câu trả lời của bạn`, Câu không ràng buộc -> `Nhập câu trả lời của bạn`).
+    + Cập nhật `updateBuilderQuestionContent` trong Creator Studio: Khi gõ tiêu đề, tự động suy luận và chọn Giới hạn tương ứng, cập nhật ô preview input trực quan.
+    + Cập nhật `renderStudioQuestionBody`: Thay khối dashed cũ bằng ô input xem trước xám nhạt bo góc chuẩn Microsoft Forms với placeholder tương ứng.
+    + Thêm nhãn/badge chỉ báo ràng buộc rõ ràng (vd: badge "Email", "Số: 20000000 ~ 20270000", "Là số") trên thẻ câu hỏi ở cả Studio và Trình làm bài để người dùng biết ngay câu nào có ràng buộc gì.
+    + Cập nhật `renderQuestionOptions` trong Trình làm bài: Đảm bảo hiển thị placeholder chuẩn xác 100% theo ảnh thực tế.
+  - [x] **Task 12.3: Autonomous QA Bot & Lead Orchestrator**
+    + Kiểm tra cú pháp `node -c server/app.js` và `node -c public/app.js`.
+    + Chạy bộ kiểm thử tự hành `tests/test_section_runner.js`, `tests/test_short_text_answers.js`, và toàn bộ `npm test` 15/15 tầng.
+    + Đồng bộ Capacitor Android `npm run sync:android`.
+    + Commit và push lên GitHub theo quy chuẩn.

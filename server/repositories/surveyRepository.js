@@ -48,6 +48,20 @@ class SurveyRepository {
       try { logic = JSON.parse(q.logic_json); } catch (e) {}
     }
 
+    let validation = (logic && logic.validation) ? logic.validation : null;
+    if (!validation && q.validation) {
+      try {
+        validation = typeof q.validation === 'string' ? JSON.parse(q.validation) : q.validation;
+      } catch (e) {
+        validation = q.validation;
+      }
+    }
+
+    if (validation) {
+      logic = logic || {};
+      logic.validation = validation;
+    }
+
     const resObj = {
       id: q.id,
       order_index: q.order_index,
@@ -57,7 +71,7 @@ class SurveyRepository {
       rows: rows,
       columns: columns,
       logic: logic,
-      validation: (logic && logic.validation) ? logic.validation : null,
+      validation: validation,
       min_label: q.min_label || null,
       max_label: q.max_label || null,
       image_url: q.image_url || null,
@@ -133,6 +147,46 @@ class SurveyRepository {
       ...survey,
       questions
     };
+  }
+
+  /**
+   * Lay khao sat theo ID kem danh sach cau hoi day du
+   * Dam bao parse logic_json va tra ve q.validation va q.logic day du
+   * @param {string} id ID khao sat
+   * @param {boolean} isOwnerOrAdmin Co kem thong tin bao mat khong
+   * @returns {Object|null}
+   */
+  getSurveyById(id, isOwnerOrAdmin = false) {
+    return this.findWithQuestions(id, isOwnerOrAdmin);
+  }
+
+  /**
+   * Lay danh sach cau hoi cua khao sat
+   * Dam bao parse logic_json va tra ve q.validation va q.logic day du
+   * @param {string} surveyId ID khao sat
+   * @param {boolean} isOwnerOrAdmin Co kem thong tin bao mat khong
+   * @returns {Array<Object>}
+   */
+  getSurveyQuestions(surveyId, isOwnerOrAdmin = false) {
+    return this.findQuestionsBySurveyId(surveyId, isOwnerOrAdmin);
+  }
+
+  /**
+   * Luu ban nhap khao sat (Draft) kem danh sach cau hoi
+   * Luon dam bao luu truong validation vao logic_json (logicObj.validation = q.validation)
+   * @param {Object} surveyData Du lieu khao sat (status tu dong la DRAFT)
+   * @param {Array<Object>} questionsData Danh sach cau hoi
+   * @returns {Object} Ket qua tao hoac cap nhat khao sat
+   */
+  saveDraft(surveyData, questionsData = []) {
+    const draftData = { ...surveyData, status: 'DRAFT' };
+    if (draftData.id) {
+      const existing = this.findById(draftData.id);
+      if (existing) {
+        return this.updateSurvey(draftData.id, draftData, questionsData);
+      }
+    }
+    return this.createSurvey(draftData, questionsData);
   }
 
   /**
@@ -216,7 +270,11 @@ class SurveyRepository {
         }
         if (q.validation) {
           logicObj = logicObj || {};
-          logicObj.validation = q.validation;
+          try {
+            logicObj.validation = typeof q.validation === 'string' ? JSON.parse(q.validation) : q.validation;
+          } catch (e) {
+            logicObj.validation = q.validation;
+          }
         }
         const logicJson = logicObj && Object.keys(logicObj).length > 0 ? JSON.stringify(logicObj) : null;
         const isReq = (q.is_required !== undefined && (q.is_required === 0 || q.is_required === false)) ? 0 : 1;
@@ -298,7 +356,11 @@ class SurveyRepository {
         }
         if (q.validation) {
           logicObj = logicObj || {};
-          logicObj.validation = q.validation;
+          try {
+            logicObj.validation = typeof q.validation === 'string' ? JSON.parse(q.validation) : q.validation;
+          } catch (e) {
+            logicObj.validation = q.validation;
+          }
         }
         const logicJson = logicObj && Object.keys(logicObj).length > 0 ? JSON.stringify(logicObj) : null;
             const isReq = (q.is_required !== undefined && (q.is_required === 0 || q.is_required === false)) ? 0 : 1;
@@ -583,7 +645,7 @@ class SurveyRepository {
         ORDER BY s.created_at DESC
         LIMIT ? OFFSET ?
       `;
-      return db.prepare(sql).all(...params);
+      return this._attachQuestionsIfRequested(db.prepare(sql).all(...params), options, true);
     }
 
     // 2. Che do Admin: Lay tat ca khao sat tren he thong
@@ -611,7 +673,7 @@ class SurveyRepository {
         ORDER BY s.created_at DESC
         LIMIT ? OFFSET ?
       `;
-      return db.prepare(sql).all(...params);
+      return this._attachQuestionsIfRequested(db.prepare(sql).all(...params), options, true);
     }
 
     // 3. Che do Khach vang lai (Guest) / Cong khai
@@ -626,7 +688,7 @@ class SurveyRepository {
         ORDER BY s.is_pinned DESC, s.is_featured DESC, s.created_at DESC
         LIMIT ? OFFSET ?
       `;
-      return db.prepare(sql).all(limit, offset);
+      return this._attachQuestionsIfRequested(db.prepare(sql).all(limit, offset), options, false);
     }
 
     // 4. Che do Respondent: Lay danh sach cac khao sat dang ACTIVE de phoi ghep
@@ -643,7 +705,21 @@ class SurveyRepository {
       ORDER BY s.is_pinned DESC, s.is_featured DESC, s.created_at DESC
       LIMIT ? OFFSET ?
     `;
-    return db.prepare(sql).all(limit, offset);
+    return this._attachQuestionsIfRequested(db.prepare(sql).all(limit, offset), options, false);
+  }
+
+  /**
+   * Helper dinh kem danh sach cau hoi day du validation & logic vao khao sat khi co yeu cau
+   */
+  _attachQuestionsIfRequested(surveys, options, isOwnerOrAdmin = false) {
+    if (!Array.isArray(surveys)) return surveys;
+    if (options && (options.includeQuestions || options.include_questions)) {
+      return surveys.map((s) => ({
+        ...s,
+        questions: this.findQuestionsBySurveyId(s.id, isOwnerOrAdmin)
+      }));
+    }
+    return surveys;
   }
 
   // ==============================================================

@@ -1253,15 +1253,17 @@ class FormParserService {
           if (opType === 3) { // Email
             return {
               type: 'EMAIL',
+              rule: 'EMAIL',
               placeholder: 'Vui lòng nhập email',
-              error_message: customMsg || 'Vui lòng nhập đúng định dạng email'
+              error_message: customMsg || 'Vui lòng nhập địa chỉ email hợp lệ'
             };
           }
           if (opType === 4) { // URL
             return {
               type: 'URL',
+              rule: 'URL',
               placeholder: 'Vui lòng nhập URL hợp lệ',
-              error_message: customMsg || 'Vui lòng nhập liên kết hợp lệ'
+              error_message: customMsg || 'Vui lòng nhập đường dẫn URL hợp lệ'
             };
           }
         }
@@ -1325,27 +1327,71 @@ class FormParserService {
       if (op.includes('email') || typeStr.includes('email')) {
         return {
           type: 'EMAIL',
+          rule: 'EMAIL',
           placeholder: 'Vui lòng nhập email',
-          error_message: 'Vui lòng nhập đúng định dạng email'
+          error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
         };
       }
       if (op.includes('url') || typeStr.includes('url')) {
         return {
           type: 'URL',
+          rule: 'URL',
           placeholder: 'Vui lòng nhập URL hợp lệ',
-          error_message: 'Vui lòng nhập liên kết hợp lệ'
+          error_message: 'Vui lòng nhập đường dẫn URL hợp lệ'
         };
       }
       if (op.includes('between')) {
-        const minVal = parseFloat(val1) || 0;
-        const maxVal = parseFloat(val2) || 0;
+        const n1 = parseFloat(val1);
+        const n2 = parseFloat(val2);
+        const minVal = (!isNaN(n1) && !isNaN(n2)) ? Math.min(n1, n2) : (!isNaN(n1) ? n1 : 0);
+        const maxVal = (!isNaN(n1) && !isNaN(n2)) ? Math.max(n1, n2) : (!isNaN(n2) ? n2 : 0);
         return {
           type: 'NUMBER',
           rule: 'BETWEEN',
           min: minVal,
           max: maxVal,
           placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-          error_message: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`
+          error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+        };
+      }
+      if (op.includes('greaterthanorequal') || op.includes('>=') || op.includes('atleast')) {
+        const minVal = parseFloat(val1) || 0;
+        return {
+          type: 'NUMBER',
+          rule: 'GREATER_THAN_OR_EQUAL',
+          min: minVal,
+          placeholder: `Lớn hơn hoặc bằng ${minVal}`,
+          error_message: `Giá trị phải lớn hơn hoặc bằng ${minVal}`
+        };
+      }
+      if (op.includes('greaterthan') || op.includes('>')) {
+        const minVal = parseFloat(val1) || 0;
+        return {
+          type: 'NUMBER',
+          rule: 'GREATER_THAN',
+          min: minVal,
+          placeholder: `Lớn hơn ${minVal}`,
+          error_message: `Giá trị phải lớn hơn ${minVal}`
+        };
+      }
+      if (op.includes('lessthanorequal') || op.includes('<=') || op.includes('atmost')) {
+        const maxVal = parseFloat(val1 || val2) || 0;
+        return {
+          type: 'NUMBER',
+          rule: 'LESS_THAN_OR_EQUAL',
+          max: maxVal,
+          placeholder: `Nhỏ hơn hoặc bằng ${maxVal}`,
+          error_message: `Giá trị phải nhỏ hơn hoặc bằng ${maxVal}`
+        };
+      }
+      if (op.includes('lessthan') || op.includes('<')) {
+        const maxVal = parseFloat(val1 || val2) || 0;
+        return {
+          type: 'NUMBER',
+          rule: 'LESS_THAN',
+          max: maxVal,
+          placeholder: `Nhỏ hơn ${maxVal}`,
+          error_message: `Giá trị phải nhỏ hơn ${maxVal}`
         };
       }
       if (op.includes('isnumber') || op.includes('number') || typeStr.includes('number')) {
@@ -1372,66 +1418,98 @@ class FormParserService {
     const combinedText = `${title} ${subtitle} ${placeholder} ${description}`.trim();
     if (!combinedText) return null;
 
-    // 3.1 Email
-    if (/(?:\bemail\b|thư\s*điện\s*tử|địa\s*chỉ\s*email)/i.test(combinedText)) {
+    // 3.1 Email: Các tiêu đề/mô tả chứa "Email", "Email HUST", "Thư điện tử", "Địa chỉ email"
+    if (/(?:\bemail(?:\s+hust)?\b|thư\s*điện\s*tử|địa\s*chỉ\s*email)/i.test(combinedText)) {
       return {
         type: 'EMAIL',
+        rule: 'EMAIL',
         placeholder: 'Vui lòng nhập email',
-        error_message: 'Vui lòng nhập đúng định dạng email'
+        error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
       };
     }
 
-    // 3.2 URL
+    // 3.2 Website / URL: Các tiêu đề chứa "Website", "URL", "Trang web"
     if (/(?:\burl\b|liên\s*kết|trang\s*web|website|\blink\b|https?:\/\/)/i.test(combinedText)) {
       return {
         type: 'URL',
+        rule: 'URL',
         placeholder: 'Vui lòng nhập URL hợp lệ',
-        error_message: 'Vui lòng nhập liên kết hợp lệ'
+        error_message: 'Vui lòng nhập đường dẫn URL hợp lệ'
       };
     }
 
-    // 3.3 Số nằm trong khoảng từ (Between)
-    const betweenMatch = combinedText.match(/(?:số\s+phải\s+nằm\s+trong\s+khoảng\s+từ|trong\s+khoảng\s+từ|nằm\s+trong\s+khoảng\s+từ)\s*([0-9.,]+)\s*(?:đến|và|~|-)\s*([0-9.,]+)/i);
-    if (betweenMatch) {
-      const minVal = parseFloat(betweenMatch[1].replace(/,/g, ''));
-      const maxVal = parseFloat(betweenMatch[2].replace(/,/g, ''));
-      return {
-        type: 'NUMBER',
-        rule: 'BETWEEN',
-        min: minVal,
-        max: maxVal,
-        placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-        error_message: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`
-      };
-    }
-
-    // 3.4 Mã số sinh viên (MSSV) kèm khoảng hoặc min/max
-    if (/(?:mã\s*số\s*sinh\s*viên|\bmssv\b)/i.test(combinedText)) {
-      const mssvMatch = combinedText.match(/(\d{7,10})\s*(?:đến|và|~|-)\s*(\d{7,10})/);
-      let minVal = 20000000;
-      let maxVal = 20270000;
-      if (mssvMatch) {
-        minVal = parseInt(mssvMatch[1], 10);
-        maxVal = parseInt(mssvMatch[2], 10);
+    // 3.3 Mã số sinh viên: Các tiêu đề chứa "Mã số sinh viên", "MSSV", "Số thẻ sinh viên"
+    if (/(?:mã\s*số\s*sinh\s*viên|ma\s*so\s*sinh\s*vien|\bmssv\b|số\s*thẻ\s*sinh\s*viên|so\s*the\s*sinh\s*vien)/i.test(combinedText)) {
+      const rangeMatch = combinedText.match(/(\d+)\s*(?:đến|và|~|-|den|va)\s*(\d+)/i);
+      if (rangeMatch) {
+        const n1 = parseInt(rangeMatch[1], 10);
+        const n2 = parseInt(rangeMatch[2], 10);
+        if (!isNaN(n1) && !isNaN(n2)) {
+          const minVal = Math.min(n1, n2);
+          const maxVal = Math.max(n1, n2);
+          return {
+            type: 'NUMBER',
+            rule: 'BETWEEN',
+            min: minVal,
+            max: maxVal,
+            placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
+            error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+          };
+        }
       }
-      return {
-        type: 'NUMBER',
-        rule: 'BETWEEN',
-        min: minVal,
-        max: maxVal,
-        placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-        error_message: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`
-      };
-    }
-
-    // 3.5 Số là số (IS_NUMBER) / Số điện thoại
-    if (/(?:giá\s*trị\s*phải\s*là\s*một\s*số|phải\s*là\s*(?:một\s*)?số|số\s*điện\s*thoại|\bsđt\b|phone\s*number)/i.test(combinedText)) {
       return {
         type: 'NUMBER',
         rule: 'IS_NUMBER',
         placeholder: 'Giá trị phải là một số',
         error_message: 'Giá trị phải là một số'
       };
+    }
+
+    // 3.4 Số điện thoại, số lượng & các trường số:
+    if (/(?:giá\s*trị\s*phải\s*là\s*(?:một\s*)?số|gia\s*tri\s*phai\s*la\s*(?:mot\s*)?so|phải\s*là\s*(?:một\s*)?số|phai\s*la\s*(?:mot\s*)?so|số\s*điện\s*thoại|so\s*dien\s*thoai|\bsđt\b|\bsdt\b|điện\s*thoại|dien\s*thoai|phone\s*number|số\s*lượng|so\s*luong|độ\s*tuổi|do\s*tuoi|\btuổi\b|\btuoi\b|năm\s*sinh|nam\s*sinh|điểm\s*số|diem\s*so|thứ\s*hạng|thu\s*hang|thu\s*nhập|thu\s*nhap|số\s*tiền|so\s*tien)/i.test(combinedText)) {
+      const rangeMatch = combinedText.match(/(\d+)\s*(?:đến|và|~|-|den|va)\s*(\d+)/i);
+      if (rangeMatch) {
+        const n1 = parseInt(rangeMatch[1], 10);
+        const n2 = parseInt(rangeMatch[2], 10);
+        if (!isNaN(n1) && !isNaN(n2)) {
+          const minVal = Math.min(n1, n2);
+          const maxVal = Math.max(n1, n2);
+          return {
+            type: 'NUMBER',
+            rule: 'BETWEEN',
+            min: minVal,
+            max: maxVal,
+            placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
+            error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+          };
+        }
+      }
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
+    // 3.5 Số nằm trong khoảng từ (Between) từ văn bản thông thường
+    const betweenMatch = combinedText.match(/(?:số\s+phải\s+nằm\s+trong\s+khoảng\s+từ|so\s+phai\s+nam\s+trong\s+khoang\s+tu|trong\s+khoảng\s+từ|trong\s+khoang\s+tu|nằm\s+trong\s+khoảng\s+từ|nam\s+trong\s+khoang\s+tu|khoảng\s+từ|khoang\s+tu)\s*([0-9.,]+)\s*(?:đến|và|~|-|den|va)\s*([0-9.,]+)/i) ||
+                         combinedText.match(/(?:^|[\s(:])(\d+(?:[.,]\d+)?)\s*(?:~|đến|den)\s*(\d+(?:[.,]\d+)?)(?:[\s):]|$)/i);
+    if (betweenMatch) {
+      const n1 = parseFloat(betweenMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(betweenMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        const minVal = Math.min(n1, n2);
+        const maxVal = Math.max(n1, n2);
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: minVal,
+          max: maxVal,
+          placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
+          error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+        };
+      }
     }
 
     // 3.6 Độ dài (Length)
@@ -2383,9 +2461,21 @@ class FormParserService {
         return { order_index: orderIndex, type: 'FILE_UPLOAD', content, is_required: isRequired, options: null };
       }
       if (/đoạn\s*văn|tự\s*luận\s*dài|chia\s*sẻ\s*chi\s*tiết|mô\s*tả\s*cụ\s*thể|paragraph/i.test(content)) {
-        return { order_index: orderIndex, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
+        const validation = this._extractValidationRule({ title: content });
+        const qRes = { order_index: orderIndex, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
+        if (validation) {
+          qRes.validation = validation;
+          qRes.logic = { validation };
+        }
+        return qRes;
       }
-      return { order_index: orderIndex, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
+      const validation = this._extractValidationRule({ title: content });
+      const qRes = { order_index: orderIndex, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
+      if (validation) {
+        qRes.validation = validation;
+        qRes.logic = { validation };
+      }
+      return qRes;
     }
 
     // 5. Menu thả xuống (DROPDOWN)

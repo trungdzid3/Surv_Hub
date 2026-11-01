@@ -2261,3 +2261,31 @@ c:\Users\Lenovo\Downloads\Linh\
 - Bổ sung 3 test cases vào `tests/test_forum_community.js` (26/26 tests PASS 100%).
 - Chạy toàn diện 15/15 Test Suites (`npm test`): 100% PASS (18.43s).
 - Đồng bộ Android Capacitor hoàn tất (`npm run sync:android`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: CHUẨN HÓA RÀNG BUỘC ĐỊNH DẠNG & ĐỘNG HÓA KHOẢNG SỐ THEO FORM QUY ĐỊNH (THÁNG 11/2026)
+
+### 1. Kiến Trúc Điều Phối Đa Đại Lý Thực Thi (Subagent-Driven Execution)
+- Triển khai theo mô hình Subagent First với ranh giới tệp độc lập tuyệt đối (Decoupled Scope & Zero Race Condition):
+  + **`Backend Parser Specialist`** (`server/services/formParserService.js`, `server/repositories/surveyRepository.js`):
+    - Xóa bỏ triệt để việc gán cứng dải số mặc định `20000000 ~ 20270000`.
+    - Trích xuất dải số (Min ~ Max) hoàn toàn theo cấu trúc quy định của biểu mẫu (Microsoft Forms restrictions, Google Forms validation, hoặc regex dải số rõ ràng trong tiêu đề/placeholder như `18 đến 60`, `1 ~ 100`).
+    - Nếu câu hỏi không quy định dải số (Mã số sinh viên, số lượng, v.v.), hệ thống chỉ gán quy tắc `IS_NUMBER` (`Giá trị phải là một số`), tuyệt đối không tự áp đặt dải số.
+    - Lưu trữ và đồng bộ đầy đủ `q.validation` và `q.logic` qua CSDL SQLite và API REST.
+  + **`Frontend Studio & Runner Specialist`** (`public/app.js`):
+    - Tích hợp `inferValidationFromTitle` trong `RestrictionEngine`: Chỉ nhận diện BETWEEN khi có dải số rõ ràng; câu hỏi dạng số thông thường trả về `IS_NUMBER`.
+    - Trong Creator Studio: Hai ô nhập `Min` và `Max` để trống (`placeholder="Min"`, `placeholder="Max"`) để người tạo form tự do nhập dải số theo yêu cầu bài khảo sát.
+    - Thay thế khối đứt nét cũ bằng ô input xem trước phẳng xám nhạt bo góc disabled chuẩn Microsoft Forms với placeholder tương ứng.
+    - Bổ sung badge chỉ báo ràng buộc trực quan trên thẻ câu hỏi (`[Email]`, `[Số: <min> ~ <max>]`, `[Số]`).
+    - Trong Trình làm bài: Placeholder hiển thị chính xác theo quy định của form (`Vui lòng nhập email`, `Số phải nằm trong khoảng từ <min> ~ <max>`, `Giá trị phải là một số`, `Chọn câu trả lời của bạn`, câu không ràng buộc là `Nhập câu trả lời của bạn`). Bỏ đoạn text lặp thừa thãi dưới ô input.
+
+### 2. Nghiệm Thu & Kiểm Thử Toàn Diện
+- Kiểm tra cú pháp toàn bộ tệp JavaScript: `node -c server/services/formParserService.js`, `node -c server/repositories/surveyRepository.js`, `node -c public/app.js` đạt 100% hợp lệ.
+- Unit tests chuyên biệt:
+  + `node tests/test_short_text_answers.js`: 100% PASS.
+  + `node tests/test_section_runner.js`: 100% PASS.
+  + `node tests/test_restrictions_and_placeholders.js`: 100% PASS.
+- Toàn bộ 15/15 tầng kiểm thử tự hành (`npm test`): **100% PASS** (19.23s).
+- Đồng bộ ứng dụng di động Capacitor Android (`npm run sync:android`) hoàn tất.
+- Tự động đồng bộ và đẩy mã nguồn lên GitHub (`origin/main`).
