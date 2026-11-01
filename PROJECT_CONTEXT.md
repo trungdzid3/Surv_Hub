@@ -2313,3 +2313,30 @@ c:\Users\Lenovo\Downloads\Linh\
 - Bổ sung test cases bao phủ cả Smart Paste và Backend Microsoft Forms validation trong `tests/test_restrictions_and_placeholders.js`: PASS 100%.
 - Chạy toàn bộ 15/15 tầng kiểm thử tự hành (`npm test`): **100% PASS** (23.91s).
 - Đồng bộ ứng dụng Android Capacitor (`npm run sync:android`) hoàn tất.
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: KHÔI PHỤC TRÌNH LÀM BÀI TỪNG CÂU MỘT & TỐI ƯU BÓC TÁCH RÀNG BUỘC MIN/MAX (THÁNG 11/2026)
+
+### 1. Vấn Đề Gốc Rễ & Giải Pháp
+- **Nguyên nhân phát hiện**:
+  1. Trình làm bài khảo sát (`renderTakeSurveyView`, `nextQuestion`, `prevQuestion`) trước đó bị chuyển nhầm sang Section Runner (hiển thị toàn bộ câu hỏi trong section trên cùng một trang), làm vô hiệu hóa cơ chế làm từng câu một (Single-Question Stepper) - vốn là điều kiện cốt lõi để duy trì hệ thống Anti-Fraud Engine (Bẫy tốc độ Speed Trap, Bẫy tập trung Attention Check động, Pacing Lock 0.3s-0.5s và Chống bot điền hàng loạt).
+  2. Bộ bóc tách thông minh ở Backend (`server/services/formParserService.js: parseSmartText`) trước đó cộng dồn các dòng placeholder / chỉ dẫn ràng buộc (`Số phải nằm trong khoảng...`, `Vui lòng nhập email`, `Giá trị phải là một số`) vào nội dung câu hỏi (`content`), đồng thời chưa bóc tách các biến thể toán hạng `RestrictionValue1` và `RestrictionValue2` trong Microsoft Forms.
+- **Giải Pháp Triệt Để**:
+  + **Khôi phục Trình làm bài Từng Câu Một (Single-Question Stepper)**:
+    - `renderTakeSurveyView`: Hiển thị duy nhất một câu hỏi hiện tại (`session.questions[session.currentIndex]`) kèm theo Badge loại câu hỏi, Badge ràng buộc (`[Email]`, `[Số: <min> ~ <max>]`, `[Số]`), thanh tiến độ, đồng hồ đếm ngược và Bento Card độc lập.
+    - `nextQuestion()`: Tự động sync dữ liệu input/textarea DOM, xác thực câu hỏi bắt buộc (kể cả Choice Grid / Checkbox Grid), kiểm tra Screener, xác thực định dạng ràng buộc (Email, Number Between/Is Number, URL, Length), điều hướng rẽ nhánh 2 tầng (Option routing & Section-end routing), kích hoạt `triggerPacingLock()`, cuộn mượt và chuyển sang câu tiếp theo hoặc nộp bài.
+    - `prevQuestion()`: Quay lại câu hỏi trước đó thông qua `session.history.pop()`.
+    - Giữ các hàm alias `nextSection()`, `prevSection()`, `buildSurveySections`, `validateCurrentSection` để tương thích 100% với các mã gọi cũ và các bộ test tự hành.
+  + **Tối ưu Bóc tách Dải Số & Ràng buộc Biểu mẫu ngoài (Backend & Frontend)**:
+    - Nâng cấp `server/services/formParserService.js: parseSmartText` tự động nhận diện và bóc tách các dòng chỉ dẫn (`isBetweenInstruction`, email, is_number, dropdown, placeholder) thành các trường riêng biệt mà không làm dính vào tiêu đề câu hỏi.
+    - Mở rộng hàm `extractOperandsFromR` trong `formParserService.js` hỗ trợ đầy đủ `RestrictionValue1`, `RestrictionValue2`, `RestrictionOperand1`, `RestrictionOperand2`.
+
+### 2. Nghiệm Thu & Kiểm Thử Toàn Diện
+- Kiểm tra cú pháp JavaScript: `node -c public/app.js`, `node -c server/services/formParserService.js` PASS 100%.
+- Kiểm thử điều hướng và ràng buộc: `node tests/test_navigation_and_enter_key.js` PASS 4/4 (100%).
+- Kiểm thử Section Runner và Restrictions: `node tests/test_section_runner.js` PASS 100%.
+- Kiểm thử Placeholder & Smart Paste: `node tests/test_restrictions_and_placeholders.js` PASS 100%.
+- Kiểm thử toàn bộ hệ thống (`npm test`): **15/15 Suites PASS 100%** (20.59s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` hoàn tất.
+- Tự động đồng bộ và đẩy mã nguồn lên GitHub (`origin/main`).

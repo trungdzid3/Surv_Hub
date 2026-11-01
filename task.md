@@ -119,3 +119,10 @@
     + Chạy bộ kiểm thử tự hành `tests/test_section_runner.js`, `tests/test_short_text_answers.js`, và toàn bộ `npm test` 15/15 tầng.
     + Đồng bộ Capacitor Android `npm run sync:android`.
     + Commit và push lên GitHub theo quy chuẩn.
+
+- [x] **Task 13: Khôi phục Trình làm bài từng câu một & Bóc tách dải số min/max chuẩn xác**
+  - [x] Khôi phục `renderTakeSurveyView`, `nextQuestion()`, `prevQuestion()` về chế độ Single-Question Stepper (1 câu/màn hình) để phục vụ Anti-Fraud Engine (bẫy tốc độ, bẫy tập trung, pacing lock, chống bot).
+  - [x] Nâng cấp `server/services/formParserService.js: parseSmartText` và mở rộng `extractOperandsFromR` để bóc tách chính xác min/max từ các dòng placeholder/chỉ dẫn (`RestrictionValue1`, `RestrictionValue2`) mà không làm bẩn tiêu đề câu hỏi.
+  - [x] Kiểm thử 15/15 test suites `npm test`, `test_navigation_and_enter_key.js`, `test_section_runner.js` đạt 100% PASS.
+  - [x] Đồng bộ ứng dụng Android Capacitor `npm run sync:android`.
+  - [x] Tự động commit và push lên GitHub.

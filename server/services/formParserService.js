@@ -1405,7 +1405,11 @@ class FormParserService {
       let v2 = undefined;
 
       // 1. Quét các trường đơn lẻ
-      if (r.Min !== undefined) v1 = r.Min;
+      if (r.RestrictionValue1 !== undefined) v1 = r.RestrictionValue1;
+      else if (r.restrictionValue1 !== undefined) v1 = r.restrictionValue1;
+      else if (r.RestrictionOperand1 !== undefined) v1 = r.RestrictionOperand1;
+      else if (r.restrictionOperand1 !== undefined) v1 = r.restrictionOperand1;
+      else if (r.Min !== undefined) v1 = r.Min;
       else if (r.min !== undefined) v1 = r.min;
       else if (r.MinValue !== undefined) v1 = r.MinValue;
       else if (r.minValue !== undefined) v1 = r.minValue;
@@ -1418,7 +1422,11 @@ class FormParserService {
       else if (r.Value1 !== undefined) v1 = r.Value1;
       else if (r.value1 !== undefined) v1 = r.value1;
 
-      if (r.Max !== undefined) v2 = r.Max;
+      if (r.RestrictionValue2 !== undefined) v2 = r.RestrictionValue2;
+      else if (r.restrictionValue2 !== undefined) v2 = r.restrictionValue2;
+      else if (r.RestrictionOperand2 !== undefined) v2 = r.RestrictionOperand2;
+      else if (r.restrictionOperand2 !== undefined) v2 = r.restrictionOperand2;
+      else if (r.Max !== undefined) v2 = r.Max;
       else if (r.max !== undefined) v2 = r.max;
       else if (r.MaxValue !== undefined) v2 = r.MaxValue;
       else if (r.maxValue !== undefined) v2 = r.maxValue;
@@ -2727,6 +2735,61 @@ class FormParserService {
           continue;
         }
 
+        // 1.5 Kiểm tra dòng placeholder hoặc hướng dẫn ràng buộc định dạng chuẩn Microsoft Forms / Google Forms
+        const isBetweenInstruction = line.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between)\s*([0-9.,]+)\s*(?:đến|và|~|-|to|and)\s*([0-9.,]+)/i) ||
+                                     line.match(/^\s*([0-9.,]+)\s*(?:~|-|đến|to)\s*([0-9.,]+)\s*$/i);
+        if (isBetweenInstruction) {
+          const n1 = parseFloat(isBetweenInstruction[1].replace(/,/g, ''));
+          const n2 = parseFloat(isBetweenInstruction[2].replace(/,/g, ''));
+          if (!isNaN(n1) && !isNaN(n2)) {
+            const minVal = Math.min(n1, n2);
+            const maxVal = Math.max(n1, n2);
+            currentQuestion.validation = {
+              type: 'NUMBER',
+              rule: 'BETWEEN',
+              min: minVal,
+              max: maxVal,
+              placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
+              error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+            };
+            currentQuestion.placeholder = `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`;
+            continue;
+          }
+        }
+
+        if (/(?:vui\s*lòng\s*nhập\s*email|email\s*hợp\s*lệ|nhập\s*email|please\s*enter\s*email)/i.test(line)) {
+          currentQuestion.validation = {
+            type: 'EMAIL',
+            rule: 'EMAIL',
+            placeholder: 'Vui lòng nhập email',
+            error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
+          };
+          currentQuestion.placeholder = 'Vui lòng nhập email';
+          continue;
+        }
+
+        if (/(?:giá\s*trị\s*phải\s*là\s*(?:một\s*)?số|phải\s*là\s*(?:một\s*)?số|value\s*must\s*be\s*a\s*number|giới\s*hạn\s*số)/i.test(line)) {
+          currentQuestion.validation = {
+            type: 'NUMBER',
+            rule: 'IS_NUMBER',
+            placeholder: 'Giá trị phải là một số',
+            error_message: 'Giá trị phải là một số'
+          };
+          currentQuestion.placeholder = 'Giá trị phải là một số';
+          continue;
+        }
+
+        if (/(?:chọn\s*câu\s*trả\s*lời\s*của\s*bạn|select\s*your\s*answer)/i.test(line)) {
+          currentQuestion.forceType = 'DROPDOWN';
+          currentQuestion.placeholder = 'Chọn câu trả lời của bạn';
+          continue;
+        }
+
+        if (/(?:nhập\s*câu\s*trả\s*lời\s*của\s*bạn|enter\s*your\s*answer)/i.test(line)) {
+          currentQuestion.placeholder = 'Nhập câu trả lời của bạn';
+          continue;
+        }
+
         // 2. Kiểm tra phương án trắc nghiệm
         const checkMatch = line.match(optionCheckboxRegex);
         if (checkMatch) {
@@ -2866,6 +2929,18 @@ class FormParserService {
       };
     }
 
+    // 3.5 Bắt buộc kiểu DROPDOWN nếu có dòng gợi ý "Chọn câu trả lời của bạn"
+    if (rawQ.forceType === 'DROPDOWN') {
+      return {
+        order_index: orderIndex,
+        type: 'DROPDOWN',
+        content,
+        is_required: isRequired,
+        options: cleanOptions,
+        placeholder: rawQ.placeholder || 'Chọn câu trả lời của bạn'
+      };
+    }
+
     // 4. Không có options -> Xét các dạng tự luận / input đặc thù
     if (cleanOptions.length === 0) {
       if (/ngày\s*(?:sinh|tháng|bắt\s*đầu|kết\s*thúc)|chọn\s*ngày|date/i.test(content)) {
@@ -2878,21 +2953,25 @@ class FormParserService {
         return { order_index: orderIndex, type: 'FILE_UPLOAD', content, is_required: isRequired, options: null };
       }
       if (/đoạn\s*văn|tự\s*luận\s*dài|chia\s*sẻ\s*chi\s*tiết|mô\s*tả\s*cụ\s*thể|paragraph/i.test(content)) {
-        const validation = this._extractValidationRule({ title: content });
+        const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
         const qRes = { order_index: orderIndex, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
         if (validation) {
           qRes.validation = validation;
           qRes.logic = { validation };
-          if (validation.placeholder) qRes.placeholder = validation.placeholder;
+          qRes.placeholder = validation.placeholder || rawQ.placeholder || 'Nhập câu trả lời của bạn';
+        } else if (rawQ.placeholder) {
+          qRes.placeholder = rawQ.placeholder;
         }
         return qRes;
       }
-      const validation = this._extractValidationRule({ title: content });
+      const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
       const qRes = { order_index: orderIndex, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
       if (validation) {
         qRes.validation = validation;
         qRes.logic = { validation };
-        if (validation.placeholder) qRes.placeholder = validation.placeholder;
+        qRes.placeholder = validation.placeholder || rawQ.placeholder || 'Nhập câu trả lời của bạn';
+      } else if (rawQ.placeholder) {
+        qRes.placeholder = rawQ.placeholder;
       }
       return qRes;
     }

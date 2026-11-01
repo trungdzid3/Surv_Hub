@@ -6292,34 +6292,21 @@ if (totalCount === 0) {
       RATING: 'Đánh giá sao'
     };
 
-    const sections = this.buildSurveySections(session.questions);
-    let curSectionIdx = session.currentSectionIndex || 0;
-    if (curSectionIdx >= sections.length) {
-      curSectionIdx = Math.max(0, sections.length - 1);
-      session.currentSectionIndex = curSectionIdx;
+    const totalQ = session.questions.length;
+    let curIdx = session.currentIndex || 0;
+    if (curIdx >= totalQ) {
+      curIdx = Math.max(0, totalQ - 1);
+      session.currentIndex = curIdx;
     }
-    const curSec = sections[curSectionIdx] || sections[0];
-    const progressPct = sections.length > 0 ? Math.round(((curSectionIdx + 1) / sections.length) * 100) : 100;
-    const isLastSection = curSectionIdx >= sections.length - 1;
-    const canGoPrev = curSectionIdx > 0 || (session.sectionHistory && session.sectionHistory.length > 0);
+    const q = session.questions[curIdx];
+    const progressPct = totalQ > 0 ? Math.round(((curIdx + 1) / totalQ) * 100) : 100;
+    const isLast = curIdx === totalQ - 1;
+    const isReq = q.is_required !== 0 && q.is_required !== false;
+    const canGoPrev = (session.history && session.history.length > 0) || curIdx > 0;
 
-    // Xây dựng bản đồ số thứ tự câu hỏi toàn bài
-    let answerableCounter = 0;
-    const qNumberMap = {};
-    session.questions.forEach((q) => {
-      if (q.type !== 'SECTION_HEADER') {
-        answerableCounter++;
-        qNumberMap[q.id] = answerableCounter;
-      }
-    });
-
-    // Đồng bộ chỉ số session.currentIndex về câu hỏi đầu tiên của Section hiện tại để giữ tính tương thích
-    if (curSec.questions && curSec.questions.length > 0) {
-      const firstQIndex = session.questions.findIndex(item => item.id === curSec.questions[0].id);
-      if (firstQIndex !== -1) {
-        session.currentIndex = firstQIndex;
-      }
-    }
+    // Tính toán phân đoạn hiện tại (nếu form có SECTION_HEADER)
+    const currentSectionNum = (session.questions.slice(0, curIdx + 1).filter(item => item.type === 'SECTION_HEADER').length) + 1;
+    const totalSections = Math.max(1, session.questions.filter(item => item.type === 'SECTION_HEADER').length + 1);
 
     // Timer display
     const sec = session.durationSec || 0;
@@ -6343,10 +6330,57 @@ if (totalCount === 0) {
       }, 1000);
     }
 
+    let restrictionBadgeHtml = '';
+    if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT'].includes(q.type)) {
+      let valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+      const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+      if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+        const inf = engine.inferValidationFromTitle(q.content);
+        if (inf) {
+          valObj = inf;
+          q.validation = inf;
+        }
+      }
+      if (valObj && valObj.type && valObj.type !== 'NONE') {
+        let badgeText = '';
+        const vType = String(valObj.type).toUpperCase();
+        if (vType === 'EMAIL') {
+          badgeText = 'Email';
+        } else if (vType === 'NUMBER') {
+          const hasMin = valObj.min !== undefined && valObj.min !== null && String(valObj.min).trim() !== '';
+          const hasMax = valObj.max !== undefined && valObj.max !== null && String(valObj.max).trim() !== '';
+          let vRule = String(valObj.rule || '').toUpperCase();
+          if (!vRule) vRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
+          if (vRule === 'BETWEEN' && hasMin && hasMax) {
+            badgeText = `Số: ${valObj.min} ~ ${valObj.max}`;
+          } else if (vRule === 'GREATER_THAN' && hasMin) {
+            badgeText = `Số > ${valObj.min}`;
+          } else if (vRule === 'LESS_THAN' && hasMax) {
+            badgeText = `Số < ${valObj.max}`;
+          } else {
+            badgeText = 'Số';
+          }
+        } else if (vType === 'URL') {
+          badgeText = 'URL';
+        } else if (vType === 'LENGTH') {
+          const vRule = String(valObj.rule || 'MAX_LENGTH').toUpperCase();
+          const bLen = valObj.min || valObj.max || 100;
+          badgeText = vRule === 'MIN_LENGTH' ? `Ký tự ≥ ${bLen}` : `Ký tự ≤ ${bLen}`;
+        }
+        if (badgeText) {
+          restrictionBadgeHtml = `
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60 select-none">
+              ${badgeText}
+            </span>
+          `;
+        }
+      }
+    }
+
     root.innerHTML = `
       <div class="stepper-focus-box space-y-6 py-4 max-w-3xl mx-auto">
         
-        <!-- Header Controls: Thoát Khảo Sát, Bộ Đếm Thời Gian, Tiến Trình Mục -->
+        <!-- Header Controls: Thoát Khảo Sát, Bộ Đếm Thời Gian, Tiến Trình Từng Câu (Chống Bot & Làm Bừa) -->
         <div class="flex items-center justify-between text-xs text-stone-500 pb-3 border-b border-stone-200 dark:border-stone-800">
           <button type="button" onclick="VibeApp.confirmExitSurvey()" class="hover:text-red-600 flex items-center gap-1 font-bold transition-colors cursor-pointer">
             <i data-lucide="x" class="w-4 h-4 stroke-[2.2]"></i>
@@ -6356,7 +6390,7 @@ if (totalCount === 0) {
           <div class="flex items-center space-x-3">
             <span class="font-mono text-stone-700 dark:text-stone-300 font-bold" id="session-timer-text">${initialTimeStr}</span>
             <span class="text-stone-300 dark:text-stone-700">|</span>
-            <span class="font-extrabold text-orange-600 dark:text-orange-400">Mục ${curSectionIdx + 1} / ${sections.length} (${progressPct}%)</span>
+            <span class="font-extrabold text-orange-600 dark:text-orange-400">Câu ${curIdx + 1} / ${totalQ} (${progressPct}%)</span>
           </div>
         </div>
 
@@ -6377,168 +6411,109 @@ if (totalCount === 0) {
           <div class="bg-orange-600 h-full rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
         </div>
 
-        <!-- Thẻ Section Header Card (Chuẩn Google Forms / Microsoft Forms) -->
-        <div class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm overflow-hidden">
-          <!-- Dải Accent Cam Vibe #EA580C -->
-          <div class="h-2.5 bg-orange-600 w-full"></div>
-          <div class="p-6 sm:p-8 space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="px-3 py-1 rounded-full bg-orange-50 dark:bg-stone-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-stone-700 text-[11px] font-extrabold font-mono uppercase tracking-wider">
-                Mục ${curSectionIdx + 1} trên ${sections.length}
-              </span>
-              <span class="text-[11px] text-stone-400 font-mono font-semibold">${curSec.questions.length} câu hỏi</span>
-            </div>
-            <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
-              ${this.escapeHtml(curSec.title || 'Mục khảo sát')}
-            </h2>
-            ${curSec.description ? `
-              <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed whitespace-pre-line pt-0.5">
-                ${this.escapeHtml(curSec.description)}
-              </p>
-            ` : ''}
-            <div class="pt-2 text-[11px] text-red-500 font-medium flex items-center gap-1">
-              <span>* Biểu thị câu hỏi bắt buộc</span>
+        ${q.type === 'SECTION_HEADER' ? `
+          <!-- Thẻ Chuyển Phân Đoạn (Section Break Card) -->
+          <div class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm overflow-hidden">
+            <div class="h-2.5 bg-orange-600 w-full"></div>
+            <div class="p-6 sm:p-9 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="px-3 py-1 rounded-full bg-orange-50 dark:bg-stone-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-stone-700 text-[11px] font-extrabold font-mono uppercase tracking-wider">
+                  Mục ${currentSectionNum} trên ${totalSections}
+                </span>
+                <span class="text-xs text-stone-400 font-mono font-bold">BƯỚC #${curIdx + 1}</span>
+              </div>
+              <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                ${this.escapeHtml(q.content || 'Mục khảo sát')}
+              </h2>
+              ${q.rows && q.rows[0] ? `
+                <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed whitespace-pre-line pt-0.5">
+                  ${this.escapeHtml(q.rows[0])}
+                </p>
+              ` : ''}
+              <div class="pt-3 text-[11px] text-stone-400 flex items-center gap-1.5">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-orange-600"></i>
+                <span>Nhấn "Bắt đầu mục này" hoặc nhấn Enter ↵ để làm tiếp các câu hỏi.</span>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- Danh sách TOÀN BỘ câu hỏi trong Section hiện tại (Hiển thị đồng thời trên cùng trang) -->
-        <div class="space-y-5">
-          ${curSec.questions.map((q) => {
-            if (q.type === 'VIDEO_BLOCK') {
-              return `
-                <div id="question-card-${q.id}" class="bento-card p-6 sm:p-7 bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm">
-                  ${this.renderQuestionOptions(q, null)}
-                </div>
-              `;
-            }
-            if (q.type === 'TEXT_BLOCK') {
-              return `
-                <div id="question-card-${q.id}" class="bento-card p-6 sm:p-7 bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm space-y-2">
-                  <h3 class="text-base font-bold text-slate-900 dark:text-white">${this.escapeHtml(q.content)}</h3>
-                  ${q.rows && q.rows[0] ? `<p class="text-xs text-stone-600 dark:text-stone-300 leading-relaxed whitespace-pre-line">${this.escapeHtml(q.rows[0])}</p>` : ''}
-                </div>
-              `;
-            }
-
-            const qNum = qNumberMap[q.id] || 1;
-            const isReq = q.is_required !== 0 && q.is_required !== false;
-            const currentAns = session.answers ? session.answers[q.id] : undefined;
-
-            let restrictionBadgeHtml = '';
-            if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT'].includes(q.type)) {
-              let valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
-              const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
-              if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-                const inf = engine.inferValidationFromTitle(q.content);
-                if (inf) {
-                  valObj = inf;
-                  q.validation = inf;
-                }
-              }
-              if (valObj && valObj.type && valObj.type !== 'NONE') {
-                let badgeText = '';
-                const vType = String(valObj.type).toUpperCase();
-                if (vType === 'EMAIL') {
-                  badgeText = 'Email';
-                } else if (vType === 'NUMBER') {
-                  const hasMin = valObj.min !== undefined && valObj.min !== null && String(valObj.min).trim() !== '';
-                  const hasMax = valObj.max !== undefined && valObj.max !== null && String(valObj.max).trim() !== '';
-                  let vRule = String(valObj.rule || '').toUpperCase();
-                  if (!vRule) vRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
-                  if (vRule === 'BETWEEN' && hasMin && hasMax) {
-                    badgeText = `Số: ${valObj.min} ~ ${valObj.max}`;
-                  } else if (vRule === 'GREATER_THAN' && hasMin) {
-                    badgeText = `Số > ${valObj.min}`;
-                  } else if (vRule === 'LESS_THAN' && hasMax) {
-                    badgeText = `Số < ${valObj.max}`;
-                  } else {
-                    badgeText = 'Số';
-                  }
-                } else if (vType === 'URL') {
-                  badgeText = 'URL';
-                } else if (vType === 'LENGTH') {
-                  const vRule = String(valObj.rule || 'MAX_LENGTH').toUpperCase();
-                  const bLen = valObj.min || valObj.max || 100;
-                  badgeText = vRule === 'MIN_LENGTH' ? `Ký tự ≥ ${bLen}` : `Ký tự ≤ ${bLen}`;
-                }
-                if (badgeText) {
-                  restrictionBadgeHtml = `
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60 select-none">
-                      ${badgeText}
+        ` : (q.type === 'VIDEO_BLOCK' ? `
+          <!-- Khối Video Minh Họa -->
+          <div id="question-card-${q.id}" class="bento-card p-6 sm:p-9 bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm">
+            ${this.renderQuestionOptions(q, null)}
+          </div>
+        ` : (q.type === 'TEXT_BLOCK' ? `
+          <!-- Khối Tiêu Đề / Mô Tả Minh Họa -->
+          <div id="question-card-${q.id}" class="bento-card p-6 sm:p-9 bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm space-y-3">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">${this.escapeHtml(q.content)}</h3>
+            ${q.rows && q.rows[0] ? `<p class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed whitespace-pre-line">${this.escapeHtml(q.rows[0])}</p>` : ''}
+          </div>
+        ` : `
+          <!-- Bento Card Câu Hỏi Đơn Lẻ (Làm Từng Câu 1 - Chống Gian Lận, Speed Trap & Attention Check Chuẩn Tuyệt Đối) -->
+          <div id="question-card-${q.id}" class="bento-card p-6 sm:p-9 space-y-6 bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm transition-all">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-orange-50 dark:bg-stone-800 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-stone-700">
+                    ${typeLabels[q.type] || 'Khảo sát'}
+                  </span>
+                  ${restrictionBadgeHtml}
+                  ${isReq ? `
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-900/40">
+                      * Bắt buộc
                     </span>
-                  `;
-                }
-              }
-            }
-
-            return `
-              <div id="question-card-${q.id}" class="bento-card p-6 sm:p-7 space-y-4 bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl sm:rounded-3xl shadow-sm transition-all">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <span class="px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-orange-50 dark:bg-stone-800 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-stone-700">
-                        ${typeLabels[q.type] || 'Khảo sát'}
-                      </span>
-                      ${restrictionBadgeHtml}
-                      ${isReq ? `
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-900/40">
-                          * Bắt buộc
-                        </span>
-                      ` : `
-                        <span class="text-[10px] text-stone-400 font-medium">(Tùy chọn)</span>
-                      `}
-                    </div>
-                    <span class="text-xs text-stone-400 font-mono font-bold">CÂU #${qNum}</span>
-                  </div>
-
-                  <h3 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug">
-                    <span>${qNum}. ${this.escapeHtml(q.content)}</span>
-                    ${isReq ? '<span class="text-red-500 ml-1 font-bold">*</span>' : ''}
-                  </h3>
-
-                  ${q.image_url ? `
-                    <div class="my-3 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700 max-w-lg">
-                      <img src="${q.image_url}" alt="Ảnh câu hỏi" class="w-full max-h-64 object-contain bg-stone-50 dark:bg-stone-900" onerror="this.style.display='none'">
-                    </div>
-                  ` : ''}
+                  ` : `
+                    <span class="text-[10px] text-stone-400 font-medium">(Tùy chọn)</span>
+                  `}
                 </div>
-
-                <!-- Options / Inputs Container -->
-                <div class="pt-1">
-                  ${this.renderQuestionOptions(q, currentAns)}
-                </div>
-
-                <!-- Thẻ cảnh báo lỗi nội dòng -->
-                <div id="val-err-${q.id}" class="text-[11px] font-semibold text-red-600 dark:text-red-400 mt-1.5 hidden flex items-center gap-1"></div>
+                <span class="text-xs text-stone-400 font-mono font-bold">CÂU #${curIdx + 1}</span>
               </div>
-            `;
-          }).join('')}
-        </div>
 
-        <!-- Thanh điều hướng cuối trang Section (Quay lại & Tiếp tục / Gửi biểu mẫu) -->
-        <div class="pt-4 pb-8 flex items-center justify-between gap-3">
-          ${canGoPrev ? `
-            <button type="button" onclick="VibeApp.prevSection()" 
-                    class="px-6 py-3 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all flex items-center gap-2 cursor-pointer shadow-xs active:scale-95">
-              <i data-lucide="arrow-left" class="w-4 h-4 stroke-[2.2]"></i>
-              <span>Quay lại</span>
-            </button>
-          ` : `
-            <div></div>
-          `}
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white leading-snug">
+                <span>${this.escapeHtml(q.content)}</span>
+                ${isReq ? '<span class="text-red-500 ml-1 font-bold">*</span>' : ''}
+              </h2>
 
-          ${isLastSection ? `
-            <button type="button" id="stepper-next-btn" onclick="VibeApp.nextSection()" 
-                    class="px-8 py-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer">
+              ${q.image_url ? `
+                <div class="my-3 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700 max-w-lg">
+                  <img src="${q.image_url}" alt="Ảnh câu hỏi" class="w-full max-h-64 object-contain bg-stone-50 dark:bg-stone-900" onerror="this.style.display='none'">
+                </div>
+              ` : ''}
+
+              ${['SINGLE_CHOICE', 'MULTIPLE_CHOICE'].includes(q.type) ? `
+                <p class="text-[11px] text-stone-400 mt-1.5 font-medium">Gợi ý phím tắt: Bấm các phím số [1], [2], [3]... trên bàn phím để chọn nhanh.</p>
+              ` : ''}
+            </div>
+
+            <!-- Options / Input Container -->
+            <div class="space-y-3 pt-1">
+              ${this.renderQuestionOptions(q, session.answers ? session.answers[q.id] : undefined)}
+            </div>
+
+            <!-- Thẻ báo lỗi nội dòng nếu có -->
+            <div id="val-err-${q.id}" class="text-[11px] font-semibold text-red-600 dark:text-red-400 mt-2 hidden flex items-center gap-1"></div>
+          </div>
+        `))}
+
+        <!-- Bottom Navigation Controls (Làm Từng Câu 1: Câu Trước & Câu Tiếp Theo / Nộp Bài) -->
+        <div class="pt-3 flex items-center justify-between gap-3">
+          <button type="button" onclick="VibeApp.prevQuestion()" 
+                  ${canGoPrev ? '' : 'disabled'}
+                  class="px-5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 disabled:opacity-25 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5 stroke-[2.2]"></i>
+            <span>Câu trước</span>
+          </button>
+
+          ${isLast ? `
+            <button type="button" id="stepper-next-btn" onclick="VibeApp.submitSurvey()" 
+                    class="px-7 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer">
               <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
               <span>${session.isEditing ? 'Cập nhật câu trả lời' : 'Nộp bài & Nhận thưởng'}</span>
               <span class="text-[10px] opacity-75 font-normal ml-1">(Enter ↵)</span>
             </button>
           ` : `
-            <button type="button" id="stepper-next-btn" onclick="VibeApp.nextSection()" 
-                    class="px-8 py-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer">
-              <span>Tiếp tục</span>
+            <button type="button" id="stepper-next-btn" onclick="VibeApp.nextQuestion()" 
+                    class="px-7 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-extrabold shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer">
+              <span>${q.type === 'SECTION_HEADER' ? 'Bắt đầu mục này' : 'Câu tiếp theo'}</span>
               <span class="text-[10px] opacity-75 font-normal ml-1">(Enter ↵)</span>
               <i data-lucide="arrow-right" class="w-4 h-4 stroke-[2.2]"></i>
             </button>
@@ -7394,26 +7369,237 @@ if (totalCount === 0) {
     this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
   },
 
-  // Giữ nguyên các hàm alias để tương thích 100% với các mã gọi cũ
+  // Trình Điều Hướng Từng Câu Một (Single-Question Stepper - Bảo Đảm Anti-Fraud, Speed Trap, Attention Check & Chống Bot)
   async nextQuestion() {
+    this.haptic('light');
     const session = this.state.activeSession;
-    if (session && session.questions && session.questions[session.currentIndex]) {
-      const curQ = session.questions[session.currentIndex];
-      // Tự động đồng bộ câu trả lời từ DOM input/textarea nếu có (phòng ngừa độ trễ oninput hoặc autocomplete)
-      const activeInput = document.querySelector('#app-root input[type="text"], #app-root textarea, #app-root input[type="number"], #app-root input[type="date"], #app-root input[type="time"]');
-      if (activeInput && activeInput.value !== undefined && activeInput.value !== null) {
-        if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT', 'DATE', 'TIME'].includes(curQ.type)) {
-          if (!session.answers) session.answers = {};
-          session.answers[curQ.id] = activeInput.value;
-          this._saveActiveSessionToStorage();
+    if (!session) return;
+    if (session.isPacingLocked) {
+      this.showToast('Vui lòng đọc kỹ câu hỏi (0.5s)', 'info');
+      return;
+    }
+
+    const curQ = session.questions[session.currentIndex];
+    // Tự động đồng bộ câu trả lời từ DOM input/textarea nếu có (phòng ngừa độ trễ oninput hoặc autocomplete)
+    const activeInput = document.querySelector('#app-root input[type="text"], #app-root textarea, #app-root input[type="number"], #app-root input[type="date"], #app-root input[type="time"]');
+    if (activeInput && activeInput.value !== undefined && activeInput.value !== null) {
+      if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT', 'DATE', 'TIME'].includes(curQ.type)) {
+        if (!session.answers) session.answers = {};
+        session.answers[curQ.id] = activeInput.value;
+        this._saveActiveSessionToStorage();
+      }
+    }
+
+    const ans = session.answers ? session.answers[curQ.id] : undefined;
+    const isReq = curQ.is_required !== 0 && curQ.is_required !== false;
+
+    // 1. Kiểm tra bắt buộc
+    if (['VIDEO_BLOCK', 'SECTION_HEADER', 'TEXT_BLOCK'].includes(curQ.type)) {
+      // Bỏ qua
+    } else if (isReq) {
+      if (curQ.type === 'CHOICE_GRID') {
+        const rows = curQ.rows || [];
+        const ansObj = (ans && typeof ans === 'object') ? ans : {};
+        const unselectedRows = rows.filter(r => !ansObj[r]);
+        if (unselectedRows.length > 0) {
+          this.showToast(`Vui lòng chọn phản hồi cho tất cả các hàng trong bảng ma trận (${unselectedRows.length} hàng còn trống)!`, 'warning');
+          return;
+        }
+      } else if (curQ.type === 'CHECKBOX_GRID') {
+        const rows = curQ.rows || [];
+        const ansObj = (ans && typeof ans === 'object') ? ans : {};
+        const unselectedRows = rows.filter(r => !ansObj[r] || !Array.isArray(ansObj[r]) || ansObj[r].length === 0);
+        if (unselectedRows.length > 0) {
+          this.showToast('Vui lòng chọn ít nhất 1 ô cho mỗi hàng trong bảng ma trận!', 'warning');
+          return;
+        }
+      } else if (curQ.type === 'MULTIPLE_CHOICE') {
+        if (!Array.isArray(ans) || ans.length === 0) {
+          this.showToast('Vui lòng chọn ít nhất một lựa chọn!', 'warning');
+          return;
+        }
+      } else {
+        if (ans === undefined || ans === null || String(ans).trim() === '') {
+          this.showToast('Vui lòng trả lời câu hỏi bắt buộc này trước khi tiếp tục!', 'warning');
+          return;
         }
       }
     }
-    return await this.nextSection();
+
+    // 2. Kiểm tra câu hỏi sàng lọc Screener
+    if (curQ.is_screener && curQ.qualifying_answer) {
+      const isQualified = String(ans).trim().toLowerCase() === String(curQ.qualifying_answer).trim().toLowerCase();
+      if (!isQualified) {
+        await this.handleScreenOut(session.surveyId);
+        return;
+      }
+    }
+
+    // 3. Kiểm tra Validation Ràng buộc (Email, Number, URL, Length)
+    const validation = curQ.validation || (curQ.logic && curQ.logic.validation ? curQ.logic.validation : null);
+    if (validation && validation.type && validation.type !== 'NONE') {
+      const valStr = (ans !== undefined && ans !== null) ? String(ans).trim() : '';
+      const inputEl = document.getElementById(`survey-answer-input-${curQ.id}`) || activeInput;
+      if (valStr.length > 0 || isReq) {
+        if (validation.type === 'EMAIL') {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valStr)) {
+            this.showToast('Vui lòng nhập đúng định dạng email (VD: name@domain.com)', 'warning');
+            if (inputEl) inputEl.focus();
+            return;
+          }
+        } else if (validation.type === 'NUMBER') {
+          const rule = validation.rule || 'IS_NUMBER';
+          if (!/^-?\d+(\.\d+)?$/.test(valStr)) {
+            this.showToast('Giá trị phải là một số', 'warning');
+            if (inputEl) inputEl.focus();
+            return;
+          }
+          const num = parseFloat(valStr);
+          const min = (validation.min !== undefined && validation.min !== null && String(validation.min).trim() !== '') ? parseFloat(validation.min) : null;
+          const max = (validation.max !== undefined && validation.max !== null && String(validation.max).trim() !== '') ? parseFloat(validation.max) : null;
+          if (rule === 'BETWEEN') {
+            if (min !== null && max !== null && (num < min || num > max)) {
+              this.showToast(`Số phải nằm trong khoảng từ ${validation.min} ~ ${validation.max}`, 'warning');
+              if (inputEl) inputEl.focus();
+              return;
+            }
+          } else if (rule === 'GREATER_THAN') {
+            if (min !== null && num <= min) {
+              this.showToast(`Số phải lớn hơn ${validation.min}`, 'warning');
+              if (inputEl) inputEl.focus();
+              return;
+            }
+          } else if (rule === 'LESS_THAN') {
+            if (max !== null && num >= max) {
+              this.showToast(`Số phải nhỏ hơn ${validation.max}`, 'warning');
+              if (inputEl) inputEl.focus();
+              return;
+            }
+          }
+        } else if (validation.type === 'URL') {
+          if (!/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i.test(valStr)) {
+            this.showToast('Vui lòng nhập đường dẫn URL hợp lệ', 'warning');
+            if (inputEl) inputEl.focus();
+            return;
+          }
+        } else if (validation.type === 'LENGTH') {
+          const maxL = validation.max || 500;
+          const minL = validation.min || 1;
+          if (validation.rule === 'MAX_LENGTH' && valStr.length > maxL) {
+            this.showToast(`Độ dài không được vượt quá ${maxL} ký tự`, 'warning');
+            if (inputEl) inputEl.focus();
+            return;
+          }
+          if (validation.rule === 'MIN_LENGTH' && valStr.length < minL) {
+            this.showToast(`Độ dài phải có ít nhất ${minL} ký tự`, 'warning');
+            if (inputEl) inputEl.focus();
+            return;
+          }
+        }
+      }
+    }
+
+    // 4. Đánh giá Điều hướng Rẽ nhánh 2 tầng (2-Tier Routing)
+    const resolveTarget = (rawTarget) => {
+      if (!rawTarget || rawTarget === 'NEXT') return 'NEXT';
+      let targetVal = rawTarget;
+      if (typeof rawTarget === 'object' && rawTarget !== null) {
+        if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT') return 'SUBMIT';
+        targetVal = rawTarget.target || rawTarget.action;
+      }
+      if (targetVal === 'SUBMIT') return 'SUBMIT';
+      if (targetVal === 'NEXT') return 'NEXT';
+      const parsed = parseInt(targetVal, 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed < session.questions.length && String(parsed) === String(targetVal)) return parsed;
+      const foundIdx = session.questions.findIndex(item => String(item.id) === String(targetVal));
+      if (foundIdx !== -1) return foundIdx;
+      return null;
+    };
+
+    let branchAction = null;
+    if (['SINGLE_CHOICE', 'DROPDOWN'].includes(curQ.type) && curQ.logic && curQ.logic.enabled && curQ.logic.options) {
+      if (curQ.logic.options[ans] !== undefined) {
+        branchAction = curQ.logic.options[ans];
+      } else if (curQ.options) {
+        const optIdx = curQ.options.findIndex(o => String(o).trim() === String(ans).trim());
+        if (optIdx !== -1 && curQ.logic.options[optIdx] !== undefined) branchAction = curQ.logic.options[optIdx];
+      }
+    } else if (curQ.type === 'SECTION_HEADER' && curQ.logic && curQ.logic.default_action) {
+      branchAction = curQ.logic.default_action;
+    }
+
+    const resolvedBranch = resolveTarget(branchAction);
+    if (resolvedBranch === 'SUBMIT') {
+      await this.submitSurvey();
+      return;
+    }
+    if (typeof resolvedBranch === 'number') {
+      session.history = session.history || [];
+      session.history.push(session.currentIndex);
+      session.currentIndex = resolvedBranch;
+      this._saveActiveSessionToStorage();
+      this.triggerPacingLock();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+      return;
+    }
+
+    // Section-end routing
+    const nextQuestionIdx = session.currentIndex + 1;
+    const isSectionEnd = (nextQuestionIdx >= session.questions.length) || (session.questions[nextQuestionIdx] && session.questions[nextQuestionIdx].type === 'SECTION_HEADER');
+    if (isSectionEnd && curQ.type !== 'SECTION_HEADER') {
+      let currentSectionHeader = null;
+      for (let i = session.currentIndex; i >= 0; i--) {
+        if (session.questions[i].type === 'SECTION_HEADER') {
+          currentSectionHeader = session.questions[i];
+          break;
+        }
+      }
+      if (currentSectionHeader && currentSectionHeader.logic && currentSectionHeader.logic.default_action) {
+        const resolvedSectionAction = resolveTarget(currentSectionHeader.logic.default_action);
+        if (resolvedSectionAction === 'SUBMIT') {
+          await this.submitSurvey();
+          return;
+        }
+        if (typeof resolvedSectionAction === 'number') {
+          session.history = session.history || [];
+          session.history.push(session.currentIndex);
+          session.currentIndex = resolvedSectionAction;
+          this._saveActiveSessionToStorage();
+          this.triggerPacingLock();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+          return;
+        }
+      }
+    }
+
+    // 5. Chuyển sang câu tiếp theo hoặc submit
+    session.history = session.history || [];
+    if (session.currentIndex < session.questions.length - 1) {
+      session.history.push(session.currentIndex);
+      session.currentIndex++;
+      this._saveActiveSessionToStorage();
+      this.triggerPacingLock();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+    } else {
+      await this.submitSurvey();
+    }
   },
 
   prevQuestion() {
-    return this.prevSection();
+    this.haptic('light');
+    const session = this.state.activeSession;
+    if (!session) return;
+    if (session.history && session.history.length > 0) {
+      session.currentIndex = session.history.pop();
+    } else if (session.currentIndex > 0) {
+      session.currentIndex--;
+    }
+    this._saveActiveSessionToStorage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
   },
 
   triggerPacingLock() {
