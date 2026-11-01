@@ -138,6 +138,7 @@ async function runTests() {
   // Tao mot khao sat DRAFT voi tieu de [HOA TOC] va goi publishSurvey
   const adminUser = db.prepare("SELECT id FROM users WHERE role = 'ADMIN' LIMIT 1").get();
   assert.ok(adminUser, 'Admin user phai ton tai');
+  db.prepare("UPDATE users SET free_trial_surveys_available = 5 WHERE id = ?").run(adminUser.id);
 
   const testSurveyId = 'test_pub_survey_' + Date.now();
   db.prepare(`
