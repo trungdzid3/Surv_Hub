@@ -256,10 +256,8 @@ class ForumSentinelService {
           try {
             const logId = crypto.randomUUID();
             const details = JSON.stringify({
-              reason: result.reason,
-              matched: result.matchedSnippet,
-              title: post.title,
-              flag: result.flag
+              f: result.flag,
+              m: result.matchedSnippet
             });
 
             db.prepare(`
@@ -269,7 +267,7 @@ class ForumSentinelService {
             `).run(
               logId,
               'SYSTEM_SENTINEL',
-              'SurvHub Micro AI Sentinel',
+              'MicroSentinel',
               'AUTO_HIDE_DISGUISED_URL',
               'FORUM_POST',
               post.id,
@@ -348,11 +346,11 @@ class ForumSentinelService {
             `).run(
               logId,
               'SYSTEM_SENTINEL',
-              'SurvHub Micro AI Sentinel',
+              'MicroSentinel',
               'AUTO_HIDE_DISGUISED_URL',
               'FORUM_COMMENT',
               comment.id,
-              JSON.stringify({ reason: result.reason, flag: result.flag, post_id: comment.post_id })
+              JSON.stringify({ f: result.flag, p: comment.post_id })
             );
           } catch (e) {}
         } else {
@@ -381,10 +379,10 @@ class ForumSentinelService {
       const postResult = this.scanPendingPosts(50);
       const commentResult = this.scanPendingComments(100);
       if (postResult.violations > 0 || commentResult.violations > 0) {
-        console.log(`[ForumSentinel] Đã xử lý ${postResult.violations} bài viết và ${commentResult.violations} bình luận vi phạm link ngoài trá hình.`);
+        console.log(`[Sentinel] Vi phạm: ${postResult.violations} bài, ${commentResult.violations} cmt.`);
       }
     } catch (err) {
-      console.error('[ForumSentinel] Lỗi trong chu trình audit:', err.message);
+      console.error('[Sentinel] Lỗi audit:', err.message);
     } finally {
       this.isScanning = false;
     }
@@ -392,9 +390,9 @@ class ForumSentinelService {
 
   /**
    * Bắt đầu tiến trình kiểm tra định kỳ ngầm
-   * @param {number} intervalMs Thời gian chu kỳ (mặc định 60 giây)
+   * @param {number} intervalMs Thời gian chu kỳ (mặc định 1 giờ = 3,600,000 ms)
    */
-  startPeriodicScan(intervalMs = 60000) {
+  startPeriodicScan(intervalMs = 3600000) {
     if (this.timer) return;
     // Chạy kiểm tra đợt đầu sau 3 giây
     setTimeout(() => {

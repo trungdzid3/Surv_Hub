@@ -116,8 +116,8 @@ if (require.main === module) {
     console.log(`[BAO MAT] Anti-Fraud Engine va Double-Entry Ledger: KICH HOAT`);
     console.log(`[GIAM SAT] Micro AI Sentinel quet dinh ky Dien Dan: KICH HOAT`);
     console.log(`=======================================================`);
-    // Khoi dong tien trinh quet ngam dinh ky dien dan
-    forumSentinelService.startPeriodicScan(60000);
+    // Khoi dong tien trinh quet ngam dinh ky dien dan (1 gio / lan)
+    forumSentinelService.startPeriodicScan(3600000);
   });
 }
 
