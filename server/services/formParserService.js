@@ -1162,11 +1162,85 @@ class FormParserService {
    * DateTime -> DATE_INPUT, FileUpload -> FILE_UPLOAD
    * Cờ question.required === true -> is_required = 1
    */
+  extractNumberRange(str) {
+    if (!str) return null;
+    let text = typeof str === 'string' ? str : '';
+    if (!text && typeof str === 'object') {
+      try {
+        text = JSON.stringify(str);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (!text || typeof text !== 'string') return null;
+
+    // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [20000000, 20270000]
+    const jsonArrMatch = text.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
+    if (jsonArrMatch) {
+      const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
+    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2
+    const propPairs = [
+      {
+        min: /["']?(?:min|minValue|lowerBound|restrictionValue1|restrictionOperand1|operand1)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+        max: /["']?(?:max|maxValue|upperBound|restrictionValue2|restrictionOperand2|operand2)["']?\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
+      }
+    ];
+    for (const pair of propPairs) {
+      const mMin = text.match(pair.min);
+      const mMax = text.match(pair.max);
+      if (mMin && mMax) {
+        const n1 = parseFloat(mMin[1].replace(/,/g, ''));
+        const n2 = parseFloat(mMax[1].replace(/,/g, ''));
+        if (!isNaN(n1) && !isNaN(n2)) {
+          return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+        }
+      }
+    }
+
+    // 3. Bắt trọn mẫu tiếng Việt: "số phải nằm trong khoảng từ ... đến ...", "nằm trong khoảng từ ... đến ...", "khoảng từ ... đến ..."
+    const vnPattern = /(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*từ|khoang\s*tu|between)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|và|va|to|and|~|-)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
+    const vnMatch = text.match(vnPattern);
+    if (vnMatch) {
+      const n1 = parseFloat(vnMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(vnMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
+    // 4. Dải số có ký tự nối hoặc từ nối: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, đến, den, to, và, va, and
+    const normalized = text
+      .replace(/[\uFF5E\u223C\u02DC]/g, '~')
+      .replace(/[\u2013\u2014\u2212]/g, '-')
+      .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+      .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
+
+    const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
+    if (match) {
+      const n1 = parseFloat(match[1].replace(/,/g, ''));
+      const n2 = parseFloat(match[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
+    return null;
+  }
+
   /**
    * Helper trích xuất các quy tắc giới hạn (Validation / Restrictions)
    * Áp dụng cho cả Microsoft Forms (q.questionInfo, Subtitle, Placeholder, Restrictions) và Google Forms
    */
   _extractValidationRule({ title = '', subtitle = '', placeholder = '', description = '', questionInfoObj = null, rawRestrictions = null, rawValidationArray = null }) {
+    const allContextText = `${title || ''} ${subtitle || ''} ${placeholder || ''} ${description || ''} ${questionInfoObj ? JSON.stringify(questionInfoObj) : ''} ${rawRestrictions ? JSON.stringify(rawRestrictions) : ''}`;
+    const earlyRange = this.extractNumberRange(allContextText);
+
     // 1. Nếu có rawValidationArray từ Google Forms (FB_PUBLIC_LOAD_DATA_ qData[4])
     if (Array.isArray(rawValidationArray) && rawValidationArray.length > 0) {
       for (const ruleItem of rawValidationArray) {
@@ -1178,6 +1252,16 @@ class FormParserService {
 
         // 1.1 Number
         if (vType === 1) {
+          if (earlyRange) {
+            return {
+              type: 'NUMBER',
+              rule: 'BETWEEN',
+              min: earlyRange.min,
+              max: earlyRange.max,
+              placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
+              error_message: customMsg || `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
+            };
+          }
           if (opType === 7) { // Between
             const n1 = parseFloat(operands[0]);
             const n2 = parseFloat(operands[1]);
@@ -1494,6 +1578,8 @@ class FormParserService {
       return { val1: v1, val2: v2 };
     };
 
+    let fallbackIsNumber = false;
+
     for (const r of restrictionsList) {
       if (!r || typeof r !== 'object') continue;
 
@@ -1543,23 +1629,33 @@ class FormParserService {
         };
       }
 
-      // 2.3 BETWEEN (Toán tử 7 hoặc chuỗi chứa 'between')
+      // Nếu có earlyRange, luôn ưu tiên trả về BETWEEN
+      if (earlyRange) {
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: earlyRange.min,
+          max: earlyRange.max,
+          placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
+          error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
+        };
+      }
+
+      // 2.3 BETWEEN (Toán tử 7 hoặc chuỗi chứa 'between' hoặc khi có earlyRange)
       const isBetween = rawOp === 7 || rawOp === '7' || opStr === 'between' || opStr.includes('between');
-      if (isBetween) {
+      if (isBetween || earlyRange) {
         let n1 = parseFloat(val1);
         let n2 = parseFloat(val2);
 
-        // Nếu thiếu toán hạng trong restriction, quét trích xuất dải số từ placeholder, subtitle, description
         if (isNaN(n1) || isNaN(n2)) {
-          const textToScan = `${placeholder} ${subtitle} ${description}`.trim();
-          const matchBetween = textToScan.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between|number\s*must\s*be\s*between|must\s*be\s*between)\s*([0-9.,]+)\s*(?:đến|và|~|-|to|and)\s*([0-9.,]+)/i) ||
-                               textToScan.match(/([0-9.,]+)\s*(?:~|-)\s*([0-9.,]+)/i);
-          if (matchBetween) {
-            const parsedN1 = parseFloat(matchBetween[1].replace(/,/g, ''));
-            const parsedN2 = parseFloat(matchBetween[2].replace(/,/g, ''));
-            if (!isNaN(parsedN1) && !isNaN(parsedN2)) {
-              n1 = parsedN1;
-              n2 = parsedN2;
+          if (earlyRange) {
+            n1 = earlyRange.min;
+            n2 = earlyRange.max;
+          } else {
+            const rangeFromScan = this.extractNumberRange(`${placeholder} ${subtitle} ${description}`);
+            if (rangeFromScan) {
+              n1 = rangeFromScan.min;
+              n2 = rangeFromScan.max;
             }
           }
         }
@@ -1578,7 +1674,7 @@ class FormParserService {
         }
       }
 
-      // 2.4 Nếu có cả 2 toán hạng val1 và val2 hợp lệ (ngay cả khi op không ghi rõ between)
+      // 2.4 Nếu có cả 2 toán hạng val1 và val2 hợp lệ
       if (val1 !== undefined && val1 !== null && val2 !== undefined && val2 !== null) {
         const n1 = parseFloat(val1);
         const n2 = parseFloat(val2);
@@ -1693,15 +1789,20 @@ class FormParserService {
         };
       }
 
-      // 2.12 IS_NUMBER (Toán tử 9 hoặc chuỗi chứa 'isnumber' hoặc 'number')
+      // 2.12 IS_NUMBER
       const isNum = rawOp === 9 || rawOp === '9' || opStr.includes('isnumber') || opStr === 'number' || ((typeStr.includes('number') || typeStr === '1' || typeStr === 1) && !opStr);
       if (isNum) {
-        return {
-          type: 'NUMBER',
-          rule: 'IS_NUMBER',
-          placeholder: 'Giá trị phải là một số',
-          error_message: 'Giá trị phải là một số'
-        };
+        if (earlyRange) {
+          return {
+            type: 'NUMBER',
+            rule: 'BETWEEN',
+            min: earlyRange.min,
+            max: earlyRange.max,
+            placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
+            error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
+          };
+        }
+        fallbackIsNumber = true;
       }
 
       // 2.13 MAX_LENGTH / LENGTH
@@ -1717,28 +1818,41 @@ class FormParserService {
       }
     }
 
+    if (earlyRange) {
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: earlyRange.min,
+        max: earlyRange.max,
+        placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
+        error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
+      };
+    }
+
+    if (fallbackIsNumber) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
     // 3. Phân tích trực tiếp từ Placeholder (Đặc thù tự động của Microsoft Forms khi thiết lập Restrictions)
     if (placeholder && typeof placeholder === 'string') {
       const trimmedPlaceholder = placeholder.trim();
 
       // 3.1 Dải số Between từ Placeholder
-      const phBetweenMatch = trimmedPlaceholder.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between|number\s*must\s*be\s*between|must\s*be\s*between)\s*([0-9.,]+)\s*(?:đến|và|~|-|to|and)\s*([0-9.,]+)/i) ||
-                             trimmedPlaceholder.match(/^\s*([0-9.,]+)\s*(?:~|-|đến|to)\s*([0-9.,]+)\s*$/i);
-      if (phBetweenMatch) {
-        const n1 = parseFloat(phBetweenMatch[1].replace(/,/g, ''));
-        const n2 = parseFloat(phBetweenMatch[2].replace(/,/g, ''));
-        if (!isNaN(n1) && !isNaN(n2)) {
-          const minVal = Math.min(n1, n2);
-          const maxVal = Math.max(n1, n2);
-          return {
-            type: 'NUMBER',
-            rule: 'BETWEEN',
-            min: minVal,
-            max: maxVal,
-            placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-            error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
-          };
-        }
+      const rangeFromPh = this.extractNumberRange(trimmedPlaceholder);
+      if (rangeFromPh) {
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: rangeFromPh.min,
+          max: rangeFromPh.max,
+          placeholder: `Số phải nằm trong khoảng từ ${rangeFromPh.min} ~ ${rangeFromPh.max}`,
+          error_message: `Số phải nằm trong khoảng từ ${rangeFromPh.min} đến ${rangeFromPh.max}`
+        };
       }
 
       // 3.2 Is Number từ Placeholder
@@ -2736,23 +2850,21 @@ class FormParserService {
         }
 
         // 1.5 Kiểm tra dòng placeholder hoặc hướng dẫn ràng buộc định dạng chuẩn Microsoft Forms / Google Forms
-        const isBetweenInstruction = line.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between)\s*([0-9.,]+)\s*(?:đến|và|~|-|to|and)\s*([0-9.,]+)/i) ||
-                                     line.match(/^\s*([0-9.,]+)\s*(?:~|-|đến|to)\s*([0-9.,]+)\s*$/i);
-        if (isBetweenInstruction) {
-          const n1 = parseFloat(isBetweenInstruction[1].replace(/,/g, ''));
-          const n2 = parseFloat(isBetweenInstruction[2].replace(/,/g, ''));
-          if (!isNaN(n1) && !isNaN(n2)) {
-            const minVal = Math.min(n1, n2);
-            const maxVal = Math.max(n1, n2);
+        const isLikelyOption = (optionLetterRegex.test(line) || optionBulletRegex.test(line) || optionCheckboxRegex.test(line)) &&
+          !/(?:số\s*phải|nằm\s*trong\s*khoảng|khoảng\s*từ|between|giới\s*hạn)/i.test(line);
+
+        if (!isLikelyOption) {
+          const range = this.extractNumberRange(line);
+          if (range) {
             currentQuestion.validation = {
               type: 'NUMBER',
               rule: 'BETWEEN',
-              min: minVal,
-              max: maxVal,
-              placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-              error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+              min: range.min,
+              max: range.max,
+              placeholder: `Số phải nằm trong khoảng từ ${range.min} ~ ${range.max}`,
+              error_message: `Số phải nằm trong khoảng từ ${range.min} đến ${range.max}`
             };
-            currentQuestion.placeholder = `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`;
+            currentQuestion.placeholder = `Số phải nằm trong khoảng từ ${range.min} ~ ${range.max}`;
             continue;
           }
         }

@@ -146,6 +146,72 @@ const RestrictionEngine = {
     return { placeholder: '', defaultError: '', validate: () => ({ valid: true }) };
   },
 
+  extractNumberRange(str) {
+    if (!str) return null;
+    if (typeof str !== 'string') {
+      try {
+        str = JSON.stringify(str);
+      } catch {
+        return null;
+      }
+    }
+
+    // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [18, 60]
+    const jsonArrMatch = str.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
+    if (jsonArrMatch) {
+      const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
+    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2
+    const jsonPropPatterns = [
+      /(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
+    ];
+    for (const pat of jsonPropPatterns) {
+      const m = str.match(pat);
+      if (m) {
+        const n1 = parseFloat(m[1].replace(/,/g, ''));
+        const n2 = parseFloat(m[2].replace(/,/g, ''));
+        if (!isNaN(n1) && !isNaN(n2)) {
+          return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+        }
+      }
+    }
+
+    // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ..." hoặc "nằm trong khoảng từ ... đến ..."
+    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between|từ)\s*(\d+(?:[.,]\d+)?)\s*(?:đến|den|to|và|va|and|~|-|–|—)\s*(\d+(?:[.,]\d+)?)/i);
+    if (explicitRangeMatch) {
+      const n1 = parseFloat(explicitRangeMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(explicitRangeMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
+    // 4. Dải số có ký tự nối/từ nối: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, đến, den, to, và, va, and
+    const normalized = str
+      .replace(/[\uFF5E\u223C\u02DC]/g, '~')
+      .replace(/[\u2013\u2014\u2212]/g, '-')
+      .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+      .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
+
+    const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
+    if (match) {
+      const n1 = parseFloat(match[1].replace(/,/g, ''));
+      const n2 = parseFloat(match[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+    return null;
+  },
+
   inferValidationFromTitle(title, description = '') {
     const text = `${title || ''} ${description || ''}`.trim().toLowerCase();
     if (!text) return null;
@@ -160,20 +226,16 @@ const RestrictionEngine = {
       };
     }
 
-    // 2. Dải số cụ thể trong tiêu đề/mô tả (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
-    const rangeMatch = text.match(/(\d+)\s*(?:~|-|đến)\s*(\d+)/i);
-    if (rangeMatch) {
-      const n1 = parseFloat(rangeMatch[1]);
-      const n2 = parseFloat(rangeMatch[2]);
-      const min = Math.min(n1, n2);
-      const max = Math.max(n1, n2);
+    // 2. Dải số cụ thể (Quét toàn diện: "20000000 ~ 20270000", "20000000 – 20270000", "từ 18 đến 60", "1 ~ 100", ...)
+    const range = this.extractNumberRange(text);
+    if (range) {
       return {
         type: 'NUMBER',
         rule: 'BETWEEN',
-        min: min,
-        max: max,
-        placeholder: 'Số phải nằm trong khoảng từ ' + min + ' ~ ' + max,
-        error_message: 'Số phải nằm trong khoảng từ ' + min + ' đến ' + max
+        min: range.min,
+        max: range.max,
+        placeholder: 'Số phải nằm trong khoảng từ ' + range.min + ' ~ ' + range.max,
+        error_message: 'Số phải nằm trong khoảng từ ' + range.min + ' đến ' + range.max
       };
     }
 
@@ -478,6 +540,72 @@ window.RestrictionEngine = {
     return { placeholder: '', defaultError: '', validate: () => ({ valid: true }) };
   },
 
+  extractNumberRange(str) {
+    if (!str) return null;
+    if (typeof str !== 'string') {
+      try {
+        str = JSON.stringify(str);
+      } catch {
+        return null;
+      }
+    }
+
+    // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [18, 60]
+    const jsonArrMatch = str.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
+    if (jsonArrMatch) {
+      const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
+    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2
+    const jsonPropPatterns = [
+      /(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?max(?:Value)?["']?|["']?upperBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
+      /(?:["']?restrictionValue2["']?|["']?operand2["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?restrictionValue1["']?|["']?operand1["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
+    ];
+    for (const pat of jsonPropPatterns) {
+      const m = str.match(pat);
+      if (m) {
+        const n1 = parseFloat(m[1].replace(/,/g, ''));
+        const n2 = parseFloat(m[2].replace(/,/g, ''));
+        if (!isNaN(n1) && !isNaN(n2)) {
+          return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+        }
+      }
+    }
+
+    // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ..." hoặc "nằm trong khoảng từ ... đến ..."
+    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between|từ)\s*(\d+(?:[.,]\d+)?)\s*(?:đến|den|to|và|va|and|~|-|–|—)\s*(\d+(?:[.,]\d+)?)/i);
+    if (explicitRangeMatch) {
+      const n1 = parseFloat(explicitRangeMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(explicitRangeMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
+    // 4. Dải số có ký tự nối/từ nối: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, đến, den, to, và, va, and
+    const normalized = str
+      .replace(/[\uFF5E\u223C\u02DC]/g, '~')
+      .replace(/[\u2013\u2014\u2212]/g, '-')
+      .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+      .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
+
+    const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
+    if (match) {
+      const n1 = parseFloat(match[1].replace(/,/g, ''));
+      const n2 = parseFloat(match[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+    return null;
+  },
+
   inferValidationFromTitle(title, description = '') {
     const text = `${title || ''} ${description || ''}`.trim().toLowerCase();
     if (!text) return null;
@@ -492,20 +620,16 @@ window.RestrictionEngine = {
       };
     }
 
-    // 2. Dải số cụ thể trong tiêu đề/mô tả (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
-    const rangeMatch = text.match(/(\d+)\s*(?:~|-|đến)\s*(\d+)/i);
-    if (rangeMatch) {
-      const n1 = parseFloat(rangeMatch[1]);
-      const n2 = parseFloat(rangeMatch[2]);
-      const min = Math.min(n1, n2);
-      const max = Math.max(n1, n2);
+    // 2. Dải số cụ thể (Quét toàn diện: "20000000 ~ 20270000", "20000000 – 20270000", "từ 18 đến 60", "1 ~ 100", ...)
+    const range = this.extractNumberRange(text);
+    if (range) {
       return {
         type: 'NUMBER',
         rule: 'BETWEEN',
-        min: min,
-        max: max,
-        placeholder: 'Số phải nằm trong khoảng từ ' + min + ' ~ ' + max,
-        error_message: 'Số phải nằm trong khoảng từ ' + min + ' đến ' + max
+        min: range.min,
+        max: range.max,
+        placeholder: 'Số phải nằm trong khoảng từ ' + range.min + ' ~ ' + range.max,
+        error_message: 'Số phải nằm trong khoảng từ ' + range.min + ' đến ' + range.max
       };
     }
 
@@ -6366,7 +6490,7 @@ if (totalCount === 0) {
       let valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
       const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
       if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-        const inf = engine.inferValidationFromTitle(q.content);
+        const inf = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
         if (inf) {
           valObj = inf;
           q.validation = inf;
@@ -6636,7 +6760,7 @@ if (totalCount === 0) {
       let validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
       const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
       if ((!validation || !validation.type || validation.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-        const inferred = engine.inferValidationFromTitle(q.content);
+        const inferred = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
         if (inferred) {
           validation = inferred;
           q.validation = inferred;
@@ -6668,7 +6792,7 @@ if (totalCount === 0) {
       let validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
       const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
       if ((!validation || !validation.type || validation.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-        const inferred = engine.inferValidationFromTitle(q.content);
+        const inferred = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
         if (inferred) {
           validation = inferred;
           q.validation = inferred;
@@ -7073,7 +7197,7 @@ if (totalCount === 0) {
     const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (this.RestrictionEngine || (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null));
     if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT'].includes(q.type) && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
       if (!validation || !validation.type || validation.type === 'NONE') {
-        const inferred = engine.inferValidationFromTitle(q.content);
+        const inferred = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
         if (inferred) {
           validation = inferred;
           q.validation = inferred;
@@ -12185,7 +12309,7 @@ if (totalCount === 0) {
         let valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
         const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
         if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-          const inf = engine.inferValidationFromTitle(q.content);
+          const inf = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
           if (inf) {
             valObj = inf;
             q.validation = inf;
@@ -12203,8 +12327,11 @@ if (totalCount === 0) {
             let vRule = String(valObj.rule || '').toUpperCase();
             if (!vRule) vRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
 
+            const detectedRange = engine ? engine.extractNumberRange(`${q.placeholder || ''} ${q.description || ''} ${q.content || ''} ${valObj?.placeholder || ''}`) : null;
             if (vRule === 'BETWEEN' && hasMin && hasMax) {
               badgeText = `Số: ${valObj.min} ~ ${valObj.max}`;
+            } else if (detectedRange) {
+              badgeText = `Số: ${detectedRange.min} ~ ${detectedRange.max}`;
             } else if (vRule === 'GREATER_THAN' && hasMin) {
               badgeText = `Số > ${valObj.min}`;
             } else if (vRule === 'LESS_THAN' && hasMax) {
@@ -12718,7 +12845,7 @@ if (totalCount === 0) {
       let val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
       const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
       if ((!val || !val.type || val.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-        const inf = engine.inferValidationFromTitle(q.content);
+        const inf = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
         if (inf) {
           val = inf;
           q.validation = inf;
@@ -12728,6 +12855,10 @@ if (totalCount === 0) {
       let previewPlaceholder = 'Nhập câu trả lời của bạn';
       if (val && val.type && val.type !== 'NONE') {
         previewPlaceholder = this.generateValidationPlaceholder(val) || (engine && engine.getMeta(val)?.placeholder) || val.placeholder || 'Nhập câu trả lời của bạn';
+      }
+      const detectedRange = engine ? engine.extractNumberRange(`${q.placeholder || ''} ${q.description || ''} ${q.content || ''} ${val?.placeholder || ''}`) : null;
+      if (detectedRange) {
+        previewPlaceholder = `Số phải nằm trong khoảng từ ${detectedRange.min} ~ ${detectedRange.max}`;
       }
 
       return `
@@ -12746,7 +12877,7 @@ if (totalCount === 0) {
       let val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
       const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
       if ((!val || !val.type || val.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-        const inf = engine.inferValidationFromTitle(q.content);
+        const inf = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
         if (inf) {
           val = inf;
           q.validation = inf;
@@ -12756,6 +12887,10 @@ if (totalCount === 0) {
       let previewPlaceholder = 'Nhập câu trả lời của bạn';
       if (val && val.type && val.type !== 'NONE') {
         previewPlaceholder = this.generateValidationPlaceholder(val) || (engine && engine.getMeta(val)?.placeholder) || val.placeholder || 'Nhập câu trả lời của bạn';
+      }
+      const detectedRange = engine ? engine.extractNumberRange(`${q.placeholder || ''} ${q.description || ''} ${q.content || ''} ${val?.placeholder || ''}`) : null;
+      if (detectedRange) {
+        previewPlaceholder = `Số phải nằm trong khoảng từ ${detectedRange.min} ~ ${detectedRange.max}`;
       }
 
       return `
@@ -13184,7 +13319,7 @@ if (totalCount === 0) {
         const curRule = q.validation?.rule;
         const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
         if (engine && typeof engine.inferValidationFromTitle === 'function') {
-          const inferred = engine.inferValidationFromTitle(val);
+          const inferred = engine.inferValidationFromTitle(val, (q.placeholder || q.description || ''));
           // Tự động gán nếu chưa có validation, hoặc đang NONE, hoặc đang IS_NUMBER mà gõ MSSV/dải số
           if (!curType || curType === 'NONE' || (curType === 'NUMBER' && (curRule === 'IS_NUMBER' || !curRule) && inferred && inferred.rule === 'BETWEEN')) {
             if (inferred) {
@@ -13362,7 +13497,7 @@ if (totalCount === 0) {
     let val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
     const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
     if ((!val || !val.type || val.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-      const inf = engine.inferValidationFromTitle(q.content);
+      const inf = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
       if (inf) {
         val = { ...inf };
         q.validation = val;
@@ -13371,19 +13506,35 @@ if (totalCount === 0) {
       }
     }
     if (!val) val = { type: 'NONE' };
+
+    const detectedRange = engine ? engine.extractNumberRange(`${q.placeholder || ''} ${q.description || ''} ${q.content || ''} ${val?.placeholder || ''}`) : null;
+    if (detectedRange) {
+      val.type = 'NUMBER';
+      val.rule = 'BETWEEN';
+      val.min = detectedRange.min;
+      val.max = detectedRange.max;
+      val.placeholder = `Số phải nằm trong khoảng từ ${detectedRange.min} ~ ${detectedRange.max}`;
+      val.error_message = `Số phải nằm trong khoảng từ ${detectedRange.min} đến ${detectedRange.max}`;
+      q.validation = { ...val };
+      if (!q.logic) q.logic = {};
+      q.logic.validation = { ...val };
+    }
+
     const valType = val.type || 'NONE';
     const hasMin = val.min !== undefined && val.min !== null && String(val.min).trim() !== '';
     const hasMax = val.max !== undefined && val.max !== null && String(val.max).trim() !== '';
     let valRule = val.rule ? String(val.rule).toUpperCase() : '';
     if (valType === 'NUMBER') {
-      if (!valRule) {
+      if (detectedRange) {
+        valRule = 'BETWEEN';
+      } else if (!valRule) {
         valRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
       }
     } else if (valType === 'LENGTH') {
       if (!valRule) valRule = 'MAX_LENGTH';
     }
-    const valMin = hasMin ? val.min : '';
-    const valMax = hasMax ? val.max : '';
+    const valMin = hasMin ? val.min : (detectedRange ? detectedRange.min : '');
+    const valMax = hasMax ? val.max : (detectedRange ? detectedRange.max : '');
     const autoPlaceholder = this.generateValidationPlaceholder(val);
 
     const valTypeMap = {
@@ -13764,7 +13915,34 @@ if (totalCount === 0) {
     this.switchCreateSurveyTab('BUILDER');
   },
 
+  extractNumberRange(str) {
+    const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+    if (engine && typeof engine.extractNumberRange === 'function') {
+      return engine.extractNumberRange(str);
+    }
+    return null;
+  },
+
   parseRawQuestionsText(text) {
+    if (typeof this !== 'undefined' && typeof this.extractNumberRange !== 'function') {
+      const eng = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+      this.extractNumberRange = (str) => {
+        if (eng && typeof eng.extractNumberRange === 'function') return eng.extractNumberRange(str);
+        if (!str || typeof str !== 'string') return null;
+        const norm = str
+          .replace(/[\uFF5E\u223C\u02DC]/g, '~')
+          .replace(/[\u2013\u2014\u2212]/g, '-')
+          .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+          .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
+        const m = norm.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
+        if (m) {
+          const a = parseFloat(m[1].replace(/,/g, ''));
+          const b = parseFloat(m[2].replace(/,/g, ''));
+          if (!isNaN(a) && !isNaN(b)) return { min: Math.min(a, b), max: Math.max(a, b) };
+        }
+        return null;
+      };
+    }
     // Tự động gỡ bỏ dấu nháy kép hoặc nháy đơn bao quanh toàn bộ văn bản nếu người dùng copy từ đoạn trích
     const cleanText = (text || '').replace(/^['"\s]+|['"\s]+$/g, '');
     const lines = cleanText.split('\n').map(l => l.trim().replace(/^['"]+|['"]+$/g, '')).filter(Boolean);
@@ -13932,26 +14110,19 @@ if (totalCount === 0) {
       }
 
       // Nếu là dòng placeholder hoặc hướng dẫn hệ thống, kiểm tra để trích xuất validation/placeholder
-      const isBetweenInstruction = line.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between)\s*([0-9.,]+)\s*(?:đến|và|~|-|to|and)\s*([0-9.,]+)/i) ||
-                                   line.match(/^\s*([0-9.,]+)\s*(?:~|-|đến|to)\s*([0-9.,]+)\s*$/i);
-      if (isBetweenInstruction) {
-        const n1 = parseFloat(isBetweenInstruction[1].replace(/,/g, ''));
-        const n2 = parseFloat(isBetweenInstruction[2].replace(/,/g, ''));
-        if (!isNaN(n1) && !isNaN(n2)) {
-          const minVal = Math.min(n1, n2);
-          const maxVal = Math.max(n1, n2);
-          currentItem.type = 'SHORT_TEXT';
-          currentItem.validation = {
-            type: 'NUMBER',
-            rule: 'BETWEEN',
-            min: minVal,
-            max: maxVal,
-            placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-            error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
-          };
-          currentItem.placeholder = `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`;
-          continue;
-        }
+      const range = this.extractNumberRange(line);
+      if (range) {
+        currentItem.type = 'SHORT_TEXT';
+        currentItem.validation = {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: range.min,
+          max: range.max,
+          placeholder: `Số phải nằm trong khoảng từ ${range.min} ~ ${range.max}`,
+          error_message: `Số phải nằm trong khoảng từ ${range.min} đến ${range.max}`
+        };
+        currentItem.placeholder = `Số phải nằm trong khoảng từ ${range.min} ~ ${range.max}`;
+        continue;
       }
 
       if (/(?:vui\s*lòng\s*nhập\s*email|email\s*hợp\s*lệ|nhập\s*email|please\s*enter\s*email)/i.test(line)) {

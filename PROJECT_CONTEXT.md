@@ -2340,3 +2340,35 @@ c:\Users\Lenovo\Downloads\Linh\
 - Kiểm thử toàn bộ hệ thống (`npm test`): **15/15 Suites PASS 100%** (20.59s).
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` hoàn tất.
 - Tự động đồng bộ và đẩy mã nguồn lên GitHub (`origin/main`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: NÂNG CẤP TOÀN DIỆN BỘ QUÉT DẢI SỐ (BETWEEN MIN/MAX) VÀ ĐỒNG BỘ GIAO DIỆN STUDIO / RUNNER (THÁNG 11/2026)
+
+### 1. Vấn Đề Gốc Rễ & Hiện Tượng
+- Người dùng phản hồi: Khi nhập câu hỏi có dải số (ví dụ: `Mã số sinh viên` với chỉ dẫn `Số phải nằm trong khoảng từ 20000000 ~ 20270000`), hệ thống nhận diện nhầm thành `Là số` (`IS_NUMBER`), khiến Studio Builder hiển thị ô "Điều kiện: Là số", placeholder "Giá trị phải là một số" và không hiển thị 2 ô nhập Min/Max.
+- **Nguyên nhân kỹ thuật**:
+  1. *Backend Parser (`formParserService.js`)*: Khi câu hỏi có cấu trúc Microsoft Forms API hoặc Google Forms, mảng `restrictions` luôn có `{ RestrictionType: 1 }` (chỉ định kiểu Số) được duyệt trước, ngắt sớm và trả về `IS_NUMBER` trước khi duyệt đến dải số.
+  2. *Frontend Deduction Engine (`public/app.js`)*: Các vị trí gọi `engine.inferValidationFromTitle(q.content)` chỉ truyền `q.content` (ví dụ `"Mã số sinh viên"`), bỏ qua `q.placeholder` và `q.description`. Do đó dải số `20000000 ~ 20270000` bị bỏ sót và câu hỏi bị gán nhầm thành `IS_NUMBER`.
+  3. *Studio Builder UI*: `renderStudioQuestionValidationConfig` trước đó không quét lại dải số từ placeholder/description để tự động nâng cấp `rule` từ `IS_NUMBER` sang `BETWEEN`, khiến ô điều kiện vẫn hiển thị "Là số".
+
+### 2. Giải Pháp Triệt Để Đã Triển Khai
+- **Backend (`server/services/formParserService.js`)**:
+  + Nâng cấp `extractNumberRange(str)` hỗ trợ toàn bộ các biến thể nối ký tự (`~`, `-`, en-dash `\u2013`, em-dash `\u2014`, minus `\u2212`, fullwidth tilde `\uFF5E`, `\u223C`, `\u02DC`), từ nối tiếng Việt (`đến`, `den`, `to`, `và`, `va`, `and`), mảng JSON `["20000000", "20270000"]`, và các cặp thuộc tính JSON (`min/max`, `minValue/maxValue`, `lowerBound/upperBound`, `restrictionValue1/restrictionValue2`, `operand1/operand2`).
+  + Quét sớm `earlyRange` từ toàn bộ ngữ cảnh JSON và văn bản (`title`, `subtitle`, `placeholder`, `description`, `questionInfoObj`, `rawRestrictions`). Nếu phát hiện dải số, luôn ưu tiên trả về `BETWEEN` với `min`, `max` và placeholder chuẩn thay vì ngắt sớm ở `IS_NUMBER`.
+  + Nâng cấp `parseSmartText(rawText)` sử dụng `this.extractNumberRange(line)` để bắt trọn dải số khi người dùng dán văn bản.
+- **Frontend (`public/app.js`)**:
+  + Nâng cấp `extractNumberRange` trong cả `RestrictionEngine`, `window.RestrictionEngine` và `VibeApp`.
+  + Đồng bộ truyền `(q.placeholder || q.description || '')` tại toàn bộ 9 vị trí gọi `engine.inferValidationFromTitle`.
+  + Trong `renderStudioQuestionValidationConfig`: Tự động quét `detectedRange` từ placeholder, description, content, tự động chuyển `val.rule = 'BETWEEN'`, gán `min` và `max`, hiển thị Dropdown "Trong khoảng", 2 ô input Min/Max bóc tách sẵn, gợi ý mẫu và badge `[Số: min ~ max]`.
+  + Trong `renderStudioQuestionsList` & `renderStudioQuestionCard`: Đồng bộ badge và input preview hiển thị `Số phải nằm trong khoảng từ min ~ max`.
+  + Trong `parseRawQuestionsText`: Bóc tách dải số ngay đầu khối phân tích placeholder/hướng dẫn.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Cú pháp JavaScript: `node -c public/app.js` và `node -c server/services/formParserService.js` PASS 100%.
+- Kiểm thử chuyên biệt: `node tests/test_restrictions_and_placeholders.js` PASS 100%.
+- Kiểm thử biến thể dải số: `node tests/test_range_variants.js` PASS 100%.
+- Kiểm thử toàn hệ thống: `npm test` PASS 15/15 Suites (100.0%, 19.54s).
+- Đồng bộ Android Capacitor: `npm run sync:android` PASS 100%.
+- Tự động commit và push lên GitHub (`origin/main`).
+
