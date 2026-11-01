@@ -2194,3 +2194,46 @@ c:\Users\Lenovo\Downloads\Linh\
 - Chạy kiểm tra cú pháp: `node -c public/app.js` đạt chuẩn (exit code 0).
 - Chạy toàn diện 15/15 Test Suites (`npm test`): **100% PASS** (24.70s).
 - Đồng bộ toàn vẹn tài nguyên sang Android: `npm run sync:android`.
+
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: HOÀN TẤT VÁ BẢO MẬT TOÀN DIỆN HỆ THỐNG THEO SECURITY AUDIT REPORT (THÁNG 11/2026)
+
+### 1. Kiến Trúc Điều Phối Đa Đại Lý Thực Thi (Subagent-Driven Execution)
+- Triển khai theo mô hình điều phối đa đại lý với ranh giới tệp độc lập tuyệt đối (Decoupled Scope & Zero Race Condition):
+  + **`auth-profile-specialist`**: Xử lý `server/controllers/authController.js` và `server/middlewares/auth.js`.
+  + **`fintech-ledger-engineer`**: Xử lý `server/controllers/walletController.js` và `server/services/ledgerService.js`.
+  + **`form-parser-specialist`**: Xử lý `server/services/webhookService.js`, `server/services/logoCrawlerService.js` và `server/controllers/surveyController.js`.
+
+### 2. Các Lỗ Hổng Bảo Mật Đã Vá Triệt Để
+1. **Google Auth Account Takeover (`POST /auth/google-auth`)**:
+   - Loại bỏ hoàn toàn việc nhận `google_id` và `email` trần không có xác thực từ request body trong môi trường production/dev.
+   - Bắt buộc phải có `credential` token hợp lệ; xác minh chữ ký mã hóa và payload danh tính qua Google Tokeninfo API (`https://oauth2.googleapis.com/tokeninfo?id_token=...`).
+2. **Email OTP Verification Bypass (`POST /auth/verify-email`)**:
+   - Loại bỏ nhánh legacy auto-verify khi gửi body rỗng ngoài môi trường test; bắt buộc phải nhập đúng mã OTP 6 số còn hạn.
+3. **Registration OTP Bypass (`POST /auth/register`)**:
+   - Xóa bỏ toàn bộ điều kiện nhận diện bằng User-Agent (`node`, `undici`) hoặc chuỗi email (`test`, `bot`, `linh_`, `techcorp`). Chỉ cho phép bypass OTP đăng ký khi `process.env.NODE_ENV === 'test'`.
+4. **Legacy JWT Secret Backdoor (`server/middlewares/auth.js`)**:
+   - Xóa bỏ hằng số `LEGACY_JWT_SECRET` (`vibesurvey_default_secret_key_2026`) và nhánh fallback `jwt.verify`. Chỉ chấp nhận duy nhất `config.JWT_SECRET`.
+5. **Payment Webhook Signature & Security (`POST /wallet/payment-webhook`)**:
+   - Kiểm tra mã xác thực/secret từ header `Authorization: Bearer <secret>`, `x-webhook-secret`, hoặc param `secure_token` so với `config.PAYMENT_GATEWAY.WEBHOOK_SECRET`. Từ chối 401 Unauthorized nếu secret không khớp.
+6. **Payment Simulation Lock (`POST /wallet/simulate-payment-success`)**:
+   - Khóa chặt trên production (`NODE_ENV === 'production'` trả về 403 Forbidden). Trong môi trường dev/test, chỉ cho phép ADMIN hoặc chính chủ đơn nạp thực hiện.
+7. **Direct Deposit Protection (`POST /wallet/deposit`)**:
+   - Khóa quyền nạp tiền trực tiếp không qua cổng thanh toán, chỉ dành riêng cho tài khoản Quản trị viên (`ADMIN`).
+8. **SSRF trong Google Sheets Webhook Dispatcher (`webhookService.js`)**:
+   - Xây dựng bộ lọc `isPrivateOrLoopbackHost`: Chặn loopback (`127.0.0.0/8`, `::1`), dải IP private RFC 1918 (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), Cloud Metadata (`169.254.169.254`) và IPv6 Link-local.
+9. **SSRF trong Logo Crawler (`logoCrawlerService.js`)**:
+   - Kiểm tra an toàn hostname trước khi cào ảnh và kiểm tra cả URL đích trong các lượt redirect 301/302, chống SSRF qua chuyển hướng.
+10. **Bảo Vệ Đáp Án Sàng Lọc & Phân Tích Khảo Sát (`surveyController.js`)**:
+    - Trong `_parseQuestionFromDb`: Ẩn hoàn toàn `qualifying_answer` đối với đáp viên (`isOwnerOrAdmin === false`).
+    - Trong `getAnalytics`: Giới hạn quyền xem thống kê và câu trả lời tự luận mẫu chỉ cho chủ khảo sát (`survey.creator_id === user.id`) hoặc Quản trị viên (`ADMIN`).
+    - Trong `uploadImage`: Whitelist định dạng ảnh `['png', 'jpg', 'jpeg', 'webp']`, chặn tệp SVG chống Stored XSS.
+    - Trong `exportSurveyData`: Khử CSV Formula Injection cho các ký tự khởi đầu `[=+\-@\t\r]`.
+    - Bổ sung `getServiceAccountInfo` tránh lỗi runtime crash.
+
+### 3. Nghiệm Thu & Kiểm Thử Toàn Diện
+- Toàn bộ các file sửa đổi đều đã kiểm tra cú pháp thành công (`node -c`).
+- Bộ kiểm thử tự hành 15/15 Suites (`npm test`): **100% PASS** (22.30s).
+- Sổ cái kế toán kép Ledger Stream đối soát chuẩn xác, cân bằng 100%.

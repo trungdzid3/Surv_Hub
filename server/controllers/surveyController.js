@@ -60,7 +60,7 @@ class SurveyController {
       video_url: q.video_url || null,
       is_required: q.is_required !== undefined ? (q.is_required === 0 ? 0 : 1) : 1,
       is_screener: q.is_screener === 1,
-      qualifying_answer: q.qualifying_answer || null
+      qualifying_answer: isOwnerOrAdmin ? (q.qualifying_answer || null) : null
     };
 
     if (isOwnerOrAdmin) {
@@ -626,7 +626,7 @@ class SurveyController {
       const cleanWebhookUrl = google_sheets_webhook_url && typeof google_sheets_webhook_url === 'string'
         ? google_sheets_webhook_url.trim()
         : null;
-      if (cleanWebhookUrl && !webhookService.isValidUrl(cleanWebhookUrl)) {
+      if (cleanWebhookUrl && (!webhookService.isValidUrl(cleanWebhookUrl) || !webhookService.isSafeUrl(cleanWebhookUrl))) {
         return res.status(400).json({ success: false, message: 'Google Sheets Webhook URL không hợp lệ (phải bắt đầu bằng http:// hoặc https://)' });
       }
 
@@ -861,7 +861,7 @@ class SurveyController {
         const cleanUrl = google_sheets_webhook_url && typeof google_sheets_webhook_url === 'string'
           ? google_sheets_webhook_url.trim()
           : null;
-        if (cleanUrl && !webhookService.isValidUrl(cleanUrl)) {
+        if (cleanUrl && (!webhookService.isValidUrl(cleanUrl) || !webhookService.isSafeUrl(cleanUrl))) {
           return res.status(400).json({ success: false, message: 'Google Sheets Webhook URL không hợp lệ (phải bắt đầu bằng http:// hoặc https://)' });
         }
         updates.push('google_sheets_webhook_url = ?');
@@ -1737,7 +1737,7 @@ class SurveyController {
       }
 
       // Cho phép xem thống kê phân tích nếu là Admin, chủ sở hữu khảo sát, hoặc khảo sát công khai đang ACTIVE/COMPLETED
-      const canViewAnalytics = user.role === 'ADMIN' || survey.creator_id === user.id || ['ACTIVE', 'COMPLETED'].includes(survey.status);
+      const canViewAnalytics = user.role === 'ADMIN' || survey.creator_id === user.id;
       if (!canViewAnalytics) {
         return res.status(403).json({ success: false, message: 'Bạn không có quyền xem thống kê khảo sát này' });
       }
@@ -1911,7 +1911,10 @@ class SurveyController {
       // 2. Mặc định: Xuất định dạng CSV (RFC 4180 có UTF-8 BOM cho Excel tiếng Việt)
       const escapeCSV = (field) => {
         if (field === null || field === undefined) return '""';
-        const str = String(field);
+        let str = String(field);
+        if (/^[=+\-@\t\r]/.test(str)) {
+          str = "'" + str;
+        }
         return `"${str.replace(/"/g, '""')}"`;
       };
 
@@ -2140,8 +2143,12 @@ class SurveyController {
         return res.status(400).json({ success: false, message: 'Dữ liệu ảnh không đúng định dạng Base64 hợp lệ' });
       }
 
-      let ext = matches[1].toLowerCase();
-      if (ext === 'jpeg') ext = 'jpg';
+      const rawExt = matches[1].toLowerCase();
+      const allowedExts = ['png', 'jpg', 'jpeg', 'webp'];
+      if (!allowedExts.includes(rawExt)) {
+        return res.status(400).json({ success: false, message: 'Định dạng ảnh không được hỗ trợ. Chỉ chấp nhận PNG, JPG, WebP' });
+      }
+      let ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
       const base64Content = matches[2];
       const buffer = Buffer.from(base64Content, 'base64');
 
@@ -2765,6 +2772,20 @@ class SurveyController {
     } catch (err) {
       console.error('Lỗi getPublicStats:', err);
       return res.status(500).json({ success: false, message: 'Lỗi tải số liệu thống kê thời gian thực: ' + err.message });
+    }
+  }
+  /**
+   * GET /api/v1/surveys/service-account-info
+   * Trả về thông tin trạng thái cấu hình Google Service Account
+   */
+  getServiceAccountInfo(req, res) {
+    try {
+      const formParserService = require('../services/formParserService');
+      const configured = formParserService.hasServiceAccountConfigured();
+      const email = formParserService.getServiceAccountEmail();
+      return res.json({ success: true, configured, serviceAccountEmail: email || null });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
     }
   }
 }

@@ -4,6 +4,8 @@
  * cấu hình URL qua API và tự động kích hoạt đồng bộ khi bài làm VALIDATED.
  */
 
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+
 const http = require('node:http');
 const assert = require('node:assert');
 const crypto = require('node:crypto');

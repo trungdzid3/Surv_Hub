@@ -132,12 +132,85 @@ class LogoCrawlerService {
   }
 
   /**
-   * Helper fetch buffer từ URL (có hỗ trợ redirect 301/302)
+   * Kiểm tra Host/Domain có phải IP nội bộ, loopback hoặc private không (Chống SSRF)
+   */
+  isPrivateOrBlockedHost(host) {
+    if (!host || typeof host !== 'string') return true;
+    let cleanHost = host.trim().toLowerCase();
+
+    // Loại bỏ port nếu có
+    if (cleanHost.includes(':') && !cleanHost.includes(']')) {
+      const parts = cleanHost.split(':');
+      if (parts.length === 2 && /^\d+$/.test(parts[1])) {
+        cleanHost = parts[0];
+      }
+    }
+
+    if (cleanHost.startsWith('[') && cleanHost.endsWith(']')) {
+      cleanHost = cleanHost.slice(1, -1);
+    }
+
+    if (
+      cleanHost === 'localhost' ||
+      cleanHost.endsWith('.localhost') ||
+      cleanHost.endsWith('.local') ||
+      cleanHost.endsWith('.internal') ||
+      cleanHost.endsWith('.lan')
+    ) {
+      return true;
+    }
+
+    if (
+      cleanHost === '::1' ||
+      cleanHost === '::' ||
+      cleanHost === '0:0:0:0:0:0:0:1' ||
+      cleanHost === '0:0:0:0:0:0:0:0' ||
+      cleanHost.startsWith('fe80:') ||
+      cleanHost.startsWith('fe8') ||
+      cleanHost.startsWith('fe9') ||
+      cleanHost.startsWith('fea') ||
+      cleanHost.startsWith('feb') ||
+      cleanHost.startsWith('fc') ||
+      cleanHost.startsWith('fd')
+    ) {
+      return true;
+    }
+
+    const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    const match = cleanHost.match(ipv4Regex);
+    if (match) {
+      const a = parseInt(match[1], 10);
+      const b = parseInt(match[2], 10);
+      const c = parseInt(match[3], 10);
+      const d = parseInt(match[4], 10);
+
+      if (a > 255 || b > 255 || c > 255 || d > 255) return true;
+      if (a === 0) return true;
+      if (a === 127) return true;
+      if (a === 10) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 169 && b === 254) return true;
+      if (a >= 224) return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Helper fetch buffer từ URL (có hỗ trợ redirect 301/302 kèm chặn SSRF)
    */
   _fetchBuffer(url, timeoutMs = 8000) {
     return new Promise((resolve, reject) => {
       try {
         const parsed = new URL(url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          return reject(new Error('Giao thức URL không hợp lệ'));
+        }
+        if (this.isPrivateOrBlockedHost(parsed.hostname)) {
+          return reject(new Error('SSRF blocked: Domain/IP nội bộ không an toàn'));
+        }
+
         const client = parsed.protocol === 'https:' ? https : http;
         const req = client.get(url, {
           headers: {
@@ -150,6 +223,14 @@ class LogoCrawlerService {
             let redirectUrl = res.headers.location;
             if (redirectUrl.startsWith('/')) {
               redirectUrl = `${parsed.protocol}//${parsed.host}${redirectUrl}`;
+            }
+            try {
+              const redirectParsed = new URL(redirectUrl);
+              if (this.isPrivateOrBlockedHost(redirectParsed.hostname)) {
+                return reject(new Error('SSRF blocked: Chuyển hướng tới IP nội bộ'));
+              }
+            } catch (err) {
+              return reject(err);
             }
             return this._fetchBuffer(redirectUrl, timeoutMs).then(resolve).catch(reject);
           }
@@ -176,6 +257,10 @@ class LogoCrawlerService {
    */
   async crawlAndSaveLogo(domain, slug) {
     if (!domain || !slug) return null;
+    if (this.isPrivateOrBlockedHost(domain)) {
+      console.warn(`[LogoCrawler] Bỏ qua cào logo: domain/IP nội bộ không an toàn (${domain})`);
+      return null;
+    }
     const localFilePath = path.join(this.targetDir, `${slug}.png`);
 
     // 1. Thử cào apple-touch-icon từ HTML website

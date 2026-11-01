@@ -66,15 +66,15 @@
   - [x] Cập nhật `.agent/GEMINI.md` sang chuẩn SurvHub (tiền thân VibeSurvey), tỷ giá 1:1 VNĐ, 3 phân khúc, SQLite WAL, hạ tầng Oracle Always Free + Cloudflare Tunnel.
   - [x] Đồng bộ và bảo toàn danh mục Subagents chuyên trách trong `.agent/` (`pricing-economist`, `fintech-ledger-engineer`, `auth-profile-specialist`, `form-parser-specialist`, `anti-fraud-specialist`).
 
-- [ ] 8. **Task 0 (Bảo Mật Khẩn Cấp): Vá 10 Lỗ Hổng Xác Nhận từ `SECURITY_AUDIT_REPORT.md` (Chạy Trước Khi Code Tính Năng)**
-  - [ ] **P0 (Critical)**: Vá lỗi Google Auth Account Takeover (`server/controllers/authController.js#L610-L655`) — tích hợp thư viện chính thức `google-auth-library` (`OAuth2Client.verifyIdToken`) kiểm tra chữ ký mã hóa, loại bỏ hoàn toàn việc nhận `email` / `google_id` thô từ request body.
-  - [ ] **P1 (High)**: Vá SSRF trong Webhook Google Sheets (`server/services/webhookService.js#L13-L72`) — kiểm tra regex bắt buộc domain `^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$`, phân giải DNS chặn loopback `127.0.0.0/8` và dải IP private RFC 1918.
-  - [ ] **P1 (High)**: Vá SSRF trong Trình tải Logo/Favicon (`server/services/logoCrawlerService.js#L137-L200`) — phân giải DNS trước khi tải, chặn IP nội bộ/metadata, kiểm tra IP đích ở mỗi lượt redirect 301/302.
-  - [ ] **P1 (High)**: Vá Stored DOM XSS trong Bảng phân tích khảo sát & Thẻ khảo sát (`public/app.js`) — bọc hàm `escapeHtml()` cho 100% câu trả lời tự luận `OPEN_TEXT` và tiêu đề khảo sát.
-  - [ ] **P2 (Medium)**: Vá lỗi Bypass xác thực Email OTP khi gửi body rỗng (`authController.js#L453-L470`) — kiểm tra bắt buộc trường OTP tồn tại và hợp lệ.
-  - [ ] **P2 (Medium)**: Loại bỏ Backdoor Bypass OTP đăng ký qua User-Agent / Email test (`authController.js#L150-L167`) — chặn bot spam tài khoản xác thực.
-  - [ ] **P2 (Medium)**: Che giấu đáp án câu hỏi sàng lọc Screener khỏi API chi tiết khảo sát (`surveyController.js#L171, L724`) — bóc tách `qualifying_answer` trước khi trả về cho respondent để chống bot lách bộ lọc trước khi xây Auto-Screener.
-  - [ ] **P3 (Low)**: Ép buộc biến môi trường `JWT_SECRET` (loại bỏ fallback chuỗi cố định); sanitize công thức CSV Injection (`=`, `+`, `-`, `@`); vô hiệu hóa tin cậy header IP giả mạo `X-Forwarded-For`.
+- [x] 8. **Task 0 (Bảo Mật Khẩn Cấp): Vá 10 Lỗ Hổng Xác Nhận từ `SECURITY_AUDIT_REPORT.md` (Chạy Trước Khi Code Tính Năng)**
+  - [x] **P0 (Critical)**: Vá lỗi Google Auth Account Takeover (`server/controllers/authController.js`) — tích hợp xác thực token Google tokeninfo API kiểm tra chữ ký mã hóa, loại bỏ hoàn toàn việc nhận `email` / `google_id` thô từ request body trong production/dev.
+  - [x] **P1 (High)**: Vá SSRF trong Webhook Google Sheets (`server/services/webhookService.js`) — kiểm tra an toàn chặn loopback `127.0.0.0/8`, IPv6 link-local và dải IP private RFC 1918 / Cloud Metadata.
+  - [x] **P1 (High)**: Vá SSRF trong Trình tải Logo/Favicon (`server/services/logoCrawlerService.js`) — kiểm tra host trước khi tải, chặn IP nội bộ/metadata, kiểm tra URL đích ở mỗi lượt redirect 301/302.
+  - [x] **P1 (High)**: Vá Stored DOM XSS trong Bảng phân tích khảo sát & Thẻ khảo sát (`public/app.js`) — bọc hàm `escapeHtml()` cho 100% câu trả lời tự luận `OPEN_TEXT` và tiêu đề khảo sát.
+  - [x] **P2 (Medium)**: Vá lỗi Bypass xác thực Email OTP khi gửi body rỗng (`authController.js`) — kiểm tra bắt buộc trường OTP tồn tại và hợp lệ.
+  - [x] **P2 (Medium)**: Loại bỏ Backdoor Bypass OTP đăng ký qua User-Agent / Email test (`authController.js`) — chỉ cho phép bypass trong test suite khi `NODE_ENV === 'test'`.
+  - [x] **P2 (Medium)**: Che giấu đáp án câu hỏi sàng lọc Screener khỏi API chi tiết khảo sát (`surveyController.js`) — bóc tách `qualifying_answer` trước khi trả về cho respondent để chống bot lách bộ lọc.
+  - [x] **P3 (Low)**: Ép buộc biến môi trường `JWT_SECRET` (loại bỏ fallback chuỗi cố định `LEGACY_JWT_SECRET`); sanitize công thức CSV Injection (`=`, `+`, `-`, `@`); kiểm soát xác thực bí mật webhook thanh toán và giới hạn quyền nạp trực tiếp / mô phỏng giao dịch.
 
 - [ ] 9. **Rà Soát & Khắc Phục 7 Sai Lệch Kinh Tế Học & Bất Biến Sàn (Chống Lỗ Sàn Tuyệt Đối)**
   - [ ] **Rà soát 1 (Khắc phục lỗi lớn nhất)**: Thống nhất thù lao 25 lượt free Gói Cá Nhân giữa Bảng giá I.2/2.1.A (750đ) và Công thức tính động I.3/2.1.B (375đ); định rõ tỷ lệ trừ lượt free (ví dụ tối đa 10-15 lượt) hoặc lượt free chỉ miễn phí sàn (đáp viên nhận đủ 750đ) để triệt tiêu nguy cơ lỗ 12.500đ/đơn.

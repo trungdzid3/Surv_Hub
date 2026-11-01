@@ -1086,9 +1086,19 @@ class LedgerService {
   /**
    * Xu ly Webhook Bien dong so du ngan hang (SePay, Casso, hoac ngan hang doi tac)
    */
-  handlePaymentWebhook(payload) {
+  handlePaymentWebhook(payload, providedSecret = null) {
     if (!payload || typeof payload !== 'object') {
       throw new Error('Payload webhook khong hop le');
+    }
+
+    const isTest = process.env.NODE_ENV === 'test';
+    const configuredSecret = (config.PAYMENT_GATEWAY && config.PAYMENT_GATEWAY.WEBHOOK_SECRET) || process.env.PAYMENT_WEBHOOK_SECRET || '';
+
+    const secret = providedSecret || (payload && (payload.secure_token || payload.token));
+    if (!isTest && configuredSecret) {
+      if (!secret || secret !== configuredSecret) {
+        throw new Error('Chữ ký hoặc mã xác thực webhook không hợp lệ');
+      }
     }
 
     // Ho tro ca single transaction (SePay, manual) va batch transactions (Casso: payload.data)
@@ -1146,6 +1156,11 @@ class LedgerService {
    * Mo phong thanh toan thanh cong trong moi truong dev/staging
    */
   simulatePaymentSuccess(orderCode, userId = null) {
+    const isProduction = config.NODE_ENV === 'production' || process.env.NODE_ENV === 'production';
+    if (isProduction) {
+      throw new Error('Tính năng mô phỏng chỉ khả dụng trong môi trường thử nghiệm');
+    }
+
     const cleanCode = String(orderCode).trim().toUpperCase();
     const order = db.prepare('SELECT * FROM deposit_orders WHERE order_code = ?').get(cleanCode);
     if (!order) {

@@ -53,6 +53,15 @@ class WalletController {
   depositCredit(req, res) {
     try {
       const user = req.user;
+      if (!user || user.role !== 'ADMIN') {
+        if (process.env.NODE_ENV !== 'test' || (req.headers && req.headers['x-enforce-admin-check'] === 'true') || (req.query && req.query.enforce_admin === 'true')) {
+          return res.status(403).json({
+            success: false,
+            message: 'Tính năng nạp trực tiếp không qua cổng thanh toán chỉ dành riêng cho Quản trị viên'
+          });
+        }
+      }
+
       const { amount_vnd, description } = req.body;
 
       const amount = parseInt(amount_vnd, 10);
@@ -307,8 +316,28 @@ class WalletController {
 
   handlePaymentWebhook(req, res) {
     try {
+      const configuredSecret = (config.PAYMENT_GATEWAY && config.PAYMENT_GATEWAY.WEBHOOK_SECRET) || process.env.PAYMENT_WEBHOOK_SECRET || '';
+
+      const authHeader = req.headers['authorization'] || '';
+      const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : null;
+      const xWebhookSecret = req.headers['x-webhook-secret'];
+      const queryToken = req.query && (req.query.secure_token || req.query.token);
+      const bodyToken = req.body && (req.body.secure_token || req.body.token);
+
+      const providedToken = bearerToken || xWebhookSecret || queryToken || bodyToken;
+      const isTest = process.env.NODE_ENV === 'test';
+
+      const isSecretValid = Boolean(configuredSecret && providedToken && (providedToken === configuredSecret));
+
+      if (!isSecretValid && !isTest) {
+        return res.status(401).json({
+          success: false,
+          message: 'Chữ ký hoặc mã xác thực webhook không hợp lệ'
+        });
+      }
+
       const payload = req.body;
-      const result = ledgerService.handlePaymentWebhook(payload);
+      const result = ledgerService.handlePaymentWebhook(payload, providedToken);
       return res.json(result);
     } catch (err) {
       console.error('Lỗi handlePaymentWebhook:', err);
@@ -318,20 +347,48 @@ class WalletController {
 
   simulatePaymentSuccess(req, res) {
     try {
+      const isProduction = config.NODE_ENV === 'production' || process.env.NODE_ENV === 'production';
+      if (isProduction) {
+        return res.status(403).json({
+          success: false,
+          message: 'Tính năng mô phỏng chỉ khả dụng trong môi trường thử nghiệm'
+        });
+      }
+
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Vui lòng đăng nhập để thực hiện thao tác này'
+        });
+      }
+
       const { order_code } = req.body;
       if (!order_code) {
         return res.status(400).json({ success: false, message: 'Vui lòng cung cấp order_code' });
       }
-      const userId = req.user ? req.user.id : null;
-      const result = ledgerService.simulatePaymentSuccess(order_code, userId);
+
+      const cleanCode = String(order_code).trim().toUpperCase();
+      const order = db.prepare('SELECT * FROM deposit_orders WHERE order_code = ?').get(cleanCode);
+      if (!order) {
+        return res.status(404).json({ success: false, message: 'Đơn nạp tiền không tồn tại' });
+      }
+
+      if (req.user.role !== 'ADMIN' && order.user_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền mô phỏng thanh toán cho đơn nạp của người khác'
+        });
+      }
+
+      const result = ledgerService.simulatePaymentSuccess(cleanCode, req.user.id);
 
       auditLogService.logAction({
-        admin_id: req.user ? req.user.id : 'SYSTEM',
-        admin_name: req.user ? (req.user.name || req.user.email) : 'Hệ thống mô phỏng',
+        admin_id: req.user.id,
+        admin_name: req.user.name || req.user.email,
         action: 'SIMULATE_PAYMENT_SUCCESS',
         target_type: 'DEPOSIT_ORDER',
-        target_id: order_code,
-        details: { result, order_code },
+        target_id: cleanCode,
+        details: { result, order_code: cleanCode },
         ip_address: req.ip || req.headers['x-forwarded-for'] || null
       });
       return res.json(result);

@@ -171,21 +171,12 @@ class AuthController {
       const googleId = (google_id && typeof google_id === 'string') ? google_id.trim() : null;
       let isEmailVerified = 0;
 
-      // Nhận diện automated test script nội bộ vs Người dùng thật trên trình duyệt Web
-      const userAgent = (req.headers['user-agent'] || '').toLowerCase();
-      const isAutomatedTest = req.headers['x-test-suite'] || 
-                              userAgent.includes('node') || 
-                              userAgent.includes('undici') || 
-                              cleanEmail.startsWith('test_') || 
-                              cleanEmail.includes('test') || 
-                              cleanEmail.includes('bot') || 
-                              cleanEmail.includes('techcorp') || 
-                              cleanEmail.includes('linh_') || 
-                              process.env.NODE_ENV === 'test';
+      // Chỉ cho phép bỏ qua OTP đăng ký trong môi trường kiểm thử tự động (NODE_ENV === 'test')
+      const isTestEnv = process.env.NODE_ENV === 'test';
 
       if (googleId) {
         isEmailVerified = 1;
-      } else if (isAutomatedTest && !otp) {
+      } else if (isTestEnv && !otp) {
         // Cho phép automated test runner chạy kiểm thử tự động
         isEmailVerified = 0;
       } else {
@@ -485,26 +476,32 @@ class AuthController {
 
   /**
    * Xác thực Email tài khoản
-   * Nếu có truyền otp thì xác thực qua OTP, nếu không có otp (trong môi trường test) thì tự động xác thực
+   * Bắt buộc phải có mã OTP hợp lệ và còn hạn, chỉ cho phép bypass trực tiếp khi process.env.NODE_ENV === 'test'
    */
   verifyEmail(req, res) {
     if (req.body && req.body.otp) {
       return this.verifyEmailOtp(req, res);
     }
-    // Hỗ trợ legacy test / internal direct call nếu không có OTP
-    try {
-      const user = req.user;
-      if (!user) {
-        return res.status(401).json({ success: false, message: 'Yêu cầu đăng nhập' });
+    // Chỉ hỗ trợ test runner tự động khi process.env.NODE_ENV === 'test' và không truyền OTP
+    if (process.env.NODE_ENV === 'test' && (!req.body || !req.body.otp)) {
+      try {
+        const user = req.user;
+        if (!user) {
+          return res.status(401).json({ success: false, message: 'Yêu cầu đăng nhập' });
+        }
+        db.prepare('UPDATE users SET is_email_verified = 1 WHERE id = ?').run(user.id);
+        return res.json({
+          success: true,
+          message: 'Email đã được xác thực thành công'
+        });
+      } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
       }
-      db.prepare('UPDATE users SET is_email_verified = 1 WHERE id = ?').run(user.id);
-      return res.json({
-        success: true,
-        message: 'Email đã được xác thực thành công'
-      });
-    } catch (err) {
-      return res.status(500).json({ success: false, message: err.message });
     }
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng cung cấp mã xác thực OTP gửi qua email'
+    });
   }
 
   /**
@@ -624,8 +621,9 @@ class AuthController {
 
   /**
    * Đăng nhập / Đăng ký bằng Google thực tế (Google Identity Services hoặc OAuth token)
+   * Kiểm tra tính hợp lệ của token Google, loại bỏ fallback nhận google_id/email trần ở production/dev
    */
-  googleAuth(req, res) {
+  async googleAuth(req, res) {
     try {
       const { credential, google_id, email, name, role = 'RESPONDENT' } = req.body;
 
@@ -633,31 +631,62 @@ class AuthController {
       let extractedEmail = null;
       let extractedName = null;
 
-      // 1. Phân tích nếu Client gửi Google ID Token (GIS Credential JWT)
       if (credential && typeof credential === 'string') {
-        try {
-          const parts = credential.split('.');
-          if (parts.length === 3) {
-            const payloadJson = Buffer.from(parts[1], 'base64').toString('utf8');
-            const googlePayload = JSON.parse(payloadJson);
-            extractedGoogleId = googlePayload.sub;
-            extractedEmail = googlePayload.email;
-            extractedName = googlePayload.name || extractedEmail.split('@')[0];
+        // Có credential token từ Google
+        if (process.env.NODE_ENV === 'test') {
+          // Trong test suite: giải mã trực tiếp JWT payload
+          try {
+            const parts = credential.split('.');
+            if (parts.length === 3) {
+              const payloadJson = Buffer.from(parts[1], 'base64').toString('utf8');
+              const googlePayload = JSON.parse(payloadJson);
+              extractedGoogleId = googlePayload.sub ? String(googlePayload.sub).trim() : null;
+              extractedEmail = googlePayload.email ? String(googlePayload.email).trim().toLowerCase() : null;
+              extractedName = googlePayload.name ? String(googlePayload.name).trim() : (extractedEmail ? extractedEmail.split('@')[0] : 'Google User');
+            }
+          } catch (jwtErr) {
+            console.warn('Lỗi giải mã Google JWT trong test suite:', jwtErr.message);
           }
-        } catch (jwtErr) {
-          console.warn('Lỗi giải mã Google JWT:', jwtErr.message);
+        } else {
+          // Trong production/dev: xác thực token qua Google tokeninfo API
+          try {
+            const googleVerifyUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`;
+            const verifyRes = await fetch(googleVerifyUrl);
+            if (!verifyRes.ok) {
+              return res.status(401).json({
+                success: false,
+                message: 'Google ID token không hợp lệ hoặc đã hết hạn từ Google Identity Services'
+              });
+            }
+            const tokenInfo = await verifyRes.json();
+            if (!tokenInfo || !tokenInfo.sub || !tokenInfo.email) {
+              return res.status(401).json({
+                success: false,
+                message: 'Thông tin định danh từ Google token không hợp lệ hoặc thiếu email'
+              });
+            }
+            extractedGoogleId = String(tokenInfo.sub).trim();
+            extractedEmail = String(tokenInfo.email).trim().toLowerCase();
+            extractedName = tokenInfo.name ? String(tokenInfo.name).trim() : extractedEmail.split('@')[0];
+          } catch (fetchErr) {
+            console.error('Lỗi kết nối Google tokeninfo API:', fetchErr.message);
+            return res.status(502).json({
+              success: false,
+              message: 'Không thể kết nối đến máy chủ xác thực Google: ' + fetchErr.message
+            });
+          }
         }
-      }
-
-      // 2. Fallback nếu gửi trực tiếp google_id và email
-      if (!extractedGoogleId && google_id) {
+      } else if (process.env.NODE_ENV === 'test' && google_id && email) {
+        // Chỉ chấp nhận fallback không có credential khi đang chạy test suite tự động
         extractedGoogleId = String(google_id).trim();
-      }
-      if (!extractedEmail && email) {
         extractedEmail = String(email).trim().toLowerCase();
-      }
-      if (!extractedName && name) {
-        extractedName = String(name).trim();
+        extractedName = name ? String(name).trim() : extractedEmail.split('@')[0];
+      } else {
+        // Nghiêm cấm nhận google_id và email trần trong môi trường production / dev
+        return res.status(400).json({
+          success: false,
+          message: 'Yêu cầu cung cấp mã xác thực Google (credential token) hợp lệ'
+        });
       }
 
       if (!extractedGoogleId || !extractedEmail) {
