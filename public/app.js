@@ -1174,228 +1174,157 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     if (!user || !contentEl) return;
 
     const adminMode = this.state.adminViewMode || 'ADMIN';
-    const adminModeLabels = {
-      RESPONDENT: 'Người Điền',
-      CREATOR: 'Doanh Nghiệp',
-      ADMIN: 'Quản Trị'
-    };
+    const isEnterprise = this.isEnterpriseUser();
 
+    // Huy hiệu vai trò súc tích, sang trọng
     let roleBadge = '';
     if (user.role === 'ADMIN') {
       if (adminMode === 'RESPONDENT') {
-        roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded border border-stone-300 dark:border-stone-700">Người Điền (Admin)</span>';
+        roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-md border border-stone-200 dark:border-stone-700">Người Điền (Admin)</span>';
       } else if (adminMode === 'CREATOR') {
-        roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-orange-600 text-white rounded">Doanh Nghiệp (Admin)</span>';
+        roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-orange-600 text-white rounded-md">Doanh Nghiệp (Admin)</span>';
       } else {
-        roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 rounded">Quản Trị</span>';
+        roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 rounded-md">Quản Trị</span>';
       }
-    } else if (user.role === 'CREATOR') {
-      roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-orange-600 text-white rounded">Doanh Nghiệp</span>';
+    } else if (user.role === 'CREATOR' || user.account_tier === 'ENTERPRISE') {
+      roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-orange-600 text-white rounded-md">Doanh Nghiệp</span>';
+    } else if (user.is_student_verified === 1 || user.account_tier === 'STUDENT') {
+      roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 rounded-md border border-orange-200 dark:border-orange-800">Sinh Viên</span>';
     } else {
-      roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded">Thành Viên</span>';
+      roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-md">Thành Viên</span>';
     }
 
-    const isGoogleLinked = user.is_google_linked === 1;
+    const firstLetter = (user.name || user.email || 'U').charAt(0).toUpperCase();
 
     contentEl.innerHTML = `
-      <!-- User Info Header -->
-      <div class="px-4 py-3 border-b border-stone-100 dark:border-stone-800">
-        <div class="flex items-center justify-between gap-2 mb-1">
-          <div class="font-bold text-sm text-slate-900 dark:text-white truncate">${user.name}</div>
-          ${roleBadge}
+      <!-- User Info Header: Gọn gàng, thoáng đãng -->
+      <div class="p-3 border-b border-stone-100 dark:border-stone-800">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+            ${firstLetter}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-1.5">
+              <div class="font-bold text-xs text-stone-900 dark:text-stone-100 truncate">${user.name}</div>
+              ${roleBadge}
+            </div>
+            <div class="text-[11px] text-stone-500 dark:text-stone-400 truncate mt-0.5">${user.email}</div>
+          </div>
         </div>
-        <div class="text-xs text-stone-500 dark:text-stone-400 truncate">${user.email}</div>
       </div>
 
       ${user.role === 'ADMIN' ? `
-        <!-- Khối Chuyển Góc Nhìn Trải Nghiệm Dành Riêng Cho ADMIN -->
-        <div class="px-4 py-2.5 bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 space-y-1.5">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-stone-500 dark:text-stone-400 font-medium text-[11px]">Chế độ trải nghiệm:</span>
-            <span class="font-bold text-orange-600 dark:text-orange-500 font-mono text-[11px]">${adminModeLabels[adminMode] || 'Quản Trị'}</span>
-          </div>
-          <div class="grid grid-cols-3 gap-1 bg-stone-200/70 dark:bg-stone-800 p-1 rounded-xl text-xs">
-            <button onclick="VibeApp.switchAdminMode('RESPONDENT')" class="py-1 px-1.5 rounded-lg font-bold text-center transition-all ${adminMode === 'RESPONDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
+        <!-- Trình Chuyển Góc Nhìn ADMIN (Duy Nhất 1 Thanh Segmented Control Gọn Gàng) -->
+        <div class="px-3 py-2 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-100 dark:border-stone-800">
+          <div class="grid grid-cols-3 gap-1 bg-stone-200/60 dark:bg-stone-800/80 p-0.5 rounded-lg text-[11px]">
+            <button onclick="VibeApp.switchAdminMode('RESPONDENT')" class="py-1 px-1 rounded-md font-semibold text-center transition-all ${adminMode === 'RESPONDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs font-bold' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
               Người Điền
             </button>
-            <button onclick="VibeApp.switchAdminMode('CREATOR')" class="py-1 px-1.5 rounded-lg font-bold text-center transition-all ${adminMode === 'CREATOR' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
+            <button onclick="VibeApp.switchAdminMode('CREATOR')" class="py-1 px-1 rounded-md font-semibold text-center transition-all ${adminMode === 'CREATOR' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs font-bold' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
               Doanh Nghiệp
             </button>
-            <button onclick="VibeApp.switchAdminMode('ADMIN')" class="py-1 px-1.5 rounded-lg font-bold text-center transition-all ${adminMode === 'ADMIN' ? 'bg-white dark:bg-stone-900 text-slate-900 dark:text-white shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
+            <button onclick="VibeApp.switchAdminMode('ADMIN')" class="py-1 px-1 rounded-md font-semibold text-center transition-all ${adminMode === 'ADMIN' ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-bold' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
               Quản Trị
             </button>
           </div>
         </div>
-
-        <!-- Khối Phân Hạng Tài Khoản (Được thiết kế tinh tế, tiệp màu nền sạch sẽ) -->
-        ${adminMode === 'RESPONDENT' ? `
-        <!-- Góc nhìn Người Điền -->
-        <div class="px-4 py-2.5 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-100 dark:border-stone-800 space-y-1.5">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-stone-500 dark:text-stone-400 font-medium text-[11px]">Phân khúc Người Điền:</span>
-            <span class="font-bold text-orange-600 dark:text-orange-400 font-mono text-[11px]">${user.account_tier === 'STUDENT' ? 'Sinh Viên' : 'Người Điền Thường'}</span>
-          </div>
-          <div class="grid grid-cols-2 gap-1 bg-stone-200/60 dark:bg-stone-800 p-1 rounded-xl text-xs">
-            <button type="button" onclick="VibeApp.switchAdminTier('PERSONAL')" class="py-1 px-2 rounded-lg font-bold text-center transition-all ${user.account_tier !== 'STUDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
-              Người Điền Thường
-            </button>
-            <button type="button" onclick="VibeApp.switchAdminTier('STUDENT')" class="py-1 px-2 rounded-lg font-bold text-center transition-all ${user.account_tier === 'STUDENT' ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
-              Sinh Viên
-            </button>
-          </div>
-        </div>
-        ` : (adminMode === 'CREATOR' ? `
-        <!-- Góc nhìn Doanh Nghiệp: Thanh lịch, tinh tế, tiệp màu với dropdown -->
-        <div class="px-4 py-2.5 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs">
-          <span class="text-stone-500 dark:text-stone-400 font-medium text-[11px]">Phân khúc tài khoản:</span>
-          <span class="inline-flex items-center gap-1.5 font-bold text-stone-900 dark:text-white text-[11px]">
-            <i data-lucide="building-2" class="w-3.5 h-3.5 text-orange-600"></i>
-            <span>Doanh Nghiệp (Enterprise)</span>
-          </span>
-        </div>
-        ` : `
-        <!-- Góc nhìn Quản Trị -->
-        <div class="px-4 py-2.5 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-100 dark:border-stone-800 space-y-1.5">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-stone-500 dark:text-stone-400 font-medium text-[11px]">Phân hạng Admin:</span>
-            <span class="font-bold text-orange-600 dark:text-orange-400 font-mono text-[11px]">${user.account_tier === 'STUDENT' ? 'Sinh Viên' : (user.account_tier === 'ENTERPRISE' ? 'Doanh Nghiệp' : 'Cá Nhân')}</span>
-          </div>
-          <div class="grid grid-cols-3 gap-1 bg-stone-200/60 dark:bg-stone-800 p-1 rounded-xl text-xs">
-            <button type="button" onclick="VibeApp.switchAdminTier('PERSONAL')" class="py-1 px-1 rounded-lg font-bold text-center transition-all ${user.account_tier === 'PERSONAL' || (!user.account_tier || (user.account_tier !== 'STUDENT' && user.account_tier !== 'ENTERPRISE')) ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
-              Thường
-            </button>
-            <button type="button" onclick="VibeApp.switchAdminTier('STUDENT')" class="py-1 px-1 rounded-lg font-bold text-center transition-all ${user.account_tier === 'STUDENT' ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
-              Sinh Viên
-            </button>
-            <button type="button" onclick="VibeApp.switchAdminTier('ENTERPRISE')" class="py-1 px-1 rounded-lg font-bold text-center transition-all ${user.account_tier === 'ENTERPRISE' ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
-              Doanh Nghiệp
-            </button>
-          </div>
-        </div>
-        `)}
       ` : ''}
 
-      <!-- Balance & Fast Track Tickets inside Profile (Thiết kế Bento 2 cột tinh gọn, không tràn màn hình) -->
-      <div class="px-3.5 py-2.5 bg-stone-50 dark:bg-stone-900 border-b border-stone-100 dark:border-stone-800 space-y-1.5">
-        ${this.isEnterpriseUser() ? `
-        <!-- Doanh Nghiệp: Ẩn hoàn toàn điểm và điểm danh, chỉ hiển thị Credit & Vé Hỏa Tốc -->
-        <div class="p-2.5 rounded-xl bg-white dark:bg-stone-800/80 border border-stone-200/70 dark:border-stone-700/60 flex items-center justify-between">
-          <div>
-            <span class="text-[10px] text-stone-500 dark:text-stone-400 block font-medium">Số dư Credit tạo form:</span>
-            <span class="font-mono font-black text-stone-900 dark:text-stone-100 text-sm block mt-0.5">
-              ${Number(user.credit_balance || 0).toLocaleString('vi-VN')} Credit
-            </span>
+      <!-- Khối Số Dư Tinh Gọn (Financial Bento Card) -->
+      <div class="p-3 border-b border-stone-100 dark:border-stone-800">
+        ${isEnterprise ? `
+          <!-- Giao diện Doanh Nghiệp: Credit & Nạp Quỹ -->
+          <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/70 border border-stone-200/60 dark:border-stone-800">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-stone-500 dark:text-stone-400 font-medium block">Số dư Credit tạo form</span>
+                <span class="font-mono font-black text-stone-900 dark:text-stone-100 text-sm block mt-0.5">
+                  ${Number(user.credit_balance || 0).toLocaleString('vi-VN')} Credit
+                </span>
+              </div>
+              <button onclick="VibeApp.toggleProfileDropdown(); VibeApp.openDepositModal()" class="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nạp Quỹ
+              </button>
+            </div>
+            ${Number(user.fast_track_tickets || 0) > 0 ? `
+              <div class="flex items-center justify-between text-[11px] pt-1.5 mt-2 border-t border-stone-200/60 dark:border-stone-800">
+                <span class="text-stone-500 dark:text-stone-400 font-medium">Vé Hỏa Tốc:</span>
+                <span class="font-mono font-bold text-stone-800 dark:text-stone-200">${Number(user.fast_track_tickets)} Vé</span>
+              </div>
+            ` : ''}
           </div>
-          <button onclick="VibeApp.toggleProfileDropdown(); VibeApp.openDepositModal()" class="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs active:scale-95 flex items-center gap-1">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nạp Quỹ
-          </button>
-        </div>
-        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800">
-          <span class="text-stone-500 dark:text-stone-400 font-medium">Vé Thu Mẫu Hỏa Tốc:</span>
-          <span class="font-mono font-bold text-stone-900 dark:text-stone-100">
-            ${Number(user.fast_track_tickets || 0)} Vé
-          </span>
-        </div>
         ` : `
-        <!-- Người Điền: Hiển thị đầy đủ Điểm, quy đổi và chuỗi điểm danh -->
-        <div class="grid grid-cols-2 gap-1.5">
-          <div class="p-2 rounded-xl bg-white dark:bg-stone-800/80 border border-stone-200/70 dark:border-stone-700/60">
-            <span class="text-[10px] text-stone-500 dark:text-stone-400 block font-medium">Số dư điểm:</span>
-            <span class="font-mono font-bold text-orange-600 dark:text-orange-500 text-xs block truncate">
-              ${Number(user.point_balance || 0).toLocaleString('vi-VN')} Điểm
-            </span>
-            <span class="text-[10px] text-stone-400 dark:text-stone-500 font-mono block">
-              ≈ ${Number(user.point_balance || 0).toLocaleString('vi-VN')}đ
-            </span>
+          <!-- Giao diện Người Điền: Điểm thưởng & Chuỗi ngày -->
+          <div class="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-900/70 border border-stone-200/60 dark:border-stone-800 space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-stone-500 dark:text-stone-400 font-medium block">Số dư tích lũy</span>
+                <div class="flex items-baseline gap-1 mt-0.5">
+                  <span class="font-mono font-black text-orange-600 dark:text-orange-500 text-sm">
+                    ${Number(user.point_balance || 0).toLocaleString('vi-VN')}
+                  </span>
+                  <span class="text-[10px] text-stone-400 dark:text-stone-500 font-medium">Point (≈ ${Number(user.point_balance || 0).toLocaleString('vi-VN')}đ)</span>
+                </div>
+              </div>
+              <button onclick="VibeApp.toggleProfileDropdown(); VibeApp.navigate('wallet')" class="px-2.5 py-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-lg transition-colors border border-orange-200/60 dark:border-orange-800/60">
+                Rút Tiền
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-stone-200/60 dark:border-stone-800">
+              <span class="inline-flex items-center gap-1 text-stone-600 dark:text-stone-400 font-medium cursor-pointer hover:text-orange-600" onclick="VibeApp.toggleProfileDropdown(); VibeApp.openStreakModal()">
+                <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-600"></i>
+                <span>Chuỗi ngày:</span>
+                <span class="font-mono font-bold text-orange-600 dark:text-orange-400 ml-0.5">
+                  ${this.state.streakInfo ? this.state.streakInfo.current_streak + ' ngày' : 'Điểm danh'}
+                </span>
+              </span>
+
+              ${Number(user.credit_balance || 0) > 0 ? `
+                <span class="font-mono text-stone-500 dark:text-stone-400 text-[10px]">
+                  ${Number(user.credit_balance).toLocaleString('vi-VN')} Credit
+                </span>
+              ` : (user.is_student_verified === 1 ? `
+                <span class="font-mono text-orange-600 text-[10px] font-bold">
+                  ${Number(user.student_karma || 0)} Karma
+                </span>
+              ` : '')}
+            </div>
           </div>
-          <div class="p-2 rounded-xl bg-white dark:bg-stone-800/80 border border-stone-200/70 dark:border-stone-700/60">
-            <span class="text-[10px] text-stone-500 dark:text-stone-400 block font-medium">Credit tạo form:</span>
-            <span class="font-mono font-bold text-stone-900 dark:text-stone-100 text-xs block truncate mt-0.5">
-              ${Number(user.credit_balance || 0).toLocaleString('vi-VN')}
-            </span>
-            <span class="text-[10px] text-stone-400 dark:text-stone-500 block">Credit</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800">
-          <span class="text-stone-500 dark:text-stone-400 font-medium">Vé Thu Mẫu Hỏa Tốc:</span>
-          <span class="font-mono font-bold text-stone-900 dark:text-stone-100">
-            ${Number(user.fast_track_tickets || 0)} Vé
-          </span>
-        </div>
-        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800 cursor-pointer hover:opacity-85 transition-opacity" onclick="VibeApp.toggleProfileDropdown(); VibeApp.openStreakModal()">
-          <span class="inline-flex items-center gap-1.5 text-stone-600 dark:text-stone-300 font-medium">
-            <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-600"></i>
-            <span>Chuỗi điểm danh:</span>
-          </span>
-          <span class="font-mono font-bold text-orange-600 dark:text-orange-400">
-            ${this.state.streakInfo ? this.state.streakInfo.current_streak + ' ngày' : 'Điểm danh'}
-          </span>
-        </div>
-        ${user.is_student_verified === 1 ? `
-        <div class="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800 cursor-pointer hover:opacity-85 transition-opacity" onclick="VibeApp.toggleProfileDropdown(); VibeApp.navigate('surveys'); VibeApp.setCategoryFilter('STUDENT_EXCHANGE')">
-          <span class="inline-flex items-center gap-1.5 text-stone-600 dark:text-stone-300 font-medium">
-            <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-orange-600"></i>
-            <span>Điểm Karma Edu:</span>
-          </span>
-          <span class="font-mono font-bold text-orange-600 dark:text-orange-400">
-            ${Number(user.student_karma || 0)} lượt tạo form
-          </span>
-        </div>
-        ` : ''}
         `}
       </div>
 
-      <!-- Security & Free Trial Verification Badges -->
-      <div class="px-4 py-2.5 bg-white dark:bg-stone-900 border-b border-stone-100 dark:border-stone-800 text-xs">
-        <div class="flex items-center justify-between">
-          <span class="text-stone-500 dark:text-stone-400">Tài khoản Google:</span>
-          ${isGoogleLinked
-        ? `<span class="font-semibold text-stone-900 dark:text-stone-200">Đã liên kết</span>`
-        : `<button onclick="VibeApp.linkGoogleAccount()" class="font-semibold text-orange-600 hover:underline">Liên kết ngay</button>`
-      }
-        </div>
+      <!-- Menu Điều Hướng Tài Khoản Cốt Lõi (Đã lược bỏ các mục trùng lặp thừa thãi) -->
+      <div class="p-1.5 space-y-0.5 text-xs">
+        <button onclick="VibeApp.navigate('profile'); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-between text-stone-800 dark:text-stone-200 font-semibold transition-colors group">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="user-check" class="w-4 h-4 text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform"></i>
+            <span>Hồ Sơ & Xác Thực</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-0.5 transition-transform"></i>
+        </button>
+
+        <button onclick="VibeApp.navigate('wallet'); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-between text-stone-800 dark:text-stone-200 font-semibold transition-colors group">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="wallet" class="w-4 h-4 text-stone-600 dark:text-stone-400 group-hover:scale-110 transition-transform"></i>
+            <span>Ví Tiền & Lịch Sử Giao Dịch</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-0.5 transition-transform"></i>
+        </button>
+
+        <button onclick="VibeApp.openBugReportModal(); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-between text-stone-800 dark:text-stone-200 font-medium transition-colors group">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="bug" class="w-4 h-4 text-stone-500 dark:text-stone-400 group-hover:scale-110 transition-transform"></i>
+            <span>Báo Lỗi & Đóng Góp Ý Kiến</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-0.5 transition-transform"></i>
+        </button>
       </div>
 
-      <!-- Menu Shortcuts -->
-      <div class="p-1 space-y-0.5 text-xs">
-        <button onclick="VibeApp.navigate('profile'); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center space-x-2.5 text-stone-800 dark:text-stone-200 font-bold transition-colors">
-          <i data-lucide="user-check" class="w-4 h-4 text-orange-600 dark:text-orange-500"></i>
-          <span>Hồ Sơ & Xác Thực</span>
-        </button>
-
-        <button onclick="VibeApp.openBugReportModal(); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center space-x-2.5 text-stone-800 dark:text-stone-200 font-medium transition-colors">
-          <i data-lucide="bug" class="w-4 h-4 text-orange-600 dark:text-orange-500"></i>
-          <span>Báo Lỗi & Góp Ý</span>
-        </button>
-
-        <button onclick="VibeApp.resetStudioToNew(false); VibeApp.navigate('create-survey'); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center space-x-2.5 text-stone-800 dark:text-stone-200 font-medium transition-colors">
-          <i data-lucide="plus-circle" class="w-4 h-4 text-orange-600 dark:text-orange-500"></i>
-          <span>Tạo Khảo Sát Mới</span>
-        </button>
-
-        <button onclick="VibeApp.navigate('creator-surveys'); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center space-x-2.5 text-stone-800 dark:text-stone-200 font-medium transition-colors">
-          <i data-lucide="folder-kanban" class="w-4 h-4 text-stone-700 dark:text-stone-300"></i>
-          <span>Khảo Sát Của Tôi</span>
-        </button>
-
-        <button onclick="VibeApp.navigate('wallet'); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center space-x-2.5 text-stone-800 dark:text-stone-200 font-medium transition-colors">
-          <i data-lucide="wallet" class="w-4 h-4 text-stone-700 dark:text-stone-300"></i>
-          <span>Ví & Rút Tiền</span>
-        </button>
-
-        ${user.role === 'ADMIN' ? `
-          <button onclick="VibeApp.navigate('admin-overview'); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 flex items-center space-x-2.5 text-stone-800 dark:text-stone-200 font-bold transition-colors">
-            <i data-lucide="shield" class="w-4 h-4 text-stone-700 dark:text-stone-300"></i>
-            <span>Trang Quản Trị Hệ Thống</span>
-          </button>
-        ` : ''}
-      </div>
-
-      <!-- Logout Button -->
-      <div class="border-t border-stone-100 dark:border-stone-800 my-1"></div>
-      <div class="p-1">
-        <button onclick="VibeApp.logout()" class="w-full text-left px-3 py-1.5 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-semibold rounded-lg flex items-center space-x-2 transition-colors">
-          <i data-lucide="log-out" class="w-4 h-4"></i>
+      <!-- Đăng Xuất -->
+      <div class="p-1.5 pt-1 border-t border-stone-100 dark:border-stone-800">
+        <button onclick="VibeApp.logout()" class="w-full text-left px-3 py-2 hover:bg-red-50 dark:hover:bg-red-950/30 text-stone-600 dark:text-stone-400 hover:text-red-600 dark:hover:text-red-400 text-xs font-semibold rounded-lg flex items-center gap-2.5 transition-colors group">
+          <i data-lucide="log-out" class="w-4 h-4 text-stone-500 group-hover:text-red-600 group-hover:translate-x-0.5 transition-all"></i>
           <span>Đăng xuất</span>
         </button>
       </div>
@@ -3965,7 +3894,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }).join('');
     }
 
-    // Mobile Bottom Floating Nav (Kiểu Bong Bóng Nổi Bo Tròn Đẳng Cấp, Chỉ Giữ Icon - Ẩn Toàn Bộ Chữ Theo Yêu Cầu)
+    // Mobile Bottom Floating Nav (Kiểu Bong Bóng Nổi Bo Tròn Đẳng Cấp, Có Nhãn Chữ Rõ Ràng Dưới Icon)
     if (mobileNav) {
       let mobileItems = [];
       const effectiveRole = user ? (user.role === 'ADMIN' ? (this.state.adminViewMode || 'ADMIN') : user.role) : 'GUEST';
@@ -3974,59 +3903,62 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         // Góc nhìn Quản Trị Viên Toàn Quyền:
         // Lược bớt ví (không hiện ví), Quản trị cho ra giữa in đậm nổi bật (isCenterAction: true)
         mobileItems = [
-          { id: 'surveys', label: 'Khảo Sát', icon: 'compass' },
-          { id: 'creator-surveys', label: 'Khảo Sát Của Tôi', icon: 'folder-kanban' },
-          { id: 'admin-overview', label: 'Quản Trị', icon: 'layout-dashboard', centerIcon: 'layout-dashboard', isCenterAction: true },
-          { id: 'create-survey', label: 'Tạo Khảo Sát', icon: 'plus-circle' },
-          { id: 'forum', label: 'Diễn Đàn', icon: 'messages-square' }
+          { id: 'surveys', label: 'Khảo Sát', mobileLabel: 'Khảo Sát', icon: 'compass' },
+          { id: 'creator-surveys', label: 'Khảo Sát Của Tôi', mobileLabel: 'Của Tôi', icon: 'folder-kanban' },
+          { id: 'admin-overview', label: 'Quản Trị', mobileLabel: 'Quản Trị', icon: 'layout-dashboard', centerIcon: 'layout-dashboard', isCenterAction: true },
+          { id: 'create-survey', label: 'Tạo Khảo Sát', mobileLabel: 'Tạo Mới', icon: 'plus-circle' },
+          { id: 'forum', label: 'Diễn Đàn', mobileLabel: 'Diễn Đàn', icon: 'messages-square' }
         ];
       } else if (effectiveRole === 'CREATOR') {
         // Góc nhìn Doanh Nghiệp (Creator / Enterprise):
         // Tô đậm phần Tạo Khảo Sát Mới (isCenterAction: true) ở chính giữa
         mobileItems = [
-          { id: 'surveys', label: 'Khám Phá', icon: 'compass' },
-          { id: 'creator-surveys', label: 'Khảo Sát Của Tôi', icon: 'folder-kanban' },
-          { id: 'create-survey', label: 'Tạo Khảo Sát', icon: 'plus-circle', centerIcon: 'plus', isCenterAction: true },
-          { id: 'forum', label: 'Diễn Đàn', icon: 'messages-square' },
-          { id: 'wallet', label: 'Ví & Nạp Quỹ', icon: 'wallet' }
+          { id: 'surveys', label: 'Khám Phá', mobileLabel: 'Khám Phá', icon: 'compass' },
+          { id: 'creator-surveys', label: 'Khảo Sát Của Tôi', mobileLabel: 'Của Tôi', icon: 'folder-kanban' },
+          { id: 'create-survey', label: 'Tạo Khảo Sát', mobileLabel: 'Tạo Mới', icon: 'plus-circle', centerIcon: 'plus', isCenterAction: true },
+          { id: 'forum', label: 'Diễn Đàn', mobileLabel: 'Diễn Đàn', icon: 'messages-square' },
+          { id: 'wallet', label: 'Ví & Nạp Quỹ', mobileLabel: 'Ví & Quỹ', icon: 'wallet' }
         ];
       } else if (effectiveRole === 'RESPONDENT') {
         // Góc nhìn Người Điền (Đáp Viên / Người Dùng Thường):
         // Nút Tạo Khảo Sát ở chính giữa dạng tròn cam nổi bật
         mobileItems = [
-          { id: 'surveys', label: 'Khảo Sát', icon: 'compass' },
-          { id: 'forum', label: 'Diễn Đàn', icon: 'messages-square' },
-          { id: 'create-survey', label: 'Tạo Khảo Sát', icon: 'plus-circle', centerIcon: 'plus', isCenterAction: true },
-          { id: 'voucher-market', label: 'Chợ Voucher', icon: 'gift' },
-          { id: 'wallet', label: 'Ví & Rút Tiền', icon: 'wallet' }
+          { id: 'surveys', label: 'Khảo Sát', mobileLabel: 'Khảo Sát', icon: 'compass' },
+          { id: 'forum', label: 'Diễn Đàn', mobileLabel: 'Diễn Đàn', icon: 'messages-square' },
+          { id: 'create-survey', label: 'Tạo Khảo Sát', mobileLabel: 'Tạo Mới', icon: 'plus-circle', centerIcon: 'plus', isCenterAction: true },
+          { id: 'voucher-market', label: 'Chợ Voucher', mobileLabel: 'Voucher', icon: 'gift' },
+          { id: 'wallet', label: 'Ví & Rút Tiền', mobileLabel: 'Ví Tiền', icon: 'wallet' }
         ];
       } else {
         // Khách chưa đăng nhập:
         mobileItems = [
-          { id: 'home', label: 'Trang Chủ', icon: 'home' },
-          { id: 'surveys', label: 'Khảo Sát', icon: 'compass' },
-          { id: 'create-survey', label: 'Tạo Khảo Sát', icon: 'plus-circle', centerIcon: 'plus', isCenterAction: true },
-          { id: 'forum', label: 'Diễn Đàn', icon: 'messages-square' },
-          { id: 'auth-login', label: 'Đăng Nhập', icon: 'log-in', isAuthAction: true }
+          { id: 'home', label: 'Trang Chủ', mobileLabel: 'Trang Chủ', icon: 'home' },
+          { id: 'surveys', label: 'Khảo Sát', mobileLabel: 'Khảo Sát', icon: 'compass' },
+          { id: 'create-survey', label: 'Tạo Khảo Sát', mobileLabel: 'Tạo Mới', icon: 'plus-circle', centerIcon: 'plus', isCenterAction: true },
+          { id: 'forum', label: 'Diễn Đàn', mobileLabel: 'Diễn Đàn', icon: 'messages-square' },
+          { id: 'auth-login', label: 'Đăng Nhập', mobileLabel: 'Đăng Nhập', icon: 'log-in', isAuthAction: true }
         ];
       }
 
       mobileNav.innerHTML = mobileItems.map(tab => {
         const isActive = (tab.id === 'admin-overview' && adminSubTabs.includes(this.state.currentTab)) || (this.state.currentTab === tab.id);
         const clickAction = tab.isAuthAction ? `VibeApp.openAuthModal('login')` : `VibeApp.navigate('${tab.id}')`;
+        const displayLabel = tab.mobileLabel || tab.label;
 
-        // Nút hành động chính ở giữa: Action Button dạng tròn cam nổi bật trung tâm (chuẩn phong cách TikTok/Instagram)
+        // Nút hành động chính ở giữa: Action Button dạng tròn cam nổi bật trung tâm kèm nhãn cam in đậm bên dưới
         if (tab.isCenterAction) {
           const centerIcon = tab.centerIcon || tab.icon || 'plus';
-          const iconSizeClass = centerIcon === 'plus' ? 'w-6 h-6 stroke-[2.8]' : 'w-5.5 h-5.5 stroke-[2.4]';
+          const iconSizeClass = centerIcon === 'plus' ? 'w-5.5 h-5.5 stroke-[2.8]' : 'w-5 h-5 stroke-[2.4]';
           return `
             <div class="flex-1 min-w-0 flex justify-center items-center">
               <button onclick="${clickAction}" 
                       title="${tab.label}" 
                       aria-label="${tab.label}"
-                      class="relative -my-1 flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/30 active:scale-90 transition-all ${isActive ? 'ring-2 ring-orange-500 ring-offset-2 dark:ring-offset-stone-900 shadow-orange-600/50' : ''
-            }">
-                <i data-lucide="${centerIcon}" class="${iconSizeClass}"></i>
+                      class="relative -mt-3.5 flex flex-col items-center justify-center group active:scale-90 transition-all select-none">
+                <div class="w-10.5 h-10.5 rounded-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-lg shadow-orange-600/35 transition-all ${isActive ? 'ring-2 ring-orange-500 ring-offset-2 dark:ring-offset-stone-900 shadow-orange-600/50 scale-105' : ''}">
+                  <i data-lucide="${centerIcon}" class="${iconSizeClass}"></i>
+                </div>
+                <span class="text-[9.5px] sm:text-[10px] leading-none mt-1 tracking-tight font-bold text-orange-600 dark:text-orange-400 truncate max-w-[64px] text-center">${displayLabel}</span>
               </button>
             </div>
           `;
@@ -4037,14 +3969,14 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             <button onclick="${clickAction}" 
                     title="${tab.label}" 
                     aria-label="${tab.label}"
-                    class="relative w-full py-1.5 flex items-center justify-center transition-all duration-200 active:scale-90 group ${isActive
-            ? 'text-orange-600 dark:text-orange-400'
-            : 'text-stone-400 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                    class="relative w-full py-1 flex flex-col items-center justify-center transition-all duration-200 active:scale-90 group select-none ${isActive
+            ? 'text-orange-600 dark:text-orange-400 font-bold'
+            : 'text-stone-400 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 font-medium'
           }">
-              <div class="w-10 h-10 rounded-full flex items-center justify-center transition-all ${isActive ? 'bg-stone-100 dark:bg-stone-800 shadow-2xs' : 'group-hover:bg-stone-50 dark:group-hover:bg-stone-800/40'
-          }">
-                <i data-lucide="${tab.icon}" class="w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? 'stroke-[2.5] scale-105' : 'stroke-[1.9]'}"></i>
+              <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all ${isActive ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400' : 'group-hover:bg-stone-50 dark:group-hover:bg-stone-800/40'}">
+                <i data-lucide="${tab.icon}" class="w-4.5 h-4.5 transition-transform group-hover:scale-110 ${isActive ? 'stroke-[2.4] scale-105' : 'stroke-[1.8]'}"></i>
               </div>
+              <span class="text-[9.5px] sm:text-[10px] leading-none mt-1 tracking-tight truncate max-w-[62px] text-center ${isActive ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-stone-500 dark:text-stone-400'}">${displayLabel}</span>
             </button>
           </div>
         `;
