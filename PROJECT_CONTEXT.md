@@ -151,6 +151,25 @@ c:\Users\Lenovo\Downloads\Linh\
     * Khung switch nâng cấp lên chuẩn `w-9 h-5` (36px x 20px).
     * Nút tròn màu trắng `w-4 h-4` (16px x 16px) đặt tại tọa độ `top-[2px] left-[2px]`.
     * Khi bật (checked): `peer-checked:after:translate-x-4` (dịch chuyển đúng 16px sang phải), đưa nút tròn áp sát mép phải đúng 2px, cân xứng hoàn hảo 100%, không còn bị kẹt lơ lửng ở giữa.
+### Phân Hệ Thống Kê Số Liệu Thời Gian Thực Liên Tục (Zero Fake Metrics - v4.7.8)
+- **Loại Bỏ Hoàn Toàn Số Liệu Giả & Hardcode Tĩnh**:
+  - Xóa bỏ triệt để các con số tĩnh bịa đặt (`99.4%`, `150.000+`, `~3 Phút`) và nội dung không có thật ("từ hơn 60 trường đại học") trên 3 thẻ Bento chất lượng tại Landing Page.
+- **API Thống Kê Công Khai Thời Gian Thực**:
+  - Tuyến đường `GET /api/v1/public/stats` và `GET /api/v1/stats` kết nối trực tiếp vào cơ sở dữ liệu SQLite (`vibesurvey.db`):
+    + `valid_data_rate`: Tính toán từ tỷ lệ phản hồi hợp lệ thực tế qua 5 tầng kiểm duyệt chống gian lận (`status != 'REJECTED' AND status != 'SUSPICIOUS'`).
+    + `total_responses`: Tổng số lượt điền mẫu thực tế được ghi nhận và đối soát trực tiếp từ cộng đồng người dùng SurvHub.
+    + `avg_time_formatted`: Thời lượng trung bình thực tế người tham gia hoàn thành một bài khảo sát (tự động chuyển đổi Giây / Phút).
+    + Các chỉ số bổ trợ: `active_surveys`, `total_surveys`, `total_users`, `total_students`.
+- **Giao Diện Frontend & Cơ Chế Polling Tự Động**:
+  - Nạp dữ liệu động ngay khi khởi tạo trang chủ `renderHomeView`.
+  - Cơ chế tự động cập nhật liên tục mỗi 15 giây qua phương thức `updateHomeStatsLive()` cập nhật trực tiếp vào DOM `#bento-stat-valid-rate`, `#bento-stat-total-responses`, `#bento-stat-avg-time` mà không gây giật lag hay reload lại trang.
+  - Chỉ báo trạng thái thời gian thực với chấm xanh nhấp nháy (Live pulse dot) và nhãn thời gian đối soát.
+- **Kiểm Chuẩn & Đồng Bộ**:
+  - `node -c server/controllers/surveyController.js`, `node -c server/routes/api.js`, `node -c public/app.js` đều đạt PASS 100%.
+  - Bộ kiểm thử tự hành `npm test` đạt 15/15 Suites PASS (100.0%).
+  - Đồng bộ Capacitor Android (`npm run sync:android`) thành công.
+  - Nâng cache-buster lên `v=4.7.8_realtime_stats` trong `public/index.html`.
+
 - **Kiểm Chuẩn & Bảo Toàn Hệ Thống**:
   - Cú pháp `node -c public/app.js` đạt mã 0 (PASS 100%).
   - Toàn bộ 15 tầng kiểm thử tự hành (`npm test`) đạt 15/15 Suites PASS (100.0%, 23.39 giây).

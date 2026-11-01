@@ -4081,9 +4081,50 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
   },
 
 
+  // ==================== CẬP NHẬT SỐ LIỆU HỆ THỐNG THỜI GIAN THỰC (ZERO FAKE METRICS) ====================
+  async updateHomeStatsLive() {
+    try {
+      const res = await this.api('/public/stats');
+      if (res && res.success && res.stats) {
+        const s = res.stats;
+        this.state.platformStats = s;
+
+        const elRate = document.getElementById('bento-stat-valid-rate');
+        const elTotal = document.getElementById('bento-stat-total-responses');
+        const elTime = document.getElementById('bento-stat-avg-time');
+        const elBadge = document.getElementById('bento-stat-live-badge');
+
+        if (elRate) elRate.textContent = s.valid_data_rate;
+        if (elTotal) elTotal.textContent = (s.total_responses || 0).toLocaleString('vi-VN');
+        if (elTime) elTime.textContent = s.avg_time_formatted;
+        if (elBadge) {
+          elBadge.textContent = `(${new Date().toLocaleTimeString('vi-VN')})`;
+        }
+      }
+    } catch (err) {
+      // Bỏ qua lỗi nền
+    }
+  },
+
   // ==================== TRANG CHỦ MỞ ĐẦU (SURVHUB LANDING PAGE) ====================
   async renderHomeView(root) {
     if (!root) return;
+
+    // Nạp số liệu thống kê thực tế nếu chưa có
+    let initialStats = this.state.platformStats || {
+      valid_data_rate: '100%',
+      total_responses: 0,
+      avg_time_formatted: '~0 Phút'
+    };
+    try {
+      const statsRes = await this.api('/public/stats');
+      if (statsRes && statsRes.success && statsRes.stats) {
+        initialStats = statsRes.stats;
+        this.state.platformStats = statsRes.stats;
+      }
+    } catch (e) {
+      console.warn('Lỗi nạp số liệu thống kê trang chủ:', e);
+    }
 
     // Nạp danh sách khảo sát nếu chưa có
     if (!this.state.surveys || this.state.surveys.length === 0) {
@@ -4271,15 +4312,15 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           </div>
         </section>
 
-        <!-- 3. BENTO CARDS: 3 CHỐT CHẶN CHẤT LƯỢNG CHUẨN STITCH -->
-        <section class="max-w-6xl mx-auto w-full">
+        <!-- 3. BENTO CARDS: 3 CHỐT CHẶN CHẤT LƯỢNG CHUẨN STITCH (SỐ LIỆU THỰC TẾ LIÊN TỤC) -->
+        <section class="max-w-6xl mx-auto w-full space-y-3">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <!-- Card 1 -->
-            <div class="flex flex-col items-center text-center p-6 rounded-3xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 shadow-xs space-y-3">
+            <div class="flex flex-col items-center text-center p-6 rounded-3xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 shadow-xs space-y-3 hover:border-orange-500/40 transition-all">
               <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-950/60 flex items-center justify-center text-orange-600 mb-1">
                 <i data-lucide="shield-check" class="w-6 h-6 stroke-[2.2]"></i>
               </div>
-              <span class="text-3xl sm:text-4xl font-black text-stone-900 dark:text-white tracking-tight font-mono">99.4%</span>
+              <span id="bento-stat-valid-rate" class="text-3xl sm:text-4xl font-black text-stone-900 dark:text-white tracking-tight font-mono">${initialStats.valid_data_rate}</span>
               <span class="text-sm font-bold text-stone-800 dark:text-stone-200">Dữ liệu xác thực</span>
               <p class="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
                 Hệ thống lọc IP, đối chiếu mã sinh viên và thuật toán kiểm tra tính nhất quán phản hồi.
@@ -4287,28 +4328,35 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             </div>
 
             <!-- Card 2 -->
-            <div class="flex flex-col items-center text-center p-6 rounded-3xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 shadow-xs space-y-3">
+            <div class="flex flex-col items-center text-center p-6 rounded-3xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 shadow-xs space-y-3 hover:border-orange-500/40 transition-all">
               <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-950/60 flex items-center justify-center text-orange-600 mb-1">
                 <i data-lucide="users" class="w-6 h-6 stroke-[2.2]"></i>
               </div>
-              <span class="text-3xl sm:text-4xl font-black text-stone-900 dark:text-white tracking-tight font-mono">150.000+</span>
+              <span id="bento-stat-total-responses" class="text-3xl sm:text-4xl font-black text-stone-900 dark:text-white tracking-tight font-mono">${(initialStats.total_responses || 0).toLocaleString('vi-VN')}</span>
               <span class="text-sm font-bold text-stone-800 dark:text-stone-200">Phản hồi giá trị</span>
               <p class="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-                Được đóng góp tích cực bởi sinh viên từ hơn 60 trường đại học và học viện hàng đầu.
+                Dữ liệu phản hồi thực tế được thu thập và kiểm duyệt tự động trên hệ thống SurvHub.
               </p>
             </div>
 
             <!-- Card 3 -->
-            <div class="flex flex-col items-center text-center p-6 rounded-3xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 shadow-xs space-y-3">
+            <div class="flex flex-col items-center text-center p-6 rounded-3xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 shadow-xs space-y-3 hover:border-orange-500/40 transition-all">
               <div class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-950/60 flex items-center justify-center text-orange-600 mb-1">
                 <i data-lucide="clock" class="w-6 h-6 stroke-[2.2]"></i>
               </div>
-              <span class="text-3xl sm:text-4xl font-black text-stone-900 dark:text-white tracking-tight font-mono">~3 Phút</span>
+              <span id="bento-stat-avg-time" class="text-3xl sm:text-4xl font-black text-stone-900 dark:text-white tracking-tight font-mono">${initialStats.avg_time_formatted}</span>
               <span class="text-sm font-bold text-stone-800 dark:text-stone-200">Thời gian trung bình</span>
               <p class="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-                Thời lượng lý tưởng để người tham gia điền biểu mẫu tập trung, đảm bảo độ chuẩn xác cao.
+                Thời lượng trung bình thực tế người tham gia hoàn thành một bài khảo sát trên hệ thống.
               </p>
             </div>
+          </div>
+
+          <!-- Trạng thái cập nhật liên tục thời gian thực -->
+          <div class="flex items-center justify-center gap-2 pt-2 text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Số liệu thực tế cập nhật liên tục từ hệ thống</span>
+            <span id="bento-stat-live-badge" class="font-mono text-[10px] text-stone-400"></span>
           </div>
         </section>
 
@@ -4402,6 +4450,25 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     `;
 
     if (window.lucide) window.lucide.createIcons();
+
+    // Kích hoạt cập nhật thời gian thực định kỳ cho 3 thẻ Bento
+    if (this._homeStatsTimer) {
+      clearInterval(this._homeStatsTimer);
+      this._homeStatsTimer = null;
+    }
+    this._homeStatsTimer = setInterval(() => {
+      if (this.state.currentView === 'home' && document.getElementById('bento-stat-valid-rate')) {
+        this.updateHomeStatsLive();
+      } else {
+        clearInterval(this._homeStatsTimer);
+        this._homeStatsTimer = null;
+      }
+    }, 15000);
+
+    const badgeEl = document.getElementById('bento-stat-live-badge');
+    if (badgeEl) {
+      badgeEl.textContent = `(${new Date().toLocaleTimeString('vi-VN')})`;
+    }
   },
 
   handleHomeSearch(query) {

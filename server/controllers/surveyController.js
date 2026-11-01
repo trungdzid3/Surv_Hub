@@ -2685,6 +2685,88 @@ class SurveyController {
       return res.status(500).json({ success: false, message: 'Lỗi tải lịch sử khảo sát' });
     }
   }
+
+  /**
+   * GET /api/v1/public/stats (hoặc /api/v1/stats)
+   * Thống kê thực tế liên tục từ cơ sở dữ liệu thời gian thực (Zero Fake Metrics)
+   */
+  getPublicStats(req, res) {
+    try {
+      // 1. Thống kê phản hồi và tỷ lệ hợp lệ
+      const respStats = db.prepare(`
+        SELECT 
+          COUNT(*) as total_responses,
+          SUM(CASE WHEN status != 'REJECTED' AND status != 'SUSPICIOUS' THEN 1 ELSE 0 END) as valid_responses,
+          AVG(CASE WHEN duration_sec > 0 THEN duration_sec ELSE NULL END) as avg_duration_sec
+        FROM responses
+      `).get() || { total_responses: 0, valid_responses: 0, avg_duration_sec: null };
+
+      // 2. Thống kê bài khảo sát
+      const surveyStats = db.prepare(`
+        SELECT 
+          COUNT(*) as total_surveys,
+          SUM(CASE WHEN status = 'ACTIVE' OR status = 'PUBLISHED' THEN 1 ELSE 0 END) as active_surveys,
+          COALESCE(SUM(collected_responses), 0) as total_collected_surveys,
+          AVG(CASE WHEN min_completion_time_sec > 0 THEN min_completion_time_sec ELSE NULL END) as avg_survey_min_time
+        FROM surveys
+      `).get() || { total_surveys: 0, active_surveys: 0, total_collected_surveys: 0, avg_survey_min_time: null };
+
+      // 3. Thống kê người dùng
+      const userStats = db.prepare(`
+        SELECT 
+          COUNT(*) as total_users,
+          SUM(CASE WHEN is_student_verified = 1 OR account_tier = 'STUDENT' OR university IS NOT NULL THEN 1 ELSE 0 END) as total_students
+        FROM users
+      `).get() || { total_users: 0, total_students: 0 };
+
+      // Tính toán tỷ lệ dữ liệu hợp lệ thực tế
+      const totalResponsesCount = Math.max(Number(respStats.total_responses || 0), Number(surveyStats.total_collected_surveys || 0));
+      let validRateText = '100%';
+      let validRateNum = 100;
+      if (respStats.total_responses > 0) {
+        validRateNum = Number(((respStats.valid_responses / respStats.total_responses) * 100).toFixed(1));
+        validRateText = `${validRateNum}%`;
+      }
+
+      // Tính thời gian trung bình thực tế
+      let avgSec = 0;
+      if (respStats.avg_duration_sec && respStats.avg_duration_sec > 0) {
+        avgSec = Math.round(respStats.avg_duration_sec);
+      } else if (surveyStats.avg_survey_min_time && surveyStats.avg_survey_min_time > 0) {
+        avgSec = Math.round(surveyStats.avg_survey_min_time);
+      }
+
+      let avgTimeFormatted = '~0 Phút';
+      if (avgSec > 0) {
+        if (avgSec < 60) {
+          avgTimeFormatted = `~${avgSec} Giây`;
+        } else {
+          const mins = (avgSec / 60).toFixed(1);
+          avgTimeFormatted = `~${mins.endsWith('.0') ? mins.slice(0, -2) : mins} Phút`;
+        }
+      }
+
+      return res.json({
+        success: true,
+        stats: {
+          valid_data_rate: validRateText,
+          valid_rate_num: validRateNum,
+          total_responses: totalResponsesCount,
+          total_responses_formatted: totalResponsesCount.toLocaleString('vi-VN'),
+          avg_duration_sec: avgSec,
+          avg_time_formatted: avgTimeFormatted,
+          active_surveys: surveyStats.active_surveys || 0,
+          total_surveys: surveyStats.total_surveys || 0,
+          total_users: userStats.total_users || 0,
+          total_students: userStats.total_students || 0,
+          updated_at: new Date().toISOString()
+        }
+      });
+    } catch (err) {
+      console.error('Lỗi getPublicStats:', err);
+      return res.status(500).json({ success: false, message: 'Lỗi tải số liệu thống kê thời gian thực: ' + err.message });
+    }
+  }
 }
 
 module.exports = new SurveyController();

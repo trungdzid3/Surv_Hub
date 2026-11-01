@@ -44,6 +44,10 @@ router.put('/auth/enterprise-profile', authenticateToken, (req, res) => authCont
 router.get('/users/streak-info', authenticateToken, (req, res) => userController.getStreakInfo(req, res));
 router.post('/users/checkin', authenticateToken, (req, res) => userController.checkin(req, res));
 
+// === Tuyến Đường Thống Kê Nền Tảng Công Khai (Zero Fake Metrics) ===
+router.get('/public/stats', (req, res) => surveyController.getPublicStats(req, res));
+router.get('/stats', (req, res) => surveyController.getPublicStats(req, res));
+
 // === 2. Tuyến Đường Khảo Sát (Surveys) ===
 // Hỗ trợ khách chưa đăng nhập vẫn xem được danh sách và nội dung khảo sát công khai
 router.get('/surveys', optionalAuthenticateToken, (req, res) => surveyController.listSurveys(req, res));
