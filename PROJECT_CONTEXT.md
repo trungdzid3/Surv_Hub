@@ -2289,3 +2289,27 @@ c:\Users\Lenovo\Downloads\Linh\
 - Toàn bộ 15/15 tầng kiểm thử tự hành (`npm test`): **100% PASS** (19.23s).
 - Đồng bộ ứng dụng di động Capacitor Android (`npm run sync:android`) hoàn tất.
 - Tự động đồng bộ và đẩy mã nguồn lên GitHub (`origin/main`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: BẢO TOÀN TRỌN VẸN RÀNG BUỘC MIN/MAX DO BIỂU MẪU QUY ĐỊNH (THÁNG 11/2026)
+
+### 1. Vấn Đề Gốc Rễ & Giải Pháp
+- **Nguyên nhân phát hiện**:
+  1. Khi người dùng nhập biểu mẫu Microsoft Forms từ liên kết ngoài (`/surveys/parse-external`), hàm `syncExternalForm` ở tầng Frontend (`public/app.js`) bị bỏ sót việc ánh xạ các trường `validation`, `placeholder`, `description`, `logic` từ dữ liệu API trả về, dẫn đến việc khi nạp vào Creator Studio câu hỏi bị mất cấu hình ràng buộc và fallback nhầm thành `IS_NUMBER` ("Là số").
+  2. Tính năng Dán Văn Bản Thông Minh (`parseRawQuestionsText` / Smart Paste) trước đó bỏ qua dòng placeholder/chỉ dẫn hoặc ném nhầm vào danh sách lựa chọn trắc nghiệm.
+- **Giải Pháp Triệt Để**:
+  + **Đồng Bộ Dữ Liệu Ngoài (`syncExternalForm`)**: Khôi phục và bảo toàn 100% `validation`, `placeholder`, `description`, `logic` khi nạp câu hỏi từ biểu mẫu Microsoft Forms / Google Forms vào `this.state.builderQuestions`.
+  + **Nâng Cấp Smart Paste (`parseRawQuestionsText`)**: Tự động bóc tách chính xác các dòng chỉ dẫn và placeholder đặc trưng của MS Forms / Google Forms:
+    - `Số phải nằm trong khoảng từ <min> ~ <max>` (hoặc `<min> ~ <max>`, `Trong khoảng <min> đến <max>`) -> Gán kiểu `SHORT_TEXT`, ràng buộc `BETWEEN` với đúng `min`, `max` do form quy định và placeholder tương ứng.
+    - `Vui lòng nhập email` -> Gán kiểu `SHORT_TEXT`, ràng buộc `EMAIL`, placeholder `Vui lòng nhập email`.
+    - `Giá trị phải là một số` / `Là số` -> Gán kiểu `SHORT_TEXT`, ràng buộc `IS_NUMBER`, placeholder `Giá trị phải là một số`.
+    - `Chọn câu trả lời của bạn` -> Gán kiểu `DROPDOWN`, placeholder `Chọn câu trả lời của bạn`.
+    - `Nhập câu trả lời của bạn` -> Giữ placeholder `Nhập câu trả lời của bạn`.
+  + **Bảo Vệ Ngữ Cảnh Creator Studio**: Đảm bảo khi câu hỏi đã có validation từ form gốc (hoặc có min/max), Studio hiển thị trung thực Dropdown "Trong khoảng", 2 ô nhập hiển thị đúng Min và Max của form, input xem trước hiển thị `Số phải nằm trong khoảng từ <min> ~ <max>`, và badge câu hỏi hiển thị `[Số: <min> ~ <max>]`.
+
+### 2. Nghiệm Thu & Kiểm Thử Toàn Diện
+- Kiểm tra cú pháp JavaScript: `node -c public/app.js`, `node -c server/services/formParserService.js` PASS 100%.
+- Bổ sung test cases bao phủ cả Smart Paste và Backend Microsoft Forms validation trong `tests/test_restrictions_and_placeholders.js`: PASS 100%.
+- Chạy toàn bộ 15/15 tầng kiểm thử tự hành (`npm test`): **100% PASS** (23.91s).
+- Đồng bộ ứng dụng Android Capacitor (`npm run sync:android`) hoàn tất.

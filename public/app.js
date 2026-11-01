@@ -99,7 +99,7 @@ const RestrictionEngine = {
 
       // Mặc định IS_NUMBER
       const defaultErr = restriction.error_message || 'Giá trị phải là một số';
-      const placeholder = restriction.placeholder || defaultErr;
+      const placeholder = 'Giá trị phải là một số';
       return {
         placeholder: placeholder,
         defaultError: defaultErr,
@@ -160,11 +160,13 @@ const RestrictionEngine = {
       };
     }
 
-    // 2. Dải số cụ thể (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
+    // 2. Dải số cụ thể trong tiêu đề/mô tả (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
     const rangeMatch = text.match(/(\d+)\s*(?:~|-|đến)\s*(\d+)/i);
     if (rangeMatch) {
-      const min = parseFloat(rangeMatch[1]);
-      const max = parseFloat(rangeMatch[2]);
+      const n1 = parseFloat(rangeMatch[1]);
+      const n2 = parseFloat(rangeMatch[2]);
+      const min = Math.min(n1, n2);
+      const max = Math.max(n1, n2);
       return {
         type: 'NUMBER',
         rule: 'BETWEEN',
@@ -175,9 +177,9 @@ const RestrictionEngine = {
       };
     }
 
-    // 3. Mã số sinh viên ("Mã số sinh viên", "MSSV", "Số thẻ sinh viên", ...)
-    if (/\b(mssv|mã số sinh viên|ma so sinh vien|số thẻ sinh viên|so the sinh vien|mã sinh viên|ma sinh vien)\b/i.test(text) ||
-        text.includes('mssv') || text.includes('mã số sinh viên') || text.includes('ma so sinh vien') || text.includes('số thẻ sinh viên') || text.includes('so the sinh vien') || text.includes('mã sinh viên')) {
+    // 3. Mã số sinh viên ("Mã số sinh viên", "MSSV", "Số thẻ sinh viên", "Mã SV", ...) khi KHÔNG có dải số kèm theo
+    if (/\b(mssv|mã số sinh viên|ma so sinh vien|số thẻ sinh viên|so the sinh vien|mã sinh viên|ma sinh vien|mã sv|ma sv)\b/i.test(text) ||
+        text.includes('mssv') || text.includes('mã số sinh viên') || text.includes('ma so sinh vien') || text.includes('số thẻ sinh viên') || text.includes('so the sinh vien') || text.includes('mã sinh viên') || text.includes('ma sinh vien') || text.includes('mã sv') || text.includes('ma sv')) {
       return {
         type: 'NUMBER',
         rule: 'IS_NUMBER',
@@ -186,9 +188,20 @@ const RestrictionEngine = {
       };
     }
 
-    // 3. Số điện thoại ("Số điện thoại", "SĐT", "Điện thoại", ...)
+    // 4. Số điện thoại ("Số điện thoại", "SĐT", "Điện thoại", ...) khi KHÔNG có dải số kèm theo
     if (/\b(số điện thoại|so dien thoai|sđt|sdt|điện thoại|dien thoai|phone|hotline)\b/i.test(text) ||
         text.includes('số điện thoại') || text.includes('so dien thoai') || text.includes('sđt') || text.includes('sdt') || text.includes('điện thoại') || text.includes('dien thoai')) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
+    // 5. Tuổi, năm sinh hoặc số lượng tổng quát nếu không có dải số
+    if (/\b(tuổi|độ tuổi|do tuoi|năm sinh|nam sinh)\b/i.test(text) ||
+        text.includes('độ tuổi') || text.includes('do tuoi')) {
       return {
         type: 'NUMBER',
         rule: 'IS_NUMBER',
@@ -378,7 +391,7 @@ window.RestrictionEngine = {
       }
 
       if (rule === 'GREATER_THAN') {
-        const minVal = min !== null ? min : 0;
+        const minVal = (restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '') ? parseFloat(restriction.min) : 0;
         const defaultErr = restriction.error_message || `Số phải lớn hơn ${minVal}`;
         const placeholder = restriction.placeholder || defaultErr;
         return {
@@ -395,7 +408,7 @@ window.RestrictionEngine = {
       }
 
       if (rule === 'LESS_THAN') {
-        const maxVal = max !== null ? max : 100;
+        const maxVal = (restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '') ? parseFloat(restriction.max) : 100;
         const defaultErr = restriction.error_message || `Số phải nhỏ hơn ${maxVal}`;
         const placeholder = restriction.placeholder || defaultErr;
         return {
@@ -413,7 +426,7 @@ window.RestrictionEngine = {
 
       // Mặc định IS_NUMBER
       const defaultErr = restriction.error_message || 'Giá trị phải là một số';
-      const placeholder = restriction.placeholder || defaultErr;
+      const placeholder = 'Giá trị phải là một số';
       return {
         placeholder: placeholder,
         defaultError: defaultErr,
@@ -479,11 +492,13 @@ window.RestrictionEngine = {
       };
     }
 
-    // 2. Dải số cụ thể (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
+    // 2. Dải số cụ thể trong tiêu đề/mô tả (VD: "20000000 ~ 20270000", "18 đến 60", "1 ~ 100")
     const rangeMatch = text.match(/(\d+)\s*(?:~|-|đến)\s*(\d+)/i);
     if (rangeMatch) {
-      const min = parseFloat(rangeMatch[1]);
-      const max = parseFloat(rangeMatch[2]);
+      const n1 = parseFloat(rangeMatch[1]);
+      const n2 = parseFloat(rangeMatch[2]);
+      const min = Math.min(n1, n2);
+      const max = Math.max(n1, n2);
       return {
         type: 'NUMBER',
         rule: 'BETWEEN',
@@ -494,9 +509,9 @@ window.RestrictionEngine = {
       };
     }
 
-    // 3. Mã số sinh viên ("Mã số sinh viên", "MSSV", "Số thẻ sinh viên", ...)
-    if (/\b(mssv|mã số sinh viên|ma so sinh vien|số thẻ sinh viên|so the sinh vien|mã sinh viên|ma sinh vien)\b/i.test(text) ||
-        text.includes('mssv') || text.includes('mã số sinh viên') || text.includes('ma so sinh vien') || text.includes('số thẻ sinh viên') || text.includes('so the sinh vien') || text.includes('mã sinh viên')) {
+    // 3. Mã số sinh viên ("Mã số sinh viên", "MSSV", "Số thẻ sinh viên", "Mã SV", ...) khi KHÔNG có dải số kèm theo
+    if (/\b(mssv|mã số sinh viên|ma so sinh vien|số thẻ sinh viên|so the sinh vien|mã sinh viên|ma sinh vien|mã sv|ma sv)\b/i.test(text) ||
+        text.includes('mssv') || text.includes('mã số sinh viên') || text.includes('ma so sinh vien') || text.includes('số thẻ sinh viên') || text.includes('so the sinh vien') || text.includes('mã sinh viên') || text.includes('ma sinh vien') || text.includes('mã sv') || text.includes('ma sv')) {
       return {
         type: 'NUMBER',
         rule: 'IS_NUMBER',
@@ -505,9 +520,20 @@ window.RestrictionEngine = {
       };
     }
 
-    // 3. Số điện thoại ("Số điện thoại", "SĐT", "Điện thoại", ...)
+    // 4. Số điện thoại ("Số điện thoại", "SĐT", "Điện thoại", ...) khi KHÔNG có dải số kèm theo
     if (/\b(số điện thoại|so dien thoai|sđt|sdt|điện thoại|dien thoai|phone|hotline)\b/i.test(text) ||
         text.includes('số điện thoại') || text.includes('so dien thoai') || text.includes('sđt') || text.includes('sdt') || text.includes('điện thoại') || text.includes('dien thoai')) {
+      return {
+        type: 'NUMBER',
+        rule: 'IS_NUMBER',
+        placeholder: 'Giá trị phải là một số',
+        error_message: 'Giá trị phải là một số'
+      };
+    }
+
+    // 5. Tuổi, năm sinh hoặc số lượng tổng quát nếu không có dải số
+    if (/\b(tuổi|độ tuổi|do tuoi|năm sinh|nam sinh)\b/i.test(text) ||
+        text.includes('độ tuổi') || text.includes('do tuoi')) {
       return {
         type: 'NUMBER',
         rule: 'IS_NUMBER',
@@ -6405,7 +6431,10 @@ if (totalCount === 0) {
               const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
               if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
                 const inf = engine.inferValidationFromTitle(q.content);
-                if (inf) valObj = inf;
+                if (inf) {
+                  valObj = inf;
+                  q.validation = inf;
+                }
               }
               if (valObj && valObj.type && valObj.type !== 'NONE') {
                 let badgeText = '';
@@ -6413,9 +6442,10 @@ if (totalCount === 0) {
                 if (vType === 'EMAIL') {
                   badgeText = 'Email';
                 } else if (vType === 'NUMBER') {
-                  const vRule = String(valObj.rule || 'IS_NUMBER').toUpperCase();
                   const hasMin = valObj.min !== undefined && valObj.min !== null && String(valObj.min).trim() !== '';
                   const hasMax = valObj.max !== undefined && valObj.max !== null && String(valObj.max).trim() !== '';
+                  let vRule = String(valObj.rule || '').toUpperCase();
+                  if (!vRule) vRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
                   if (vRule === 'BETWEEN' && hasMin && hasMax) {
                     badgeText = `Số: ${valObj.min} ~ ${valObj.max}`;
                   } else if (vRule === 'GREATER_THAN' && hasMin) {
@@ -6608,12 +6638,8 @@ if (totalCount === 0) {
       }
 
       let placeholder = 'Nhập câu trả lời của bạn';
-      if (engine && validation && validation.type && validation.type !== 'NONE') {
-        const meta = engine.getMeta(validation);
-        if (meta && meta.placeholder) placeholder = meta.placeholder;
-        else if (validation.placeholder) placeholder = validation.placeholder;
-      } else if (validation?.placeholder) {
-        placeholder = validation.placeholder;
+      if (validation && validation.type && validation.type !== 'NONE') {
+        placeholder = this.generateValidationPlaceholder(validation) || (engine && engine.getMeta(validation)?.placeholder) || validation.placeholder || 'Nhập câu trả lời của bạn';
       }
 
       return `
@@ -6644,12 +6670,8 @@ if (totalCount === 0) {
       }
 
       let placeholder = 'Nhập câu trả lời của bạn';
-      if (engine && validation && validation.type && validation.type !== 'NONE') {
-        const meta = engine.getMeta(validation);
-        if (meta && meta.placeholder) placeholder = meta.placeholder;
-        else if (validation.placeholder) placeholder = validation.placeholder;
-      } else if (validation?.placeholder) {
-        placeholder = validation.placeholder;
+      if (validation && validation.type && validation.type !== 'NONE') {
+        placeholder = this.generateValidationPlaceholder(validation) || (engine && engine.getMeta(validation)?.placeholder) || validation.placeholder || 'Nhập câu trả lời của bạn';
       }
 
       return `
@@ -7043,11 +7065,13 @@ if (totalCount === 0) {
     if (!q) return { valid: true };
     let validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
     const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (this.RestrictionEngine || (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null));
-    if ((!validation || !validation.type || validation.type === 'NONE') && ['SHORT_TEXT', 'PARAGRAPH'].includes(q.type) && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
-      const inferred = engine.inferValidationFromTitle(q.content);
-      if (inferred) {
-        validation = inferred;
-        q.validation = inferred;
+    if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT'].includes(q.type) && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+      if (!validation || !validation.type || validation.type === 'NONE') {
+        const inferred = engine.inferValidationFromTitle(q.content);
+        if (inferred) {
+          validation = inferred;
+          q.validation = inferred;
+        }
       }
     }
     if (!validation || !engine) return { valid: true };
@@ -10535,7 +10559,11 @@ if (totalCount === 0) {
           is_required: q.is_required !== 0 && q.is_required !== false,
           is_screener: false,
           qualifying_answer: null,
-          image_url: q.image_url || null
+          image_url: q.image_url || null,
+          placeholder: q.placeholder || null,
+          description: q.description || null,
+          validation: q.validation || (q.logic && q.logic.validation ? q.logic.validation : null),
+          logic: q.logic || (q.validation ? { validation: q.validation } : null)
         }));
 
         this.haptic('success');
@@ -11941,7 +11969,10 @@ if (totalCount === 0) {
         const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
         if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
           const inf = engine.inferValidationFromTitle(q.content);
-          if (inf) valObj = inf;
+          if (inf) {
+            valObj = inf;
+            q.validation = inf;
+          }
         }
 
         if (valObj && valObj.type && valObj.type !== 'NONE') {
@@ -11950,9 +11981,11 @@ if (totalCount === 0) {
           if (vType === 'EMAIL') {
             badgeText = 'Email';
           } else if (vType === 'NUMBER') {
-            const vRule = String(valObj.rule || 'IS_NUMBER').toUpperCase();
             const hasMin = valObj.min !== undefined && valObj.min !== null && String(valObj.min).trim() !== '';
             const hasMax = valObj.max !== undefined && valObj.max !== null && String(valObj.max).trim() !== '';
+            let vRule = String(valObj.rule || '').toUpperCase();
+            if (!vRule) vRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
+
             if (vRule === 'BETWEEN' && hasMin && hasMax) {
               badgeText = `Số: ${valObj.min} ~ ${valObj.max}`;
             } else if (vRule === 'GREATER_THAN' && hasMin) {
@@ -12477,8 +12510,7 @@ if (totalCount === 0) {
 
       let previewPlaceholder = 'Nhập câu trả lời của bạn';
       if (val && val.type && val.type !== 'NONE') {
-        const meta = engine ? engine.getMeta(val) : null;
-        previewPlaceholder = (meta && meta.placeholder) || this.generateValidationPlaceholder(val) || val.placeholder || 'Nhập câu trả lời của bạn';
+        previewPlaceholder = this.generateValidationPlaceholder(val) || (engine && engine.getMeta(val)?.placeholder) || val.placeholder || 'Nhập câu trả lời của bạn';
       }
 
       return `
@@ -12506,8 +12538,7 @@ if (totalCount === 0) {
 
       let previewPlaceholder = 'Nhập câu trả lời của bạn';
       if (val && val.type && val.type !== 'NONE') {
-        const meta = engine ? engine.getMeta(val) : null;
-        previewPlaceholder = (meta && meta.placeholder) || this.generateValidationPlaceholder(val) || val.placeholder || 'Nhập câu trả lời của bạn';
+        previewPlaceholder = this.generateValidationPlaceholder(val) || (engine && engine.getMeta(val)?.placeholder) || val.placeholder || 'Nhập câu trả lời của bạn';
       }
 
       return `
@@ -12933,10 +12964,12 @@ if (totalCount === 0) {
 
       if (['SHORT_TEXT', 'PARAGRAPH'].includes(q.type)) {
         const curType = q.validation?.type;
-        if (!curType || curType === 'NONE') {
-          const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
-          if (engine && typeof engine.inferValidationFromTitle === 'function') {
-            const inferred = engine.inferValidationFromTitle(val);
+        const curRule = q.validation?.rule;
+        const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+        if (engine && typeof engine.inferValidationFromTitle === 'function') {
+          const inferred = engine.inferValidationFromTitle(val);
+          // Tự động gán nếu chưa có validation, hoặc đang NONE, hoặc đang IS_NUMBER mà gõ MSSV/dải số
+          if (!curType || curType === 'NONE' || (curType === 'NUMBER' && (curRule === 'IS_NUMBER' || !curRule) && inferred && inferred.rule === 'BETWEEN')) {
             if (inferred) {
               q.validation = { ...inferred };
               if (!q.logic) q.logic = {};
@@ -13109,11 +13142,31 @@ if (totalCount === 0) {
   },
 
   renderStudioQuestionValidationConfig(q, qIdx) {
-    const val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null) || { type: 'NONE' };
+    let val = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+    const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+    if ((!val || !val.type || val.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
+      const inf = engine.inferValidationFromTitle(q.content);
+      if (inf) {
+        val = { ...inf };
+        q.validation = val;
+        if (!q.logic) q.logic = {};
+        q.logic.validation = { ...val };
+      }
+    }
+    if (!val) val = { type: 'NONE' };
     const valType = val.type || 'NONE';
-    const valRule = val.rule || (valType === 'NUMBER' ? 'IS_NUMBER' : (valType === 'LENGTH' ? 'MAX_LENGTH' : ''));
-    const valMin = (val.min !== undefined && val.min !== null) ? val.min : '';
-    const valMax = (val.max !== undefined && val.max !== null) ? val.max : '';
+    const hasMin = val.min !== undefined && val.min !== null && String(val.min).trim() !== '';
+    const hasMax = val.max !== undefined && val.max !== null && String(val.max).trim() !== '';
+    let valRule = val.rule ? String(val.rule).toUpperCase() : '';
+    if (valType === 'NUMBER') {
+      if (!valRule) {
+        valRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
+      }
+    } else if (valType === 'LENGTH') {
+      if (!valRule) valRule = 'MAX_LENGTH';
+    }
+    const valMin = hasMin ? val.min : '';
+    const valMax = hasMax ? val.max : '';
     const autoPlaceholder = this.generateValidationPlaceholder(val);
 
     const valTypeMap = {
@@ -13311,11 +13364,16 @@ if (totalCount === 0) {
     if (!q.validation) q.validation = { type: 'NUMBER' };
     q.validation.rule = rule;
     if (rule === 'BETWEEN') {
-      // Người tạo tự nhập min và max, không tự gán cứng mặc định
+      // Người tạo tự nhập min và max, nếu chưa có thì để trống, không tự gán cứng mặc định
+    } else if (rule === 'IS_NUMBER') {
+      delete q.validation.min;
+      delete q.validation.max;
     } else if (rule === 'GREATER_THAN') {
       if (!q.validation.min) q.validation.min = '0';
+      delete q.validation.max;
     } else if (rule === 'LESS_THAN') {
       if (!q.validation.max) q.validation.max = '100';
+      delete q.validation.min;
     }
     q.validation.placeholder = this.generateValidationPlaceholder(q.validation);
     if (!q.logic) q.logic = {};
@@ -13656,7 +13714,64 @@ if (totalCount === 0) {
         continue;
       }
 
-      // Nếu là dòng placeholder hoặc hướng dẫn hệ thống, bỏ qua
+      // Nếu là dòng placeholder hoặc hướng dẫn hệ thống, kiểm tra để trích xuất validation/placeholder
+      const isBetweenInstruction = line.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*từ|nằm\s*trong\s*khoảng\s*từ|trong\s*khoảng\s*từ|khoảng\s*từ|khoang\s*tu|between)\s*([0-9.,]+)\s*(?:đến|và|~|-|to|and)\s*([0-9.,]+)/i) ||
+                                   line.match(/^\s*([0-9.,]+)\s*(?:~|-|đến|to)\s*([0-9.,]+)\s*$/i);
+      if (isBetweenInstruction) {
+        const n1 = parseFloat(isBetweenInstruction[1].replace(/,/g, ''));
+        const n2 = parseFloat(isBetweenInstruction[2].replace(/,/g, ''));
+        if (!isNaN(n1) && !isNaN(n2)) {
+          const minVal = Math.min(n1, n2);
+          const maxVal = Math.max(n1, n2);
+          currentItem.type = 'SHORT_TEXT';
+          currentItem.validation = {
+            type: 'NUMBER',
+            rule: 'BETWEEN',
+            min: minVal,
+            max: maxVal,
+            placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
+            error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+          };
+          currentItem.placeholder = `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`;
+          continue;
+        }
+      }
+
+      if (/(?:vui\s*lòng\s*nhập\s*email|email\s*hợp\s*lệ|nhập\s*email|please\s*enter\s*email)/i.test(line)) {
+        currentItem.type = 'SHORT_TEXT';
+        currentItem.validation = {
+          type: 'EMAIL',
+          rule: 'EMAIL',
+          placeholder: 'Vui lòng nhập email',
+          error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
+        };
+        currentItem.placeholder = 'Vui lòng nhập email';
+        continue;
+      }
+
+      if (/(?:giá\s*trị\s*phải\s*là\s*(?:một\s*)?số|phải\s*là\s*(?:một\s*)?số|value\s*must\s*be\s*a\s*number|giới\s*hạn\s*số)/i.test(line)) {
+        currentItem.type = 'SHORT_TEXT';
+        currentItem.validation = {
+          type: 'NUMBER',
+          rule: 'IS_NUMBER',
+          placeholder: 'Giá trị phải là một số',
+          error_message: 'Giá trị phải là một số'
+        };
+        currentItem.placeholder = 'Giá trị phải là một số';
+        continue;
+      }
+
+      if (/(?:chọn\s*câu\s*trả\s*lời\s*của\s*bạn|select\s*your\s*answer)/i.test(line)) {
+        currentItem.type = 'DROPDOWN';
+        currentItem.placeholder = 'Chọn câu trả lời của bạn';
+        continue;
+      }
+
+      if (/(?:nhập\s*câu\s*trả\s*lời\s*của\s*bạn|enter\s*your\s*answer)/i.test(line)) {
+        currentItem.placeholder = 'Nhập câu trả lời của bạn';
+        continue;
+      }
+
       if (isPlaceholderOrInstruction(line)) {
         continue;
       }
@@ -13777,6 +13892,11 @@ if (totalCount === 0) {
         q.options = null;
         q.rows = null;
         q.columns = null;
+      }
+
+      if (q.validation) {
+        if (!q.logic) q.logic = {};
+        q.logic.validation = q.validation;
       }
 
       return q;

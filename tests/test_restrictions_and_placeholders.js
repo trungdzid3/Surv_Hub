@@ -61,4 +61,106 @@ assert(appJs.includes('restrictionBadgeHtml'), 'restrictionBadgeHtml must exist'
 assert(appJs.includes('toggleStudioLongAnswer'), 'toggleStudioLongAnswer must exist');
 console.log('PASS: Studio preview input, restriction badges and long answer toggle verified');
 
+// 4. Test parseRawQuestionsText with Microsoft Forms copied layout
+const parseMethodMatch = appJs.match(/parseRawQuestionsText\(text\)\s*\{([\s\S]*?)\n  \},/);
+assert(parseMethodMatch, 'parseRawQuestionsText method must exist');
+const parseRawQuestionsText = new Function('text', parseMethodMatch[1]);
+
+const sampleSmartPaste = `
+2. Email HUST *
+Vui lòng nhập email
+
+3. Mã số sinh viên *
+Số phải nằm trong khoảng từ 20000000 ~ 20270000
+
+4. Số điện thoại (thường xuyên liên lạc)
+Giá trị phải là một số
+
+5. Khoa/Viện/Trường đang theo học *
+Chọn câu trả lời của bạn
+- Viện CNTT
+- Viện Cơ khí
+
+6. Lớp - Khóa (theo eHUST) (VD: Thực phẩm 06 - K69) *
+Nhập câu trả lời của bạn
+`;
+
+const parsedQs = parseRawQuestionsText(sampleSmartPaste);
+assert.strictEqual(parsedQs.length, 5);
+
+// Câu 2: Email
+assert.strictEqual(parsedQs[0].content, 'Email HUST');
+assert.strictEqual(parsedQs[0].type, 'SHORT_TEXT');
+assert.strictEqual(parsedQs[0].validation?.type, 'EMAIL');
+assert.strictEqual(parsedQs[0].placeholder, 'Vui lòng nhập email');
+
+// Câu 3: MSSV - Số trong khoảng 20000000 đến 20270000 do form quy định
+assert.strictEqual(parsedQs[1].content, 'Mã số sinh viên');
+assert.strictEqual(parsedQs[1].type, 'SHORT_TEXT');
+assert.strictEqual(parsedQs[1].validation?.type, 'NUMBER');
+assert.strictEqual(parsedQs[1].validation?.rule, 'BETWEEN');
+assert.strictEqual(parsedQs[1].validation?.min, 20000000);
+assert.strictEqual(parsedQs[1].validation?.max, 20270000);
+assert.strictEqual(parsedQs[1].placeholder, 'Số phải nằm trong khoảng từ 20000000 ~ 20270000');
+
+// Câu 4: SĐT - Là số
+assert.strictEqual(parsedQs[2].content, 'Số điện thoại (thường xuyên liên lạc)');
+assert.strictEqual(parsedQs[2].type, 'SHORT_TEXT');
+assert.strictEqual(parsedQs[2].validation?.type, 'NUMBER');
+assert.strictEqual(parsedQs[2].validation?.rule, 'IS_NUMBER');
+assert.strictEqual(parsedQs[2].placeholder, 'Giá trị phải là một số');
+
+// Câu 5: Dropdown
+assert.strictEqual(parsedQs[3].content, 'Khoa/Viện/Trường đang theo học');
+assert.strictEqual(parsedQs[3].type, 'DROPDOWN');
+assert.strictEqual(parsedQs[3].options.length, 2);
+
+// Câu 6: Text thuần
+assert.strictEqual(parsedQs[4].type, 'SHORT_TEXT');
+assert.strictEqual(parsedQs[4].placeholder, 'Nhập câu trả lời của bạn');
+console.log('PASS: parseRawQuestionsText correctly extracts form-defined restrictions and placeholders');
+
+// 5. Test Backend formParserService with Microsoft Forms Parameters & Placeholder
+const formParserService = require('../server/services/formParserService');
+
+const msBetweenQ = formParserService._parseMicrosoftQuestion({
+  title: 'Mã số sinh viên',
+  type: 'Question.TextField',
+  placeholder: 'Số phải nằm trong khoảng từ 20000000 ~ 20270000',
+  questionInfo: JSON.stringify({
+    Restrictions: [
+      {
+        RestrictionType: 1,
+        RestrictionOperator: 7,
+        Parameters: ['20000000', '20270000']
+      }
+    ]
+  })
+}, 3);
+
+assert.strictEqual(msBetweenQ.validation?.type, 'NUMBER');
+assert.strictEqual(msBetweenQ.validation?.rule, 'BETWEEN');
+assert.strictEqual(msBetweenQ.validation?.min, 20000000);
+assert.strictEqual(msBetweenQ.validation?.max, 20270000);
+assert.strictEqual(msBetweenQ.placeholder, 'Số phải nằm trong khoảng từ 20000000 ~ 20270000');
+
+const msIsNumQ = formParserService._parseMicrosoftQuestion({
+  title: 'Số điện thoại (thường xuyên liên lạc)',
+  type: 'Question.TextField',
+  placeholder: 'Giá trị phải là một số',
+  questionInfo: JSON.stringify({
+    Restrictions: [
+      {
+        RestrictionType: 1,
+        RestrictionOperator: 9
+      }
+    ]
+  })
+}, 4);
+
+assert.strictEqual(msIsNumQ.validation?.type, 'NUMBER');
+assert.strictEqual(msIsNumQ.validation?.rule, 'IS_NUMBER');
+assert.strictEqual(msIsNumQ.placeholder, 'Giá trị phải là một số');
+console.log('PASS: formParserService._parseMicrosoftQuestion correctly parses min/max and is_number');
+
 console.log('ALL RESTRICTION & PLACEHOLDER TESTS PASSED 100%!');
