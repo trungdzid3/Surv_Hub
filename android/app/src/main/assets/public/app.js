@@ -1384,7 +1384,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     let roleBadge = '';
     if (user.role === 'ADMIN') {
       if (adminMode === 'RESPONDENT') {
-        roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-md border border-stone-200 dark:border-stone-700">Người Điền (Admin)</span>';
+        roleBadge = `<span class="text-[10px] font-bold px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 rounded-md border border-stone-200 dark:border-stone-700">${user.account_tier === 'STUDENT' ? 'Sinh Viên (Admin)' : 'Người Điền (Admin)'}</span>`;
       } else if (adminMode === 'CREATOR') {
         roleBadge = '<span class="text-[10px] font-bold px-2 py-0.5 bg-orange-600 text-white rounded-md">Doanh Nghiệp (Admin)</span>';
       } else {
@@ -1418,8 +1418,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       </div>
 
       ${user.role === 'ADMIN' ? `
-        <!-- Trình Chuyển Góc Nhìn ADMIN (Duy Nhất 1 Thanh Segmented Control Gọn Gàng) -->
-        <div class="px-3 py-2 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-100 dark:border-stone-800">
+        <!-- Trình Chuyển Góc Nhìn & Phân Khúc ADMIN -->
+        <div class="px-3 py-2 bg-stone-50 dark:bg-stone-900/60 border-b border-stone-100 dark:border-stone-800 space-y-1.5">
           <div class="grid grid-cols-3 gap-1 bg-stone-200/60 dark:bg-stone-800/80 p-0.5 rounded-lg text-[11px]">
             <button onclick="VibeApp.switchAdminMode('RESPONDENT')" class="py-1 px-1 rounded-md font-semibold text-center transition-all ${adminMode === 'RESPONDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs font-bold' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
               Người Điền
@@ -1431,6 +1431,37 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
               Quản Trị
             </button>
           </div>
+
+          ${adminMode === 'RESPONDENT' ? `
+            <!-- Chuyển đổi Phân khúc Người Điền: Người Thường vs Sinh Viên -->
+            <div class="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800/80">
+              <span class="text-stone-500 dark:text-stone-400 font-medium text-[10.5px]">Phân khúc:</span>
+              <div class="grid grid-cols-2 gap-1 bg-stone-200/60 dark:bg-stone-800/80 p-0.5 rounded-lg text-[10.5px]">
+                <button type="button" onclick="VibeApp.switchAdminTier('PERSONAL')" class="py-0.5 px-2 rounded-md font-bold text-center transition-all ${user.account_tier !== 'STUDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
+                  Người Thường
+                </button>
+                <button type="button" onclick="VibeApp.switchAdminTier('STUDENT')" class="py-0.5 px-2 rounded-md font-bold text-center transition-all ${user.account_tier === 'STUDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
+                  Sinh Viên
+                </button>
+              </div>
+            </div>
+          ` : (adminMode === 'ADMIN' ? `
+            <!-- Phân hạng Admin khi ở chế độ Quản trị toàn quyền -->
+            <div class="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800/80">
+              <span class="text-stone-500 dark:text-stone-400 font-medium text-[10.5px]">Phân hạng:</span>
+              <div class="grid grid-cols-3 gap-1 bg-stone-200/60 dark:bg-stone-800/80 p-0.5 rounded-lg text-[10.5px]">
+                <button type="button" onclick="VibeApp.switchAdminTier('PERSONAL')" class="py-0.5 px-1.5 rounded-md font-bold text-center transition-all ${user.account_tier === 'PERSONAL' || (!user.account_tier || (user.account_tier !== 'STUDENT' && user.account_tier !== 'ENTERPRISE')) ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
+                  Thường
+                </button>
+                <button type="button" onclick="VibeApp.switchAdminTier('STUDENT')" class="py-0.5 px-1.5 rounded-md font-bold text-center transition-all ${user.account_tier === 'STUDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
+                  Sinh Viên
+                </button>
+                <button type="button" onclick="VibeApp.switchAdminTier('ENTERPRISE')" class="py-0.5 px-1.5 rounded-md font-bold text-center transition-all ${user.account_tier === 'ENTERPRISE' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
+                  Doanh Nghiệp
+                </button>
+              </div>
+            </div>
+          ` : '')}
         </div>
       ` : ''}
 
