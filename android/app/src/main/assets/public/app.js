@@ -12284,9 +12284,10 @@ if (totalCount === 0) {
       const typeInfo = this.getStudioQuestionTypeInfo(q.type);
       const isReq = q.is_required !== 0 && q.is_required !== false;
 
+      let valObj = null;
       let restrictionBadgeHtml = '';
       if (['SHORT_TEXT', 'PARAGRAPH'].includes(q.type)) {
-        let valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+        valObj = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
         const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
         if ((!valObj || !valObj.type || valObj.type === 'NONE') && engine && typeof engine.inferValidationFromTitle === 'function' && q.content) {
           const inf = engine.inferValidationFromTitle(q.content, (q.placeholder || q.description || ''));
@@ -13495,13 +13496,13 @@ if (totalCount === 0) {
     if (!val) val = { type: 'NONE' };
 
     const detectedRange = engine ? engine.extractNumberRange(`${q.placeholder || ''} ${q.description || ''} ${q.content || ''} ${val?.placeholder || ''}`) : null;
-    if (detectedRange) {
+    if (detectedRange && val.type !== 'NONE' && (val.type === 'NUMBER' || !val.type)) {
       val.type = 'NUMBER';
       val.rule = 'BETWEEN';
-      val.min = detectedRange.min;
-      val.max = detectedRange.max;
-      val.placeholder = `Số phải nằm trong khoảng từ ${detectedRange.min} ~ ${detectedRange.max}`;
-      val.error_message = `Số phải nằm trong khoảng từ ${detectedRange.min} đến ${detectedRange.max}`;
+      val.min = (val.min !== undefined && val.min !== null && String(val.min).trim() !== '') ? val.min : detectedRange.min;
+      val.max = (val.max !== undefined && val.max !== null && String(val.max).trim() !== '') ? val.max : detectedRange.max;
+      val.placeholder = `Số phải nằm trong khoảng từ ${val.min} ~ ${val.max}`;
+      val.error_message = `Số phải nằm trong khoảng từ ${val.min} đến ${val.max}`;
       q.validation = { ...val };
       if (!q.logic) q.logic = {};
       q.logic.validation = { ...val };
