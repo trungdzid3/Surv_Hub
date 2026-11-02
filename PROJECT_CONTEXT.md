@@ -318,6 +318,12 @@ c:\Users\Lenovo\Downloads\Linh\
   - Bảo toàn 100% màu nền hệ thống: Nền sáng (`#FFF8F5`, `#FAFAFA`, `#FFFFFF`) và Nền tối Obsidian Charcoal (`#121214`, `#1C1C20`, `#222228`) được giữ nguyên để bảo đảm tính tương phản cao và chống mỏi mắt.
   - Đồng bộ nguồn chân lý SSOT tại `DESIGN.md`, `public/styles.css`, `public/index.html` và `public/js/modules/adminAnalyticsModule.js`.
 
+### J. Quy Chuẩn Sao Lưu Dự Phòng Khi Đại Tu Hệ Thống (Major Overhaul Backup Protocol - v4.9.5)
+- **Bắt buộc sao lưu trước khi đại tu**: Khi thực hiện các thay đổi lớn về giao diện, bố cục layout, bảng màu sắc/design system, tái cấu trúc logic chính/cốt lõi (pricing, ledger, anti-fraud, auth, routing) hoặc thay đổi schema CSDL SQLite, bắt buộc tạo bản sao lưu an toàn vào `backups/` hoặc định danh timestamp rõ ràng trước khi tác động mã nguồn.
+- **Kỷ luật dọn dẹp sao lưu**: Chủ động kiểm tra và xóa/dọn dẹp các bản backup cũ nếu đã có và cần thiết để tránh trùng lặp dữ liệu, xung đột mã nguồn và bảo vệ dung lượng workspace.
+- **Rollback toàn vẹn**: Luôn đảm bảo sẵn sàng phương án hoàn nguyên (rollback) nguyên trạng ngay lập tức khi phát sinh sự cố kỹ thuật.
+- **Miễn trừ cho hotfix nhỏ**: Các hotfix nhỏ dưới 30 dòng code hoặc tinh chỉnh nhẹ không cần tạo backup để tránh gây rác workspace.
+
 ### G. Dọn Dẹp Lưu Trữ, Tệp Rác & Kiểm Toán Hệ Thống
 - **Dọn dẹp tệp rác & giải phóng dung lượng**: Đã xóa sạch 95 tệp cùng 4 thư mục rác (`backup_ui_pre_hallmark/`, `archive/`, `scratch/`, `.hallmark/`, 10 ảnh upload demo cũ trong `uploads/`, các tệp `.bak`, `.db-wal`, `.db-shm`), giải phóng tổng cộng **129.43 MB** đĩa trống.
 - **Bảo toàn dữ liệu người dùng**: Tệp `"Danh Sách Email Sinh Viên.docx"` được bảo vệ nguyên vẹn 100%.
