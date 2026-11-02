@@ -38,22 +38,23 @@ db.exec(`
 console.log('✅ Đã dọn dẹp trắng toàn bộ các bảng dữ liệu.');
 
 // 2. Khởi tạo tài khoản Quản Trị Viên (Admin)
+// ACCOUNT DEMO: doi mat khau that bang env/manual truoc khi dung, KHONG commit mat khau that vao day
 const salt = bcrypt.genSaltSync(10);
 
 const admins = [
   {
-    email: 'trungdzid3@gmail.com',
-    password: 'Trung@2302',
+    email: 'admin@example.com',
+    password: 'ChangeMe_2026!@#',
     name: 'Admin Trung'
   },
   {
-    email: 'linharmykxbnvn@gmail.com',
-    password: 'Linh@2006',
+    email: 'admin2@example.com',
+    password: 'ChangeMe_2027!@#',
     name: 'Admin Linh'
   },
   {
     email: 'admin@vibesurvey.com',
-    password: 'admin123',
+    password: 'ChangeMe_2027!@#',
     name: 'Quản Trị Viên Hệ Thống'
   }
 ];
@@ -161,7 +162,7 @@ db.exec('VACUUM;');
 
 console.log('=======================================================');
 console.log('🎉 LÀM SẠCH DATABASE HOÀN TẤT!');
-console.log('📊 Người dùng: 3 Tài khoản Quản Trị Viên (trungdzid3@gmail.com, linharmykxbnvn@gmail.com, admin@vibesurvey.com)');
+console.log('📊 Người dùng: 3 Tài khoản Quản Trị Viên (admin@example.com, admin2@example.com, admin@vibesurvey.com)');
 console.log('📋 Khảo sát công khai: 2 (Sẵn sàng phục vụ khách xem & làm bài)');
 console.log('🎁 Voucher danh mục: 3 thương hiệu (Shopee, Grab, Highlands)');
 console.log('=======================================================');

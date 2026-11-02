@@ -5,6 +5,7 @@
 
 const { fork } = require('node:child_process');
 const path = require('node:path');
+const fs = require('node:fs');
 
 console.log(`
 ╔══════════════════════════════════════════════════════════════════════╗
@@ -115,6 +116,36 @@ const testSuites = [
     name: 'Tầng 17: Survey Full Flow, ID Map & Database Logic Sync Suite',
     description: 'Kiểm tra parseSmartText, logic_json persistence, ID Map remap targets và đồng bộ CSDL',
     file: 'test_survey_full_flow.js'
+  },
+  {
+    id: 18,
+    name: 'Tầng 18: Delete Survey Foreign Key & Cascade Suite',
+    description: 'Kiểm tra xóa khảo sát không phá vỡ ràng buộc khóa ngoại, dọn cascade an toàn',
+    file: 'test_delete_survey_fk.js'
+  },
+  {
+    id: 19,
+    name: 'Tầng 19: Full MS Forms Branching & Parser Suite',
+    description: 'Kiểm tra rẽ nhánh biểu mẫu Microsoft Forms đa nhánh end-to-end',
+    file: 'test_full_msforms_branching.js'
+  },
+  {
+    id: 20,
+    name: 'Tầng 20: OTP Cooldown & Anti-Spam Suite',
+    description: 'Kiểm tra thời gian chờ gửi lại OTP, chống spam mã xác thực',
+    file: 'test_otp_cooldown.js'
+  },
+  {
+    id: 21,
+    name: 'Tầng 21: Range Variants & Restriction Sanitization Suite',
+    description: 'Kiểm tra biến thể ràng buộc khoảng số (range variants) được bóc tách chuẩn',
+    file: 'test_range_variants.js'
+  },
+  {
+    id: 22,
+    name: 'Tầng 22: Survey Logic ID Map Consistency Suite',
+    description: 'Kiểm tra tính nhất quán bản đồ ID logic_json khi chỉnh sửa câu hỏi',
+    file: 'test_survey_logic_id_map.js'
   }
 ];
 
@@ -144,9 +175,24 @@ function cleanupTestArtifacts() {
   cleanAllTestData({ verbose: true });
 }
 
+// Test Lifecycle Rule: tự động xóa artifact file tạm (screenshot, profile CDP, báo cáo JSON)
+// do test ghi vào tests/reports/ — chạy đầu phiên để có trạng thái sạch.
+function cleanupReportArtifacts() {
+  const reportsDir = path.join(__dirname, 'reports');
+  try {
+    if (fs.existsSync(reportsDir)) {
+      fs.rmSync(reportsDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(reportsDir, { recursive: true });
+  } catch (err) {
+    console.error('Khong don duoc tests/reports:', err.message);
+  }
+}
+
 async function runAll() {
   // Tự động dọn dẹp sạch sẽ dữ liệu test trước khi bắt đầu
   cleanAllTestData({ verbose: false });
+  cleanupReportArtifacts();
 
   const overallStart = Date.now();
   const summary = [];
@@ -207,6 +253,13 @@ async function runAll() {
   console.log(`🎯 Tỷ lệ thành công: ${totalPassed}/${totalSuites} Suites (${((totalPassed / totalSuites) * 100).toFixed(1)}%)`);
 
   cleanupTestArtifacts();
+
+  // Test Lifecycle Rule: toàn bộ suite PASS thì xóa sạch artifact file tạm;
+  // có FAIL thì giữ lại tests/reports/ phục vụ debug.
+  if (isAllPassed) {
+    cleanupReportArtifacts();
+    console.log('Da don dep tests/reports sau khi toan bo suite PASS.');
+  }
 
   if (isAllPassed) {
     console.log('\n🏆 [KẾT QUẢ]: TẤT CẢ CÁC TẦNG KIỂM THỬ ĐÃ VƯỢT QUA 100% (100% PASS)');

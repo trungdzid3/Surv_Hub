@@ -13,6 +13,10 @@ package-lock.json
 *service_account*.json
 credentials*.json
 google-service-account.json
+Danh Sach Email Sinh Vien*.docx
+*Email Sinh Vien*.docx
+*Email Sinh Viên*.docx
+.archify/
 
 # Logs & Temporary files
 public/uploads/*

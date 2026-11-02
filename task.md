@@ -1,19 +1,19 @@
-# TASK: TỐI ƯU HÓA TOKEN & MODULAR HÓA - DỌN DẸP DỮ LIỆU THỪA - KIỂM TOÁN BẢO MẬT & REVIEW FRONTEND
+# TASK: ĐẠI TU MODULAR HÓA app.js THEO MIỀN NGHIỆP VỤ (8 WAVE) - TIẾN ĐỘ ĐÊM 03-11-2026
 
-Ngày tạo: 03-11-2026. Orchestrator điều phối theo mô hình Subagent-Driven (AGENTS.md Mục 5).
+Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data/catalogs.js + utils.js + 7 module miền nghiệp vụ (creator-studio, respondent, wallet-ledger, admin-console, forum, modals-terms, notifications). Mỗi wave: node -c + npm test + sync:android + commit.
 
-## BẢNG MA TRẬN PHÂN QUYỀN VÀ KHÓA FILE (AGENT FILE LOCK & SKILL MATRIX)
+- [x] Wave 0: Dọn dẹp + bảo mật hygiene: untrack PII docx (KHẨN - repo GitHub public), .gitignore chặn PII, vệ sinh mật khẩu clean_database.js, xóa 10 script one-off + .archify + .pdf-build + backup cũ + PDF superseded | [Orchestrator + senior-coder]
+- [x] Wave 0b: Test registry: xóa test chết/one-off/live-service, đăng ký 5 suite PASS (tầng 18-22), cơ chế tự dọn tests/reports/ khi PASS | [Orchestrator]
+- [x] Wave 1: catalogs.js (7 hằng danh mục, Object.freeze) + utils.js (escapeHtml/formatVND/refreshIcons) + hợp nhất 3 cặp hàm trùng + voucherMarket.js + pushNotifications.js (fix rò rỉ visibilitychange) + docs/CODE_MAP.md + cache-buster 4.9.6. app.js 20.612 -> 19.685 dòng. npm test 22/22 PASS (18.96s) | [senior-coder + Orchestrator QA]
+- [ ] Wave 2: tách modules/wallet-ledger.js (~1.3k: ví, swap, nạp VietQR) | [senior-coder] | [Locked: public/app.js, public/js/modules/wallet-ledger.js, public/index.html, docs/CODE_MAP.md]
+- [ ] Wave 3: tách modules/admin-console.js (~2k: overview, payouts, fraud, console) | [senior-coder]
+- [ ] Wave 4: tách modules/forum.js (~1.8k: diễn đàn + WYSIWYG + đính kèm + admin sub-nav) | [senior-coder]
+- [ ] Wave 5: tách modules/modals-terms.js (~1.7k: auth modal, google auth, điều khoản, toast/modal utils) | [senior-coder]
+- [ ] Wave 6: tách modules/creator-studio.js (~4.8k: studio, image picker, forms auth, escrow, builder, smart paste) | [senior-coder]
+- [ ] Wave 7: tách modules/respondent.js (~3.9k: runner + review + hồ sơ 5 tab) | [senior-coder]
+- [ ] Wave 8: QA tổng + CODE_MAP chốt + PROJECT_CONTEXT cập nhật + báo cáo nghiệm thu | [Orchestrator]
 
-- [ ] Task 1: Nạp ngữ cảnh + khảo sát nhanh cấu trúc, xác định file khổng lồ (app.js 20.571 dòng, PROJECT_CONTEXT.md 2.961 dòng), phát hiện PII bị git track | [Agent: Lead Orchestrator] | [Locked Files: task.md]
-- [ ] Task 2: Chiến lược modular hóa + tối ưu token từ Gemini 4 Argon (KHÔNG code, chỉ vạch hướng) | [Agent: ask-argon (Gemini 4 Argon)] | [Skills: ask-argon] | [Locked Files: (read-only)]
-- [ ] Task 3: Trinh sát sâu: bản đồ line-range app.js, cơ chế load script, mirror android assets, đăng ký test trong run_all_tests.js, rác trong scripts/, cấu trúc PROJECT_CONTEXT.md | [Agent: code-researcher] | [Locked Files: (read-only)]
-- [ ] Task 4: Kiểm toán bảo mật tập trung (security-audit guidance mode): auth/JWT/admin/upload/SQL/PII in git | [Agent: security-auditor] | [Skills: security-audit] | [Locked Files: (read-only)]
-- [ ] Task 5: Review frontend READ-ONLY theo DESIGN.md + hallmark + taste-skill + impeccable (KHÔNG sửa code, chỉ báo cáo) | [Agent: frontend-reviewer] | [Skills: hallmark, design-taste-frontend, impeccable] | [Locked Files: (read-only)]
-- [ ] Task 6: Dọn dẹp tệp thừa/cũ: untrack PII docx, xóa backups cũ, .archify cũ, script one-off, test mồ côi; bổ sung cơ chế tự dọn khi test xong | [Agent: Lead Orchestrator + senior-coder] | [Locked Files: .gitignore, tests/*, scripts/*]
-- [ ] Task 7: Modular hóa app.js + sinh CODE_MAP (truy tìm nhanh vị trí sửa) theo chiến lược Argon | [Agent: senior-coder] | [Locked Files: public/app.js, public/js/modules/, public/index.html, android mirror]
-- [ ] Task 8: Nén gọn PROJECT_CONTEXT.md (SSOT tinh gọn), lưu trữ phần lịch sử | [Agent: Lead Orchestrator] | [Locked Files: PROJECT_CONTEXT.md, docs/]
-- [ ] Task 9: Kiểm thử: node -c toàn bộ JS đã sửa, npm test hồi quy, đồng bộ android assets | [Agent: autonomous-qa] | [Locked Files: tests/]
-- [ ] Task 10: Cập nhật PROJECT_CONTEXT.md, commit + push (auto_github_sync), tổng hợp báo cáo nghiệm thu 3 luồng | [Agent: Lead Orchestrator] | [Locked Files: PROJECT_CONTEXT.md]
+## Sprint 03-11-2026 (Buổi 2): Fix layout filter bar + modal điều khoản read-only (phiên khác đã hoàn thành)
 
 ## SPRINT 03-11-2026 (BUOI 2): FIX LAYOUT FILTER BAR + MODAL DIEU KHOAN READ-ONLY
 
