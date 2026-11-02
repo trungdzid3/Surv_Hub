@@ -2449,3 +2449,20 @@ c:\Users\Lenovo\Downloads\Linh\
   + Chuỗi ngày tháng và timestamp không bị nhận diện nhầm thành khoảng số.
 - Chạy toàn diện 17/17 Test Suites (`npm test`): **100% PASS** (20.73 giây).
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android`.
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: KHÓA CHẶT QUYỀN CHUYỂN PHÂN KHÚC & TỰ ĐỘNG HÓA VÒNG ĐỜI GÓI SINH VIÊN (THÁNG 11/2026)
+
+### 1. Phân Định Quyền Hạn & Cơ Chế Phân Khúc Người Điền
+- **Chỉ Dành Riêng Cho Quản Trị Viên (Admin Mode)**:
+  + Toàn bộ khối điều hướng chuyển đổi vai trò (`Người Điền`, `Doanh Nghiệp`, `Quản Trị`) và dòng `Phân khúc (Test): Thường | Sinh Viên` được bảo vệ nghiêm ngặt chỉ hiển thị với tài khoản Quản trị viên (`user.role === 'ADMIN'`).
+  + Với người dùng thông thường (`user.role !== 'ADMIN'`), toàn bộ khối chuyển đổi vai trò và phân khúc hoàn toàn không tồn tại trong giao diện.
+  + Khi Admin chuyển sang góc nhìn `Người Điền` (`adminMode === 'RESPONDENT'`), dòng `Phân khúc (Test)` tự động ẩn đi để giao diện phản ánh chính xác 100% trải nghiệm thực tế của người điền thật. Dòng chuyển phân khúc chỉ xuất hiện khi Admin ở góc nhìn `Quản Trị` (`adminMode === 'ADMIN'`) để phục vụ việc kiểm thử bộ lọc khảo sát.
+
+### 2. Tự Động Hóa Vòng Đời Phân Khúc Sinh Viên (Zero Manual Switch for Users)
+- **Người dùng bình thường tuyệt đối không có cơ chế chuyển đổi bằng tay**:
+  + Người dùng đăng ký tài khoản mặc định ở phân khúc **Thường** (`account_tier = 'PERSONAL'`, `is_student_verified = 0`).
+  + Khi người dùng vào trang *Hồ Sơ & Xác Thực*, nhập email đại học (`.edu.vn` / `.ac.vn`) và xác minh mã OTP 6 số thành công: Hệ thống tự động nâng cấp tài khoản lên **Sinh Viên** (`account_tier = 'STUDENT'`, `is_student_verified = 1`), ghi nhận thời điểm xác thực `student_verified_at` và hạn hiệu lực 1 năm `student_expires_at`.
+  + **Cơ chế Hết hạn Tự động (Auto-Downgrade on Expiry)**: Trong API `/auth/me`, hệ thống tự động kiểm tra thời hạn sinh viên. Nếu đã quá hạn 1 năm hoặc năm hiện tại vượt quá năm tốt nghiệp `graduation_year`, tài khoản sẽ tự động chuyển về phân khúc **Thường** (`account_tier = 'PERSONAL'`, `is_student_verified = 0`).
+  + **Tái xác thực (Re-verification)**: Khi hết hạn, sinh viên có thể vào lại trang Hồ Sơ để gửi mã OTP xác thực lại bằng email trường, khi xác thực thành công sẽ tự động được kích hoạt lại Gói Sinh Viên với chu kỳ 1 năm tiếp theo.

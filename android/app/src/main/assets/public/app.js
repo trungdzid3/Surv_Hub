@@ -1567,10 +1567,10 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             </button>
           </div>
 
-          ${adminMode === 'RESPONDENT' || adminMode === 'ADMIN' ? `
-            <!-- Chuyển đổi Phân khúc Người Điền: Thường vs Sinh Viên (Chỉ 2 mục chuẩn) -->
+          ${adminMode === 'ADMIN' ? `
+            <!-- Chuyển đổi Phân khúc Người Điền: Thường vs Sinh Viên (Chỉ dành riêng cho ADMIN kiểm thử phân khúc) -->
             <div class="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800/80">
-              <span class="text-stone-500 dark:text-stone-400 font-medium text-[10.5px]">Phân khúc:</span>
+              <span class="text-stone-500 dark:text-stone-400 font-medium text-[10.5px]">Phân khúc (Test):</span>
               <div class="grid grid-cols-2 gap-1 bg-stone-200/60 dark:bg-stone-800/80 p-0.5 rounded-lg text-[10.5px]">
                 <button type="button" onclick="VibeApp.switchAdminTier('PERSONAL')" class="py-0.5 px-2 rounded-md font-bold text-center transition-all ${user.account_tier !== 'STUDENT' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'}">
                   Thường
@@ -15619,6 +15619,7 @@ if (totalCount === 0) {
                 </div>
                 <p class="text-emerald-700 dark:text-emerald-300">
                   Email sinh viên đã xác minh: <strong class="font-mono">${user.student_email || user.email}</strong>
+                  ${user.student_expires_at ? ` · <span class="text-stone-500 font-normal">Hiệu lực đến: <strong class="font-mono text-emerald-800 dark:text-emerald-200">${new Date(user.student_expires_at).toLocaleDateString('vi-VN')}</strong></span>` : ''}
                 </p>
                 <div class="text-[11px] text-stone-500 pt-1">
                   Đặc quyền: 30 lượt miễn phí / tháng (làm mới ngày 01 hằng tháng), hưởng trọn mức giá sàn ưu đãi cho khóa luận/NCKH, thù lao người điền chia 85/15.

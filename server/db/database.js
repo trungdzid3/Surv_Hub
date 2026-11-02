@@ -444,6 +444,8 @@ function initSchema() {
     'ALTER TABLE users ADD COLUMN student_otp TEXT;',
     'ALTER TABLE users ADD COLUMN student_otp_expires_at INTEGER;',
     'ALTER TABLE users ADD COLUMN student_otp_sent_at INTEGER;',
+    'ALTER TABLE users ADD COLUMN student_expires_at TEXT;',
+    'ALTER TABLE users ADD COLUMN student_verified_at TEXT;',
     'ALTER TABLE users ADD COLUMN profile_completed INTEGER DEFAULT 0;',
     'ALTER TABLE users ADD COLUMN demographic_locked_until TEXT;',
     'ALTER TABLE users ADD COLUMN free_quota_remaining INTEGER DEFAULT 0;',

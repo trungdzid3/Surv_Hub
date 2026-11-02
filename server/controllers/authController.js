@@ -393,6 +393,22 @@ class AuthController {
     delete freshUser.password_hash;
     delete freshUser.email_otp;
     delete freshUser.student_otp;
+
+    // Tự động kiểm tra thời hạn gói Sinh Viên: nếu hết hạn thì tự động về gói Thường (PERSONAL)
+    if (freshUser.account_tier === 'STUDENT' || freshUser.is_student_verified === 1) {
+      let isExpired = false;
+      if (freshUser.student_expires_at && new Date(freshUser.student_expires_at).getTime() < Date.now()) {
+        isExpired = true;
+      } else if (freshUser.graduation_year && new Date().getFullYear() > Number(freshUser.graduation_year)) {
+        isExpired = true;
+      }
+      if (isExpired) {
+        db.prepare("UPDATE users SET is_student_verified = 0, account_tier = 'PERSONAL' WHERE id = ?").run(freshUser.id);
+        freshUser.is_student_verified = 0;
+        freshUser.account_tier = 'PERSONAL';
+      }
+    }
+
     if (freshUser.demographics_json) {
       try { demographics = JSON.parse(freshUser.demographics_json); } catch (e) {}
     }
@@ -1131,15 +1147,21 @@ class AuthController {
         newFreeQuota = Math.max(newFreeQuota, 30);
       }
 
+      // Thiết lập thời hạn sinh viên: 1 năm (365 ngày) kể từ thời điểm xác thực
+      const nowIso = new Date().toISOString();
+      const expiresIso = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
       db.prepare(`
         UPDATE users 
         SET is_student_verified = 1,
             account_tier = 'STUDENT',
+            student_verified_at = ?,
+            student_expires_at = ?,
             student_otp = NULL,
             student_otp_expires_at = NULL,
             free_quota_remaining = ?
         WHERE id = ?
-      `).run(newFreeQuota, user.id);
+      `).run(nowIso, expiresIso, newFreeQuota, user.id);
 
       const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
       delete updatedUser.password_hash;
