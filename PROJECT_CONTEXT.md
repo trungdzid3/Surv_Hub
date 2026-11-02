@@ -2992,6 +2992,11 @@ c:\Users\Lenovo\Downloads\Linh\
 - **Cấu hình env mới (.env đã cập nhật, .env.example làm mẫu)**: `SEED_ACCOUNT_PASSWORDS`, `PAYMENT_WEBHOOK_SECRET` (hex 64 ngẫu nhiên), `PAYMENT_BANK_ID/NAME/ACCOUNT_NUMBER/ACCOUNT_NAME/QR_TEMPLATE`, `CORS_ORIGINS`.
 - **Nghiệm thu**: `node -c` PASS 8 file; `npm test` 17/17 suite PASS 100% (21.18s); `npm run sync:android` OK; cache-buster `index.html:554` → `4.9.5_email_consent_security`.
 - **Kỹ nợ còn lại (chấp nhận)**: JWT vẫn lưu localStorage (đại tu auth riêng khi lên production); DB cũ còn `__profile_*` trong `answers_payload` đã bị chặn xuất bằng strip runtime; `server/db/vibesurvey.db` churn test không commit.
-- **Argon mục 4 (tịch thu số dư)**: bridge hết phiên Gemini ("no Gemini models available; refresh the authenticated session"), hạn mức còn 100% — chờ chạy lại phiên đăng nhập (login_gemini.py) rồi truy vấn tiếp.
+- **Argon mục 4 (tịch thu số dư) — ĐÃ TRUY VẤN THÀNH CÔNG** (sau khi làm mới cookie Gemini bằng `login_gemini.py` và khởi động lại bridge `gemini-api.exe`, PID 11288):
+  - Phản biện 4 phương án: A (tạm khóa + khiếu nại) RẤT CHUẨN; B (tách nguồn theo sổ cái — hủy thù lao bài REJECTED_FRAUD là "từ chối nghiệm thu", không phải "tịch thu") là CỐT LÕI PHÁP LÝ VỮNG NHẤT; C (cấn trừ thiệt hại thực tế + hoàn phần dư) đúng BLDS; **D (trọng tài nội bộ bắt buộc) BỊ VÔ HIỆU theo Khoản 4 Điều 25 Luật BVLNTD** — chỉ được giữ như bước hòa giải tự nguyện.
+  - **Kết luận Argon: kết hợp A + B + C, bỏ D.** Trình tự: tạm khóa quy đổi → hủy Point từng giao dịch vi phạm theo sổ cái → cấn trừ thiệt hại thực tế có căn cứ → mở khiếu nại 7-14 ngày → quyết toán phần dư hợp lệ.
+  - Điều khoản mẫu 3 khoản thay "tịch thu số dư" (bản đầy đủ lưu tại log truy vấn; ý chính: tạm ngưng vĩnh viễn quyền truy cập + quy đổi khi trust < 40 do gian lận; hủy ghi nhận thù lao các khảo sát không đạt nghiệm thu; bảo lưu + quyền yêu cầu thanh quyết toán phần dư hợp lệ; khiếu nại 7 ngày làm việc, quá hạn chốt theo biên bản hệ thống).
+  - 3 rủi ro còn lại Argon cảnh báo khi lên production: (1) định nghĩa "thiệt hại thực tế" bị Ủy ban Cạnh tranh Quốc gia soi xét nếu cấn trừ không chứng minh được; (2) quy đổi 2 chiều 1:1 qua VietQR/MoMo dễ bị NHNN coi là trung gian thanh toán/ví điện tử trái phép — phải tách bạch "trả thù lao cộng tác viên" vs "tiền điện tử"; (3) thuế TNCN 10% vãng lai cho mỗi lần chi trả từ 2 triệu đồng trở lên.
+  - **Chưa sửa điều khoản trong app.js** — chờ chủ dự án chốt câu chữ (Argon chỉ tham vấn chiến lược theo quy chế).
 
 
