@@ -2830,3 +2830,32 @@ c:\Users\Lenovo\Downloads\Linh\
 - Toàn bộ 17/17 Test Suites hệ thống (`npm test`): **100% PASS** (17.32s).
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` hoàn tất.
 - Tự động commit và push lên GitHub (`origin/main`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: HỢP NHẤT KHO KỸ NĂNG VỀ ANTIGRAVITY (SSOT) & NÂNG CẤP IMPECCABLE + TASTE-SKILL (THÁNG 11/2026)
+
+### 1. Hợp Nhất Cơ Sở Kỹ Năng (Skill Single Source of Truth - "Cài 1 Được 2")
+- **Bối cảnh & Vấn đề**: Trước đây 406 skills bị sao chép nhân đôi ở cả 2 thư mục `C:\Users\Lenovo\.zcode\skills\` và `C:\Users\Lenovo\.agents\skills\`. Điều này gây lãng phí dung lượng ổ đĩa và làm ZCode quét trùng tên, nhân đôi danh sách skills trong context prompt.
+- **Giải pháp triển khai**:
+  + Chuyển toàn bộ quyền quản trị kỹ năng tập trung duy nhất về **Antigravity standard**: `C:\Users\Lenovo\.agents\skills\`.
+  + Dọn dẹp sạch sẽ 406 thư mục nhân bản cũ trong `C:\Users\Lenovo\.zcode\skills\`, chỉ để lại tệp `README.md` chỉ dẫn SSOT.
+  + Do ZCode tự động nhận diện và quét đồng thời `C:\Users\Lenovo\.agents\skills\`, từ nay mọi skill cài đặt vào Antigravity (`~/.agents/skills`) đều khả dụng ngay lập tức trên cả Antigravity và ZCode mà không cần sao chép thủ công.
+  + Đã bổ sung nguyên tắc này vào `AGENTS.md` (Mục 11 & Mục 13) và Rule toàn cục.
+
+### 2. Nâng Cấp Trọn Bộ 2 Kỹ Năng Thiết Kế Đỉnh Cao (Anti-Slop Design Suite)
+- **`pbakaus/impeccable` (v4.8.0 - Paul Bakaus)**:
+  + Cài đặt trọn bộ mã nguồn chính thức vào `C:\Users\Lenovo\.agents\skills\impeccable\` (và alias `impeccable-design-polish`).
+  + Bổ sung trọn vẹn **42 reference playbooks**: `critique.md`, `audit.md`, `bolder.md`, `quieter.md`, `harden.md`, `craft-floor.md`, `colorize.md`, `component-review.md`, `distill.md`, `doctor.md`, `document.md`, `extract.md`, `generate.md`, `typeset.md`, `visualize.md`, `live.md`, v.v.
+  + Tích hợp đầy đủ các chế độ: `Persuade`, `Operate`, `Read`, `Experience`.
+- **`leonxlnx/taste-skill` (v2 - Leon)**:
+  + Cài đặt trọn bộ mã nguồn chính thức vào `C:\Users\Lenovo\.agents\skills\taste-skill\`.
+  + Bổ sung đầy đủ **11 tài liệu chuyên sâu trong `references/`**: `app-screens.md`, `colour.md`, `copy.md`, `critique.md`, `imagery.md`, `layout.md`, `motion.md`, `research.md`, `scenes.md`, `tells.md`, `type.md`.
+  + Bổ sung thư viện gallery nghiên cứu 247 trang web đạt giải (`library/`), kịch bản kiểm thử (`evals/`) và assets mẫu.
+- **Đăng ký Lockfile**: Đã cập nhật `C:\Users\Lenovo\.agents\.skill-lock.json` ghi nhận chính thức 2 kỹ năng với nguồn GitHub upstream.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Kiểm tra cú pháp: `npm run lint` đạt 100% hợp lệ.
+- Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (18.00s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android`.
+- Tự động commit và push lên GitHub (`origin/main`).
