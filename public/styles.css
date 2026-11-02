@@ -1,3 +1,20 @@
+/* ==================== ẨN TRIỆT ĐỂ THANH CUỘN XÁM MẶC ĐỊNH (NO SCROLLBAR) ==================== */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar,
+[class*="scrollbar-none"]::-webkit-scrollbar,
+[class*="no-scrollbar"]::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar,
+.scrollbar-none,
+[class*="scrollbar-none"],
+[class*="no-scrollbar"] {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 /* ==========================================================================
    SurvHub - Minimalist Unique Design System & Typography
    Phong cách: Tối giản màu sắc lạ (Nordic Slate & Cobalt Noir, Deep Minimalist),

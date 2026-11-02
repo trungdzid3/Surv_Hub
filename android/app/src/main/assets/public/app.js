@@ -15037,190 +15037,211 @@ if (totalCount === 0) {
           </div>
         </div>
 
-        <!-- 5 TAB CHỨC NĂNG CHUẨN STITCH ĐẦY ĐỦ NGUYÊN BẢN -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-stone-200/80 dark:border-stone-800 text-xs font-bold">
+        <!-- 5 TAB CHỨC NĂNG CHUẨN STITCH ĐẦY ĐỦ NGUYÊN BẢN (SEGMENTED DOCK CAO CẤP, 0% THANH KÉO XÁM) -->
+        <div class="p-1.5 rounded-2xl bg-stone-100/90 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shadow-2xs">
           <button type="button" onclick="VibeApp.switchProfileTab('demographics')" 
-                  class="pb-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'demographics' ? 'border-orange-600 text-orange-600 dark:text-orange-400 font-extrabold' : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'}">
+                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'demographics' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
             <i data-lucide="user" class="w-4 h-4"></i>
             <span>1. Thông tin nhân khẩu học</span>
           </button>
           <button type="button" onclick="VibeApp.switchProfileTab('reputation')" 
-                  class="pb-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'reputation' ? 'border-orange-600 text-orange-600 dark:text-orange-400 font-extrabold' : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'}">
+                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'reputation' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
             <i data-lucide="award" class="w-4 h-4"></i>
             <span>2. Đánh giá & Mức độ uy tín</span>
           </button>
           <button type="button" onclick="VibeApp.switchProfileTab('created-forms')" 
-                  class="pb-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'created-forms' ? 'border-orange-600 text-orange-600 dark:text-orange-400 font-extrabold' : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'}">
+                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'created-forms' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
             <i data-lucide="file-plus" class="w-4 h-4"></i>
             <span>3. Khảo sát đã tạo (Form đã up)</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-stone-100 dark:bg-stone-800 font-mono font-bold">${myCreatedSurveys.length}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'created-forms' ? 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400' : 'bg-stone-200/80 dark:bg-stone-800 text-stone-600 dark:text-stone-400'}">${myCreatedSurveys.length}</span>
           </button>
           <button type="button" onclick="VibeApp.switchProfileTab('filled-forms')" 
-                  class="pb-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'filled-forms' ? 'border-orange-600 text-orange-600 dark:text-orange-400 font-extrabold' : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'}">
+                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'filled-forms' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
             <i data-lucide="check-circle-2" class="w-4 h-4"></i>
             <span>4. Khảo sát đã tham gia</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 font-mono font-bold">${myParticipatedSurveys.length}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'filled-forms' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'}">${myParticipatedSurveys.length}</span>
           </button>
           <button type="button" onclick="VibeApp.switchProfileTab('forum-posts')" 
-                  class="pb-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'forum-posts' ? 'border-orange-600 text-orange-600 dark:text-orange-400 font-extrabold' : 'border-transparent text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'}">
+                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'forum-posts' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
             <i data-lucide="messages-square" class="w-4 h-4"></i>
             <span>5. Bài viết trên diễn đàn</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-stone-100 dark:bg-stone-800 font-mono font-bold">${myPosts.length}</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'forum-posts' ? 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400' : 'bg-stone-200/80 dark:bg-stone-800 text-stone-600 dark:text-stone-400'}">${myPosts.length}</span>
           </button>
         </div>
 
-        <!-- TAB 1: THÔNG TIN NHÂN KHẨU HỌC (THỰC TẾ) -->
-        <div id="profile-tab-demographics" class="${activeTab === 'demographics' ? '' : 'hidden'} space-y-5">
+        <!-- TAB 1: THÔNG TIN NHÂN KHẨU HỌC (THIẾT KẾ THOÁNG ĐÃNG, CHUẨN STITCH, 0% SÁT XÍT) -->
+        <div id="profile-tab-demographics" class="${activeTab === 'demographics' ? '' : 'hidden'} space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
-              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block">Hồ Sơ Nghiên Cứu</span>
-              <h2 class="text-lg font-black text-stone-900 dark:text-white">Thông Tin Cá Nhân & Nhân Khẩu Học</h2>
+              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block mb-1">Hồ Sơ Nghiên Cứu</span>
+              <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Thông Tin Cá Nhân & Nhân Khẩu Học</h2>
             </div>
-            <div class="bg-stone-50 dark:bg-stone-900/60 px-4 py-2 rounded-2xl border border-stone-200 dark:border-stone-800 flex items-center gap-2 text-xs text-stone-600 dark:text-stone-400">
-              <i data-lucide="info" class="w-4 h-4 text-orange-600 shrink-0"></i>
+            <div class="bg-orange-50/80 dark:bg-orange-950/30 px-4 py-2.5 rounded-2xl border border-orange-200/80 dark:border-orange-900/40 flex items-center gap-2.5 text-xs text-orange-900 dark:text-orange-200 shadow-2xs">
+              <i data-lucide="shield-check" class="w-4 h-4 text-orange-600 shrink-0"></i>
               <span>Hoàn thiện 100% hồ sơ để mở khóa thêm lượt mẫu miễn phí. Thông tin cốt lõi khóa 90 ngày.</span>
             </div>
           </div>
 
           ${isLocked ? `
-            <div class="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex items-center gap-3">
+            <div class="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex items-center gap-3 shadow-xs">
               <i data-lucide="lock" class="w-5 h-5 text-amber-600 shrink-0"></i>
               <span>Hồ sơ nhân khẩu học đang được khóa an toàn đến ngày <strong>${lockDateStr}</strong> (Khóa 90 ngày sau khi lưu để đảm bảo tính khách quan của dữ liệu nghiên cứu thị trường).</span>
             </div>
           ` : ''}
 
-          <div class="bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4.5">
-              <!-- 1. Giới tính -->
-              <div class="relative">
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Giới tính: *</label>
-                <input type="hidden" id="demo-gender" value="${demographics.gender || 'MALE'}">
-                <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-gender-menu', event)"
-                        class="custom-dropdown-trigger w-full flex items-center justify-between p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-500 transition-all ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                  <span id="demo-gender-label">${demographics.gender === 'FEMALE' ? 'Nữ' : (demographics.gender === 'OTHER' ? 'Khác / Không tiết lộ' : 'Nam')}</span>
-                  <i data-lucide="chevron-down" class="dropdown-trigger-icon w-3.5 h-3.5 stroke-[2] transition-transform duration-200 pointer-events-none"></i>
-                </button>
-                ${!isLocked ? `
-                  <div id="demo-gender-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                    <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'MALE', 'Nam', event)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">
-                      <span>Nam</span>
-                    </div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'FEMALE', 'Nữ', event)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">
-                      <span>Nữ</span>
-                    </div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'OTHER', 'Khác / Không tiết lộ', event)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">
-                      <span>Khác / Không tiết lộ</span>
-                    </div>
-                  </div>
-                ` : ''}
+          <div class="bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 rounded-3xl p-6 sm:p-9 shadow-xs space-y-9">
+            
+            <!-- SECTION A: THÔNG TIN CÁ NHÂN & NƠI SINH SỐNG -->
+            <div class="space-y-5">
+              <div class="flex items-center gap-2 pb-3 border-b border-stone-100 dark:border-stone-800 text-xs font-black uppercase tracking-wider text-stone-800 dark:text-stone-200">
+                <i data-lucide="user" class="w-4 h-4 text-orange-600"></i>
+                <span>A. Thông tin cá nhân & Địa bàn sinh sống</span>
               </div>
 
-              <!-- 2. Ngày sinh -->
-              <div>
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Ngày sinh: *</label>
-                <input type="date" id="demo-birthdate" value="${demographics.birth_date || '2003-08-15'}" ${isLocked ? 'disabled' : ''}
-                       class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-              </div>
-
-              <!-- 3. Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới) -->
-              <div class="relative">
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới): *</label>
-                <input type="hidden" id="demo-province" value="${demographics.province || 'Hà Nội'}">
-                <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-province-menu', event)"
-                        class="custom-dropdown-trigger w-full flex items-center justify-between p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-500 transition-all ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                  <span id="demo-province-label">${demographics.province || 'Hà Nội'}</span>
-                  <i data-lucide="chevron-down" class="dropdown-trigger-icon w-3.5 h-3.5 stroke-[2] transition-transform duration-200 pointer-events-none"></i>
-                </button>
-                ${!isLocked ? `
-                  <div id="demo-province-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                    ${(window.VIBE_34_PROVINCES || ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Quảng Ninh', 'Huế', 'Bắc Ninh', 'Bình Dương', 'Đồng Nai']).map(p => `
-                      <div onclick="VibeApp.selectCustomFormOption('demo-province', '${p}', '${p}', event)" 
-                           class="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 ${demographics.province === p ? 'text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
-                        <span>${p}</span>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 sm:gap-y-7">
+                <!-- 1. Giới tính -->
+                <div class="relative space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Giới tính: *</label>
+                  <input type="hidden" id="demo-gender" value="${demographics.gender || 'MALE'}">
+                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-gender-menu', event)"
+                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                    <span id="demo-gender-label">${demographics.gender === 'FEMALE' ? 'Nữ' : (demographics.gender === 'OTHER' ? 'Khác / Không tiết lộ' : 'Nam')}</span>
+                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
+                  </button>
+                  ${!isLocked ? `
+                    <div id="demo-gender-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                      <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'MALE', 'Nam', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
+                        <span>Nam</span>
                       </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
-              </div>
-
-              <!-- 4. Nghề nghiệp / Đối tượng -->
-              <div class="relative">
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Nghề nghiệp / Đối tượng: *</label>
-                <input type="hidden" id="demo-occupation" value="${demographics.occupation || 'Học sinh / Sinh viên đại học'}">
-                <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-occupation-menu', event)"
-                        class="custom-dropdown-trigger w-full flex items-center justify-between p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-500 transition-all ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                  <span id="demo-occupation-label">${demographics.occupation || 'Học sinh / Sinh viên đại học'}</span>
-                  <i data-lucide="chevron-down" class="dropdown-trigger-icon w-3.5 h-3.5 stroke-[2] transition-transform duration-200 pointer-events-none"></i>
-                </button>
-                ${!isLocked ? `
-                  <div id="demo-occupation-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                    <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học sinh / Sinh viên đại học', 'Học sinh / Sinh viên đại học', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Học sinh / Sinh viên đại học</div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học viên cao học / NCS', 'Học viên cao học / NCS', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Học viên cao học / NCS</div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Giảng viên / Nhà nghiên cứu', 'Giảng viên / Nhà nghiên cứu', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Giảng viên / Nhà nghiên cứu</div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Người đi làm (Khối kỹ thuật & kinh tế)', 'Người đi làm (Khối kỹ thuật & kinh tế)', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Người đi làm (Khối kỹ thuật & kinh tế)</div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Khác', 'Khác', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Khác</div>
-                  </div>
-                ` : ''}
-              </div>
-
-              <!-- 5. Trường Đại Học (293 trường) -->
-              <div class="relative">
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Trường Đại học / Học Viện / Cao Đẳng: *</label>
-                <div class="relative">
-                  <input type="text" id="demo-university" value="${demographics.university || (user.university || '')}" ${isLocked ? 'disabled' : ''} 
-                         placeholder="Gõ tìm trường (VD: Bách Khoa, Kinh Tế, FPT, FTU...)"
-                         onfocus="VibeApp.filterDemoUniversities(this.value)"
-                         oninput="VibeApp.filterDemoUniversities(this.value)"
-                         class="w-full p-2.5 pr-8 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                  <i data-lucide="search" class="w-3.5 h-3.5 text-stone-400 absolute right-2.5 top-3 pointer-events-none"></i>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'FEMALE', 'Nữ', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
+                        <span>Nữ</span>
+                      </div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'OTHER', 'Khác / Không tiết lộ', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
+                        <span>Khác / Không tiết lộ</span>
+                      </div>
+                    </div>
+                  ` : ''}
                 </div>
-                ${!isLocked ? `
-                  <div id="demo-uni-popover" class="hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                    <div id="demo-uni-dropdown-list" class="space-y-0.5"></div>
-                  </div>
-                ` : ''}
-              </div>
 
-              <!-- 6. Ngành học / Chuyên môn -->
-              <div>
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Ngành học / Chuyên môn: *</label>
-                <input type="text" id="demo-major" value="${demographics.major || (user.major || '')}" ${isLocked ? 'disabled' : ''} placeholder="VD: Công nghệ thông tin, Marketing..."
-                       class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-              </div>
+                <!-- 2. Ngày sinh -->
+                <div class="space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Ngày sinh: *</label>
+                  <input type="date" id="demo-birthdate" value="${demographics.birth_date || '2003-08-15'}" ${isLocked ? 'disabled' : ''}
+                         class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                </div>
 
-              <!-- 7. Năm tốt nghiệp -->
-              <div>
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Năm tốt nghiệp (dự kiến): *</label>
-                <input type="number" id="demo-gradyear" value="${demographics.graduation_year || (user.graduation_year || 2026)}" min="1980" max="2035" ${isLocked ? 'disabled' : ''}
-                       class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-bold font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500 ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-              </div>
+                <!-- 3. Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới) -->
+                <div class="relative space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới): *</label>
+                  <input type="hidden" id="demo-province" value="${demographics.province || 'Hà Nội'}">
+                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-province-menu', event)"
+                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                    <span id="demo-province-label">${demographics.province || 'Hà Nội'}</span>
+                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
+                  </button>
+                  ${!isLocked ? `
+                    <div id="demo-province-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto no-scrollbar p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                      ${(window.VIBE_34_PROVINCES || ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Quảng Ninh', 'Huế', 'Bắc Ninh', 'Bình Dương', 'Đồng Nai']).map(p => `
+                        <div onclick="VibeApp.selectCustomFormOption('demo-province', '${p}', '${p}', event)" 
+                             class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 ${demographics.province === p ? 'text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-stone-800' : 'text-stone-700 dark:text-stone-200'}">
+                          <span>${p}</span>
+                        </div>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+                </div>
 
-              <!-- 8. Mức thu nhập hàng tháng -->
-              <div class="relative">
-                <label class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">Mức thu nhập hàng tháng: *</label>
-                <input type="hidden" id="demo-income" value="${demographics.monthly_income || (user.monthly_income || 'Dưới 5 triệu VNĐ')}">
-                <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-income-menu', event)"
-                        class="custom-dropdown-trigger w-full flex items-center justify-between p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-bold text-slate-800 dark:text-slate-200 hover:border-orange-500 transition-all ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                  <span id="demo-income-label">${demographics.monthly_income || user.monthly_income || 'Dưới 5 triệu VNĐ'}</span>
-                  <i data-lucide="chevron-down" class="dropdown-trigger-icon w-3.5 h-3.5 stroke-[2] transition-transform duration-200 pointer-events-none"></i>
-                </button>
-                ${!isLocked ? `
-                  <div id="demo-income-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                    <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Dưới 5 triệu VNĐ', 'Dưới 5 triệu VNĐ', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Dưới 5 triệu VNĐ</div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 5 - 10 triệu VNĐ', 'Từ 5 - 10 triệu VNĐ', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Từ 5 - 10 triệu VNĐ</div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 10 - 20 triệu VNĐ', 'Từ 10 - 20 triệu VNĐ', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Từ 10 - 20 triệu VNĐ</div>
-                    <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Trên 20 triệu VNĐ', 'Trên 20 triệu VNĐ', event)" class="px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200">Trên 20 triệu VNĐ</div>
-                  </div>
-                ` : ''}
+                <!-- 4. Mức thu nhập hàng tháng -->
+                <div class="relative space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Mức thu nhập hàng tháng: *</label>
+                  <input type="hidden" id="demo-income" value="${demographics.monthly_income || (user.monthly_income || 'Dưới 5 triệu VNĐ')}">
+                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-income-menu', event)"
+                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                    <span id="demo-income-label">${demographics.monthly_income || user.monthly_income || 'Dưới 5 triệu VNĐ'}</span>
+                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
+                  </button>
+                  ${!isLocked ? `
+                    <div id="demo-income-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Dưới 5 triệu VNĐ', 'Dưới 5 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Dưới 5 triệu VNĐ</div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 5 - 10 triệu VNĐ', 'Từ 5 - 10 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Từ 5 - 10 triệu VNĐ</div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 10 - 20 triệu VNĐ', 'Từ 10 - 20 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Từ 10 - 20 triệu VNĐ</div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Trên 20 triệu VNĐ', 'Trên 20 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Trên 20 triệu VNĐ</div>
+                    </div>
+                  ` : ''}
+                </div>
               </div>
             </div>
 
-            <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p class="text-xs text-stone-500">
-                Thông tin hồ sơ được bảo mật và mã hóa phục vụ đối soát mẫu khảo sát.
+            <!-- SECTION B: ĐỊNH DANH HỌC THUẬT & CHUYÊN MÔN -->
+            <div class="space-y-5 pt-3">
+              <div class="flex items-center gap-2 pb-3 border-b border-stone-100 dark:border-stone-800 text-xs font-black uppercase tracking-wider text-stone-800 dark:text-stone-200">
+                <i data-lucide="graduation-cap" class="w-4 h-4 text-orange-600"></i>
+                <span>B. Định danh học thuật & Chuyên môn</span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 sm:gap-y-7">
+                <!-- 5. Nghề nghiệp / Đối tượng -->
+                <div class="relative space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Nghề nghiệp / Đối tượng: *</label>
+                  <input type="hidden" id="demo-occupation" value="${demographics.occupation || 'Học sinh / Sinh viên đại học'}">
+                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-occupation-menu', event)"
+                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                    <span id="demo-occupation-label">${demographics.occupation || 'Học sinh / Sinh viên đại học'}</span>
+                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
+                  </button>
+                  ${!isLocked ? `
+                    <div id="demo-occupation-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học sinh / Sinh viên đại học', 'Học sinh / Sinh viên đại học', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Học sinh / Sinh viên đại học</div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học viên cao học / NCS', 'Học viên cao học / NCS', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Học viên cao học / NCS</div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Giảng viên / Nhà nghiên cứu', 'Giảng viên / Nhà nghiên cứu', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Giảng viên / Nhà nghiên cứu</div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Người đi làm (Khối kỹ thuật & kinh tế)', 'Người đi làm (Khối kỹ thuật & kinh tế)', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Người đi làm (Khối kỹ thuật & kinh tế)</div>
+                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Khác', 'Khác', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Khác</div>
+                    </div>
+                  ` : ''}
+                </div>
+
+                <!-- 6. Trường Đại Học (293 trường) -->
+                <div class="relative space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Trường Đại học / Học Viện / Cao Đẳng: *</label>
+                  <div class="relative">
+                    <input type="text" id="demo-university" value="${demographics.university || (user.university || '')}" ${isLocked ? 'disabled' : ''} 
+                           placeholder="Gõ tìm trường (VD: Bách Khoa, Kinh Tế, FPT, FTU...)"
+                           onfocus="VibeApp.filterDemoUniversities(this.value)"
+                           oninput="VibeApp.filterDemoUniversities(this.value)"
+                           class="w-full h-12 px-4 pr-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                    <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute right-3.5 top-4 pointer-events-none"></i>
+                  </div>
+                  ${!isLocked ? `
+                    <div id="demo-uni-popover" class="hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto no-scrollbar p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                      <div id="demo-uni-dropdown-list" class="space-y-0.5"></div>
+                    </div>
+                  ` : ''}
+                </div>
+
+                <!-- 7. Ngành học / Chuyên môn -->
+                <div class="space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Ngành học / Chuyên môn: *</label>
+                  <input type="text" id="demo-major" value="${demographics.major || (user.major || '')}" ${isLocked ? 'disabled' : ''} placeholder="VD: Công nghệ thông tin, Marketing..."
+                         class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                </div>
+
+                <!-- 8. Năm tốt nghiệp -->
+                <div class="space-y-2">
+                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Năm tốt nghiệp (dự kiến): *</label>
+                  <input type="number" id="demo-gradyear" value="${demographics.graduation_year || (user.graduation_year || 2026)}" min="1980" max="2035" ${isLocked ? 'disabled' : ''}
+                         class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-black font-mono text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                </div>
+              </div>
+            </div>
+
+            <!-- FOOTER HÀNH ĐỘNG -->
+            <div class="pt-6 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p class="text-xs text-stone-500 flex items-center gap-1.5">
+                <i data-lucide="lock" class="w-3.5 h-3.5 text-stone-400"></i>
+                <span>Thông tin hồ sơ được bảo mật và mã hóa phục vụ đối soát mẫu khảo sát.</span>
               </p>
               ${!isLocked ? `
-                <button type="button" onclick="VibeApp.saveDemographicsAction()" class="py-2.5 px-6 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-extrabold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto">
+                <button type="button" onclick="VibeApp.saveDemographicsAction()" class="h-12 px-8 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-black shadow-md shadow-orange-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto">
                   <i data-lucide="save" class="w-4 h-4"></i>
                   <span>Lưu & Cập Nhật Hồ Sơ Nhân Khẩu Học</span>
                 </button>
