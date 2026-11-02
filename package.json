@@ -15,6 +15,7 @@
     "test:simulation": "node tests/test_simulation.js",
     "test:export": "node tests/test_export.js",
     "test:vouchers": "node tests/test_vouchers_and_parser.js",
+    "test:ai-agent": "python tests/ai_qa_agent.py",
     "db:backup": "node scripts/backup_db.js",
     "sync:android": "node scripts/sync_capacitor.js",
     "generate:icons": "node scripts/generate_icons.js",

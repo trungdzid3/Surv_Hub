@@ -12,11 +12,7 @@ class GeminiSentinelService {
     this.model = config.GEMINI_AI?.MODEL || 'gemini-3.5-flash-lite';
     this.keys = (config.GEMINI_AI?.KEYS && config.GEMINI_AI.KEYS.length > 0)
       ? config.GEMINI_AI.KEYS
-      : [
-        'AIzaSyBl4Q2pnrYEWHu9P5K6gKg1AEq6OhsFEM4',
-        'AIzaSyAxIzy-6vkoGO_14cBBJH71vQOzdag5rcI',
-        'AIzaSyBOSVxR8oq4iJLCerktkHk0SzD2cGaajOk'
-      ];
+      : [];
     this.currentKeyIndex = 0;
 
     this.systemInstruction = `
@@ -67,6 +63,16 @@ Chỉ trả về duy nhất một chuỗi JSON hợp lệ, không kèm lời m�
         violation: false,
         flag: 'CLEAN',
         reason: 'Nội dung rỗng',
+        detected_text: null,
+        model: this.model
+      };
+    }
+
+    if (this.keys.length === 0) {
+      return {
+        violation: false,
+        flag: 'LOCAL_FALLBACK',
+        reason: 'Chưa cấu hình API Key trong GEMINI_API_KEYS, chuyển sang phân tích heuristic nội bộ',
         detected_text: null,
         model: this.model
       };

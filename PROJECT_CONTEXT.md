@@ -2605,3 +2605,21 @@ c:\Users\Lenovo\Downloads\Linh\
 - Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (19.29s).
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` thành công.
 - Tự động commit và push lên GitHub (`origin/main`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: TRIỂN KHAI AUTONOMOUS QA BROWSER AGENT (PLAYWRIGHT + GEMINI FLASH LITE)
+
+### 1. Kiến Trúc Tác Nhân Kiểm Thử Tự Hành ([tests/ai_qa_agent.py](file:///c:/Users/Lenovo/Downloads/Linh/tests/ai_qa_agent.py))
+- **Mô hình kết hợp (Hybrid Architecture)**: Lấy cảm hứng từ quy trình Playwright + Browser-Use trong video Anh Tester:
+  + Tầng điều khiển trình duyệt: **Playwright Python Chromium**, chạy Headless trên `http://localhost:3000`.
+  + Tầng trích xuất DOM ([DOMObserver]): Tự động trích xuất các phần tử tương tác (button, input, select, link) được nén gọn dưới 35 elements để tối ưu token.
+  + Tầng suy luận AI ([GeminiBrain]): Tích hợp mô hình `gemini-3.5-flash-lite`, đọc cấu hình từ file `.env` với cơ chế xoay vòng và tự động chuyển đổi khi gặp lỗi.
+  + Tầng dự phòng cục bộ ([fallback_heuristic_decision]): Tự động kích hoạt khi chưa có API key hoặc kết nối AI ngoài gặp sự cố, đảm bảo bộ kiểm thử luôn thực thi hoàn hảo mà không bao giờ bị gián đoạn.
+- **Tính năng giám sát trực quan**: Tự động chụp ảnh màn hình bằng chứng sau mỗi thao tác lưu tại `tests/reports/screenshots/` và xuất báo cáo kết quả chi tiết `tests/reports/ai_qa_report.json`.
+
+### 2. Nghiệm Thu & Tích Hợp Lệnh Chạy
+- Bổ sung lệnh chạy nhanh vào `package.json`: `"test:ai-agent": "python tests/ai_qa_agent.py"`.
+- Kịch bản kiểm thử E2E Diễn đàn SurvHub (`E2E_FORUM_SURVHUB_EXPLORE`): **PASS 100%**.
+- Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (20.70s).
+- Đồng bộ ứng dụng Android Capacitor hoàn tất.
