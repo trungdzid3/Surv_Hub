@@ -133,6 +133,11 @@ async function testUUIDTarget() {
   await mockApp.nextQuestion();
   assert.strictEqual(mockApp.state.activeSession.currentIndex, 2, 'Phải nhảy đến Section Header có ID sec_hocthuat (index 2)');
   console.log('[PASS] 2.1 Target la ID UUID: Nhay chinh xac den cau hoi / Section Header co ID tuong ung.');
+
+  // Test Case 2.1b: Tiếp tục ấn Next trên Section Header sec_hocthuat (index 2) phải vào câu hỏi q_ht1 (index 3), KHÔNG ĐƯỢC NHẢY CÓC!
+  await mockApp.nextQuestion();
+  assert.strictEqual(mockApp.state.activeSession.currentIndex, 3, 'Từ Section Header, ấn Tiếp tục phải vào câu hỏi đầu tiên của phân đoạn đó (index 3)');
+  console.log('[PASS] 2.1b Section Header Navigation: An Tiep tren Section Header vao dung cau hoi con cua phan doan, khong bi bo qua noi dung.');
 }
 
 // Test Case 2.2: Target là số index

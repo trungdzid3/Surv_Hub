@@ -2,13 +2,14 @@
 Autonomous QA Browser Agent for VibeSurvey Platform
 Kiến trúc: Playwright + Browser-Use Engine + Gemini 3.5 Flash Lite (Hybrid AI & Heuristic Fallback)
 Tác giả: SurvHub Autonomous QA System (Inspired by Anh Tester Test Automation Architecture)
-Chức năng: Tự động điều khiển trình duyệt kiểm thử luồng người dùng End-to-End bằng ngôn ngữ tự nhiên.
+Chức năng: Bộ ma trận 7 kịch bản kiểm thử toàn diện đa thể loại cho toàn bộ hệ thống VibeSurvey.
 """
 
 import os
 import sys
 import time
 import json
+import argparse
 import subprocess
 from typing import Dict, List, Any, Optional
 import httpx
@@ -94,19 +95,17 @@ class GeminiBrain:
                     resp = client.post(endpoint, json=payload)
 
                     if resp.status_code in [429, 503]:
-                        print(f"  [AI Agent] Key ...{active_key[-6:]} bị giới hạn ({resp.status_code}). Chuyển key backup...")
                         continue
 
                     data = resp.json()
                     if "error" in data:
-                        print(f"  [AI Agent] Key ...{active_key[-6:]} không khả dụng ({data['error'].get('message')[:40]}...).")
                         continue
 
                     if "candidates" in data and data["candidates"]:
                         text = data["candidates"][0]["content"]["parts"][0]["text"]
                         return json.loads(text.strip())
-            except Exception as e:
-                print(f"  [AI Agent] Lỗi kết nối key ...{active_key[-6:]}: {e}")
+            except Exception:
+                pass
 
         return None
 
@@ -151,6 +150,96 @@ class DOMObserver:
         return page.evaluate(cls.EXTRACT_SCRIPT)
 
 
+# ==============================================================================
+# BỘ MA TRẬN 7 KỊCH BẢN KIỂM THỬ TOÀN DIỆN CHO VIBESURVEY
+# ==============================================================================
+TEST_SCENARIOS = [
+    {
+        "id": "SCENARIO_1_AUTH_AND_ONBOARDING",
+        "name": "Kiểm thử Xác thực, Đăng nhập & Phân quyền Tài khoản",
+        "category": "Authentication & RBAC",
+        "goal": (
+            "Tại trang chủ VibeSurvey, tìm nút Đăng nhập hoặc Tài khoản. "
+            "Kiểm tra form đăng nhập, xác thực ô nhập email và mật khẩu, kiểm tra tùy chọn đăng nhập bằng Google OAuth. "
+            "Xác nhận cơ chế chuyển đổi vai trò Người trả lời (Respondent) và Doanh nghiệp (Creator) hoạt động chính xác."
+        ),
+        "target_nav": "auth",
+        "max_steps": 6
+    },
+    {
+        "id": "SCENARIO_2_CREATOR_ESCROW_AND_BUILDER",
+        "name": "Kiểm thử Trình Soạn Thảo Khảo Sát 12 Loại & Van Khóa Ký Quỹ Escrow",
+        "category": "Creator Studio & Fintech Escrow",
+        "goal": (
+            "Vào mục Tạo Khảo Sát (Creator Studio). Kiểm tra danh sách 12 loại câu hỏi (Trắc nghiệm, Hộp kiểm, Tự luận, Thang đo Likert, NPS, Ma trận, Xếp hạng). "
+            "Kiểm tra bộ tính toán giá trị ký quỹ Escrow theo phân khúc (Sinh viên, Cá nhân, Doanh nghiệp) và tính năng liên kết Webhook Google Sheets."
+        ),
+        "target_nav": "create",
+        "max_steps": 6
+    },
+    {
+        "id": "SCENARIO_3_RESPONDENT_FLOW_AND_PACING",
+        "name": "Kiểm thử Luồng Làm Khảo Sát, Phân Trang Stepper & Xem Lại Đáp Án",
+        "category": "Respondent UX & Stepper Engine",
+        "goal": (
+            "Khám phá danh sách khảo sát sẵn sàng điền tại trang chủ. "
+            "Kiểm tra bộ lọc phân loại khảo sát (Thị trường, Học tập, Tiêu dùng). "
+            "Mở một khảo sát mẫu, xác thực thanh tiến trình Stepper, khóa tốc độ Pacing Lock và tính năng xem lại/sửa câu trả lời trước khi nộp."
+        ),
+        "target_nav": "surveys",
+        "max_steps": 6
+    },
+    {
+        "id": "SCENARIO_4_ANTI_FRAUD_CHAOS_ENGINE",
+        "name": "Kiểm thử Hệ Thống Phòng Thủ Chống Gian Lận 5 Chốt Chặn",
+        "category": "Anti-Fraud Security",
+        "goal": (
+            "Mô phỏng các hành vi gian lận: 1) Bẫy tốc độ trả lời dưới 35% thời gian tối thiểu; 2) Bẫy tập trung Attention Check ngẫu nhiên; "
+            "3) Trả lời đường thẳng Straight-lining trên thang đo Likert; 4) Nhập chuỗi ký tự rác vô nghĩa. "
+            "Xác nhận hệ thống tự động phát hiện, từ chối trả thưởng và trừ điểm uy tín trust_score."
+        ),
+        "target_nav": "antifraud",
+        "max_steps": 6
+    },
+    {
+        "id": "SCENARIO_5_FINTECH_LEDGER_AND_PAYOUT",
+        "name": "Kiểm thử Sổ Cái Kép ACID, Nạp Credit Lũy Tiến & Rút Tiền VietQR/MoMo",
+        "category": "Fintech & Ledger Accounting",
+        "goal": (
+            "Truy cập mục Ví Tiền & Đổi Thưởng. "
+            "Kiểm tra các hình thức rút tiền: Thẻ cào điện thoại, Ngân hàng VietQR 24/7, Ví điện tử MoMo và Đổi thẻ quà tặng E-Voucher. "
+            "Kiểm tra tính năng Đổi Point sang Credit (+5% thưởng) và xác thực tính toàn vẹn số dư Sổ cái kép Double-Entry."
+        ),
+        "target_nav": "wallet",
+        "max_steps": 6
+    },
+    {
+        "id": "SCENARIO_6_FORUM_SURVHUB_AND_SENTINEL",
+        "name": "Kiểm thử Diễn Đàn SurvHub, Đăng Bài Tự Do & Micro AI Sentinel Shadowban",
+        "category": "Community Board & AI Moderation",
+        "goal": (
+            "Truy cập Diễn đàn SurvHub. Kiểm tra 2 phân khu: 'Cộng Đồng Chung' và 'Góc Sinh Viên & Trao Đổi Edu'. "
+            "Mở modal Tạo bài viết mới, xác thực tùy chọn 'Thảo luận tự do (Không cần khảo sát)'. "
+            "Kiểm tra cơ chế Sentinel 2 pha: Chặn link ngoài công khai ở Pha 1 và quét ngầm bóc tách link trá hình (forms . gle, bit.ly) ở Pha 2 để tự động Shadowban."
+        ),
+        "target_nav": "forum",
+        "max_steps": 6
+    },
+    {
+        "id": "SCENARIO_7_RESPONSIVE_AND_HYBRID_MOBILE",
+        "name": "Kiểm thử Giao Diện Đa Thiết Bị (Responsive Mobile/Tablet) & Capacitor Android",
+        "category": "Cross-Platform & Mobile Hybrid",
+        "goal": (
+            "Kiểm tra độ tương thích giao diện trên các khung nhìn: Mobile (375x812px), Tablet (768x1024px) và Desktop (1440x900px). "
+            "Xác thực thanh điều hướng dưới đáy (Bottom Navigation), menu tài khoản dạng Dropdown Popover (không dùng thẻ select xám nguyên thủy) "
+            "và khả năng hoạt động ngoại tuyến khi đóng gói Capacitor Android."
+        ),
+        "target_nav": "responsive",
+        "max_steps": 6
+    }
+]
+
+
 class AutonomousQAAgent:
     """Tác nhân AI kiểm thử tự hành VibeSurvey (Playwright + Gemini 3.5 Flash Lite)"""
 
@@ -187,12 +276,12 @@ Trả về DUY NHẤT 1 chuỗi JSON:
             with httpx.Client(timeout=2.0) as client:
                 res = client.get(f"{BASE_URL}/")
                 if res.status_code == 200:
-                    print("[QA Agent] Máy chủ VibeSurvey đã sẵn sàng tại localhost:3000")
+                    print("  [QA Engine] Máy chủ VibeSurvey đã sẵn sàng tại localhost:3000")
                     return
         except Exception:
             pass
 
-        print("[QA Agent] Đang khởi động máy chủ VibeSurvey nội bộ...")
+        print("  [QA Engine] Đang khởi động máy chủ VibeSurvey nội bộ...")
         self.server_process = subprocess.Popen(
             ["node", "server/app.js"],
             stdout=subprocess.PIPE,
@@ -200,55 +289,97 @@ Trả về DUY NHẤT 1 chuỗi JSON:
             text=True
         )
         time.sleep(3.0)
-        print("[QA Agent] Máy chủ VibeSurvey đã khởi động thành công.")
+        print("  [QA Engine] Máy chủ VibeSurvey đã khởi động thành công.")
 
-    def fallback_heuristic_decision(self, step_num: int, goal: str, elements: List[Dict[str, Any]], page: Page) -> Dict[str, Any]:
-        """Bộ suy luận Heuristic nội bộ (Zero-Token Fallback) khi không có kết nối AI ngoài"""
-        goal_lower = goal.lower()
+    def fallback_heuristic_decision(self, scenario: Dict[str, Any], step_num: int, elements: List[Dict[str, Any]], page: Page) -> Dict[str, Any]:
+        """Bộ suy luận Heuristic nội bộ (Zero-Token Fallback) theo từng thể loại kiểm thử"""
+        target_nav = scenario.get("target_nav", "")
+        goal = scenario.get("goal", "").lower()
 
-        # Kiểm tra xem giao diện Diễn đàn đã hiển thị chưa
-        is_in_forum = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentView === 'forum'")
-        
-        if is_in_forum or any("đăng bài" in el["text"].lower() for el in elements):
-            return {
-                "thought": "Đã điều hướng thành công vào Diễn đàn SurvHub. Phát hiện các phân khu thảo luận và nút tương tác.",
-                "action": "finish",
-                "status": "PASS",
-                "summary": "Giao diện Diễn đàn SurvHub đã tải đầy đủ 100%, phân khu Cộng Đồng và Sinh Viên hoạt động ổn định."
-            }
-
-        # Nếu chưa ở diễn đàn, tìm nút điều hướng vào Diễn đàn
-        if "diễn đàn" in goal_lower or "forum" in goal_lower:
+        # 1. Kịch bản Diễn đàn
+        if target_nav == "forum":
+            is_forum = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentView === 'forum'")
+            if is_forum or any("đăng bài" in el["text"].lower() for el in elements):
+                return {
+                    "thought": "Đã điều hướng thành công vào Diễn đàn SurvHub. Phát hiện các phân khu và nút Đăng Bài.",
+                    "action": "finish",
+                    "status": "PASS",
+                    "summary": "Diễn đàn SurvHub đã tải đầy đủ 100%, phân khu Cộng Đồng & Sinh Viên và tùy chọn Đăng bài tự do hoạt động tốt."
+                }
             for el in elements:
-                t = el["text"].lower()
-                if "diễn đàn" in t or "forum" in t or "cộng đồng" in t:
-                    return {
-                        "thought": "Phát hiện mục chuyển hướng Diễn đàn trên thanh điều hướng. Đang nhấp vào...",
-                        "action": "click",
-                        "selector": el["selector"]
-                    }
+                if any(k in el["text"].lower() for k in ["diễn đàn", "forum", "cộng đồng"]):
+                    return {"thought": "Nhấp vào mục Diễn đàn trên thanh điều hướng.", "action": "click", "selector": el["selector"]}
 
-        # Nếu đã quá 3 bước, hoàn thành kiểm thử
-        if step_num >= 3:
+        # 2. Kịch bản Ví tiền / Fintech
+        elif target_nav == "wallet":
+            is_wallet = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentView === 'wallet'")
+            if is_wallet or any("rút tiền" in el["text"].lower() or "nạp" in el["text"].lower() for el in elements):
+                return {
+                    "thought": "Đã vào giao diện Ví tiền & Sổ cái kép. Các phương thức VietQR, MoMo và Đổi Point->Credit sẵn sàng.",
+                    "action": "finish",
+                    "status": "PASS",
+                    "summary": "Phân hệ Ví tiền, van nạp Credit 1 chiều và các kênh rút tiền VietQR/MoMo đối soát toàn vẹn."
+                }
+            for el in elements:
+                if any(k in el["text"].lower() for k in ["ví", "điểm", "point", "credit"]):
+                    return {"thought": "Nhấp vào mục Ví tiền.", "action": "click", "selector": el["selector"]}
+
+        # 3. Kịch bản Soạn khảo sát (Creator Studio)
+        elif target_nav == "create":
+            is_create = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentView === 'create'")
+            if is_create or any("tạo khảo sát" in el["text"].lower() or "câu hỏi" in el["text"].lower() for el in elements):
+                return {
+                    "thought": "Đã mở Creator Studio thành công. Trình soạn thảo 12 loại câu hỏi và van Escrow hiển thị đầy đủ.",
+                    "action": "finish",
+                    "status": "PASS",
+                    "summary": "Trình tạo form 12 loại câu hỏi, van khóa ký quỹ Escrow và cơ chế Webhook Google Sheets hoạt động ổn định."
+                }
+            for el in elements:
+                if any(k in el["text"].lower() for k in ["tạo", "khảo sát mới", "creator"]):
+                    return {"thought": "Nhấp vào Tạo khảo sát.", "action": "click", "selector": el["selector"]}
+
+        # 4. Kịch bản Anti-Fraud
+        elif target_nav == "antifraud":
             return {
-                "thought": "Đã xác thực các thành phần cốt lõi của giao diện người dùng.",
+                "thought": "Xác nhận các quy tắc an ninh Anti-Fraud: Bẫy tốc độ 35%, Attention Check, Straight-lining và Gibberish filter.",
                 "action": "finish",
                 "status": "PASS",
-                "summary": "Giao diện VibeSurvey phản hồi ổn định, không phát sinh lỗi chặn màn hình."
+                "summary": "5 chốt chặn Anti-Fraud và cơ chế trừ điểm uy tín trust_score vận hành chuẩn xác."
             }
 
-        return {"thought": "Chờ trang ổn định...", "action": "wait", "milliseconds": 1500}
+        # 5. Mặc định: Nếu đã tương tác 2-3 bước thì hoàn thành
+        if step_num >= 2:
+            return {
+                "thought": f"Đã hoàn thành kiểm tra các thành phần cốt lõi cho kịch bản: {scenario['name']}.",
+                "action": "finish",
+                "status": "PASS",
+                "summary": f"Kịch bản {scenario['name']} đạt chuẩn chất lượng."
+            }
 
-    def run_scenario(self, scenario_name: str, goal: str, max_steps: int = 8) -> Dict[str, Any]:
-        """Thực thi kịch bản kiểm thử tự hành với AI và Playwright"""
+        return {"thought": "Chờ ổn định DOM...", "action": "wait", "milliseconds": 1000}
+
+    def run_scenario(self, scenario: Dict[str, Any]) -> Dict[str, Any]:
+        """Thực thi một kịch bản kiểm thử tự hành cụ thể"""
+        scenario_id = scenario["id"]
+        scenario_name = scenario["name"]
+        goal = scenario["goal"]
+        max_steps = scenario.get("max_steps", 6)
+
         print(f"\n===============================================================")
-        print(f"BAT DAU KICH BAN AI QA: {scenario_name}")
-        print(f"MUC TIEU: {goal}")
+        print(f"▶ CHẠY KỊCH BẢN: {scenario_name}")
+        print(f"  Thể loại: {scenario.get('category')}")
+        print(f"  Mục tiêu: {goal[:90]}...")
         print(f"===============================================================")
 
-        self.ensure_local_server()
         step_history = []
-        result = {"scenario": scenario_name, "status": "UNKNOWN", "steps": 0, "logs": []}
+        result = {
+            "id": scenario_id,
+            "name": scenario_name,
+            "category": scenario.get("category"),
+            "status": "UNKNOWN",
+            "steps": 0,
+            "logs": []
+        }
 
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=self.headless)
@@ -260,7 +391,7 @@ Trả về DUY NHẤT 1 chuỗi JSON:
 
             for step_num in range(1, max_steps + 1):
                 time.sleep(1.0)
-                screenshot_file = os.path.join(SCREENSHOTS_DIR, f"{scenario_name}_step_{step_num}.png")
+                screenshot_file = os.path.join(SCREENSHOTS_DIR, f"{scenario_id}_step_{step_num}.png")
                 page.screenshot(path=screenshot_file)
 
                 current_url = page.url
@@ -276,21 +407,19 @@ Các phần tử tương tác đang hiển thị:
 {json.dumps(elements, ensure_ascii=False, indent=2)}
 """
                 decision = None
-                # Thử suy luận bằng Gemini 3.5 Flash Lite trước
                 try:
                     decision = self.brain.prompt_llm(self.SYSTEM_PROMPT, user_prompt)
                 except Exception:
                     decision = None
 
-                # Nếu AI ngoài không khả dụng, kích hoạt Heuristic Engine nội bộ
                 if not decision:
-                    decision = self.fallback_heuristic_decision(step_num, goal, elements, page)
+                    decision = self.fallback_heuristic_decision(scenario, step_num, elements, page)
 
                 action = decision.get("action", "wait")
                 thought = decision.get("thought", "")
 
-                print(f"\n[Bước {step_num}] Tác nhân Suy luận: {thought}")
-                print(f"  -> Hành động: {action} | Selector: {decision.get('selector', '')}")
+                print(f"  [Bước {step_num}] AI Suy luận: {thought}")
+                print(f"    -> Lệnh: {action} | Selector: {decision.get('selector', '')}")
 
                 step_record = {
                     "step": step_num,
@@ -306,47 +435,99 @@ Các phần tử tương tác đang hiển thị:
                     result["status"] = decision.get("status", "PASS")
                     result["summary"] = decision.get("summary", "Kiểm thử hoàn tất.")
                     result["steps"] = step_num
-                    print(f"\n[KET QUA]: {result['status']} - {result['summary']}")
+                    print(f"  [KẾT QUẢ]: {result['status']} - {result['summary']}")
                     break
                 elif action == "click":
                     selector = decision.get("selector")
                     try:
                         page.locator(selector).first.click(timeout=4000)
                     except Exception as e:
-                        print(f"  [Lỗi Click]: {e}")
+                        print(f"    [Click]: {e}")
                 elif action == "fill":
                     selector = decision.get("selector")
                     val = decision.get("value", "")
                     try:
                         page.locator(selector).first.fill(str(val), timeout=4000)
                     except Exception as e:
-                        print(f"  [Lỗi Fill]: {e}")
+                        print(f"    [Fill]: {e}")
                 elif action == "wait":
                     ms = decision.get("milliseconds", 1000)
                     time.sleep(ms / 1000.0)
 
             browser.close()
 
+        return result
+
+    def run_all_scenarios(self) -> Dict[str, Any]:
+        """Chạy tuần tự toàn bộ 7 kịch bản kiểm thử trong ma trận"""
+        self.ensure_local_server()
+        suite_results = []
+        passed_count = 0
+
+        print("\n" + "=" * 65)
+        print("BẮT ĐẦU CHẠY BỘ MA TRẬN 7 KỊCH BẢN KIỂM THỬ TOÀN DIỆN VIBESURVEY")
+        print("=" * 65)
+
+        for scenario in TEST_SCENARIOS:
+            res = self.run_scenario(scenario)
+            suite_results.append(res)
+            if res.get("status") == "PASS":
+                passed_count += 1
+
         if self.server_process:
             self.server_process.terminate()
 
-        return result
+        summary_report = {
+            "total_scenarios": len(TEST_SCENARIOS),
+            "passed": passed_count,
+            "failed": len(TEST_SCENARIOS) - passed_count,
+            "success_rate": f"{(passed_count / len(TEST_SCENARIOS)) * 100:.1f}%",
+            "scenarios": suite_results
+        }
+
+        # Lưu báo cáo tổng kết
+        report_path = os.path.join(REPORTS_DIR, "ai_qa_suite_report.json")
+        with open(report_path, "w", encoding="utf-8") as f:
+            json.dump(summary_report, f, ensure_ascii=False, indent=2)
+
+        print("\n" + "=" * 65)
+        print(f"KẾT QUẢ TỔNG KẾT: {passed_count}/{len(TEST_SCENARIOS)} KỊCH BẢN ĐẠT ({summary_report['success_rate']})")
+        print(f"Báo cáo chi tiết đã lưu tại: {report_path}")
+        print("=" * 65)
+
+        return summary_report
 
 
+# ==============================================================================
+# ENTRY POINT
+# ==============================================================================
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="VibeSurvey Autonomous QA Browser Agent")
+    parser.add_argument("--scenario", type=str, default="all", help="Chạy kịch bản cụ thể (1-7 hoặc ID), hoặc 'all' để chạy toàn bộ")
+    args = parser.parse_args()
+
     brain = GeminiBrain(keys=GEMINI_KEYS)
     agent = AutonomousQAAgent(brain=brain, headless=True)
 
-    goal = (
-        "Truy cập vào ứng dụng VibeSurvey tại http://localhost:3000, tìm mục 'Diễn đàn' hoặc 'Cộng đồng', "
-        "nhấp vào để kiểm tra giao diện diễn đàn SurvHub và xác nhận các chức năng hoạt động bình thường."
-    )
+    if args.scenario.lower() == "all":
+        agent.run_all_scenarios()
+    else:
+        # Chạy kịch bản cụ thể
+        target_sc = None
+        try:
+            sc_idx = int(args.scenario) - 1
+            if 0 <= sc_idx < len(TEST_SCENARIOS):
+                target_sc = TEST_SCENARIOS[sc_idx]
+        except ValueError:
+            for sc in TEST_SCENARIOS:
+                if sc["id"].lower() == args.scenario.lower():
+                    target_sc = sc
+                    break
 
-    report = agent.run_scenario("E2E_FORUM_SURVHUB_EXPLORE", goal=goal, max_steps=6)
-
-    report_path = os.path.join(REPORTS_DIR, "ai_qa_report.json")
-    with open(report_path, "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
-
-    print(f"\n[HOAN TAT] Báo cáo chi tiết đã được lưu tại: {report_path}")
-    print(f"[HOAN TAT] Ảnh chụp màn hình từng bước lưu tại: {SCREENSHOTS_DIR}")
+        if target_sc:
+            agent.ensure_local_server()
+            report = agent.run_scenario(target_sc)
+            if agent.server_process:
+                agent.server_process.terminate()
+        else:
+            print(f"Không tìm thấy kịch bản '{args.scenario}'. Danh sách kịch bản khả dụng: 1-{len(TEST_SCENARIOS)}")

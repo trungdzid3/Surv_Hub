@@ -18,23 +18,38 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    const orangePalette = {
+      50: '#FFF7ED',
+      100: '#FFEDD5',
+      200: '#FED7AA',
+      300: '#FDBA74',
+      400: '#FB923C',
+      500: '#F97316',
+      600: '#EA580C',
+      700: '#C2410C',
+      800: '#9A3412',
+      900: '#7C2D12',
+      950: '#431407',
+    };
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            brand: {
-              50: '#FFF7ED',
-              100: '#FFEDD5',
-              200: '#FED7AA',
-              300: '#FDBA74',
-              400: '#FB923C',
-              500: '#F97316',
-              600: '#EA580C',
-              700: '#C2410C',
-              800: '#9A3412',
-              900: '#7C2D12',
-            },
+            brand: orangePalette,
+            emerald: orangePalette,
+            green: orangePalette,
+            blue: orangePalette,
+            indigo: orangePalette,
+            purple: orangePalette,
+            violet: orangePalette,
+            amber: orangePalette,
+            yellow: orangePalette,
+            teal: orangePalette,
+            rose: orangePalette,
+            red: orangePalette,
+            cyan: orangePalette,
+            sky: orangePalette,
             dark: {
               page: '#121214',
               card: '#1C1C20',
@@ -67,7 +82,7 @@
 <body class="bg-[#FFF8F5] dark:bg-[#121214] text-slate-800 dark:text-stone-100 min-h-screen flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased safe-bottom">
   <!-- ==================== STITCH AMBIENT ATMOSPHERIC GLOWS ==================== -->
   <div class="pointer-events-none fixed -top-40 left-1/2 -translate-x-1/2 w-[850px] h-[550px] bg-gradient-to-tr from-[#EA580C]/10 via-[#F97316]/10 to-transparent rounded-full blur-3xl opacity-70 -z-10 dark:opacity-0 transition-opacity"></div>
-  <div class="pointer-events-none fixed top-1/3 -right-32 w-[480px] h-[480px] bg-amber-400/10 rounded-full blur-3xl opacity-60 -z-10 dark:opacity-0 transition-opacity"></div>
+  <div class="pointer-events-none fixed top-1/3 -right-32 w-[480px] h-[480px] bg-orange-400/10 rounded-full blur-3xl opacity-60 -z-10 dark:opacity-0 transition-opacity"></div>
   <div class="pointer-events-none fixed bottom-10 -left-20 w-[420px] h-[420px] bg-orange-300/15 rounded-full blur-3xl opacity-60 -z-10 dark:opacity-0 transition-opacity"></div>
 
 
@@ -121,7 +136,7 @@
 
           <!-- Theme Toggle Button (Light/Dark Mode) -->
           <button id="theme-toggle-btn" onclick="VibeApp.toggleTheme(event)" class="relative w-9 h-9 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center transition-colors active:scale-90 flex-shrink-0 cursor-pointer overflow-hidden" title="Chuyển chế độ Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối">
-            <span class="theme-icon-sun absolute inset-0 flex items-center justify-center text-amber-500">
+            <span class="theme-icon-sun absolute inset-0 flex items-center justify-center text-orange-500">
               <i data-lucide="sun" class="w-4 h-4 stroke-[2.2]"></i>
             </span>
             <span class="theme-icon-moon absolute inset-0 flex items-center justify-center text-stone-600 dark:text-stone-300">
@@ -134,7 +149,7 @@
           <button id="header-streak-btn" onclick="VibeApp.openStreakModal()" class="hidden h-8 items-center gap-1 px-2 rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100/80 dark:bg-stone-800/60 text-stone-400 dark:text-stone-500 hover:border-orange-300 dark:hover:border-orange-800 transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs" title="Chuỗi điểm danh hàng ngày">
             <span id="header-streak-flame" class="relative flex items-center justify-center">
               <i data-lucide="flame" class="w-3.5 h-3.5 stroke-[2.2]"></i>
-              <span id="header-streak-dot" class="hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-stone-900 animate-pulse"></span>
+              <span id="header-streak-dot" class="hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-stone-900 animate-pulse"></span>
             </span>
             <span id="header-streak-text" class="font-mono font-black text-xs leading-none">0</span>
           </button>
@@ -273,7 +288,7 @@
       <div class="pt-3.5 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-[11px] text-stone-500 dark:text-stone-400">
         <p>© 2026 SurvHub Ecosystem JSC. Giữ toàn bộ bản quyền.</p>
         <div class="flex items-center space-x-4">
-          <span class="inline-flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i> Mã hóa SSL 256-bit</span>
+          <span class="inline-flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-orange-600"></i> Mã hóa SSL 256-bit</span>
           <span class="inline-flex items-center gap-1"><i data-lucide="receipt" class="w-3.5 h-3.5 text-orange-600"></i> Xuất hóa đơn VAT đầy đủ</span>
           <span class="inline-flex items-center gap-1"><i data-lucide="database" class="w-3.5 h-3.5 text-stone-500"></i> Sổ cái kế toán kép ACID</span>
         </div>
@@ -333,7 +348,7 @@
 
               <!-- Logo SurvHub Tròn & Tiêu Đề -->
               <div class="mt-8 sm:mt-12">
-                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-600 to-cyan-500 text-white font-black text-2xl flex items-center justify-center shadow-lg mb-6 tracking-wider">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-orange-600 via-orange-500 to-orange-400 text-white font-black text-2xl flex items-center justify-center shadow-lg mb-6 tracking-wider">
                   V
                 </div>
                 <h2 id="google-dialog-heading" class="text-2xl sm:text-3xl font-normal text-white mb-6 tracking-tight leading-tight">
@@ -344,7 +359,7 @@
                 <div class="relative inline-block w-full sm:w-auto">
                   <button type="button" onclick="VibeApp.toggleGoogleDropdown()" class="w-full sm:w-auto min-w-[260px] px-3.5 py-1.5 rounded-full bg-[#1e1f20] hover:bg-[#2a2b2e] border border-[#444746] flex items-center justify-between gap-3 text-left transition-colors">
                     <div class="flex items-center gap-2.5 truncate">
-                      <div id="google-active-avatar" class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">T</div>
+                      <div id="google-active-avatar" class="w-6 h-6 rounded-full bg-orange-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">T</div>
                       <span id="google-active-email" class="text-xs font-medium text-[#e3e3e3] truncate">trungdzid3@gmail.com</span>
                     </div>
                     <svg class="w-4 h-4 text-[#9aa0a6] flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
@@ -354,21 +369,21 @@
                   <div id="google-dropdown-menu" class="hidden absolute left-0 top-full mt-2 w-80 bg-[#1e1f20] border border-[#444746] rounded-2xl shadow-2xl z-50 py-2 divide-y divide-[#303030]">
                     <div class="px-3 py-1.5 text-[11px] font-medium text-[#9aa0a6]">Chọn tài khoản Google:</div>
                     <div class="p-1 space-y-1">
-                      <button type="button" onclick="VibeApp.switchGoogleAccount('trungdzid3@gmail.com', 'Trung Nguyễn Thành', 'T', 'bg-indigo-600')" class="w-full px-3 py-2 rounded-xl hover:bg-[#2a2b2e] flex items-center gap-3 text-left transition-colors">
-                        <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">T</div>
+                      <button type="button" onclick="VibeApp.switchGoogleAccount('trungdzid3@gmail.com', 'Trung Nguyễn Thành', 'T', 'bg-orange-600')" class="w-full px-3 py-2 rounded-xl hover:bg-[#2a2b2e] flex items-center gap-3 text-left transition-colors">
+                        <div class="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">T</div>
                         <div class="truncate">
                           <div class="text-xs font-medium text-white">Trung Nguyễn Thành</div>
                           <div class="text-[11px] text-[#9aa0a6] truncate">trungdzid3@gmail.com</div>
                         </div>
                       </button>
-                      <button type="button" onclick="VibeApp.switchGoogleAccount('linharmykxbnvn@gmail.com', 'Nguyễn Thùy Linh', 'L', 'bg-emerald-600')" class="w-full px-3 py-2 rounded-xl hover:bg-[#2a2b2e] flex items-center gap-3 text-left transition-colors">
-                        <div class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">L</div>
+                      <button type="button" onclick="VibeApp.switchGoogleAccount('linharmykxbnvn@gmail.com', 'Nguyễn Thùy Linh', 'L', 'bg-orange-700')" class="w-full px-3 py-2 rounded-xl hover:bg-[#2a2b2e] flex items-center gap-3 text-left transition-colors">
+                        <div class="w-7 h-7 rounded-full bg-orange-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">L</div>
                         <div class="truncate">
                           <div class="text-xs font-medium text-white">Nguyễn Thùy Linh</div>
                           <div class="text-[11px] text-[#9aa0a6] truncate">linharmykxbnvn@gmail.com</div>
                         </div>
                       </button>
-                      <button type="button" onclick="VibeApp.promptCustomGoogleAccount()" class="w-full px-3 py-2 rounded-xl hover:bg-[#2a2b2e] flex items-center gap-3 text-left transition-colors text-sky-400">
+                      <button type="button" onclick="VibeApp.promptCustomGoogleAccount()" class="w-full px-3 py-2 rounded-xl hover:bg-[#2a2b2e] flex items-center gap-3 text-left transition-colors text-orange-400">
                         <div class="w-7 h-7 rounded-full border border-dashed border-[#5f6368] flex items-center justify-center text-xs flex-shrink-0">+</div>
                         <span class="text-xs font-medium">Sử dụng một tài khoản khác...</span>
                       </button>

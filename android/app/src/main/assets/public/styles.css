@@ -845,10 +845,10 @@ html.dark #user-balance-pill {
   box-shadow: none !important;
 }
 html.dark #header-points-text {
-  color: #34D399 !important;
+  color: #FB923C !important;
 }
 html.dark #header-credit-text {
-  color: #34D399 !important;
+  color: #FB923C !important;
 }
 
 /* BẢNG MÀU CARDS & BENTO SURFACES CHÍNH (#1C1C20 nổi khối rõ rệt) */
@@ -1036,39 +1036,31 @@ html.dark .overflow-x-auto button.active-chip {
   font-weight: 700 !important;
 }
 
-/* BADGES & CHIPS TRẠNG THÁI (CHUẨN CHỈNH, KHÔNG BỊ XỈN) */
+/* BADGES & CHIPS TRẠNG THÁI (ĐỒNG BỘ 100% SẮC CAM THỐNG NHẤT) */
 html.dark span.bg-amber-100,
-html.dark .bg-amber-50 {
-  background-color: rgba(245, 158, 11, 0.12) !important;
-  border-color: rgba(245, 158, 11, 0.28) !important;
-  color: #FBBF24 !important;
+html.dark .bg-amber-50,
+html.dark span.bg-emerald-50,
+html.dark span.bg-emerald-100,
+html.dark span.bg-blue-50,
+html.dark span.bg-blue-100,
+html.dark span.bg-orange-50,
+html.dark span.bg-orange-100,
+html.dark span.bg-red-50,
+html.dark span.bg-red-100 {
+  background-color: rgba(234, 88, 12, 0.12) !important;
+  border-color: rgba(234, 88, 12, 0.28) !important;
+  color: #FB923C !important;
 }
 html.dark .text-amber-800,
-html.dark .text-amber-600 {
-  color: #FBBF24 !important;
-}
-
-html.dark span.bg-emerald-50,
-html.dark span.bg-emerald-100 {
-  background-color: rgba(16, 185, 129, 0.12) !important;
-  border-color: rgba(16, 185, 129, 0.28) !important;
-  color: #34D399 !important;
-}
+html.dark .text-amber-600,
 html.dark .text-emerald-700,
-html.dark .text-emerald-600 {
-  color: #34D399 !important;
-}
-
-html.dark span.bg-blue-50,
-html.dark span.bg-blue-100 {
-  background-color: rgba(56, 189, 248, 0.12) !important;
-  border-color: rgba(56, 189, 248, 0.28) !important;
-  color: #38BDF8 !important;
-}
+html.dark .text-emerald-600,
 html.dark .text-blue-600,
 html.dark .text-blue-700,
-html.dark .text-indigo-600 {
-  color: #38BDF8 !important;
+html.dark .text-indigo-600,
+html.dark .text-red-600,
+html.dark .text-rose-600 {
+  color: #FB923C !important;
 }
 
 /* MODAL DIALOGS & POPUPS CHUẨN ĐỒNG BỘ */
@@ -1165,9 +1157,9 @@ html.dark .custom-checkbox-box {
   background-color: #1e293b;
 }
 .custom-checkbox-input:checked + .custom-checkbox-box {
-  background-color: #2563eb;
-  border-color: #2563eb;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  background-color: #EA580C;
+  border-color: #EA580C;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
 }
 .custom-checkbox-icon {
   width: 0.75rem;
@@ -1182,7 +1174,7 @@ html.dark .custom-checkbox-box {
   transform: scale(1);
 }
 .custom-checkbox-wrapper:hover .custom-checkbox-box {
-  border-color: #3b82f6;
+  border-color: #F97316;
 }
 
 /* Cho phép bento-card hiển thị dropdown popover không bị cắt */

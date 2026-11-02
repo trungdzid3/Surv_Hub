@@ -7779,7 +7779,14 @@ if (totalCount === 0) {
         if (optIdx !== -1 && curQ.logic.options[optIdx] !== undefined) branchAction = curQ.logic.options[optIdx];
       }
     } else if (curQ.type === 'SECTION_HEADER' && curQ.logic) {
-      branchAction = curQ.logic.target || curQ.logic.default_action;
+      // SECTION_HEADER không được tự ý rẽ nhánh khi vừa bắt đầu hiển thị tiêu đề,
+      // vì logic.target của SECTION_HEADER là đích đến SAU KHI ĐIỀN XONG toàn bộ câu hỏi trong phân đoạn đó (Section-End Routing).
+      // Ngoại lệ duy nhất: Phân đoạn hoàn toàn rỗng (không chứa bất kỳ câu hỏi nào phía sau).
+      const nextQ = session.questions[session.currentIndex + 1];
+      const isSectionEmpty = !nextQ || nextQ.type === 'SECTION_HEADER';
+      if (isSectionEmpty) {
+        branchAction = curQ.logic.target || curQ.logic.default_action;
+      }
     }
 
     let resolvedBranch = null;

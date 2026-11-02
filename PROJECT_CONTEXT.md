@@ -2608,6 +2608,33 @@ c:\Users\Lenovo\Downloads\Linh\
 
 ---
 
+## CẬP NHẬT TIẾN ĐỘ: SỬA TRIỆT ĐỂ LỖI BỎ QUA CÂU HỎI CON KHI ĐIỀU HƯỚNG TỪ SECTION_HEADER (SURVEY RUNNER - THÁNG 11/2026)
+
+### 1. Hiện Tượng & Nguyên Nhân
+- **Hiện tượng**: Người dùng chọn nhánh (ví dụ chọn Nguyện vọng 1 là Tiểu ban Truyền thông), hệ thống chuyển đúng đến thẻ phân đoạn (Mục 4: Câu hỏi ứng tuyển - Tiểu ban Truyền thông), nhưng khi nhấn nút "Bắt đầu mục này" hoặc nhấn Enter thì hệ thống lập tức nhảy cóc sang Mục chung cuối cùng, bỏ qua hoàn toàn các câu hỏi con thuộc phân đoạn đó.
+- **Nguyên nhân cốt lõi**:
+  + Tại dòng 7781 trong `nextQuestion()` (`public/app.js`): Khi `curQ.type === 'SECTION_HEADER'`, hệ thống đọc ngay `curQ.logic.target || curQ.logic.default_action` và gán vào `branchAction`.
+  + Thuộc tính `logic.target` của một `SECTION_HEADER` vốn là đích đến **sau khi người dùng điền xong toàn bộ câu hỏi trong phân đoạn đó** (ví dụ Mục 4 điền xong sẽ chuyển sang Mục 3 hoặc Mục 8).
+  + Việc gán `branchAction` ngay khi người dùng đang ở trên thẻ tiêu đề phân đoạn khiến hệ thống thực hiện rẽ nhánh tức thì ra khỏi phân đoạn, làm mất trắng nội dung các câu hỏi con bên trong.
+
+### 2. Giải Pháp Triển Khai
+- **Khóa Điều Hướng Đầu Phân Đoạn**:
+  + Tại `public/app.js`: Cập nhật điều kiện trong `nextQuestion()` để `SECTION_HEADER` không được tự ý rẽ nhánh bằng `logic.target` khi bắt đầu phân đoạn.
+  + Ngoại lệ duy nhất: Chỉ thực hiện rẽ nhánh ngay trên `SECTION_HEADER` nếu phân đoạn đó hoàn toàn rỗng (`isSectionEmpty = !nextQ || nextQ.type === 'SECTION_HEADER'`).
+  + Khi phân đoạn có câu hỏi: Nhấn "Bắt đầu mục này" hoặc phím `Enter` sẽ tiến vào câu hỏi con đầu tiên của phân đoạn đó (`session.currentIndex++`).
+  + Sau khi người dùng điền hết toàn bộ câu hỏi trong phân đoạn, cơ chế Section-End Routing ở cuối phân đoạn mới kích hoạt `logic.target` để đưa người dùng đến điểm hội tụ (Convergence Target) hoặc nộp bài.
+- **Bổ Sung Chốt Chặn Kiểm Thử Tự Hành**:
+  + Thêm Test Case 2.1b vào `tests/test_stepper_routing_and_smart_branching.js`: Kiểm tra nghiêm ngặt việc nhấn Next trên `SECTION_HEADER` phải đi tiếp vào câu hỏi con đầu tiên, không được nhảy cóc.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Kiểm tra cú pháp: `node -c public/app.js` đạt mã 0 (PASS).
+- Chạy `tests/test_stepper_routing_and_smart_branching.js`: Đạt 7/7 bài kiểm thử (100% PASS).
+- Chạy toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (21.54s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` hoàn tất.
+- Tự động commit và push lên GitHub (`origin/main`).
+
+---
+
 ## CẬP NHẬT TIẾN ĐỘ: TRIỂN KHAI AUTONOMOUS QA BROWSER AGENT (PLAYWRIGHT + GEMINI FLASH LITE)
 
 ### 1. Kiến Trúc Tác Nhân Kiểm Thử Tự Hành ([tests/ai_qa_agent.py](file:///c:/Users/Lenovo/Downloads/Linh/tests/ai_qa_agent.py))
