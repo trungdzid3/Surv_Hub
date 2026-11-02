@@ -15,6 +15,7 @@
 - **Frontend SPA & Mobile Hybrid**: Single Page Application với Tailwind CSS, Lucide Icons, font Montserrat 100%, phong cách Minimalist Modern Bento Grid (Cam `#EA580C`, Trắng `#FFFFFF`, Đen `#09090B`).
 - **Android Mobile Wrapper**: Dự án Capacitor Native (`android/`) sẵn sàng đóng gói APK.
 - **Cơ sở dữ liệu**: SQLite WAL mode (`server/db/vibesurvey.db`) với cơ chế migration tự động khi khởi động.
+- **Sơ đồ Kiến trúc & Luồng nghiệp vụ**: Tài liệu hóa tương tác HTML/SVG độc lập qua Archify (docs/architecture/vibesurvey-architecture.html), tự động cập nhật qua Git Auto-Sync.
 
 ### Cấu Trúc Thư Mục Chuẩn
 ```

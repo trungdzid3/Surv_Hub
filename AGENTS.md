@@ -136,6 +136,10 @@ Tài liệu quy chiếu SSOT:
 ### 14. Quy chế Tự động hóa Đồng bộ Git & GitHub (Git Auto-Sync Protocol)
 auto_github_sync: true # Dự án đã kết nối GitHub (trungdzid3/VibeSurvey). Tự động commit và push sau mỗi task hoàn tất.
 
+### 15. Quy chế Tự động Cập nhật Sơ đồ Kiến trúc & Nghiệp vụ (Archify Auto-Sync Protocol)
+- Khi hoàn thành mỗi tính năng hoặc thay đổi logic nghiệp vụ cốt lõi (`server/services/`, `server/controllers/`, API contracts): Agent tự động cập nhật sơ đồ tương ứng bằng `archify` (lưu tại `.archify/` hoặc `docs/architecture/`).
+- Tự động commit và push sơ đồ cập nhật cùng đợt bàn giao task qua quy chế Git Auto-Sync.
+
 ---
 
 ## VII. ĐỘI HÌNH TÁC TỬ CHUYÊN BIỆT (.zcode/agents/ & .agent/)

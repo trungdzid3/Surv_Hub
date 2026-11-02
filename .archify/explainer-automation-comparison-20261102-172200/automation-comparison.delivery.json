@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f6a8da95-f073-4cfc-8c75-0bd4e18df7cd",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\explainer-automation-comparison-20261102-172200\\candidate.archify.md",
+  "output": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\explainer-automation-comparison-20261102-172200\\automation-comparison.html",
+  "specification": {
+    "sha256": "ee688bd9432d02778188561a0b3a2715d3fe176198f9e34206defc0ab540df90",
+    "bytes": 4967
+  },
+  "artifact": {
+    "sha256": "830fdb91be96eefd43de8960e52956a3d7849d9798b9a69e135647ce53d30cc5",
+    "bytes": 543533
+  },
+  "explainer": {
+    "preparedSha256": "3c13a5d2a4be4770446d03840adce012dca2b2839f55e2bb9ada9fe43866f600",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "bu-seq",
+        "inline": true,
+        "sha256": "a1f0526e6feb767941cb6bcaa8fe531298beb96c6cb15ce140492bb4371fc71b",
+        "bytes": 1470
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\explainer-automation-comparison-20261102-172200\\candidate.archify.md",
+    "sha256": "ee688bd9432d02778188561a0b3a2715d3fe176198f9e34206defc0ab540df90",
+    "bytes": 4967
+  },
+  "artifact": {
+    "path": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\explainer-automation-comparison-20261102-172200\\automation-comparison.html",
+    "sha256": "830fdb91be96eefd43de8960e52956a3d7849d9798b9a69e135647ce53d30cc5",
+    "bytes": 543533
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\explainer-automation-comparison-20261102-172200\\automation-comparison.finalize.json",
+    "summaryReceipt": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\explainer-automation-comparison-20261102-172200\\automation-comparison.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2683,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
