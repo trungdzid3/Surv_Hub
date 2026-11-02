@@ -94,7 +94,11 @@ class AuthController {
         ON CONFLICT(email) DO UPDATE SET otp = excluded.otp, expires_at = excluded.expires_at, created_at = CURRENT_TIMESTAMP
       `).run(cleanEmail, otp, expiresAt);
 
-      console.log(`\n=======================================================\n[REGISTRATION OTP] Gửi mã xác thực đăng ký đến: ${cleanEmail}\nMÃ XÁC THỰC 6 CHỮ SỐ LÀ: [ ${otp} ] (Hết hạn sau 10 phút)\n=======================================================\n`);
+      // Che một phần địa chỉ email trước khi ghi log (không bao giờ in mã OTP ra console)
+      const parts = cleanEmail.split('@');
+      const maskedEmail = parts[0].slice(0, 2) + '***' + (parts[0].length > 3 ? parts[0].slice(-1) : '') + '@' + parts[1];
+
+      console.log(`\n=======================================================\n[REGISTRATION OTP] Gửi mã xác thực đăng ký đến: ${maskedEmail} | Mã có hiệu lực trong 10 phút\n=======================================================\n`);
 
       // Gửi email qua Bộ điều phối thông minh đa kênh (Resend -> Brevo -> SMTP)
       let emailSent = false;
@@ -127,12 +131,10 @@ class AuthController {
         emailError = err.message;
       }
 
-      const parts = cleanEmail.split('@');
-      const maskedEmail = parts[0].slice(0, 2) + '***' + (parts[0].length > 3 ? parts[0].slice(-1) : '') + '@' + parts[1];
-
-      // Nếu tất cả kênh email đều hết quota, gửi thất bại hoặc đang ở chế độ Test/Mock:
+      // Nếu tất cả kênh email đều hết quota, gửi thất bại hoặc đang chạy bộ kiểm thử tự hành:
       // Tự động trả về debugOtp để người dùng/test runner vẫn hoàn tất được quy trình
-      const returnOtp = (!emailSent || config.NODE_ENV !== 'production' || emailMode === 'MOCK_TEST_SKIPPED') ? otp : undefined;
+      // (Chỉ trả OTP khi kênh email thất bại hoặc môi trường test, không rò rỉ mã trong môi trường thật)
+      const returnOtp = (!emailSent || emailMode === 'MOCK_TEST_SKIPPED' || config.NODE_ENV === 'test') ? otp : undefined;
       let responseMessage = `Mã xác thực gồm 6 chữ số đã được gửi đến hộp thư ${maskedEmail}. Vui lòng nhập mã để hoàn tất đăng ký!`;
       if (emailMode === 'MOCK_TEST_SKIPPED') {
         responseMessage = `[Chế độ Thử Nghiệm] Mã xác thực đăng ký của bạn là: ${otp}`;
@@ -320,9 +322,6 @@ class AuthController {
       }
 
       let isMatch = bcrypt.compareSync(password, user.password_hash);
-      if (!isMatch && (password === 'password123' || password === '123456')) {
-        isMatch = bcrypt.compareSync('123456', user.password_hash) || bcrypt.compareSync('password123', user.password_hash);
-      }
       if (!isMatch) {
         return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không chính xác' });
       }
@@ -561,7 +560,11 @@ class AuthController {
 
       db.prepare('UPDATE users SET email_otp = ?, email_otp_expires_at = ?, email_otp_sent_at = ? WHERE id = ?').run(otp, expiresAt, sentAt, user.id);
 
-      console.log(`\n=======================================================\n[EMAIL OTP SERVICE] Gửi mã xác thực đến: ${user.email}\nMÃ XÁC THỰC 6 CHỮ SỐ LÀ: [ ${otp} ] (Hết hạn sau 10 phút)\n=======================================================\n`);
+      // Che một phần địa chỉ email trước khi ghi log (không bao giờ in mã OTP ra console)
+      const parts = user.email.split('@');
+      const maskedEmail = parts[0].slice(0, 2) + '***' + (parts[0].length > 3 ? parts[0].slice(-1) : '') + '@' + parts[1];
+
+      console.log(`\n=======================================================\n[EMAIL OTP SERVICE] Gửi mã xác thực đến: ${maskedEmail} | Mã có hiệu lực trong 10 phút\n=======================================================\n`);
 
       // Bắn email thật qua bộ điều phối thông minh đa kênh (Resend -> Brevo -> SMTP)
       if (user.email) {
@@ -585,14 +588,11 @@ class AuthController {
         }).catch(e => console.warn('Lỗi gửi OTP Verification đa kênh:', e.message));
       }
 
-      const parts = user.email.split('@');
-      const maskedEmail = parts[0].slice(0, 2) + '***' + (parts[0].length > 3 ? parts[0].slice(-1) : '') + '@' + parts[1];
-
       return res.json({
         success: true,
         message: `Mã xác thực gồm 6 chữ số đã được gửi đến hộp thư ${maskedEmail}. Vui lòng kiểm tra email của bạn!`,
         maskedEmail,
-        debugOtp: config.NODE_ENV !== 'production' ? otp : undefined
+        debugOtp: config.NODE_ENV === 'test' ? otp : undefined
       });
     } catch (err) {
       console.error('Lỗi sendVerificationOtp:', err);
@@ -1075,7 +1075,11 @@ class AuthController {
         WHERE id = ?
       `).run(cleanEmail, otp, expiresAt, sentAt, user.id);
 
-      console.log(`[STUDENT OTP] Gui ma xac thuc sinh vien den: ${cleanEmail} | Ma OTP: ${otp} (Hieu luc 5 phut)`);
+      // Che một phần địa chỉ email trước khi ghi log (không bao giờ in mã OTP ra console)
+      const parts = cleanEmail.split('@');
+      const maskedEmail = parts[0].slice(0, 2) + '***' + (parts[0].length > 3 ? parts[0].slice(-1) : '') + '@' + parts[1];
+
+      console.log(`[STUDENT OTP] Gui ma xac thuc sinh vien den: ${maskedEmail} | Ma co hieu luc 5 phut`);
 
       // Gửi email qua sendSmartEmail
       const notificationService = require('../services/notificationService');
@@ -1097,14 +1101,11 @@ class AuthController {
         textContent: `Ma xac thuc email sinh vien cua ban la: ${otp}. Ma co hieu luc trong 5 phut.`
       }).catch(e => console.warn('Loi gui Student Email OTP:', e.message));
 
-      const parts = cleanEmail.split('@');
-      const maskedEmail = parts[0].slice(0, 2) + '***' + (parts[0].length > 3 ? parts[0].slice(-1) : '') + '@' + parts[1];
-
       return res.json({
         success: true,
         message: `Mã xác thực gồm 6 chữ số đã được gửi đến email ${maskedEmail}. Vui lòng nhập mã để hoàn tất!`,
         maskedEmail,
-        debugOtp: config.NODE_ENV !== 'production' ? otp : undefined
+        debugOtp: config.NODE_ENV === 'test' ? otp : undefined
       });
     } catch (err) {
       console.error('Lỗi sendStudentEmailOtp:', err);

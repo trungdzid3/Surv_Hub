@@ -3270,14 +3270,17 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             </ul>
           </div>
 
-          <!-- Box 5: Bảo mật thông tin Nghị định 13 -->
+          <!-- Box 5: Bảo mật thông tin Luật Bảo Vệ Dữ Liệu Cá Nhân & Nghị định 13 -->
           <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
             <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
               <i data-lucide="lock" class="w-4 h-4 text-orange-600"></i>
-              <span>5. Bảo Vệ Dữ Liệu Cá Nhân (Nghị Định 13/2023/NĐ-CP)</span>
+              <span>5. Bảo Vệ Dữ Liệu Cá Nhân (Luật Bảo Vệ Dữ Liệu Cá Nhân 91/2025/QH15 & Nghị Định 356/2025/NĐ-CP)</span>
             </div>
             <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              Toàn bộ dữ liệu phản hồi khảo sát được chuyển giao cho Doanh Nghiệp dưới dạng báo cáo thống kê ẩn danh. Doanh Nghiệp không thể xem được họ tên, email, số điện thoại hay tài khoản thanh toán của bạn. SurvHub cam kết không bao giờ bán dữ liệu cá nhân cho bên thứ ba vì bất kỳ mục đích thương mại nào.
+              Thông tin nhân khẩu học của bạn (giới tính, khu vực, trường, ngành, độ tuổi) CHỈ được nền tảng sử dụng nội bộ để ghép cặp những khảo sát phù hợp với bạn. Những dữ liệu này KHÔNG BAO GIỜ được chuyển giao cho Doanh Nghiệp hay xuất hiện trong kết quả khảo sát. Doanh Nghiệp chỉ nhận câu trả lời khảo sát dưới dạng thống kê ẩn danh, gắn với mã phiên làm bài.
+            </p>
+            <p class="text-[11px] text-stone-600 dark:text-stone-400">
+              Địa chỉ email tài khoản của bạn CHỈ được chia sẻ cho Doanh Nghiệp khi họ bật chế độ thu thập email cho bài khảo sát đó, và bạn sẽ luôn được thông báo rõ ràng ngay trước khi bắt đầu làm. Số điện thoại, tài khoản thanh toán và các dữ liệu nhạy cảm khác không bao giờ được chia sẻ cho Doanh Nghiệp dưới bất kỳ hình thức nào. SurvHub cam kết không bán dữ liệu cá nhân cho bên thứ ba vì bất kỳ mục đích thương mại nào.
             </p>
           </div>
 
@@ -6025,6 +6028,14 @@ if (totalCount === 0) {
                     <div class="text-xs font-bold text-orange-900 dark:text-orange-200 truncate">Tài trợ quà tặng voucher độc quyền</div>
                     <div class="text-[11px] text-orange-700 dark:text-orange-400 truncate">${voucherName}</div>
                   </div>
+                </div>
+              ` : ''}
+
+              ${s.allow_email_collection === true ? `
+                <!-- Thông báo quyền riêng tư: khảo sát bật chế độ thu thập email đáp viên -->
+                <div class="flex items-start gap-2 text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+                  <i data-lucide="mail" class="w-3.5 h-3.5 shrink-0 mt-0.5"></i>
+                  <span>Khảo sát này sẽ chia sẻ địa chỉ email tài khoản của bạn cho doanh nghiệp sau khi hoàn thành.</span>
                 </div>
               ` : ''}
 
@@ -10164,6 +10175,7 @@ if (totalCount === 0) {
       this.state.isPinnedSurvey = survey.is_pinned === 1;
       this.state.allowEditResponse = survey.allow_edit_response === 1;
       this.state.allowViewResponse = survey.allow_view_response !== 0;
+      this.state.studioAllowEmailCollection = survey.allow_email_collection === 1;
 
       if (survey.survey_source === 'GOOGLE_FORMS' || survey.survey_source === 'MS_FORMS') {
         this.state.createSurveyTab = 'EXTERNAL_URL';
@@ -10223,6 +10235,7 @@ if (totalCount === 0) {
     this.state.externalFormUrl = '';
     this.state.allowEditResponse = false;
     this.state.allowViewResponse = true;
+    this.state.studioAllowEmailCollection = false;
     this.state.builderQuestions = null;
     this.state.createSurveyTab = 'BUILDER';
     this.state.studioHasVoucher = false;
@@ -11887,6 +11900,26 @@ if (totalCount === 0) {
                          autocomplete="off" spellcheck="false"
                          class="w-full p-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 text-xs font-mono focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all">
                   <p class="text-[11px] text-stone-400">Tự động đồng bộ câu trả lời trực tiếp về trang tính Google Sheets của bạn khi có bài làm hợp lệ.</p>
+                </div>
+
+                <!-- Quyền riêng tư: Chế độ thu thập email đáp viên (Email Consent Toggle) -->
+                <div class="flex items-start justify-between gap-3 p-3.5 rounded-xl bg-stone-50/80 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 transition-all">
+                  <div class="space-y-1">
+                    <div class="text-xs font-bold text-stone-900 dark:text-white flex items-center gap-2 flex-wrap">
+                      <i data-lucide="mail" class="w-4 h-4 text-orange-600 dark:text-orange-400"></i>
+                      <span>Thu thập email người trả lời</span>
+                    </div>
+                    <p class="text-[10.5px] text-stone-500 dark:text-stone-400 leading-tight">Bật: bạn nhận thêm địa chỉ email tài khoản của người trả lời sau khi họ hoàn thành — đây là thông tin cá nhân duy nhất được chia sẻ. Tắt (mặc định): bài làm hoàn toàn ẩn danh.</p>
+                  </div>
+                  <input type="checkbox" id="survey-allow-email-collection"
+                         ${this.state.studioAllowEmailCollection ? 'checked' : ''}
+                         onchange="VibeApp.state.studioAllowEmailCollection = this.checked; if (this.nextElementSibling) { this.nextElementSibling.classList.toggle('active', this.checked); }"
+                         class="sr-only peer">
+                  <label for="survey-allow-email-collection"
+                         class="vibe-switch ${this.state.studioAllowEmailCollection ? 'active' : ''} inline-flex items-center shrink-0"
+                         title="${this.state.studioAllowEmailCollection ? 'Bấm để tắt thu thập email' : 'Bấm để bật thu thập email'}">
+                    <span class="vibe-switch-knob"></span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -14862,6 +14895,10 @@ if (totalCount === 0) {
       const apiUrl = isEditing ? `/surveys/${this.state.editingSurveyId}` : '/surveys';
       const apiMethod = isEditing ? 'PUT' : 'POST';
 
+      // Quyền riêng tư: đọc trạng thái thu thập email từ toggle (fallback về state nếu panel chưa render)
+      const emailCollectionEl = document.getElementById('survey-allow-email-collection');
+      const allowEmailCollection = emailCollectionEl ? (emailCollectionEl.checked ? 1 : 0) : (this.state.studioAllowEmailCollection ? 1 : 0);
+
       const createRes = await this.api(apiUrl, {
         method: apiMethod,
         body: JSON.stringify({
@@ -14881,6 +14918,7 @@ if (totalCount === 0) {
           duration_days: parseInt(this.state.surveyDurationDays, 10) || 14,
           allow_edit_response: this.state.allowEditResponse ? 1 : 0,
           allow_view_response: this.state.allowViewResponse !== false ? 1 : 0,
+          allow_email_collection: allowEmailCollection,
           target_demographics: targetDemographics,
           questions: questionsPayload
         })

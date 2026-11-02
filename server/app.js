@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const path = require('path');
 const config = require('./config');
 const apiRoutes = require('./routes/api');
+const { createRateLimiter } = require('./middlewares/rateLimit');
 
 const app = express();
 
@@ -64,8 +65,20 @@ app.use(
 );
 
 // Bật CORS cho cả Web Browser và Capacitor Native Mobile App (capacitor://localhost hoặc http://localhost)
+// Whitelist động: chỉ cấp header CORS cho domain tin cậy, origin lạ sẽ bị trình duyệt tự chặn
+const allowedOrigins = String(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const capacitorOrigins = ['capacitor://localhost', 'http://localhost', 'https://localhost'];
+const appUrlOrigin = (() => { try { return new URL(config.APP_URL).origin; } catch (e) { return null; } })();
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    // Yêu cầu same-origin/curl/mobile webview không gửi Origin: cho qua
+    if (!origin) return callback(null, true);
+    if (origin === appUrlOrigin || capacitorOrigins.includes(origin) || isLocalOrigin(origin) || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false); // Không cấp header CORS cho origin lạ (trình duyệt tự chặn)
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Fingerprint', 'Idempotency-Key']
 }));
@@ -76,6 +89,11 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Phục vụ tài nguyên tĩnh của Frontend
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/src', express.static(path.join(__dirname, '../src')));
+
+// Rate limit tổng cho toàn bộ API v1, sau đó limiter hẹp hơn riêng cho luồng xác thực
+// (mount theo thứ tự: limiter tổng trước, limiter auth hẹp hơn sau, cả 2 đều trước router)
+app.use('/api/v1', createRateLimiter({ windowMs: 60000, max: 300 }));
+app.use('/api/v1/auth', createRateLimiter({ windowMs: 60000, max: 60, message: 'Quá nhiều thao tác xác thực. Vui lòng thử lại sau một phút.' }));
 
 // Mount API v1
 app.use('/api/v1', apiRoutes);

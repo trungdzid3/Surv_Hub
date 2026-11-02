@@ -2977,4 +2977,21 @@ c:\Users\Lenovo\Downloads\Linh\
 - **Chất lượng**: svg_audit 83/100; render đối chiếu khớp reference; legibility 64/32px đọc rõ (32px = size UI sidebar/footer `w-8 h-8`), favicon 16px nét hơn bản cũ.
 - **Gotchas**: banner `<img>` chỉ tham chiếu `logo-light.svg`/`logo-dark.svg` qua `app.js` (theme toggle) và `favicon.*` trong `index.html`; không file nào ngoài đó dependency vào bộ logo. Script trace/export tạm KHÔNG lưu vào repo (Test Lifecycle Rule) — cần tái tạo thì chạy lại từ ảnh gốc `logo-original-clean.png` hoặc ảnh tham chiếu user.
 
+## Sprint 03-11-2026 (Buổi 5): Xử Lý Mục 1 (An Ninh Khẩn) & Mục 2 (Email Consent) — v4.9.5_email_consent_security
+- **Backup dự phòng**: `backups/backup_pre_security_emailconsent_20261103-012533/` (8 file prefix rõ ràng).
+- **Mục 1a — server/db/database.js (Lead tự sửa)**: thêm cột `surveys.allow_email_collection INTEGER DEFAULT 0` (migration idempotent); `ensureEssentialAccounts` đọc mật khẩu seed từ env `SEED_ACCOUNT_PASSWORDS` (định dạng `email=pass,...`), thiếu ánh xạ thì skip + warn — 4 dòng mật khẩu plain-text đã rời khỏi mã nguồn.
+- **Mục 1b — Security (senior-coder)**: (1) xóa backdoor `123456/password123` trong login (`authController.js`); (2) 3 console.log OTP không còn in mã, log masked email; (3) `debugOtp` chỉ trả khi `NODE_ENV==='test'` hoặc kênh email thất bại/MOCK (bảo toàn bộ test); (4) `config/index.js` fail-fast bắt buộc `JWT_SECRET`/`PAYMENT_WEBHOOK_SECRET`/`PAYMENT_ACCOUNT_NUMBER` từ env + nạp thêm `.env` gốc repo; (5) CORS whitelist động thay `origin:'*'` (localhost/Capacitor/`CORS_ORIGINS`/APP_URL, origin lạ không cấp header); (6) file mới `server/middlewares/rateLimit.js` — fixed-window in-memory, skip NODE_ENV=test, mount 300/phút cho `/api/v1` + 60/phút cho `/api/v1/auth`; (7) webhook ngân hàng so sánh `crypto.timingSafeEqual` (giữ bypass NODE_ENV=test).
+- **Mục 2 — Email Consent (senior-coder)**: email tài khoản đáp viên là thông tin cá nhân DUY NHẤT được chuyển giao creator, và chỉ khi creator bật cờ từng khảo sát:
+  - `createSurvey`/`updateSurvey` nhận + lưu `allow_email_collection` (đã test runtime SQLite in-memory 25 params khớp).
+  - XÓA auto-fill `__profile_gender/province/university/major/age` khỏi luồng nộp bài; helper `_stripPrivateProfileFields()` chặn mọi đường ra: webhook Sheets cả 2 luồng (nộp mới + edit-after-submit), CSV/JSON export, getSurvey/startSession.
+  - Export CSV mặc định 6 cột meta ẩn danh (Mã Phản Hồi, Mã Ứng Viên, Thời Gian, Điểm Chất Lượng, Điểm Thưởng, Thời Điểm Nộp); cờ bật mới thêm cột "Email Người Trả Lời". Tên/giới tính/trường/ngành/tuổi bị loại vĩnh viễn khỏi export.
+  - Editor: toggle `vibe-switch` (accent cam, icon Lucide mail) "Thu thập email người trả lời" ngay dưới khối Google Sheets Webhook URL, mặc định TẮT; payload POST/PUT kèm cờ; openEditSurvey điền lại trạng thái.
+  - Người điền: màn intro làm bài hiển thị dòng thông báo khi khảo sát bật thu thập email.
+  - Modal điều khoản mục 5: đổi dẫn chiếu NĐ 13/2023 (hết hiệu lực) → Luật 91/2025/QH15 + NĐ 356/2025/NĐ-CP; viết lại 4 cam kết (demographics chỉ nội bộ, email có điều kiện + thông báo trước, SĐT/thanh toán không bao giờ, không bán dữ liệu).
+  - Bug phụ phát hiện khi sửa: luồng sync webhook khi edit bài gọi `webhookSyncService.syncResponse` (module + method đều không tồn tại, tính năng chết từ trước) → sửa thành `webhookService.dispatchGoogleSheetsSync` đúng API.
+- **Cấu hình env mới (.env đã cập nhật, .env.example làm mẫu)**: `SEED_ACCOUNT_PASSWORDS`, `PAYMENT_WEBHOOK_SECRET` (hex 64 ngẫu nhiên), `PAYMENT_BANK_ID/NAME/ACCOUNT_NUMBER/ACCOUNT_NAME/QR_TEMPLATE`, `CORS_ORIGINS`.
+- **Nghiệm thu**: `node -c` PASS 8 file; `npm test` 17/17 suite PASS 100% (21.18s); `npm run sync:android` OK; cache-buster `index.html:554` → `4.9.5_email_consent_security`.
+- **Kỹ nợ còn lại (chấp nhận)**: JWT vẫn lưu localStorage (đại tu auth riêng khi lên production); DB cũ còn `__profile_*` trong `answers_payload` đã bị chặn xuất bằng strip runtime; `server/db/vibesurvey.db` churn test không commit.
+- **Argon mục 4 (tịch thu số dư)**: bridge hết phiên Gemini ("no Gemini models available; refresh the authenticated session"), hạn mức còn 100% — chờ chạy lại phiên đăng nhập (login_gemini.py) rồi truy vấn tiếp.
+
 

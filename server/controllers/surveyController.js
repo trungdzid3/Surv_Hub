@@ -621,7 +621,7 @@ class SurveyController {
           }
           parsedUserResponse = {
             ...existingResponse,
-            answers: answersObj
+            answers: this._stripPrivateProfileFields(answersObj)
           };
         }
 
@@ -645,6 +645,7 @@ class SurveyController {
             pricing_tier: survey.pricing_tier || 'STANDARD',
             allow_edit_response: survey.allow_edit_response !== undefined ? survey.allow_edit_response : 0,
             allow_view_response: survey.allow_view_response !== undefined ? survey.allow_view_response : 1,
+            allow_email_collection: survey.allow_email_collection === 1,
             auto_screener_bypassed: screenerResult.autoScreenerBypassed,
             auto_filled_demographics: screenerResult.autoFilledDemographics,
             questions: screenerResult.questions
@@ -708,6 +709,10 @@ class SurveyController {
         allow_view_response = 1,
         duration_days = 14
       } = req.body;
+
+      // Quyền riêng tư: email tài khoản đáp viên chỉ được phép chuyển giao cho creator khi cờ này được bật
+      // (mặc định 0 - bài làm hoàn toàn ẩn danh, demographics không bao giờ rời khỏi nền tảng)
+      const allowEmailCollection = (req.body.allow_email_collection === true || req.body.allow_email_collection === 1 || req.body.allow_email_collection === '1') ? 1 : 0;
 
       const validDurationDays = Math.min(90, Math.max(1, parseInt(duration_days, 10) || 14));
 
@@ -838,8 +843,8 @@ class SurveyController {
             cost_per_response, reward_points_per_response, escrow_locked_balance, min_completion_time_sec, 
             status, survey_source, external_form_url, normalized_form_url, google_sheets_webhook_url, sponsor_campaign_id, reward_mode,
             academic_tags_json, target_demographics_json, package_type, pricing_tier,
-            allow_edit_response, allow_view_response, duration_days, expires_at, voucher_purchase_quantity
-          ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 0.0, ?, 'DRAFT', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+' || ? || ' days'), ?)
+            allow_edit_response, allow_view_response, allow_email_collection, duration_days, expires_at, voucher_purchase_quantity
+          ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 0.0, ?, 'DRAFT', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+' || ? || ' days'), ?)
         `).run(
           surveyId,
           user.id,
@@ -862,6 +867,7 @@ class SurveyController {
           pricing_tier,
           allow_edit_response ? 1 : 0,
           allow_view_response !== undefined && (allow_view_response === 0 || allow_view_response === false) ? 0 : 1,
+          allowEmailCollection,
           validDurationDays,
           validDurationDays,
           voucherPurchaseQty
@@ -1044,6 +1050,12 @@ class SurveyController {
       if (req.body.allow_view_response !== undefined) {
         updates.push('allow_view_response = ?');
         params.push(req.body.allow_view_response ? 1 : 0);
+      }
+
+      // Quyền riêng tư: cho phép creator bật/tắt chế độ thu thập email đáp viên khi sửa khảo sát
+      if (req.body.allow_email_collection !== undefined) {
+        updates.push('allow_email_collection = ?');
+        params.push((req.body.allow_email_collection === true || req.body.allow_email_collection === 1 || req.body.allow_email_collection === '1') ? 1 : 0);
       }
 
       // Cập nhật câu hỏi nếu được cung cấp
@@ -1448,7 +1460,8 @@ class SurveyController {
               responseId: existing.id,
               minCompletionTimeSec: 0,
               rewardPoints: 0,
-              existingAnswers,
+              allow_email_collection: survey.allow_email_collection === 1,
+              existingAnswers: this._stripPrivateProfileFields(existingAnswers),
               auto_screener_bypassed: screenerResult.autoScreenerBypassed,
               auto_filled_demographics: screenerResult.autoFilledDemographics,
               questions: screenerResult.questions,
@@ -1484,6 +1497,7 @@ class SurveyController {
         responseId,
         minCompletionTimeSec: survey.min_completion_time_sec,
         rewardPoints: survey.reward_points_per_response,
+        allow_email_collection: survey.allow_email_collection === 1,
         auto_screener_bypassed: screenerResult.autoScreenerBypassed,
         auto_filled_demographics: screenerResult.autoFilledDemographics,
         questions: screenerResult.questions
@@ -1492,6 +1506,26 @@ class SurveyController {
       console.error('Lỗi startSession:', err);
       return res.status(500).json({ success: false, message: 'Lỗi bắt đầu khảo sát: ' + err.message });
     }
+  }
+
+  /**
+   * Loại bỏ các trường hồ sơ ngầm (__profile_*) khỏi tập câu trả lời trước khi gửi ra ngoài nền tảng.
+   * Tuân thủ cam kết pháp lý: dữ liệu nhân khẩu học chỉ dùng nội bộ (matching/screener/analytics),
+   * không bao giờ được chuyển giao cho creator qua bất kỳ đường nào (webhook Google Sheets, export...).
+   * @param {object} answers
+   * @returns {object}
+   */
+  _stripPrivateProfileFields(answers) {
+    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+      return {};
+    }
+    const publicAnswers = {};
+    for (const key of Object.keys(answers)) {
+      if (!key.startsWith('__profile_')) {
+        publicAnswers[key] = answers[key];
+      }
+    }
+    return publicAnswers;
   }
 
   /**
@@ -1546,14 +1580,10 @@ class SurveyController {
       const matchResult = this._checkUserMatchesTarget(userDemo, targetDemo);
       const isBypassed = matchResult.matchesAll;
 
-      // Auto-fill thông tin Profile ngầm vào câu trả lời
+      // Khi profile người điền đã khớp đối tượng mục tiêu thì hệ thống bypass screener nội bộ.
+      // Lưu ý pháp lý: demographics chỉ được dùng nội bộ nền tảng (matching/screener),
+      // TUYỆT ĐỐI không được ghi vào tập câu trả lời gửi ra ngoài cho creator.
       if (isBypassed && userDemo) {
-        answers['__profile_gender'] = userDemo.gender || null;
-        answers['__profile_province'] = userDemo.province || null;
-        answers['__profile_university'] = userDemo.university || null;
-        answers['__profile_major'] = userDemo.major || null;
-        answers['__profile_age'] = userDemo.birth_year ? (new Date().getFullYear() - userDemo.birth_year) : null;
-
         // Điền ngầm vào các câu hỏi screener nếu có trong DB để đảm bảo dữ liệu không bị trống
         for (const q of dbQuestions) {
           if (q.is_screener === 1 && (answers[q.id] === undefined || answers[q.id] === null)) {
@@ -1789,8 +1819,15 @@ class SurveyController {
 
         try {
           if (survey.google_sheets_webhook_url) {
-            const webhookSyncService = require('../services/webhookSyncService');
-            webhookSyncService.syncResponse(survey.id, response.id, answers);
+            // Đồng bộ lại Google Sheets khi người điền chỉnh sửa câu trả lời (dùng đúng dịch vụ webhook chuẩn)
+            webhookService.dispatchGoogleSheetsSync(survey.google_sheets_webhook_url, {
+              survey_id: survey.id,
+              response_id: response.id,
+              submitted_at: new Date().toISOString(),
+              duration_sec: (response.duration_sec || 0) + duration,
+              quality_score: response.quality_score || 0,
+              answers: this._stripPrivateProfileFields(answers)
+            });
           }
         } catch (wErr) {
           console.warn('[Webhook] Lỗi đồng bộ khi cập nhật câu trả lời:', wErr.message);
@@ -1868,6 +1905,7 @@ class SurveyController {
       // Xử lý kết quả chấm điểm
       if (evalResult.status === 'VALIDATED') {
         // Tự động kích hoạt đồng bộ Google Sheets nếu có cấu hình Webhook URL
+        // Lọc bỏ trường hồ sơ ngầm (__profile_*) - demographics không bao giờ chuyển giao ra ngoài
         if (survey.google_sheets_webhook_url) {
           webhookService.dispatchGoogleSheetsSync(survey.google_sheets_webhook_url, {
             survey_id: survey.id,
@@ -1875,7 +1913,7 @@ class SurveyController {
             submitted_at: new Date().toISOString(),
             duration_sec: duration,
             quality_score: evalResult.qualityScore,
-            answers: answers
+            answers: this._stripPrivateProfileFields(answers)
           });
         }
 
@@ -2103,14 +2141,26 @@ class SurveyController {
       const rawQuestions = db.prepare('SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC').all(id);
       const questions = rawQuestions.map(q => this._parseQuestionFromDb(q, true));
 
-      // Chỉ xuất các bài làm đã được thẩm định hợp lệ (VALIDATED)
-      const responses = db.prepare(`
-        SELECT r.*, u.name AS respondent_name, u.email AS respondent_email, u.gender AS u_gender, u.province AS u_province, u.university AS u_university, u.major AS u_major, u.birth_date AS u_birth_date
-        FROM responses r
-        JOIN users u ON r.respondent_id = u.id
-        WHERE r.survey_id = ? AND r.status = 'VALIDATED'
-        ORDER BY r.submitted_at ASC
-      `).all(id);
+      // Quyền riêng tư dữ liệu xuất (cam kết pháp lý): email tài khoản đáp viên chỉ được phép
+      // chuyển giao cho creator khi khảo sát bật chế độ thu thập email. Họ tên, giới tính, khu vực,
+      // trường, ngành, tuổi... KHÔNG BAO GIỜ được xuất ra ngoài dưới bất kỳ định dạng nào.
+      const allowEmailCollection = survey.allow_email_collection === 1;
+
+      // Chỉ xuất các bài làm đã được thẩm định hợp lệ (VALIDATED) - chỉ JOIN users khi cần email
+      const responses = allowEmailCollection
+        ? db.prepare(`
+            SELECT r.*, u.email AS respondent_email
+            FROM responses r
+            JOIN users u ON r.respondent_id = u.id
+            WHERE r.survey_id = ? AND r.status = 'VALIDATED'
+            ORDER BY r.submitted_at ASC
+          `).all(id)
+        : db.prepare(`
+            SELECT r.*
+            FROM responses r
+            WHERE r.survey_id = ? AND r.status = 'VALIDATED'
+            ORDER BY r.submitted_at ASC
+          `).all(id);
 
       // 1. Trường hợp Xuất định dạng JSON
       if (format === 'json') {
@@ -2148,21 +2198,13 @@ class SurveyController {
             return {
               responseId: r.id,
               respondentId: r.respondent_id,
-              respondentName: r.respondent_name,
-              respondentEmail: r.respondent_email,
-              demographics: {
-                gender: parsedAnswers['__profile_gender'] || r.u_gender || null,
-                province: parsedAnswers['__profile_province'] || r.u_province || null,
-                university: parsedAnswers['__profile_university'] || r.u_university || null,
-                major: parsedAnswers['__profile_major'] || r.u_major || null,
-                birth_date: r.u_birth_date || null
-              },
+              respondentEmail: allowEmailCollection ? (r.respondent_email || null) : null,
               startedAt: r.started_at,
               submittedAt: r.submitted_at,
               durationSec: r.duration_sec,
               qualityScore: r.quality_score,
               pointsRewarded: r.points_rewarded,
-              answers: parsedAnswers
+              answers: this._stripPrivateProfileFields(parsedAnswers)
             };
           })
         };
@@ -2185,26 +2227,18 @@ class SurveyController {
 
       const isGoogleFormsFormat = req.query.style === 'google_forms' || req.query.google_forms === 'true';
 
+      // Quy ước ẩn danh: cột định danh duy nhất là mã phản hồi (r.id) và mã ứng viên nội bộ.
+      // Email chỉ xuất hiện khi creator bật thu thập email; họ tên + demographics bị loại bỏ hoàn toàn.
       const headers = isGoogleFormsFormat
         ? [
             'Dấu thời gian',
-            'Địa chỉ email',
-            'Họ và tên',
-            'Giới tính',
-            'Khu vực',
-            'Trường đại học',
-            'Khối ngành',
+            ...(allowEmailCollection ? ['Địa chỉ email'] : []),
             ...questions.map(q => q.content.replace(/[\r\n]+/g, ' '))
           ]
         : [
             'Mã Phản Hồi (Response ID)',
             'Mã Ứng Viên (Respondent ID)',
-            'Tên Người Trả Lời (Respondent Name)',
-            'Email Người Trả Lời (Respondent Email)',
-            'Giới Tính (Auto-Fill)',
-            'Khu Vực (Auto-Fill)',
-            'Trường ĐH (Auto-Fill)',
-            'Khối Ngành (Auto-Fill)',
+            ...(allowEmailCollection ? ['Email Người Trả Lời (Respondent Email)'] : []),
             'Thời Gian Làm Bài (Giây)',
             'Điểm Chất Lượng (%)',
             'Điểm Thưởng Nhận Được',
@@ -2222,13 +2256,11 @@ class SurveyController {
           parsedAnswers = {};
         }
 
-        const demoGender = parsedAnswers['__profile_gender'] || r.u_gender || '';
-        const demoProvince = parsedAnswers['__profile_province'] || r.u_province || '';
-        const demoUniversity = parsedAnswers['__profile_university'] || r.u_university || '';
-        const demoMajor = parsedAnswers['__profile_major'] || r.u_major || '';
+        // Loại bỏ trường hồ sơ ngầm (__profile_*) khỏi dữ liệu xuất ra ngoài
+        const safeAnswers = this._stripPrivateProfileFields(parsedAnswers);
 
         const questionValues = questions.map(q => {
-          const val = parsedAnswers[q.id];
+          const val = safeAnswers[q.id];
           if (val === undefined || val === null) return '';
           if (Array.isArray(val)) {
             return val.join('; ');
@@ -2247,23 +2279,13 @@ class SurveyController {
         const row = isGoogleFormsFormat
           ? [
               r.submitted_at || '',
-              r.respondent_email || '',
-              r.respondent_name || '',
-              demoGender,
-              demoProvince,
-              demoUniversity,
-              demoMajor,
+              ...(allowEmailCollection ? [r.respondent_email || ''] : []),
               ...questionValues
             ]
           : [
               r.id,
               r.respondent_id,
-              r.respondent_name,
-              r.respondent_email,
-              demoGender,
-              demoProvince,
-              demoUniversity,
-              demoMajor,
+              ...(allowEmailCollection ? [r.respondent_email || ''] : []),
               r.duration_sec,
               Math.round((r.quality_score || 0) * 100),
               r.points_rewarded,

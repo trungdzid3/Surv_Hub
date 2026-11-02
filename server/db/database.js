@@ -415,6 +415,8 @@ function initSchema() {
     'ALTER TABLE surveys ADD COLUMN sponsor_campaign_id TEXT REFERENCES voucher_campaigns(id);',
     "ALTER TABLE surveys ADD COLUMN reward_mode TEXT DEFAULT 'POINTS_ONLY';",
     'ALTER TABLE surveys ADD COLUMN google_sheets_webhook_url TEXT;',
+    // Audit pháp lý 03-11-2026: Chỉ khi creator bật cờ này, email tài khoản đáp viên mới được chuyển giao cho creator
+    'ALTER TABLE surveys ADD COLUMN allow_email_collection INTEGER DEFAULT 0;',
     'ALTER TABLE responses ADD COLUMN completion_code_input TEXT;',
     "ALTER TABLE responses ADD COLUMN verification_method TEXT DEFAULT 'NATIVE_SUBMIT';",
     'ALTER TABLE users ADD COLUMN fast_track_tickets INTEGER DEFAULT 0;',
@@ -757,15 +759,31 @@ function initSchema() {
 }
 
 // Tự động đảm bảo các tài khoản kiểm thử cốt lõi luôn tồn tại và đúng mật khẩu trên mọi môi trường (Local & Render)
+// Bảo mật (audit 03-11-2026): mật khẩu seed KHÔNG còn ghi cứng trong mã nguồn — đọc từ biến môi trường
+// SEED_ACCOUNT_PASSWORDS theo định dạng "email=mat_khau,email=mat_khau". Thiếu ánh xạ cho tài khoản nào
+// thì bỏ qua tài khoản đó (không tạo mới, không đặt lại mật khẩu) kèm cảnh báo trên console.
 function ensureEssentialAccounts() {
   try {
     const bcrypt = require('bcryptjs');
     const crypto = require('crypto');
     const salt = bcrypt.genSaltSync(10);
 
+    const seedPasswordMap = {};
+    String(process.env.SEED_ACCOUNT_PASSWORDS || '')
+      .split(',')
+      .forEach((pair) => {
+        const separatorIndex = pair.indexOf('=');
+        if (separatorIndex > 0) {
+          const seedEmail = pair.slice(0, separatorIndex).trim().toLowerCase();
+          const seedPassword = pair.slice(separatorIndex + 1).trim();
+          if (seedEmail && seedPassword) {
+            seedPasswordMap[seedEmail] = seedPassword;
+          }
+        }
+      });
+
     const essentialUsers = [
       { email: 'admin@survhub.com',
-        password: 'admin123',
         name: 'Quản Trị Viên SurvHub',
         role: 'ADMIN',
         credit_balance: 100000000,
@@ -776,7 +794,6 @@ function ensureEssentialAccounts() {
         status: 'ACTIVE'
       },
       { email: 'admin@vibesurvey.com',
-        password: 'admin123',
         name: 'Quản Trị Viên Hệ Thống',
         role: 'ADMIN',
         credit_balance: 100000000,
@@ -788,7 +805,6 @@ function ensureEssentialAccounts() {
       },
       {
         email: 'trungdzid3@gmail.com',
-        password: 'Trung@2302',
         name: 'Admin Trung',
         role: 'ADMIN',
         credit_balance: 100000000,
@@ -803,7 +819,6 @@ function ensureEssentialAccounts() {
       },
       {
         email: 'linharmykxbnvn@gmail.com',
-        password: 'Linh@2006',
         name: 'Admin Linh',
         role: 'ADMIN',
         credit_balance: 100000000,
@@ -818,8 +833,13 @@ function ensureEssentialAccounts() {
     ];
 
     for (const u of essentialUsers) {
+      const seedPassword = seedPasswordMap[u.email.toLowerCase()];
+      if (!seedPassword) {
+        console.warn(`[DB Bootstrap] Bỏ qua tài khoản ${u.email} — thiếu mật khẩu trong biến môi trường SEED_ACCOUNT_PASSWORDS`);
+        continue;
+      }
       const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(u.email);
-      const hash = bcrypt.hashSync(u.password, salt);
+      const hash = bcrypt.hashSync(seedPassword, salt);
       if (!existing) {
         const id = crypto.randomUUID();
         db.prepare(`

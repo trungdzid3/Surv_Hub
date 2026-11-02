@@ -1,21 +1,26 @@
 const path = require('path');
 require('dotenv').config();
+// Nạp thêm .env đặt tại thư mục gốc repo (không ghi đè biến môi trường đã có sẵn)
+require('dotenv').config({ path: path.join(__dirname, '../../.env'), override: false });
 
 module.exports = {
   PORT: process.env.PORT || 3000,
   APP_URL: process.env.APP_URL || 'http://localhost:3000',
   NODE_ENV: process.env.NODE_ENV || 'development',
-  JWT_SECRET: process.env.JWT_SECRET || 'survhub_default_secret_key_2026',
+  // Fail-fast: từ chối khởi động khi thiếu khóa ký JWT thay vì dùng khóa mặc định đoán được
+  JWT_SECRET: process.env.JWT_SECRET || (() => { throw new Error('[CONFIG BAO MAT] Biến môi trường JWT_SECRET chưa được cấu hình trong .env'); })(),
   DB_PATH: process.env.DB_PATH || path.join(__dirname, '../db/vibesurvey.db'),
-  
+
   // Cấu hình Cổng Thanh Toán & VietQR Napas247
   PAYMENT_GATEWAY: {
     BANK_ID: process.env.PAYMENT_BANK_ID || 'MB',
     BANK_NAME: process.env.PAYMENT_BANK_NAME || 'Ngân hàng Quân Đội (MBBank)',
-    ACCOUNT_NUMBER: process.env.PAYMENT_ACCOUNT_NUMBER || '0335888888',
+    // Fail-fast: số tài khoản nhận tiền bắt buộc phải cấu hình, cấm dùng số mặc định cứng
+    ACCOUNT_NUMBER: process.env.PAYMENT_ACCOUNT_NUMBER || (() => { throw new Error('[CONFIG THANH TOAN] Biến môi trường PAYMENT_ACCOUNT_NUMBER chưa được cấu hình'); })(),
     ACCOUNT_NAME: process.env.PAYMENT_ACCOUNT_NAME || 'SURVHUB PLATFORM',
     TEMPLATE: process.env.PAYMENT_QR_TEMPLATE || 'compact',
-    WEBHOOK_SECRET: process.env.PAYMENT_WEBHOOK_SECRET || 'survhub_payment_secret_2026',
+    // Fail-fast: secret webhook bắt buộc cấu hình riêng, cấm dùng secret mặc định đoán được
+    WEBHOOK_SECRET: process.env.PAYMENT_WEBHOOK_SECRET || (() => { throw new Error('[CONFIG THANH TOAN] Biến môi trường PAYMENT_WEBHOOK_SECRET chưa được cấu hình trong .env'); })(),
     ORDER_EXPIRE_MINUTES: 15
   },
 

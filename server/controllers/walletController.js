@@ -2,6 +2,7 @@ const db = require('../db/database');
 const ledgerService = require('../services/ledgerService');
 const auditLogService = require('../services/auditLogService');
 const config = require('../config');
+const crypto = require('crypto'); // Dùng cho so sánh secret webhook timing-safe
 
 class WalletController {
   getWallet(req, res) {
@@ -327,7 +328,17 @@ class WalletController {
       const providedToken = bearerToken || xWebhookSecret || queryToken || bodyToken;
       const isTest = process.env.NODE_ENV === 'test';
 
-      const isSecretValid = Boolean(configuredSecret && providedToken && (providedToken === configuredSecret));
+      // So sánh timing-safe để kẻ tấn công không đoán được secret qua thời gian phản hồi
+      const isSecretValid = Boolean(configuredSecret && providedToken) && (() => {
+        const secretBuffer = Buffer.from(String(configuredSecret));
+        const providedBuffer = Buffer.from(String(providedToken));
+        if (secretBuffer.length !== providedBuffer.length) {
+          // Vẫn tiêu tốn thời gian so sánh để tránh đoán độ dài qua timing
+          crypto.timingSafeEqual(secretBuffer, secretBuffer);
+          return false;
+        }
+        return crypto.timingSafeEqual(secretBuffer, providedBuffer);
+      })();
 
       if (!isSecretValid && !isTest) {
         return res.status(401).json({
