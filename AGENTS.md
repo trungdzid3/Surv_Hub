@@ -149,6 +149,11 @@ auto_github_sync: true # Dự án đã kết nối GitHub (trungdzid3/VibeSurvey
 - Khi hoàn thành mỗi tính năng hoặc thay đổi logic nghiệp vụ cốt lõi (`server/services/`, `server/controllers/`, API contracts): Agent tự động cập nhật sơ đồ tương ứng bằng `archify` (lưu tại `.archify/` hoặc `docs/architecture/`).
 - Tự động commit và push sơ đồ cập nhật cùng đợt bàn giao task qua quy chế Git Auto-Sync.
 
+### 16. Quy tắc Quản lý Vòng đời Bộ kiểm thử & Tệp tạm (Test Lifecycle Rule)
+- **Bộ test dùng 1 lần**: Toàn bộ script test tạo tạm, script chẩn đoán nhanh (diagnostic), kịch bản kiểm thử phục vụ debug một lần sau khi chạy xong xác minh kết quả BẮT BUỘC phải xóa ngay, không để tồn đọng trong repository.
+- **Bộ test dùng nhiều lần**: Chỉ lưu lại các bài kiểm thử hồi quy (regression tests) chính thức nằm trong quy trình CI/CD hoặc được tích hợp vào `tests/run_all_tests.js` / lệnh `npm test`.
+- **Cấm lưu script tạm vào mã nguồn chính**: Tuyệt đối không lưu các script patch, script migration tạm hay script update chuỗi vào thư mục `server/`, `tests/` hoặc thư mục gốc. Mọi thao tác cập nhật mã nguồn phải được thực hiện chuẩn mực hoặc xóa sạch sau khi hoàn tất.
+
 ---
 
 ## VII. ĐỘI HÌNH TÁC TỬ CHUYÊN BIỆT (.zcode/agents/ & .agent/)
