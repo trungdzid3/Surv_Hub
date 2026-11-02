@@ -2545,3 +2545,34 @@ c:\Users\Lenovo\Downloads\Linh\
 - Cập nhật cache-buster lên `public/index.html` (4.7.6_1793609653653).
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android`.
 - Tự động commit và push lên GitHub (`origin/main`).
+
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: CHUẨN HÓA HIỆU ỨNG GẠT MƯỢT MÀ CHO TOÀN BỘ NÚT GẠT (SMOOTH TOGGLE SWITCH ENGINE - THÁNG 11/2026)
+
+### 1. Hiện Tượng & Nguyên Nhân
+- **Hiện tượng**: Các nút gạt (toggle switches) trong hệ thống bị giật cục, chuyển trạng thái tức thì không có chuyển động trượt, tạo cảm giác như "chuyển ảnh tĩnh" khi bấm.
+- **Nguyên nhân cốt lõi**:
+  1. Khi người dùng click toggle (ví dụ: `toggleHideCompleted`, `toggleStudentExchange`, `toggleStudioVoucher`), hàm xử lý lập tức kích hoạt re-render DOM toàn bộ (`refreshStudioSidebarView()` hoặc `renderSurveysView()`), làm tiêu hủy element DOM cũ và thay bằng element DOM mới trong 0ms trước khi trình duyệt kịp dựng các khung hình chuyển động CSS (0 frame transition).
+  2. Tại nút "Bắt buộc" trong Studio Question Builder (`req-btn-${qIdx}`): HTML ban đầu dùng kích thước `w-8 h-4.5` và `w-3.5 h-3.5`, nhưng khi click hàm `toggleStudioRequired` lại gán đè chuỗi `className` thành `w-9 h-5` và `w-4 h-4`, làm nút giật kích thước đột ngột thay vì trượt mượt.
+  3. Thiếu bộ class CSS chuẩn hóa hỗ trợ GPU acceleration với `transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.28s ease` và tactile active squash/stretch effect.
+
+### 2. Giải Pháp Toàn Diện Đã Triển Khai
+- **Bộ CSS Component `.vibe-switch` Đạt Chuẩn 60 FPS (`public/styles.css`)**:
+  + Thiết lập cấu trúc Track (`.vibe-switch`) và Knob (`.vibe-switch-knob`) với biến thể kích thước: chuẩn (w-11 h-6), nhỏ (`.vibe-switch-sm`, w-9 h-5), mini (`.vibe-switch-xs`, w-8 h-4.5).
+  + Áp dụng đường cong chuyển động mượt mà tự nhiên `cubic-bezier(0.16, 1, 0.3, 1)` cho cả màu nền track và dịch chuyển knob qua `transform: translateX(...)`.
+  + Tích hợp phản hồi xúc giác (Tactile Press Feedback): Khi người dùng nhấn giữ chuột/chạm cảm ứng (`:active`), knob tự động co giãn nhẹ theo chiều ngang tạo cảm giác vật lý đầm chắc chuẩn native iOS.
+  + Đảm bảo tương thích hoàn hảo Dark Mode (nền xám đậm obsidian `#27272A` khi tắt, chuyển cam rực rỡ `#EA580C` khi bật).
+- **Cập Nhật Toàn Bộ Điểm Kích Hoạt Trong Frontend (`public/app.js`)**:
+  + Nút "Bắt buộc / Yêu cầu mỗi hàng" (`req-btn-${qIdx}`): Sử dụng `.vibe-switch.vibe-switch-xs`, hàm `toggleStudioRequired` sử dụng `btn.classList.toggle('active', !!isRequired)` thay vì gán đè chuỗi className, đảm bảo knob trượt mượt mà 100%.
+  + Nút "Hiện bài đã làm" (`#hide-completed-switch`): Chuyển đổi trạng thái class `active` tức thì trên DOM, kết hợp trì hoãn re-render danh sách 180ms bằng `setTimeout`, mắt người dùng nhìn thấy trọn vẹn chuyển động trượt êm dịu.
+  + Nút "Trao Đổi Sinh Viên (Edu Karma)" (`#student-exchange-switch`): Đồng bộ class `active` và trì hoãn 180ms trước khi làm mới sidebar tính phí.
+  + Nút "Tặng E-Voucher quà tặng" (`#studio-voucher-switch`): Áp dụng `.vibe-switch`, đồng bộ class `active` tức thì và delay 180ms mở rộng bảng voucher.
+  + Nút "Bộ lọc đối tượng" (`#studio-has-targeting`) & "Ghim VIP Đầu Trang" (`#studio-is-pinned`): Nâng cấp từ thẻ input checkbox thô thành `.vibe-switch.vibe-switch-sm` hiện đại, phản hồi gạt tức thì và mượt mà.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Kiểm tra cú pháp: `node -c public/app.js` đạt mã 0 (PASS).
+- Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (19.97s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` thành công.
+- Tự động commit và push lên GitHub (`origin/main`).

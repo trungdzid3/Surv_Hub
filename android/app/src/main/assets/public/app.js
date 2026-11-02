@@ -1450,14 +1450,15 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         </div>
 
         <!-- Toggle Bật/Tắt Bộ Lọc -->
-        <label class="flex items-start justify-between gap-3 cursor-pointer select-none">
+        <label class="flex items-start justify-between gap-3 cursor-pointer select-none" onclick="VibeApp.toggleStudioTargeting(!VibeApp.state.hasTargeting)">
           <div class="space-y-0.5">
             <div class="text-xs font-bold text-slate-800 dark:text-slate-200">Kích hoạt bộ lọc đối tượng</div>
             <div class="text-[10px] text-stone-500 leading-tight">Chỉ phân phối bài làm đến đúng tệp nhân khẩu học được chọn</div>
           </div>
-          <input type="checkbox" id="studio-has-targeting" ${hasTargeting ? 'checked' : ''} 
-                 onchange="VibeApp.toggleStudioTargeting(this.checked)" 
-                 class="w-4 h-4 mt-0.5 accent-orange-600 rounded">
+          <button id="studio-has-targeting" type="button" role="switch" aria-checked="${hasTargeting ? 'true' : 'false'}" 
+                  class="vibe-switch vibe-switch-sm ${hasTargeting ? 'active' : ''} inline-flex items-center shrink-0 pointer-events-none">
+            <span class="vibe-switch-knob"></span>
+          </button>
         </label>
 
         ${hasTargeting ? `
@@ -1633,8 +1634,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                   Ký quỹ bằng Điểm Karma/Lượt Free của bạn. Không phát sinh chi phí tiền mặt VNĐ. Khảo sát chỉ hiển thị cho sinh viên.
                 </div>
               </div>
-              <button type="button" role="switch" class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${this.state.isStudentExchange ? 'bg-orange-600' : 'bg-stone-300 dark:bg-stone-700'} pointer-events-none">
-                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${this.state.isStudentExchange ? 'translate-x-4' : 'translate-x-0'}"></span>
+              <button id="student-exchange-switch" type="button" role="switch" aria-checked="${this.state.isStudentExchange ? 'true' : 'false'}" class="vibe-switch vibe-switch-sm ${this.state.isStudentExchange ? 'active' : ''} inline-flex items-center shrink-0 pointer-events-none">
+                <span class="vibe-switch-knob"></span>
               </button>
             </label>
             ${this.state.isStudentExchange ? `
@@ -1919,12 +1920,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                 </div>
                 <p class="text-[10.5px] text-stone-500 dark:text-stone-400 leading-tight">Mỗi người hoàn thành bài sẽ nhận được mã ưu đãi vào Ví Voucher, giúp tăng tốc độ phản hồi vượt bậc.</p>
               </div>
-              <button type="button" role="switch" aria-checked="${this.state.studioHasVoucher ? 'true' : 'false'}"
+              <button id="studio-voucher-switch" type="button" role="switch" aria-checked="${this.state.studioHasVoucher ? 'true' : 'false'}"
                       onclick="VibeApp.toggleStudioVoucher(!${this.state.studioHasVoucher ? 'true' : 'false'})"
-                      class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${this.state.studioHasVoucher ? 'bg-orange-600' : 'bg-stone-300 dark:bg-stone-700'}"
+                      class="vibe-switch ${this.state.studioHasVoucher ? 'active' : ''} inline-flex items-center shrink-0"
                       title="${this.state.studioHasVoucher ? 'Bấm để tắt tặng Voucher' : 'Bấm để bật tặng Voucher'}">
-                <span aria-hidden="true" 
-                      class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${this.state.studioHasVoucher ? 'translate-x-5' : 'translate-x-0'}"></span>
+                <span class="vibe-switch-knob"></span>
               </button>
             </div>
 
@@ -2220,8 +2220,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           </div>
 
           <!-- Ghim VIP nổi bật -->
-          <label class="flex items-start gap-2.5 cursor-pointer pt-2 border-t border-stone-100 dark:border-stone-800 text-xs">
-            <input type="checkbox" id="studio-is-pinned" ${this.state.isPinnedSurvey ? 'checked' : ''} onchange="VibeApp.toggleStudioPinned(this.checked)" class="mt-0.5 rounded text-orange-600 focus:ring-orange-500">
+          <label class="flex items-start justify-between gap-2.5 cursor-pointer pt-2 border-t border-stone-100 dark:border-stone-800 text-xs select-none" onclick="VibeApp.toggleStudioPinned(!VibeApp.state.isPinnedSurvey)">
             <div>
               <div class="flex items-center gap-1.5">
                 <span class="font-bold text-slate-800 dark:text-slate-200">Ghim Vị Trí VIP Đầu Trang</span>
@@ -2231,6 +2230,10 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                 ${(user.fast_track_tickets || 0) > 0 ? `Trừ 1 vé VIP (Bạn có ${user.fast_track_tickets} vé)` : `+${this.state.creatorTier === 'STUDENT' ? '15.000đ' : '40.000đ'} phí dịch vụ`}
               </p>
             </div>
+            <button id="studio-is-pinned" type="button" role="switch" aria-checked="${this.state.isPinnedSurvey ? 'true' : 'false'}"
+                    class="vibe-switch vibe-switch-sm ${this.state.isPinnedSurvey ? 'active' : ''} inline-flex items-center shrink-0 pointer-events-none">
+              <span class="vibe-switch-knob"></span>
+            </button>
           </label>
         </div>
 
@@ -5197,8 +5200,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
               <div class="flex items-center gap-2 cursor-pointer select-none" onclick="VibeApp.toggleHideCompleted()">
                 <i data-lucide="eye-off" class="w-4 h-4 text-stone-500 dark:text-stone-400"></i>
                 <span class="text-xs font-medium text-stone-600 dark:text-stone-300">Hiện bài đã làm</span>
-                <button type="button" class="w-9 h-5 rounded-full transition-colors relative focus:outline-none p-0.5 ${!this.state.hideFinished ? 'bg-orange-600' : 'bg-stone-300 dark:bg-stone-700'}">
-                  <span class="block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 transform ${!this.state.hideFinished ? 'translate-x-4' : 'translate-x-0'}"></span>
+                <button id="hide-completed-switch" type="button" role="switch" aria-checked="${!this.state.hideFinished ? 'true' : 'false'}" class="vibe-switch vibe-switch-sm ${!this.state.hideFinished ? 'active' : ''} inline-flex items-center shrink-0 pointer-events-none">
+                  <span class="vibe-switch-knob"></span>
                 </button>
               </div>
 
@@ -5727,18 +5730,23 @@ if (totalCount === 0) {
   },
 
   toggleHideFinished() {
-    this.haptic('light');
-    this.state.hideFinished = !this.state.hideFinished;
-    this.state.surveysCurrentPage = 1;
-    this.renderSurveysView(document.getElementById('app-root'));
+    this.toggleHideCompleted();
   },
 
   toggleHideCompleted() {
     this.haptic('light');
     this.state.hideFinished = !this.state.hideFinished;
     this.state.hideCompletedSurveys = this.state.hideFinished;
+    window.hideCompletedSurveys = this.state.hideFinished;
     this.state.surveysCurrentPage = 1;
-    this.renderSurveysView(document.getElementById('app-root'), false);
+    const switchEl = document.getElementById('hide-completed-switch');
+    if (switchEl) {
+      switchEl.classList.toggle('active', !this.state.hideFinished);
+      switchEl.setAttribute('aria-checked', !this.state.hideFinished ? 'true' : 'false');
+    }
+    setTimeout(() => {
+      this.renderSurveysView(document.getElementById('app-root'), false);
+    }, 180);
   },
 
   resetSurveyFilters() {
@@ -12238,12 +12246,22 @@ if (totalCount === 0) {
   toggleStudentExchange(enabled) {
     this.haptic('light');
     this.state.isStudentExchange = !!enabled;
+    if (window.currentStudioSurvey) {
+      window.currentStudioSurvey.isStudentExchange = !!enabled;
+    }
     if (this.state.isStudentExchange) {
       this.state.creatorTier = 'STUDENT';
     }
-    if (!this.refreshStudioSidebarView()) {
-      this.renderCreateSurveyView(document.getElementById('app-root'));
+    const switchEl = document.getElementById('student-exchange-switch');
+    if (switchEl) {
+      switchEl.classList.toggle('active', !!enabled);
+      switchEl.setAttribute('aria-checked', enabled ? 'true' : 'false');
     }
+    setTimeout(() => {
+      if (!this.refreshStudioSidebarView()) {
+        this.renderCreateSurveyView(document.getElementById('app-root'));
+      }
+    }, 180);
   },
 
   setStudioSlaTier(slaKey) {
@@ -12272,18 +12290,32 @@ if (totalCount === 0) {
 
   toggleStudioTargeting(isChecked) {
     this.haptic('light');
-    this.state.hasTargeting = isChecked;
-    if (!this.refreshStudioSidebarView()) {
-      this.renderCreateSurveyView(document.getElementById('app-root'));
+    this.state.hasTargeting = !!isChecked;
+    const switchEl = document.getElementById('studio-has-targeting');
+    if (switchEl) {
+      switchEl.classList.toggle('active', !!isChecked);
+      switchEl.setAttribute('aria-checked', isChecked ? 'true' : 'false');
     }
+    setTimeout(() => {
+      if (!this.refreshStudioSidebarView()) {
+        this.renderCreateSurveyView(document.getElementById('app-root'));
+      }
+    }, 180);
   },
 
   toggleStudioPinned(isChecked) {
     this.haptic('light');
-    this.state.isPinnedSurvey = isChecked;
-    if (!this.refreshStudioSidebarView()) {
-      this.renderCreateSurveyView(document.getElementById('app-root'));
+    this.state.isPinnedSurvey = !!isChecked;
+    const switchEl = document.getElementById('studio-is-pinned');
+    if (switchEl) {
+      switchEl.classList.toggle('active', !!isChecked);
+      switchEl.setAttribute('aria-checked', isChecked ? 'true' : 'false');
     }
+    setTimeout(() => {
+      if (!this.refreshStudioSidebarView()) {
+        this.renderCreateSurveyView(document.getElementById('app-root'));
+      }
+    }, 180);
   },
 
   toggleStudioVoucher(isChecked) {
@@ -12303,9 +12335,16 @@ if (totalCount === 0) {
       }
       this.loadStudioCatalogVouchersIfNeeded();
     }
-    if (!this.refreshStudioSidebarView()) {
-      this.renderCreateSurveyView(document.getElementById('app-root'));
+    const switchEl = document.getElementById('studio-voucher-switch');
+    if (switchEl) {
+      switchEl.classList.toggle('active', !!isChecked);
+      switchEl.setAttribute('aria-checked', isChecked ? 'true' : 'false');
     }
+    setTimeout(() => {
+      if (!this.refreshStudioSidebarView()) {
+        this.renderCreateSurveyView(document.getElementById('app-root'));
+      }
+    }, 180);
   },
 
   setStudioVoucherMode(mode) {
@@ -12823,8 +12862,8 @@ if (totalCount === 0) {
               <span class="font-semibold text-stone-600 dark:text-stone-400 text-[11px]">
                 ${['CHOICE_GRID', 'CHECKBOX_GRID'].includes(q.type) ? 'Yêu cầu mỗi hàng' : 'Bắt buộc'}
               </span>
-              <button id="req-btn-${qIdx}" type="button" class="w-8 h-4.5 rounded-full transition-colors relative focus:outline-none p-0.5 pointer-events-none ${isReq ? 'bg-orange-600' : 'bg-stone-300 dark:bg-stone-700'}">
-                <span class="block w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform duration-200 transform ${isReq ? 'translate-x-3.5' : 'translate-x-0'}"></span>
+              <button id="req-btn-${qIdx}" type="button" role="switch" aria-checked="${isReq ? 'true' : 'false'}" class="vibe-switch vibe-switch-xs ${isReq ? 'active' : ''} inline-flex items-center shrink-0 pointer-events-none">
+                <span class="vibe-switch-knob"></span>
               </button>
             </div>
           </div>
@@ -13506,20 +13545,18 @@ if (totalCount === 0) {
     this.haptic('light');
     if (this.state.builderQuestions && this.state.builderQuestions[qIdx]) {
       this.state.builderQuestions[qIdx].is_required = !!isRequired;
+      if (window.currentStudioSurvey && window.currentStudioSurvey.questions && window.currentStudioSurvey.questions[qIdx]) {
+        window.currentStudioSurvey.questions[qIdx].required = !!isRequired;
+        window.currentStudioSurvey.questions[qIdx].is_required = !!isRequired;
+      }
       const wrap = document.getElementById(`req-toggle-wrap-${qIdx}`);
       const btn = document.getElementById(`req-btn-${qIdx}`);
       if (wrap) {
         wrap.setAttribute('onclick', `event.stopPropagation(); VibeApp.toggleStudioRequired(${qIdx}, ${!isRequired})`);
       }
       if (btn) {
-        const span = btn.querySelector('span');
-        if (isRequired) {
-          btn.className = "w-9 h-5 rounded-full transition-colors relative focus:outline-none p-0.5 pointer-events-none bg-orange-600";
-          if (span) span.className = "block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 transform translate-x-4";
-        } else {
-          btn.className = "w-9 h-5 rounded-full transition-colors relative focus:outline-none p-0.5 pointer-events-none bg-stone-300 dark:bg-stone-700";
-          if (span) span.className = "block w-4 h-4 rounded-full bg-white shadow-xs transition-transform duration-200 transform translate-x-0";
-        }
+        btn.classList.toggle('active', !!isRequired);
+        btn.setAttribute('aria-checked', isRequired ? 'true' : 'false');
       }
     }
   },

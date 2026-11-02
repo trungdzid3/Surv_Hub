@@ -1421,3 +1421,168 @@ html.dark .theme-icon-moon {
   pointer-events: none;
   transition: transform 0.24s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease;
 }
+
+/* =========================================================
+   VIBESURVEY TOGGLE SWITCH COMPONENT (60 FPS HARDWARE ACCELERATED)
+   Chuẩn mực giao diện SSOT DESIGN.md: Cam #EA580C, mượt mà chuẩn iOS native
+   ========================================================= */
+.vibe-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 2.75rem;
+  height: 1.5rem;
+  padding: 2px;
+  border-radius: 9999px;
+  background-color: #D1D5DB;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  outline: none;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: background-color 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s ease,
+              transform 0.15s ease;
+  will-change: background-color;
+}
+
+.vibe-switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-page, #ffffff), 0 0 0 4px rgba(234, 88, 12, 0.45);
+}
+
+.vibe-switch:hover {
+  background-color: #C7CBD1;
+}
+
+/* Dark Mode Track (Tắt) */
+html.dark .vibe-switch,
+.dark .vibe-switch {
+  background-color: #27272A;
+  border-color: #3F3F46;
+}
+
+html.dark .vibe-switch:hover,
+.dark .vibe-switch:hover {
+  background-color: #323238;
+}
+
+/* Active Track (Bật) */
+.vibe-switch.active {
+  background-color: #EA580C !important;
+  border-color: #EA580C !important;
+}
+
+html.dark .vibe-switch.active,
+.dark .vibe-switch.active {
+  background-color: #EA580C !important;
+  border-color: #F97316 !important;
+}
+
+.vibe-switch.active:hover {
+  background-color: #C2410C !important;
+  border-color: #C2410C !important;
+}
+
+html.dark .vibe-switch.active:hover,
+.dark .vibe-switch.active:hover {
+  background-color: #F97316 !important;
+  border-color: #F97316 !important;
+}
+
+/* Knob */
+.vibe-switch-knob {
+  display: block;
+  box-sizing: border-box;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  transform: translateX(0);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.2s ease;
+  will-change: transform, width;
+}
+
+/* Khi Track bật: Dịch chuyển knob */
+.vibe-switch.active .vibe-switch-knob {
+  transform: translateX(1.25rem);
+}
+
+/* Phản hồi xúc giác (Tactile Press Feedback) khi người dùng nhấn giữ switch */
+.vibe-switch:active:not(.disabled):not([disabled]) .vibe-switch-knob {
+  width: 1.4rem;
+}
+
+.vibe-switch.active:active:not(.disabled):not([disabled]) .vibe-switch-knob {
+  transform: translateX(1.1rem);
+  width: 1.4rem;
+}
+
+/* ==================== BIẾN THỂ NHỎ: SMALL (.vibe-switch-sm) ==================== */
+.vibe-switch-sm {
+  width: 2.25rem;
+  height: 1.25rem;
+  padding: 2px;
+}
+
+.vibe-switch-sm .vibe-switch-knob {
+  width: 1rem;
+  height: 1rem;
+}
+
+.vibe-switch-sm.active .vibe-switch-knob {
+  transform: translateX(1rem);
+}
+
+.vibe-switch-sm:active:not(.disabled):not([disabled]) .vibe-switch-knob {
+  width: 1.15rem;
+}
+
+.vibe-switch-sm.active:active:not(.disabled):not([disabled]) .vibe-switch-knob {
+  transform: translateX(0.85rem);
+  width: 1.15rem;
+}
+
+/* ==================== BIẾN THỂ MINI: EXTRA SMALL (.vibe-switch-xs) ==================== */
+.vibe-switch-xs {
+  width: 2rem;
+  height: 1.125rem;
+  padding: 2px;
+}
+
+.vibe-switch-xs .vibe-switch-knob {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.vibe-switch-xs.active .vibe-switch-knob {
+  transform: translateX(0.875rem);
+}
+
+.vibe-switch-xs:active:not(.disabled):not([disabled]) .vibe-switch-knob {
+  width: 1rem;
+}
+
+.vibe-switch-xs.active:active:not(.disabled):not([disabled]) .vibe-switch-knob {
+  transform: translateX(0.75rem);
+  width: 1rem;
+}
+
+/* ==================== TRẠNG THÁI VÔ HIỆU HÓA (DISABLED) ==================== */
+.vibe-switch[disabled],
+.vibe-switch.disabled {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  filter: grayscale(20%);
+}
+
