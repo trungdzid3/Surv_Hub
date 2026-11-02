@@ -374,6 +374,23 @@ c:\Users\Lenovo\Downloads\Linh\
 - **Rollback toàn vẹn**: Luôn đảm bảo sẵn sàng phương án hoàn nguyên (rollback) nguyên trạng ngay lập tức khi phát sinh sự cố kỹ thuật.
 - **Miễn trừ cho hotfix nhỏ**: Các hotfix nhỏ dưới 30 dòng code hoặc tinh chỉnh nhẹ không cần tạo backup để tránh gây rác workspace.
 
+### L. Tái Thiết Kế Bảng Duyệt Rút Tiền Admin Payouts & Nút Quyết Định Theo Chuẩn DESIGN.md (v4.9.7)
+- **Tái Thiết Kế Nút Thao Tác Quyết Định ("Duyệt" & "Từ Chối")**:
+  - Khắc phục triệt để tình trạng hai nút bị trùng màu cam và chữ "Từ chối" bị rớt dòng thành 2 hàng do thiếu không gian hiển thị.
+  - Cột "Thao Tác Quyết Định": Bổ sung `whitespace-nowrap min-w-[200px]` cho cả `<th>` và `<td>` đảm bảo bố cục co giãn chuẩn mực.
+  - Nút "Duyệt" (Primary Action CTA): Nền cam rực rỡ `bg-orange-600 hover:bg-orange-700 active:scale-95 text-white`, bo góc `rounded-xl`, padding `px-3.5 py-1.5`, font chữ `text-xs font-bold`, icon Lucide `check` mảnh (`stroke-[2.5]`), hiệu ứng đổ bóng `shadow-xs shadow-orange-600/20`.
+  - Nút "Từ chối" (Secondary / Outline): Kiểu dáng Surface viền tinh tế `border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 active:scale-95 text-stone-700 dark:text-stone-300`, bo góc `rounded-xl`, padding `px-3.5 py-1.5`, font `text-xs font-bold`, icon Lucide `x` mảnh (`stroke-[2.5]`).
+  - Trạng thái hoàn tất sau duyệt: Phân định rõ ràng bằng badge font-mono: COMPLETED (`check-check` màu cam `text-orange-600`) và REJECTED (`ban` màu xám trung tính `text-stone-400`).
+- **Nâng Cấp Hộp Thoại Xác Nhận & Haptic Feedback Cho Admin Payouts**:
+  - Bổ sung hộp thoại xác nhận `confirm()` khi người quản trị nhấn nút "Từ chối" nhằm phòng ngừa thao tác nhầm lẫn làm hoàn điểm về ví người dùng.
+  - Tích hợp haptic feedback: `medium` khi bắt đầu, `success` khi duyệt thành công và `error` khi gặp sự cố.
+- **Hiện Đại Hóa Phân Trang & Nút Unban**:
+  - Thanh phân trang đáy bảng: Thay thế hoàn toàn các ký tự thô sơ `<` và `>` bằng biểu tượng Lucide `chevron-left` và `chevron-right`, chuẩn hóa styling `rounded-xl font-bold text-xs`.
+  - Nút mở khóa (Unban tài khoản & Gỡ cấm IP): Đồng bộ thiết kế bo góc `rounded-xl`, thêm biểu tượng `unlock` và nhãn `whitespace-nowrap`.
+- **Đồng Bộ & Kiểm Chuẩn Đạt 100%**:
+  - Đồng bộ 100% giữa `public/app.js` và `android/app/src/main/assets/public/app.js`.
+  - Toàn bộ 17 tầng kiểm thử tự hành (`npm test`) đạt PASS 100% (17/17 Suites).
+
 ### G. Dọn Dẹp Lưu Trữ, Tệp Rác & Kiểm Toán Hệ Thống
 - **Dọn dẹp tệp rác & giải phóng dung lượng**: Đã xóa sạch 95 tệp cùng 4 thư mục rác (`backup_ui_pre_hallmark/`, `archive/`, `scratch/`, `.hallmark/`, 10 ảnh upload demo cũ trong `uploads/`, các tệp `.bak`, `.db-wal`, `.db-shm`), giải phóng tổng cộng **129.43 MB** đĩa trống.
 - **Bảo toàn dữ liệu người dùng**: Tệp `"Danh Sách Email Sinh Viên.docx"` được bảo vệ nguyên vẹn 100%.
@@ -2859,3 +2876,36 @@ c:\Users\Lenovo\Downloads\Linh\
 - Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (18.00s).
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android`.
 - Tự động commit và push lên GitHub (`origin/main`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: XÓA BỎ HOÀN TOÀN CƠ CHẾ ĐIỂM KARMA & TINH GỌN HỆ THỐNG TIỀN TỆ (02/11/2026)
+
+### 1. Bối Cảnh & Quyết Định Nghiệp Vụ
+- **Vấn đề cốt lõi**: Khái niệm Điểm Karma (Edu Karma / Điền chéo sinh viên 0đ) làm phức tạp hóa hệ thống tiền tệ, tạo tâm lý gượng ép khi phải "điền trả lễ" và không tạo động lực thực tế cho đáp viên bằng tiền mặt.
+- **Quyết định chốt**: Loại bỏ hoàn toàn cơ chế Karma khỏi toàn bộ hệ thống (Web & Android App). Quy chuẩn hóa hệ sinh thái về mô hình tiền tệ thuần nhất:
+  + **Point (Ví tiền thưởng)**: Tỷ giá 1:1 VNĐ, nhận được khi làm khảo sát hợp lệ, dùng để rút tiền ngân hàng, ví MoMo, đổi thẻ cào, voucher hoặc đổi sang Credit (+5%).
+  + **Credit (Ví tạo khảo sát)**: Tỷ giá 1:1 VNĐ, nạp tiền thật hoặc đổi từ Point sang, dùng để ký quỹ tạo khảo sát.
+  + **Sinh viên (`STUDENT`)**: Áp dụng bảng giá trợ giá rẻ nhất sàn (400đ - 600đ/mẫu), nhận tài trợ 30 lượt mẫu miễn phí/tháng từ sàn, mọi đáp viên làm khảo sát của sinh viên đều nhận thù lao bằng Point thật.
+
+### 2. Các Thay Đổi Kỹ Thuật Đã Triển Khai
+1. **Frontend (`public/app.js` & `android/app/src/main/assets/public/app.js`)**:
+   - Xóa bỏ nút và tham chiếu `#header-edu-karma-btn`.
+   - Xóa nhãn hiển thị Karma trong dropdown tài khoản người dùng (`user-profile-dropdown`).
+   - Xóa bỏ khối công tắc chọn "Trao Đổi Sinh Viên (Edu Karma - 0đ phí VNĐ)" trong modal tạo khảo sát Studio.
+   - Loại bỏ khối ghi đè tính toán 0đ cho `isStudentExchange` trong hàm `calculateStudioEconomics`.
+   - Loại bỏ cờ `isExchange` và logic trừ Karma trong `publishSurvey`.
+   - Xóa nhãn badge `[Trao Đổi Edu]` và mức thù lao `+1 Điểm Karma` trên thẻ khảo sát (cả dạng lưới `grid`, dạng danh sách `list` và thẻ đính kèm bài viết diễn đàn); toàn bộ thù lao hiển thị đồng nhất bằng Điểm (`Point`).
+   - Trang Ví (`wallet`): Chuyển bố cục hàng thẻ Bento thành 2 cột cân đối hoàn hảo cho mọi người dùng (`grid-cols-1 md:grid-cols-2`), hiển thị đầy đủ hình 3D cho cả thẻ Point (`wallet_3d_master.svg`) và thẻ Credit (`coins_coupon_3d_master.svg`), loại bỏ hoàn toàn Thẻ 3 (Edu Karma).
+   - Bộ lọc khảo sát: Loại bỏ danh mục lọc `STUDENT_EXCHANGE` và bộ lọc ẩn khảo sát theo `is_student_exchange`.
+   - Diễn đàn: Cập nhật mô tả Hub sinh viên thành không gian học thuật chia sẻ đề tài NCKH; đổi nhãn phân khu đăng bài thành "NCKH & Luận văn".
+2. **Backend (`server/`)**:
+   - `surveyRepository.js`: Loại bỏ điều kiện lọc ẩn khảo sát `is_student_exchange` trong `listPublicSurveys`, `listRespondentSurveys`, `listSurveys`. Khảo sát sinh viên mở công khai cho toàn bộ cộng đồng đáp viên cùng tham gia nhận Point.
+   - `forumController.js`: Tinh gọn phân khu Góc Sinh Viên (`p.post_type = 'STUDENT'`), gỡ bỏ các ràng buộc `is_student_exchange`, chuẩn hóa thông báo lỗi thành "khu vực Góc Sinh Viên".
+   - `test_edu_karma_exchange.js`: Đã xóa bỏ tệp kiểm thử lỗi thời theo đúng Test Lifecycle Rule.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Kiểm tra cú pháp: `node -c public/app.js` và `node -c android/app/src/main/assets/public/app.js` PASS 100%.
+- Toàn bộ 17/17 Test Suites hệ thống (`npm test`): **100% PASS**.
+- Đồng bộ ứng dụng Android: Hoàn tất đồng bộ mã nguồn sang Capacitor assets.
+

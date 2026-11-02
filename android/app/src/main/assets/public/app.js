@@ -16761,7 +16761,7 @@ if (totalCount === 0) {
                     <th class="p-3">Số Tiền & Phí</th>
                     <th class="p-3">Phương Thức & Người Nhận</th>
                     <th class="p-3">Trạng Thái / Thời Gian</th>
-                    <th class="p-3 text-right">Thao Tác Quyết Định</th>
+                    <th class="p-3 text-right whitespace-nowrap min-w-[200px]">Thao Tác Quyết Định</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
@@ -16876,23 +16876,37 @@ if (totalCount === 0) {
                         </td>
 
                         <!-- Cột 6: Thao tác -->
-                        <td class="p-3 text-right">
+                        <td class="p-3 text-right whitespace-nowrap min-w-[200px]">
                           ${p.status === 'PENDING' ? `
-                            <div class="flex items-center justify-end gap-1.5">
+                            <div class="inline-flex items-center justify-end gap-2">
                               <button 
+                                type="button"
                                 onclick="VibeApp.handleAdminPayout('${p.id}', true)" 
-                                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm">
-                                Duyệt
+                                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white text-xs font-bold transition-all shadow-xs shadow-orange-600/20 whitespace-nowrap cursor-pointer"
+                                title="Duyệt chi trả yêu cầu rút tiền này">
+                                <i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                                <span>Duyệt</span>
                               </button>
                               <button 
+                                type="button"
                                 onclick="VibeApp.handleAdminPayout('${p.id}', false)" 
-                                class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm">
-                                Từ chối
+                                class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 active:scale-95 text-stone-700 dark:text-stone-300 hover:text-stone-950 dark:hover:text-white text-xs font-bold transition-all shadow-2xs whitespace-nowrap cursor-pointer"
+                                title="Từ chối yêu cầu và hoàn trả điểm thưởng">
+                                <i data-lucide="x" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                                <span>Từ chối</span>
                               </button>
                             </div>
+                          ` : (p.status === 'COMPLETED' ? `
+                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 font-mono">
+                              <i data-lucide="check-check" class="w-3.5 h-3.5 stroke-[2.2]"></i>
+                              <span>Đã thanh toán</span>
+                            </span>
                           ` : `
-                            <span class="text-xs text-slate-400 font-mono font-bold">Đã hoàn tất</span>
-                          `}
+                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-stone-400 dark:text-stone-500 font-mono">
+                              <i data-lucide="ban" class="w-3.5 h-3.5 stroke-[2]"></i>
+                              <span>Đã từ chối</span>
+                            </span>
+                          `)}
                         </td>
                       </tr>
                     `;
@@ -16910,14 +16924,16 @@ if (totalCount === 0) {
                 <button 
                   type="button"
                   onclick="VibeApp.setAdminPayoutPage(-1)" 
-                  ${pagination.page <= 1 ? 'disabled class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-lg cursor-not-allowed font-bold"' : 'class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold transition-all shadow-xs"'}>
-                  &lt; Trang Trước
+                  ${pagination.page <= 1 ? 'disabled class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 dark:bg-stone-800/60 text-stone-400 dark:text-stone-600 rounded-xl cursor-not-allowed font-bold text-xs"' : 'class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 rounded-xl font-bold text-xs transition-all shadow-2xs active:scale-95 cursor-pointer"'}>
+                  <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                  <span>Trang Trước</span>
                 </button>
                 <button 
                   type="button"
                   onclick="VibeApp.setAdminPayoutPage(1)" 
-                  ${pagination.page >= totalPages ? 'disabled class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-lg cursor-not-allowed font-bold"' : 'class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-bold transition-all shadow-xs"'}>
-                  Trang Sau &gt;
+                  ${pagination.page >= totalPages ? 'disabled class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 dark:bg-stone-800/60 text-stone-400 dark:text-stone-600 rounded-xl cursor-not-allowed font-bold text-xs"' : 'class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 rounded-xl font-bold text-xs transition-all shadow-2xs active:scale-95 cursor-pointer"'}>
+                  <span>Trang Sau</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
             </div>
@@ -16957,6 +16973,11 @@ if (totalCount === 0) {
 
   async handleAdminPayout(payoutId, isApproved) {
     const action = isApproved ? 'APPROVE' : 'REJECT';
+    if (!isApproved) {
+      const confirmReject = confirm('Bạn có chắc chắn muốn TỪ CHỐI yêu cầu rút thưởng này không?\n\nSố điểm thưởng sẽ được hoàn trả tự động lại ví của người dùng.');
+      if (!confirmReject) return;
+    }
+    this.haptic('medium');
     try {
       await this.api(`/admin/payouts/${payoutId}/action`, {
         method: 'POST',
@@ -16966,10 +16987,12 @@ if (totalCount === 0) {
           admin_note: isApproved ? 'Đã duyệt qua ngân hàng / cổng thanh toán' : 'Từ chối giải ngân và hoàn trả điểm thưởng'
         })
       });
+      this.haptic('success');
       this.showToast(isApproved ? 'Đã phê duyệt lệnh rút thưởng!' : 'Đã từ chối lệnh rút thưởng và hoàn điểm', 'success');
       const root = document.getElementById('app-root');
       if (root) this.renderAdminPayoutsView(root);
     } catch (e) {
+      this.haptic('error');
       this.showToast(e.message, 'error');
     }
   },
@@ -17204,9 +17227,10 @@ if (totalCount === 0) {
                         <div class="flex items-center gap-2">
                           ${(isBanned || isSuspended || trust < 80) ? `
                             <button 
+                              type="button"
                               onclick="VibeApp.unbanAdminUser('${u.id}')"
-                              class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
-                              <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+                              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs shadow-orange-600/20 whitespace-nowrap cursor-pointer">
+                              <i data-lucide="unlock" class="w-3.5 h-3.5 stroke-[2.2]"></i>
                               <span>Mở Khóa Tài Khoản (Unban)</span>
                             </button>
                           ` : `
@@ -17330,9 +17354,13 @@ if (totalCount === 0) {
                         <td class="p-3 font-mono font-bold text-orange-600 dark:text-orange-400">${b.ip_address}</td>
                         <td class="p-3 text-stone-700 dark:text-stone-300 font-medium">${b.reason}</td>
                         <td class="p-3 font-mono text-stone-400">${new Date(b.banned_at).toLocaleString('vi-VN')}</td>
-                        <td class="p-3 text-right">
-                          <button onclick="VibeApp.unbanIpAddress('${b.ip_address}')" class="px-3 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-orange-600 hover:text-white text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95">
-                            Gỡ Cấm IP
+                        <td class="p-3 text-right whitespace-nowrap">
+                          <button 
+                            type="button"
+                            onclick="VibeApp.unbanIpAddress('${b.ip_address}')" 
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 dark:bg-stone-800 hover:bg-orange-600 hover:text-white text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95 cursor-pointer whitespace-nowrap">
+                            <i data-lucide="unlock" class="w-3.5 h-3.5 stroke-[2]"></i>
+                            <span>Gỡ Cấm IP</span>
                           </button>
                         </td>
                       </tr>

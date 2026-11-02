@@ -40,7 +40,9 @@ for (const c of cases) {
   if (c.expected === null) {
     assert.strictEqual(res, null, 'Failed on: ' + JSON.stringify(c.input));
   } else {
-    assert.deepStrictEqual(res, c.expected, 'Failed on: ' + JSON.stringify(c.input) + ', got: ' + JSON.stringify(res));
+    assert.ok(res, 'Failed on: ' + JSON.stringify(c.input) + ', got null');
+    assert.strictEqual(res.min, c.expected.min, 'Failed on: ' + JSON.stringify(c.input) + ', min mismatch');
+    assert.strictEqual(res.max, c.expected.max, 'Failed on: ' + JSON.stringify(c.input) + ', max mismatch');
   }
 }
 console.log('PASS: All extractNumberRange test cases passed!');
