@@ -2670,6 +2670,40 @@ c:\Users\Lenovo\Downloads\Linh\
 
 ---
 
+## CẬP NHẬT TIẾN ĐỘ: TINH GỌN DỰ ÁN, DỌN DẸP TỆP RÁC & CHUẨN HÓA VÒNG ĐỜI TEST SUITES (THÁNG 11/2026)
+
+### 1. Phạm Vi Dọn Dẹp Toàn Diện Đã Thực Hiện
+- **Dọn dẹp tệp rác & tệp tạm ở thư mục gốc (~2.5 MB)**:
+  + Đã xóa: `test_temp_range.js`, `vibesurvey-project.zip` (2MB), `cloudflared.log`, `test_calc.xlsx`, `apply_patches.js`, `apply_surveys_update.js`, `extract_stitch.js`, `design_md_b64.txt`, `patch_bento.txt`, `patch_empty.txt`, `patch_filter.txt`, `scratch_clean_db.js`, `scratch_find_fk.js`, `scratch_test_admin.js`, thư mục `scratch/` (13 tệp nháp) và `server/db/vibesurvey.db.bak`.
+- **Dọn dẹp script patch / update nằm sai vị trí trong source code**:
+  + Đã xóa khỏi `server/controllers/`: `update_project_context.js`, `update_survey_helpers.js`, `update_task_md.js`.
+  + Đã xóa khỏi `server/db/`: `update_db.js`.
+  + Đã xóa khỏi `server/routes/`: `update_route.js`.
+  + Đã xóa khỏi `tests/`: `add_suite14.js`, `fix_export_test.js`, `fix_test.js`, `fix_trust_test.js`.
+- **Dọn dẹp tệp HTML và ảnh test giao diện trong `public/` và `android/`**:
+  + Đã xóa: `test_brand_logo.html`, `test_compare_images.html`, `test_composite_dark.png`, `test_composite_white.png`, `assets/test_crop_*.png`, `app.js.bak`.
+- **Dọn dẹp thư mục `fonts/` ở gốc dự án (~4.7 MB)**:
+  + Đã xác nhận 19/19 tệp font trùng khớp 100% mã băm SHA256 với `public/fonts/`.
+  + Xóa thư mục `fonts/` ở gốc; toàn bộ font Montserrat được phục vụ trực tiếp và chuẩn mực từ `public/fonts/`.
+- **Dọn dẹp thư mục `scripts/`**:
+  + Đã xóa 80 tệp ảnh tạm (`scripts/*.png`, ~10MB) gồm ảnh crop, mask, diff map.
+  + Đã xóa ~160 script một lần (`patch_*.js`, `inspect_*.js`, `check_*.js`, `show_*.js`, `update_*.js`, `reproduce_*.js`, `diagnose_*.js`).
+  + Giữ lại toàn bộ 23 script vận hành cần thiết: `backup_db.js`, `sync_capacitor.js`, `generate_icons.js`, `build-apk.bat`, `tunnel.bat`, `clean_database.js`, `cleanup_demo_data.js`, `purge_all_demo_data.js`, `seed_*.js`, `generate_*.py`, `generate_*.js`, `crawl_brand_logos.js`, `build_web_logos.py`, `setup_bug_reports.js`, `pack_zip.js`, `sync_forum_view.js`, `sync_profile_view.js`.
+
+### 2. Chuẩn Hóa Quy Tắc Quản Lý Vòng Đời Bộ Kiểm Thử (Test Lifecycle Rule)
+- Đã bổ sung Mục 16 vào `AGENTS.md` (và Mục 17 vào Rule toàn cục):
+  + **Bộ test dùng 1 lần**: Toàn bộ script test tạo tạm, script chẩn đoán nhanh (diagnostic), kịch bản kiểm thử phục vụ debug một lần sau khi chạy xong xác minh kết quả BẮT BUỘC phải xóa ngay, không để tồn đọng trong repository.
+  + **Bộ test dùng nhiều lần**: Chỉ lưu lại các bài kiểm thử hồi quy (regression tests) chính thức nằm trong quy trình CI/CD hoặc được tích hợp vào `tests/run_all_tests.js` / lệnh `npm test`.
+  + **Cấm lưu script tạm vào mã nguồn chính**: Tuyệt đối không lưu các script patch, script migration tạm hay script update chuỗi vào thư mục `server/`, `tests/` hoặc thư mục gốc.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Kiểm tra cú pháp: `npm run lint` đạt 100% hợp lệ.
+- Chạy toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (19.62s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android`.
+- Tự động commit và push lên GitHub (`origin/main`).
+
+---
+
 ## CẬP NHẬT TIẾN ĐỘ: TRIỂN KHAI AUTONOMOUS QA BROWSER AGENT (PLAYWRIGHT + GEMINI FLASH LITE)
 
 ### 1. Kiến Trúc Tác Nhân Kiểm Thử Tự Hành ([tests/ai_qa_agent.py](file:///c:/Users/Lenovo/Downloads/Linh/tests/ai_qa_agent.py))

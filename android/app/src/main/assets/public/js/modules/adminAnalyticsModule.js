@@ -158,7 +158,7 @@
                 <span>Nạp Tiền: <strong class="text-stone-900 dark:text-white font-mono font-bold">${(summary.totalDeposits || 0).toLocaleString('vi-VN')} đ</strong></span>
               </div>
               <div class="flex items-center gap-1.5">
-                <span class="w-3 h-1 bg-emerald-600 rounded-full inline-block"></span>
+                <span class="w-3 h-1 bg-orange-700 rounded-full inline-block"></span>
                 <span>Giải Ngân: <strong class="text-stone-900 dark:text-white font-mono font-bold">${(summary.totalPayouts || 0).toLocaleString('vi-VN')} đ</strong></span>
               </div>
               <div class="flex items-center gap-1.5">
@@ -177,8 +177,8 @@
                   <stop offset="100%" stop-color="#EA580C" stop-opacity="0.01" />
                 </linearGradient>
                 <linearGradient id="trendPayoutGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#059669" stop-opacity="0.22" />
-                  <stop offset="100%" stop-color="#059669" stop-opacity="0.01" />
+                  <stop offset="0%" stop-color="#C2410C" stop-opacity="0.22" />
+                  <stop offset="100%" stop-color="#C2410C" stop-opacity="0.01" />
                 </linearGradient>
               </defs>
 
@@ -195,11 +195,11 @@
               <path d="${depAreaD}" fill="url(#trendDepositGrad)" />
               <path d="${payAreaD}" fill="url(#trendPayoutGrad)" />
 
-              <!-- Đường chỉ số Nạp tiền (Cam) -->
+              <!-- Đường chỉ số Nạp tiền (Cam chính) -->
               <path d="${depLineD}" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
 
-              <!-- Đường chỉ số Rút tiền (Xanh lá) -->
-              <path d="${payLineD}" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 2" />
+              <!-- Đường chỉ số Rút tiền (Cam đậm nét đứt) -->
+              <path d="${payLineD}" fill="none" stroke="#C2410C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 2" />
 
               <!-- Điểm nút tương tác (Dots) -->
               ${depPoints.map(p => `
@@ -209,7 +209,7 @@
               `).join('')}
 
               ${payPoints.map(p => `
-                <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#FFFFFF" stroke="#059669" stroke-width="2" class="cursor-pointer hover:r-4.5 transition-all">
+                <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#FFFFFF" stroke="#C2410C" stroke-width="2" class="cursor-pointer hover:r-4.5 transition-all">
                   <title>Ngày ${p.date}: Rút ${p.val.toLocaleString('vi-VN')} đ</title>
                 </circle>
               `).join('')}
