@@ -2950,4 +2950,12 @@ c:\Users\Lenovo\Downloads\Linh\
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` thành công 100%.
 - Kiểm tra `git status`: Workspace sạch sẽ, không có tệp rác hay tệp tạm tồn đọng.
 
+## Thông Tin Liên Hệ Thực Tế (Sản Phẩm Demo — Chưa Kinh Doanh)
+- **Trạng thái pháp nhân**: Sản phẩm demo, chưa kinh doanh, KHÔNG có công ty/văn phòng đại diện. Footer không được đưa vào bất kỳ thông tin pháp nhân, mã số thuế, trụ sở giả định hay kênh truyền thông (Fanpage/Zalo/Telegram) nào cho đến khi thực tế có.
+- **Địa chỉ chính (Hà Nội)**: KTX B3, Đại học Bách Khoa Hà Nội — hiển thị dạng link mở Google Maps (`https://share.google/dPIe7cYsGVPNhs4vC`).
+- **Hỗ trợ đáp viên & Hợp tác doanh nghiệp**: `linharmykxbnvn@gmail.com`.
+- **Email phản ánh**: `ngthtrung.son@gmail.com`.
+- **Đã loại bỏ khỏi Footer** (cả bản Web `public/index.html` và bản Android `android/app/src/main/assets/public/index.html`): khối Công ty Cổ phần + MSDN 0110824688, Trụ sở Cầu Giấy, Văn phòng đại diện TP.HCM, giờ làm việc, tổng đài 1900 6868, hotline 0988.123.456, dòng Hóa đơn điện tử VAT, badge "Xuất hóa đơn VAT đầy đủ", 3 kênh Fanpage/Zalo/Telegram, đuôi "Ecosystem JSC" ở dòng bản quyền.
+- **Lưu ý**: Phần "Cấp Độ 2: Pháp Nhân & Hóa Đơn VAT" trong `public/app.js` (xác thực doanh nghiệp) là tính năng phân cấp tài khoản, KHÔNG thuộc phạm vi thông tin liên hệ — giữ nguyên.
+
 
