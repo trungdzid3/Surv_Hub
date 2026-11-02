@@ -168,6 +168,23 @@ c:\Users\Lenovo\Downloads\Linh\
   - `node -c server/controllers/surveyController.js`, `node -c server/routes/api.js`, `node -c public/app.js` đều đạt PASS 100%.
   - Bộ kiểm thử tự hành `npm test` đạt 15/15 Suites PASS (100.0%).
   - Đồng bộ Capacitor Android (`npm run sync:android`) thành công.
+
+### Phân Hệ Quản Lý Hồ Sơ Tài Khoản 5 Tab Đầy Đủ & 100% Real Data (v4.9.0)
+- **Phục hồi nguyên bản trọn vẹn 5 Tab chuẩn phong cách Stitch**:
+  - Tab 1: 1. Thông tin nhân khẩu học: Lưu trữ và đối soát 8 trường thông tin cốt lõi (Giới tính, Ngày sinh, Tỉnh thành 34 tỉnh mới, Nghề nghiệp, Trường đại học 293 trường, Ngành học, Năm tốt nghiệp, Mức thu nhập), cơ chế khóa 90 ngày sau khi lưu.
+  - Tab 2: 2. Đánh giá & Mức độ uy tín: Circular Gauge SVG trực quan hiển thị trust_score thực tế từ CSDL, 2 thanh tiến độ Attention Check và chuẩn định mức thời gian, 3 huy hiệu học thuật (Đáp Viên Vàng, Định Danh Edu, Chuẩn Cronbach), và danh sách nhận xét thật từ các đề tài khảo sát user đã tham gia nghiệm thu thành công.
+  - Tab 3: 3. Khảo sát đã tạo (Form đã up): Đồng bộ 100% Real Data từ /api/v1/surveys/creator, hiển thị huy hiệu trạng thái, tiến độ phản hồi thực tế (x / y mẫu), nút Xem báo cáo, Chỉnh sửa và Nút Xóa Khảo Sát Thật (DELETE /api/v1/surveys/:id) có modal xác nhận an toàn.
+  - Tab 4: 4. Khảo sát đã tham gia: Bảng lịch sử làm bài khảo sát 100% Real Data từ /api/v1/surveys/history, hiển thị tên đề tài, đơn vị nghiên cứu, thời gian làm bài, xu thưởng và trạng thái duyệt đã nghiệm thu.
+  - Tab 5: 5. Bài viết trên diễn đàn: Danh sách bài viết 100% Real Data do chính user đăng từ /api/v1/forum/posts, số lượt tim, bình luận và Nút Xóa Bài Viết Thật (DELETE /api/v1/forum/posts/:id) có modal xác nhận.
+- **Khắc phục triệt để lỗi upload ảnh đại diện (Avatar 500 Internal Server Error)**:
+  - Tự động nén ảnh qua HTMLCanvasElement về tối đa 500x500px, JPEG chất lượng 0.82 (chỉ ~60-120KB).
+  - Tự động mã hóa JSON.stringify() trong client api() và cấu hình express.json({ limit: '50mb' }) ở backend.
+  - Giữ nguyên hiển thị Avatar chữ in hoa nền gradient màu cam độc bản mặc định khi người dùng chưa tải ảnh lên.
+- **Chuẩn hóa phân quyền tuyệt đối trên Header Hồ Sơ**:
+  - Người Điền Phổ Thông (PERSONAL): Huy hiệu Người Điền Phổ Thông, nút Xác Thực SV (.edu.vn). Tuyệt đối ẩn nút Hồ Sơ Doanh Nghiệp và huy hiệu Gói SV Đã Xác Thực.
+  - Sinh Viên (STUDENT): Huy hiệu Gói Sinh Viên (.EDU.VN), nút Gói SV Đã Xác Thực. Tuyệt đối ẩn nút Hồ Sơ Doanh Nghiệp.
+  - Doanh Nghiệp (ENTERPRISE): Huy hiệu Gói Doanh Nghiệp, nút Hồ Sơ Doanh Nghiệp & MST. Tuyệt đối ẩn nút Gói SV Đã Xác Thực.
+
   - Nâng cache-buster lên `v=4.7.8_realtime_stats` trong `public/index.html`.
 
 ### I. Khắc Phục Triệt Để Rẽ Nhánh Phân Đoạn & Bảo Toàn Ràng Buộc logic_json (v4.8.0)
