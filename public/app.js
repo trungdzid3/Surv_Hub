@@ -1149,11 +1149,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       streakBtn.classList.add('hidden');
       streakBtn.classList.remove('flex');
     }
-    const karmaBtn = document.getElementById('header-edu-karma-btn');
-    if (karmaBtn) {
-      karmaBtn.classList.add('hidden');
-      karmaBtn.classList.remove('flex');
-    }
+
     this.state.streakInfo = null;
 
     this.renderNavigation();
@@ -1168,9 +1164,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
   isEnterpriseUser() {
     const user = this.state.currentUser;
     if (!user) return false;
-    return user.role === 'CREATOR' ||
-      (user.role === 'ADMIN' && (this.state.adminViewMode || 'ADMIN') === 'CREATOR') ||
-      user.account_tier === 'ENTERPRISE';
+    return user.account_tier === 'ENTERPRISE' ||
+      (user.enterprise_verify_level && user.enterprise_verify_level >= 1) ||
+      (user.role === 'ADMIN' && (this.state.adminViewMode || 'ADMIN') === 'CREATOR');
   },
 
   applyUserInterface(silent = false) {
@@ -1226,12 +1222,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }
     }
 
-    // Karma không hiển thị trên thanh menu theo yêu cầu người dùng
-    const karmaBtn = document.getElementById('header-edu-karma-btn');
-    if (karmaBtn) {
-      karmaBtn.classList.add('hidden');
-      karmaBtn.style.display = 'none';
-    }
+
     if (!isEnterprise) {
       this.fetchStreakInfo();
     } else {
@@ -1406,11 +1397,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                 <span class="font-mono text-stone-500 dark:text-stone-400 text-[10px]">
                   ${Number(user.credit_balance).toLocaleString('vi-VN')} Credit
                 </span>
-              ` : (user.is_student_verified === 1 ? `
-                <span class="font-mono text-orange-600 text-[10px] font-bold">
-                  ${Number(user.student_karma || 0)} Karma
-                </span>
-              ` : '')}
+              ` : ''}
             </div>
           </div>
         `}
@@ -1650,31 +1637,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             </span>
           </div>
 
-          ${user && user.is_student_verified === 1 ? `
-          <!-- Tùy chọn Trao Đổi Sinh Viên Edu Karma (Chỉ Edu Hiển Thị) -->
-          <div class="p-3 rounded-xl border ${this.state.isStudentExchange ? 'border-orange-600 bg-orange-50/50 dark:bg-stone-800/80 ring-1 ring-orange-500/30' : 'border-stone-200 dark:border-stone-800'} space-y-2">
-            <label class="flex items-start justify-between gap-3 cursor-pointer select-none" onclick="VibeApp.toggleStudentExchange(!VibeApp.state.isStudentExchange)">
-              <div class="space-y-0.5">
-                <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <i data-lucide="graduation-cap" class="w-4 h-4 text-orange-600"></i>
-                  <span>Trao Đổi Sinh Viên (Edu Karma - 0đ phí VNĐ)</span>
-                </div>
-                <div class="text-[10.5px] text-stone-500 dark:text-stone-400 leading-tight">
-                  Ký quỹ bằng Điểm Karma/Lượt Free của bạn. Không phát sinh chi phí tiền mặt VNĐ. Khảo sát chỉ hiển thị cho sinh viên.
-                </div>
-              </div>
-              <button id="student-exchange-switch" type="button" role="switch" aria-checked="${this.state.isStudentExchange ? 'true' : 'false'}" class="vibe-switch vibe-switch-sm ${this.state.isStudentExchange ? 'active' : ''} inline-flex items-center shrink-0 pointer-events-none">
-                <span class="vibe-switch-knob"></span>
-              </button>
-            </label>
-            ${this.state.isStudentExchange ? `
-              <div class="text-[11px] text-orange-600 dark:text-orange-400 font-medium pt-1.5 border-t border-orange-200/60 dark:border-stone-700 flex items-center justify-between">
-                <span>Karma hiện có: <strong>${user.student_karma || 0} lượt</strong></span>
-                <span>Phí xuất bản: <strong>0đ (Khấu trừ 1 Karma)</strong></span>
-              </div>
-            ` : ''}
-          </div>
-          ` : ''}
+
 
           <!-- Nhập số lượng mẫu -->
           <div class="space-y-1.5">
@@ -1869,65 +1832,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           </div>
         </div>
 
-        <!-- CARD 3: VOUCHER QUÀ TẶNG KÈM THEO -->
-        ${!this.isEnterpriseUser() ? `
-          <!-- CARD 3: KHÓA ĐẶC QUYỀN DOANH NGHIỆP -->
-          <div class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
-              <div class="flex items-center gap-1.5">
-                <i data-lucide="gift" class="w-4 h-4 text-orange-600 dark:text-orange-400"></i>
-                <span class="text-xs font-bold uppercase tracking-wider text-stone-900 dark:text-white flex items-center gap-2">3. Quà Tặng & Voucher Kèm Theo</span>
-              </div>
-              <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/80">
-                <i data-lucide="lock" class="w-3 h-3"></i>
-                Đặc Quyền Doanh Nghiệp
-              </span>
-            </div>
-
-            <!-- Bento Box Giới thiệu Tính Năng Khóa -->
-            <div class="p-4 rounded-xl bg-stone-50/70 dark:bg-[#161619] border border-stone-200/80 dark:border-stone-800 space-y-3.5">
-              <div class="flex items-start justify-between gap-3">
-                <div class="space-y-1">
-                  <div class="text-xs font-bold text-stone-900 dark:text-white flex items-center gap-2 flex-wrap">
-                    <span>Đính kèm E-Voucher quà tặng tài trợ</span>
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60">Gấp 2X Gom Mẫu</span>
-                  </div>
-                  <p class="text-[11px] text-stone-600 dark:text-stone-400 leading-relaxed">
-                    Tính năng đính kèm E-Voucher quà tặng (Shopee, Grab, Highlands hoặc voucher riêng) giúp tăng tốc độ thu thập mẫu gấp 2 lần, độc quyền dành cho Tài khoản Doanh Nghiệp (Enterprise Research).
-                  </p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-stone-200/60 dark:border-stone-800 text-[10.5px] text-stone-600 dark:text-stone-400">
-                <div class="flex items-center gap-1.5">
-                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>
-                  <span>Tự cấp mã riêng của thương hiệu (0đ phí)</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>
-                  <span>Mua voucher từ kho sàn bằng Credit</span>
-                </div>
-              </div>
-
-              <!-- CTA Buttons -->
-              <div class="pt-1">
-                ${user && user.role === 'ADMIN' ? `
-                  <button type="button" onclick="VibeApp.switchAdminViewMode('CREATOR')" 
-                          class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 active:bg-orange-700 shadow-xs transition-all">
-                    <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
-                    <span>Chuyển sang Góc Nhìn Doanh Nghiệp</span>
-                  </button>
-                ` : `
-                  <button type="button" onclick="VibeApp.navigate('profile')" 
-                          class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-orange-600 hover:bg-orange-500 active:bg-orange-700 shadow-xs transition-all">
-                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                    <span>Nâng Cấp Gói Doanh Nghiệp</span>
-                  </button>
-                `}
-              </div>
-            </div>
-          </div>
-        ` : `
+        <!-- CARD 3: VOUCHER QUÀ TẶNG KÈM THEO (CHỈ HIỂN THỊ VỚI DOANH NGHIỆP) -->
+        ${!this.isEnterpriseUser() ? '' : `
           <!-- CARD 3: VOUCHER QUÀ TẶNG KÈM THEO (DÀNH CHO DOANH NGHIỆP) -->
           <div class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl p-5 shadow-sm space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
@@ -5460,11 +5366,6 @@ if (totalCount === 0) {
                 <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-orange-600 text-white font-bold text-[10px]">
                   VIP
                 </span>
-              ` : s.is_student_exchange === 1 ? `
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold text-[10px] border border-orange-200/60 dark:border-orange-800/60">
-                  <i data-lucide="graduation-cap" class="w-3 h-3"></i>
-                  <span>Trao Đổi Edu</span>
-                </span>
               ` : isNearFull ? `
                 <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-semibold text-[10px]">
                   Còn ${remainingSlots}
@@ -5508,14 +5409,7 @@ if (totalCount === 0) {
 
           <div class="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
             <div>
-              ${s.is_student_exchange === 1 ? `
-                <div class="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-400 font-mono leading-none">
-                  +1 Điểm Karma
-                </div>
-                <div class="text-[10px] text-stone-500 dark:text-stone-400 font-mono mt-0.5">
-                  Lượt tạo form Edu
-                </div>
-              ` : s.reward_mode === 'VOUCHER_ONLY' ? `
+              ${s.reward_mode === 'VOUCHER_ONLY' ? `
                 <div class="text-xs font-bold text-orange-600 dark:text-orange-400">Voucher 0đ</div>
               ` : `
                 <div class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white font-mono leading-none">
@@ -5582,12 +5476,7 @@ if (totalCount === 0) {
                 <span>VIP</span>
               </span>
             ` : ''}
-            ${s.is_student_exchange === 1 ? `
-              <span class="px-1.5 py-0.5 rounded bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 font-bold text-[10px] border border-orange-200/60 dark:border-orange-800/60 flex items-center gap-1">
-                <i data-lucide="graduation-cap" class="w-3 h-3"></i>
-                <span>Trao Đổi Edu</span>
-              </span>
-            ` : ''}
+
             ${isNearFull ? `
               <span class="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-medium text-[10px]">
                 Còn ${remainingSlots} suất
@@ -5613,21 +5502,12 @@ if (totalCount === 0) {
 
         <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
           <div class="text-right">
-            ${s.is_student_exchange === 1 ? `
-              <div class="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-400 font-mono">
-                +1 Điểm Karma
-              </div>
-              <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                Lượt tạo form Edu
-              </div>
-            ` : `
-              <div class="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-500 font-mono">
-                +${(s.reward_points_per_response || 0).toLocaleString()} Điểm
-              </div>
-              <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                ≈ ${(s.reward_points_per_response || 0).toLocaleString()}đ
-              </div>
-            `}
+            <div class="text-xs sm:text-sm font-bold text-orange-600 dark:text-orange-500 font-mono">
+              +${(s.reward_points_per_response || 0).toLocaleString()} Điểm
+            </div>
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+              ≈ ${(s.reward_points_per_response || 0).toLocaleString()}đ
+            </div>
           </div>
 
           ${isCompleted ? `
@@ -5669,11 +5549,6 @@ if (totalCount === 0) {
       });
     }
 
-    const isEduUser = this.state.currentUser && this.state.currentUser.is_student_verified === 1;
-    if (!isEduUser) {
-      list = list.filter(s => !s.is_student_exchange || s.is_student_exchange === 0);
-    }
-
     if (cat === 'HIGH_REWARD') {
       list = list.filter(s => (s.reward_points_per_response || 0) >= 250);
     } else if (cat === 'FAST') {
@@ -5682,8 +5557,6 @@ if (totalCount === 0) {
       list = list.filter(s => (s.question_count || 1) <= 10); // Dưới 10 câu
     } else if (cat === 'VOUCHER') {
       list = list.filter(s => !!(s.sponsor_brand_name || s.sponsor_voucher_title || s.reward_mode === 'VOUCHER_ONLY'));
-    } else if (cat === 'STUDENT_EXCHANGE') {
-      list = list.filter(s => s.is_student_exchange === 1 || s.is_student_exchange === true);
     }
 
     if (len === 'UNDER_10' || len === 'SHORT') {
@@ -8752,12 +8625,12 @@ if (totalCount === 0) {
             <span class="text-stone-600 dark:text-stone-300 font-semibold">Ví & Rút Tiền</span>
           </div>
         </div>
-        <!-- HÀNG THẺ BENTO SỐ DƯ: SINH VIÊN 3 CỘT NGANG HÀNG NHAU (ẨN SVG), NGƯỜI DÙNG THƯỜNG 2 CỘT -->
-        <div class="grid grid-cols-1 ${isStudent ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5">
+        <!-- HÀNG THẺ BENTO SỐ DƯ: 2 CỘT NGANG HÀNG NHAU (POINT & CREDIT) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           
           <!-- THẺ 1: POINT CỦA BẠN (SUNSET ORANGE GRADIENT CARD) -->
           <div class="rounded-3xl p-6 sm:p-7 text-white flex flex-col justify-between shadow-sm relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 min-h-[260px]">
-            ${!isStudent ? '<img src="/assets/3d/wallet_3d_master.svg" class="absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-75 dark:opacity-50 drop-shadow-sm" alt="3D Orange Wallet" />' : ''}
+            <img src="/assets/3d/wallet_3d_master.svg" class="absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-75 dark:opacity-50 drop-shadow-sm" alt="3D Orange Wallet" />
             <!-- Nội dung Thẻ Point -->
             <div class="relative z-10">
               <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-xs text-white border border-white/25 shadow-2xs">
@@ -8805,7 +8678,7 @@ if (totalCount === 0) {
 
           <!-- THẺ 2: CREDIT CỦA BẠN (WHITE MODERN CARD) -->
           <div class="bg-white dark:bg-[#18181B] rounded-3xl p-6 sm:p-7 border border-stone-200/80 dark:border-stone-800 shadow-sm flex flex-col justify-between relative overflow-hidden min-h-[260px]">
-            ${!isStudent ? '<img src="/assets/3d/coins_coupon_3d_master.svg" class="absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-90 dark:opacity-75 drop-shadow-sm" alt="3D Coins and Coupon" />' : ''}
+            <img src="/assets/3d/coins_coupon_3d_master.svg" class="absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-90 dark:opacity-75 drop-shadow-sm" alt="3D Coins and Coupon" />
             <!-- Nội dung Thẻ Credit -->
             <div class="relative z-10">
               <div class="flex items-center gap-2">
@@ -8837,43 +8710,7 @@ if (totalCount === 0) {
             </div>
           </div>
 
-          ${isStudent ? `
-          <!-- THẺ 3: EDU KARMA (DÀNH RIÊNG CHO SINH VIÊN, NGANG HÀNG POINT & CREDIT) -->
-          <div class="bg-white dark:bg-[#18181B] rounded-3xl p-6 sm:p-7 border border-stone-200/80 dark:border-stone-800 shadow-sm flex flex-col justify-between relative overflow-hidden min-h-[260px]">
-            <!-- Nội dung Thẻ Edu Karma -->
-            <div class="relative z-10">
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <div class="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center shrink-0">
-                    <i data-lucide="graduation-cap" class="w-4 h-4 stroke-[2.2]"></i>
-                  </div>
-                  <span class="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider">EDU KARMA</span>
-                </div>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white shrink-0">Chỉ Sinh Viên</span>
-              </div>
-
-              <div class="mt-4">
-                <div class="flex items-baseline gap-2">
-                  <span class="text-3xl sm:text-4xl font-extrabold font-mono text-orange-600 dark:text-orange-400 tracking-tight">${Number(this.state.currentUser?.student_karma || 0)}</span>
-                  <span class="text-sm font-bold text-stone-500 dark:text-stone-400">Karma</span>
-                </div>
-                <div class="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500 mt-2 font-medium">
-                  ${this.getLucideSvg("info", "w-3.5 h-3.5 text-stone-400 shrink-0")}
-                  <span class="truncate">Làm khảo sát +1 Karma. Dùng tạo form 0đ.</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Nút CTA Sàn Trao Đổi Edu -->
-            <div class="relative z-10 pt-4">
-              <button type="button" onclick="VibeApp.navigate('surveys'); VibeApp.setCategoryFilter('STUDENT_EXCHANGE')" 
-                      class="w-full py-3 px-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs flex items-center justify-center gap-2 mt-4 transition-all active:scale-98 cursor-pointer shadow-xs">
-                <i data-lucide="graduation-cap" class="w-4 h-4"></i>
-                <span>Sàn Trao Đổi Edu</span>
-              </button>
-            </div>
-          </div>
-          ` : ''}
+          
 
         </div>
 
@@ -12137,51 +11974,7 @@ if (totalCount === 0) {
 
     const targetN = parseInt(this.state.targetResponses, 10) || 100;
 
-    // RÀNG BUỘC CỐT LÕI: Trao Đổi Sinh Viên Edu Karma (Chỉ Edu Hiển Thị)
-    const isStudentExchange = this.state.isStudentExchange === true && user?.is_student_verified === 1;
-    if (isStudentExchange) {
-      return {
-        tier: 'STUDENT',
-        qCount,
-        questionCount: qCount,
-        lengthCategory,
-        lengthBadge,
-        floorPrice: 0,
-        slaPrices: { FLOOR: 0, RECOMMENDED: 0, RUSH: 0 },
-        effectivePrice: 0,
-        boostShareText: 'Trao đổi Edu',
-        respondentReward: 0,
-        platformFee: 0,
-        hasTargeting: false,
-        targetingFeePerSample: 0,
-        targetingFeeText: 'Miễn phí (Edu)',
-        targetingFeeVnd: 0,
-        pinFeeVnd: 0,
-        hasVoucher: false,
-        voucherMode: 'CUSTOM',
-        voucherCostCredit: 0,
-        voucherSummaryText: '',
-        freeDeductionSamples: 0,
-        freeDeductionVnd: 0,
-        finalEscrowCredit: 0,
-        isZeroCost: true,
-        isStudentExchange: true,
-        targetN,
-        targetFiltersCount: 0,
-        targetingSummaryText: 'Dành riêng cho sinh viên (.edu)',
-        incentiveFloor: { delta: 0, pct: 0, levelText: 'Trao đổi Edu (+1 Karma)', badgeClass: 'text-orange-600', queuePriority: 'Sàn sinh viên' },
-        incentiveRecommended: { delta: 0, pct: 0, levelText: 'Trao đổi Edu (+1 Karma)', badgeClass: 'text-orange-600', queuePriority: 'Sàn sinh viên' },
-        incentiveRush: { delta: 0, pct: 0, levelText: 'Trao đổi Edu (+1 Karma)', badgeClass: 'text-orange-600', queuePriority: 'Sàn sinh viên' },
-        incentiveCurrent: { delta: 0, pct: 0, levelText: 'Trao đổi Edu (+1 Karma)', badgeClass: 'text-orange-600', queuePriority: 'Sàn sinh viên' },
-        isDataDriven: false,
-        completedSurveysCount: 0,
-        thresholdRequired: 30,
-        actualEtaFloor: '~1 – 2 ngày',
-        actualEtaRecommended: '~1 – 2 ngày',
-        actualEtaRush: '~1 – 2 ngày',
-        actualEtaCurrent: '~1 – 2 ngày'
-      };
-    }
+
 
     const tier = this.state.creatorTier || 'PERSONAL';
 
@@ -12390,24 +12183,7 @@ if (totalCount === 0) {
   },
 
   toggleStudentExchange(enabled) {
-    this.haptic('light');
-    this.state.isStudentExchange = !!enabled;
-    if (window.currentStudioSurvey) {
-      window.currentStudioSurvey.isStudentExchange = !!enabled;
-    }
-    if (this.state.isStudentExchange) {
-      this.state.creatorTier = 'STUDENT';
-    }
-    const switchEl = document.getElementById('student-exchange-switch');
-    if (switchEl) {
-      switchEl.classList.toggle('active', !!enabled);
-      switchEl.setAttribute('aria-checked', enabled ? 'true' : 'false');
-    }
-    setTimeout(() => {
-      if (!this.refreshStudioSidebarView()) {
-        this.renderCreateSurveyView(document.getElementById('app-root'));
-      }
-    }, 180);
+    // Karma exchange da duoc go bo
   },
 
   setStudioSlaTier(slaKey) {
@@ -15097,7 +14873,7 @@ if (totalCount === 0) {
           voucher_data: voucherPayload,
           reward_points_per_response: calc.respondentReward,
           is_pinned: this.state.isPinnedSurvey === true,
-          is_student_exchange: (this.state.isStudentExchange && user?.is_student_verified === 1) ? 1 : 0,
+          is_student_exchange: 0,
           duration_days: parseInt(this.state.surveyDurationDays, 10) || 14,
           allow_edit_response: this.state.allowEditResponse ? 1 : 0,
           allow_view_response: this.state.allowViewResponse !== false ? 1 : 0,
@@ -15134,24 +14910,20 @@ if (totalCount === 0) {
 
         // Xuất bản và Khóa Ký Quỹ
         try {
-          const isExchange = this.state.isStudentExchange && user?.is_student_verified === 1;
           const pubRes = await this.api(`/surveys/${surveyId}/publish`, {
             method: 'POST',
             body: JSON.stringify({ 
-              use_free_trial: calc.freeDeductionSamples > 0 || isExchange,
-              is_student_exchange: isExchange ? 1 : 0
+              use_free_trial: calc.freeDeductionSamples > 0,
+              is_student_exchange: 0
             })
           });
 
           this.haptic('success');
-          this.showToast(isExchange ? 'Kích hoạt thành công khảo sát Trao Đổi Sinh Viên (Edu Karma)!' : (pubRes.isFreeTrial ? 'Kích hoạt thành công khảo sát Miễn Phí!' : 'Xuất bản và ký quỹ khảo sát thành công!'), 'success');
+          this.showToast(pubRes.isFreeTrial ? 'Kích hoạt thành công khảo sát Miễn Phí!' : 'Xuất bản và ký quỹ khảo sát thành công!', 'success');
           if (this.state.currentUser) {
             if (pubRes.newCreditBalance !== undefined) this.state.currentUser.credit_balance = pubRes.newCreditBalance;
             if (pubRes.freeTrialSurveysAvailable !== undefined) this.state.currentUser.free_trial_surveys_available = pubRes.freeTrialSurveysAvailable;
             if (pubRes.freeQuotaRemaining !== undefined) this.state.currentUser.free_quota_remaining = pubRes.freeQuotaRemaining;
-            if (isExchange && this.state.currentUser.student_karma !== undefined) {
-              this.state.currentUser.student_karma = Math.max(0, this.state.currentUser.student_karma - 1);
-            }
           }
           this.resetStudioToNew(false);
           this.navigate('creator-surveys');
@@ -19101,7 +18873,7 @@ if (totalCount === 0) {
                   <h1 class="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-white">Diễn Đàn</h1>
                   <span id="forum-current-hub-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${filter.hub === 'STUDENT' ? 'bg-orange-600 text-white shadow-xs' : 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60'} uppercase">${filter.hub === 'STUDENT' ? 'Diễn Đàn Sinh Viên' : 'Góc Thảo Luận & Đề Tài'}</span>
                 </div>
-                <p id="forum-hub-description" class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 leading-relaxed max-w-2xl">${filter.hub === 'STUDENT' ? 'Không gian thảo luận học thuật, trao đổi đáp viên chéo (Edu Karma) và hỗ trợ hoàn thành khóa luận tốt nghiệp.' : 'Không gian chia sẻ bối cảnh đề tài, trao đổi đáp viên tương hỗ và phản biện học thuật đa trường viện.'}</p>
+                <p id="forum-hub-description" class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 leading-relaxed max-w-2xl">${filter.hub === 'STUDENT' ? 'Không gian thảo luận học thuật, chia sẻ khảo sát học thuật và hỗ trợ hoàn thành khóa luận tốt nghiệp.' : 'Không gian chia sẻ bối cảnh đề tài, trao đổi đáp viên tương hỗ và phản biện học thuật đa trường viện.'}</p>
               </div>
             </div>
 
@@ -19541,7 +19313,7 @@ if (totalCount === 0) {
     const hubDesc = document.getElementById('forum-hub-description');
     if (hubDesc) {
       if (hubId === 'STUDENT') {
-        hubDesc.textContent = 'Không gian thảo luận học thuật, trao đổi đáp viên chéo (Edu Karma) và hỗ trợ hoàn thành khóa luận tốt nghiệp.';
+        hubDesc.textContent = 'Không gian thảo luận học thuật, chia sẻ khảo sát học thuật và hỗ trợ hoàn thành khóa luận tốt nghiệp.';
       } else {
         hubDesc.textContent = 'Không gian chia sẻ bối cảnh đề tài, trao đổi đáp viên tương hỗ và phản biện học thuật đa trường viện.';
       }
@@ -19731,7 +19503,7 @@ if (totalCount === 0) {
               </div>
 
               <div class="font-mono text-xs font-bold text-orange-600 dark:text-orange-400">
-                ${isEduExchange ? '+1 Điểm Karma' : `+${(s.reward_points_per_response || 0).toLocaleString('vi-VN')} Point`}
+                +${(s.reward_points_per_response || 0).toLocaleString('vi-VN')} Point
               </div>
             </div>
 
@@ -19890,7 +19662,7 @@ if (totalCount === 0) {
                     <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-orange-600"></i>
                     <span>Góc Sinh Viên</span>
                   </div>
-                  <div class="text-[10px] text-stone-400">${isEduUser ? 'Edu Karma / Luận văn' : 'Cần email trường .edu'}</div>
+                  <div class="text-[10px] text-stone-400">${isEduUser ? 'Học thuật / Luận văn' : 'Cần email trường .edu'}</div>
                 </div>
               </label>
             </div>
