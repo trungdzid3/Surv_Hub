@@ -19796,15 +19796,10 @@ if (totalCount === 0) {
                       title="Danh sách dấu chấm">
                 <i data-lucide="list" class="w-4 h-4 stroke-[2.2]"></i>
               </button>
-              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('insertOrderedList')" 
+              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('cycleOrderedList')" 
                       class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
-                      title="Danh sách số">
+                      title="Đánh số thứ tự (Click 1: số 1,2,3... / Click 2: chữ cái a,b,c... / Click 3: tắt)">
                 <i data-lucide="list-ordered" class="w-4 h-4 stroke-[2.2]"></i>
-              </button>
-              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('abcList')" 
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
-                      title="Danh sách chữ cái (a, b, c...)">
-                <i data-lucide="type" class="w-4 h-4 stroke-[2.2]"></i>
               </button>
               <div class="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5"></div>
               <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('indent')" 
@@ -19953,17 +19948,46 @@ if (totalCount === 0) {
     if (!editor) return;
     editor.focus();
 
-    if (cmd === 'abcList') {
-      document.execCommand('insertOrderedList', false, null);
+    if (cmd === 'cycleOrderedList') {
       const sel = window.getSelection();
+      let parentOl = null;
       if (sel && sel.anchorNode) {
         let node = sel.anchorNode;
-        while (node && node !== editor && node.nodeName !== 'OL') {
+        while (node && node !== editor) {
+          if (node.nodeName === 'OL') {
+            parentOl = node;
+            break;
+          }
           node = node.parentNode;
         }
-        if (node && node.nodeName === 'OL') {
-          node.setAttribute('type', 'a');
-          node.classList.add('list-alpha');
+      }
+
+      if (!parentOl) {
+        // Click lần 1: Chưa có danh sách đánh số -> Đánh số theo thứ tự 1, 2, 3...
+        document.execCommand('insertOrderedList', false, null);
+        const newSel = window.getSelection();
+        if (newSel && newSel.anchorNode) {
+          let node = newSel.anchorNode;
+          while (node && node !== editor) {
+            if (node.nodeName === 'OL') {
+              node.setAttribute('type', '1');
+              node.classList.remove('list-alpha');
+              break;
+            }
+            node = node.parentNode;
+          }
+        }
+      } else {
+        const currentType = parentOl.getAttribute('type');
+        const isAlpha = currentType === 'a' || parentOl.classList.contains('list-alpha');
+
+        if (!isAlpha) {
+          // Click lần 2: Đang là số 1, 2, 3 -> Chuyển sang chữ cái abc (a, b, c...)
+          parentOl.setAttribute('type', 'a');
+          parentOl.classList.add('list-alpha');
+        } else {
+          // Click lần 3: Đang là chữ cái abc -> Tắt đánh số (quay về đoạn văn thường)
+          document.execCommand('insertOrderedList', false, null);
         }
       }
     } else {
