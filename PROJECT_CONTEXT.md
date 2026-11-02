@@ -50,8 +50,12 @@ c:\Users\Lenovo\Downloads\Linh\
   - Sinh Viên (.edu.vn): Giá sàn 400đ - 600đ/mẫu, miễn phí 30 lượt/tháng.
   - Cá Nhân: Giá sàn 800đ - 1.200đ/mẫu, hỗ trợ dùng thử 25 lượt bài đầu.
   - Doanh Nghiệp (Enterprise B2B): Giá sàn 1.500đ - 2.500đ/mẫu, cấp quyền xuất hóa đơn VAT, bảo hành mẫu 1 đổi 1 trong 7 ngày.
-- **Thời hạn treo khảo sát trên sàn (Tự do 1 - 90 ngày)**: Ô nhập số ngày tự do đặt ngay cạnh nhãn "Thời Hạn Treo Trên Sàn (Tự Do):", gỡ bỏ các chip chọn cứng gây rối, khảo sát dừng khi đủ mẫu hoặc hết thời hạn, số tiền mẫu chưa thu được hoàn lại 100%.
-- **Bảng giá & Tốc độ gom mẫu dự kiến**: 3 nấc tốc độ (Sàn tiết kiệm ~3-5 ngày, Đề xuất ~24-48h, Hỏa tốc ~2-6h) kèm thanh trượt Creator Boost chia 80/20.
+- **Thời hạn treo khảo sát trên sàn (Tự do 1 - 90 ngày)**: Ô nhập số ngày tự do đặt ngay cạnh nhãn "Thời hạn treo sàn:", gỡ bỏ các chip chọn cứng gây rối, khảo sát dừng khi đủ mẫu hoặc hết thời hạn, số tiền mẫu chưa thu được hoàn lại 100%.
+- **Bảng giá & Tốc độ gom mẫu dự kiến (Đồng bộ 2 chiều & Tinh gọn UX v3.3.6)**:
+  + **Đồng bộ 2 chiều SLA Tier & Thanh trượt Tăng Thưởng**: Khi người dùng kéo thanh trượt vượt mức Hỏa Tốc, nấc Hỏa Tốc lập tức được kích hoạt viền cam và radio; kéo xuống mức Đề Xuất hoặc Sàn Tiết Kiệm thì nấc tương ứng tự động active. Ngược lại, khi click vào bất kỳ nấc nào, thanh trượt nhảy đồng bộ về đúng mức giá đó.
+  + **Tinh gọn khu vực Card 2**: Loại bỏ đoạn văn giải thích dài dòng ở chân 3 nấc SLA, chuyển thành nút tròn `?` với popover giải thích súc tích tốc độ ước tính và cam kết hoàn cọc 100%.
+  + **Xóa bỏ các nhãn thừa rườm rà**: Gỡ bỏ chữ `(Doanh Nghiệp Boost)` tại thanh trượt, xóa các tag trong ngoặc vuông `[Đề Xuất]` và `[Thưởng Cao]`.
+  + **Chuẩn hóa Card 4 thành "4. Thanh Toán"**: Rút gọn các dòng tóm tắt thành "Số mẫu:", "Đơn giá:", "Lượt miễn phí:", "Tổng thanh toán:", "Số dư khả dụng:".
 - **Đồng bộ biểu mẫu ngoài**: Nhận diện và trích xuất tự động từ Google Forms (hỗ trợ `forms.gle`, link `/edit`, HTML public scraping) và Microsoft Forms (hỗ trợ cả `forms.office.com`, `forms.cloud.microsoft`, SPA API Runtime ngầm `prefetchFormUrl` với AntiForgeryToken). Bóc tách chuẩn xác 100% câu hỏi trắc nghiệm, hộp kiểm, đoạn văn, rating stars, ma trận Likert. Tích hợp song song 2 giải pháp chính thức khi đồng bộ Google Forms bị giới hạn quyền truy cập (Lỗi 401):
   + **Giải pháp 1 (Email Bot Service Account)**: Thêm email bot hệ thống `vibesurvey-forms-sync@vibesurvey-512517.iam.gserviceaccount.com` làm cộng tác viên (Editor) trên Google Forms. Cung cấp nút sao chép email 1-click mượt mà và hướng dẫn 3 bước thao tác trực quan.
   + **Giải pháp 2 (Google OAuth 2.0 1-Click)**: Ủy quyền 1-click bằng tài khoản Google cá nhân của người dùng với phạm vi an toàn `forms.body.readonly`. Không cần nhập mật khẩu hay Cookie cá nhân, hỗ trợ hủy liên kết bất kỳ lúc nào.
