@@ -1593,8 +1593,7 @@ c:\Users\Lenovo\Downloads\Linh\
 
 ## Tích Hợp Toàn Diện 3 Màn Hình Stitch Vào Nền Tảng VibeSurvey (31/10/2026)
 1. **Mục tiêu & Tôn chỉ**:
-   - Tôn trọng và giữ nguyên 100% nhận diện thương hiệu **VibeSurvey**, logo chính thức (`/logo-light.svg`, `/logo-dark.svg`, `/favicon.svg`, `/logo.svg`), các logic nghiệp vụ kinh tế và tiền tệ (Point, Credit, Karma, VNĐ).
-   - **Logo v2 (03-11-2026)**: Vẽ lại toàn bộ 4 file SVG bằng hình học sạch (chữ S ribbon 2 cung tròn bán kính 92, nét 84 bo tròn, gradient Cam `#FFB43A` -> `#F97316` -> `#EE4423`), thay thế path bezier lỗi gây méo xoáy; favicon.svg bản đậm nét 100. Bộ PNG (favicon.png, icon-192/512, logo.png) giữ nguyên thiết kế gốc.
+   - Tôn trọng và giữ nguyên 100% nhận diện thương hiệu **VibeSurvey**, logo chính thức (`/logo-light.svg`, `/logo-dark.svg`, `/favicon.svg`), các logic nghiệp vụ kinh tế và tiền tệ (Point, Credit, Karma, VNĐ).
    - Áp dụng triệt để bộ quy chuẩn [DESIGN.md](file:///c:/Users/Lenovo/Downloads/Linh/DESIGN.md): Bộ 3 màu chủ đạo Cam `#EA580C`, Trắng `#FFFFFF`, Đen than `#121214` / `#1C1C20`, font Montserrat 100%, bộ biểu tượng Lucide Icons (`data-lucide="..."`), không emoji hay màu sắc dị biệt.
    - Triển khai theo mô hình Subagent-Driven Execution Model (Rule 14) với subagent chuyên biệt `ui_integrator`.
 
