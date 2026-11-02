@@ -15006,10 +15006,19 @@ if (totalCount === 0) {
     const isEnterpriseLevel1 = enterpriseLevel >= 1;
     const isStudentVerified = (user.is_student_verified === 1 || user.account_tier === 'STUDENT') && !isEnterprise;
 
-    // Chuẩn hóa profileTab sang 5 tab chính nếu chưa có
-    if (!this.state.profileTab || !['demographics', 'reputation', 'created-forms', 'filled-forms', 'forum-posts', 'STUDENT', 'ENTERPRISE'].includes(this.state.profileTab)) {
-      this.state.profileTab = 'demographics';
+    // Chuẩn hóa profileTab sang 3 phân hệ chính (Không tràn màn hình, 0% trượt ngang)
+    if (!this.state.profileTab || ['demographics', 'reputation'].includes(this.state.profileTab)) {
+      this.state.profileTab = 'overview';
+    } else if (['created-forms', 'filled-forms'].includes(this.state.profileTab)) {
+      this.state.profileTab = 'surveys';
+    } else if (!['overview', 'surveys', 'forum-posts', 'STUDENT', 'ENTERPRISE'].includes(this.state.profileTab)) {
+      this.state.profileTab = 'overview';
     }
+
+    if (!this.state.surveySubTab) {
+      this.state.surveySubTab = (myCreatedSurveys.length === 0 && myParticipatedSurveys.length > 0) ? 'filled' : 'created';
+    }
+    const surveySubTab = this.state.surveySubTab;
 
     let demographics = {};
     if (user.demographics_json) {
@@ -15177,506 +15186,520 @@ if (totalCount === 0) {
           </div>
         </div>
 
-        <!-- 5 TAB CHỨC NĂNG CHUẨN STITCH ĐẦY ĐỦ NGUYÊN BẢN (SEGMENTED DOCK CAO CẤP, 0% THANH KÉO XÁM) -->
-        <div class="p-1.5 rounded-2xl bg-stone-100/90 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shadow-2xs">
-          <button type="button" onclick="VibeApp.switchProfileTab('demographics')" 
-                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'demographics' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
-            <i data-lucide="user" class="w-4 h-4"></i>
-            <span>1. Thông tin nhân khẩu học</span>
+        <!-- THANH ĐIỀU HƯỚNG 3 PHÂN HỆ GỘP TINH GỌN (100% VỪA VẶN MỌI THIẾT BỊ, TUYỆT ĐỐI 0% TRƯỢT NGANG) -->
+        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 w-full p-1.5 rounded-2xl bg-stone-100/90 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800 shadow-2xs">
+          <!-- 1. Hồ Sơ & Đánh Giá Uy Tín -->
+          <button type="button" onclick="VibeApp.switchProfileTab('overview')" 
+                  class="py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold cursor-pointer ${activeTab === 'overview' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
+            <i data-lucide="user-check" class="w-4 h-4 shrink-0"></i>
+            <span class="truncate">Hồ Sơ & Uy Tín</span>
           </button>
-          <button type="button" onclick="VibeApp.switchProfileTab('reputation')" 
-                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'reputation' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
-            <i data-lucide="award" class="w-4 h-4"></i>
-            <span>2. Đánh giá & Mức độ uy tín</span>
+
+          <!-- 2. Quản Lý Khảo Sát (Tạo & Điền) -->
+          <button type="button" onclick="VibeApp.switchProfileTab('surveys')" 
+                  class="py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold cursor-pointer ${activeTab === 'surveys' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
+            <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0"></i>
+            <span class="truncate">Quản Lý Khảo Sát</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'surveys' ? 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400' : 'bg-stone-200/80 dark:bg-stone-800 text-stone-600 dark:text-stone-400'}">${myCreatedSurveys.length + myParticipatedSurveys.length}</span>
           </button>
-          <button type="button" onclick="VibeApp.switchProfileTab('created-forms')" 
-                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'created-forms' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
-            <i data-lucide="file-plus" class="w-4 h-4"></i>
-            <span>3. Khảo sát đã tạo (Form đã up)</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'created-forms' ? 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400' : 'bg-stone-200/80 dark:bg-stone-800 text-stone-600 dark:text-stone-400'}">${myCreatedSurveys.length}</span>
-          </button>
-          <button type="button" onclick="VibeApp.switchProfileTab('filled-forms')" 
-                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'filled-forms' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
-            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-            <span>4. Khảo sát đã tham gia</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'filled-forms' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'}">${myParticipatedSurveys.length}</span>
-          </button>
+
+          <!-- 3. Bài Viết Diễn Đàn -->
           <button type="button" onclick="VibeApp.switchProfileTab('forum-posts')" 
-                  class="flex-1 min-w-fit py-2.5 px-3.5 rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap text-xs font-bold cursor-pointer ${activeTab === 'forum-posts' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
-            <i data-lucide="messages-square" class="w-4 h-4"></i>
-            <span>5. Bài viết trên diễn đàn</span>
+                  class="py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold cursor-pointer ${activeTab === 'forum-posts' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
+            <i data-lucide="messages-square" class="w-4 h-4 shrink-0"></i>
+            <span class="truncate">Bài Viết Diễn Đàn</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'forum-posts' ? 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400' : 'bg-stone-200/80 dark:bg-stone-800 text-stone-600 dark:text-stone-400'}">${myPosts.length}</span>
           </button>
         </div>
 
-        <!-- TAB 1: THÔNG TIN NHÂN KHẨU HỌC (THIẾT KẾ THOÁNG ĐÃNG, CHUẨN STITCH, 0% SÁT XÍT) -->
-        <div id="profile-tab-demographics" class="${activeTab === 'demographics' ? '' : 'hidden'} space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-            <div>
-              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block mb-1">Hồ Sơ Nghiên Cứu</span>
-              <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Thông Tin Cá Nhân & Nhân Khẩu Học</h2>
+        <!-- PHÂN HỆ 1: HỒ SƠ & UY TÍN (GỘP BENTO ĐÁNH GIÁ VÀ FORM NHÂN KHẨU HỌC LIỀN MẠCH) -->
+        <div id="profile-tab-overview" class="${activeTab === 'overview' ? '' : 'hidden'} space-y-8">
+          
+          <!-- KHỐI 1: BENTO ĐÁNH GIÁ CHẤT LƯỢNG & MỨC ĐỘ UY TÍN -->
+          <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+              <div>
+                <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block mb-0.5">Huy Hiệu & Đạo Đức Nghiên Cứu</span>
+                <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Đánh Giá & Mức Độ Uy Tín Tài Khoản</h2>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-stone-500">
+                <i data-lucide="shield-check" class="w-4 h-4 text-orange-600"></i>
+                <span>Chỉ số tin cậy đo lường qua hệ thống kiểm duyệt Anti-Fraud</span>
+              </div>
             </div>
-            <div class="bg-orange-50/80 dark:bg-orange-950/30 px-4 py-2.5 rounded-2xl border border-orange-200/80 dark:border-orange-900/40 flex items-center gap-2.5 text-xs text-orange-900 dark:text-orange-200 shadow-2xs">
-              <i data-lucide="shield-check" class="w-4 h-4 text-orange-600 shrink-0"></i>
-              <span>Hoàn thiện 100% hồ sơ để mở khóa thêm lượt mẫu miễn phí. Thông tin cốt lõi khóa 90 ngày.</span>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <!-- Cột trái: Visual Metrics Bento -->
+              <div class="lg:col-span-5 flex flex-col gap-4">
+                <div class="bg-white dark:bg-[#18181B] p-6 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-xs flex flex-col gap-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-extrabold uppercase text-stone-500 tracking-wider">Chỉ Số Chất Lượng Đáp Viên</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 text-[10px] font-extrabold">Xác minh AI</span>
+                  </div>
+
+                  <!-- SVG Circular Gauge & Rating sao thật -->
+                  <div class="flex items-center gap-5 py-2">
+                    <div class="relative w-28 h-28 flex items-center justify-center shrink-0">
+                      <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path class="text-stone-100 dark:text-stone-800 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3.5"></path>
+                        <path class="text-orange-600 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="${trustScore}, 100" stroke-linecap="round" stroke-width="3.5"></path>
+                      </svg>
+                      <div class="absolute flex flex-col items-center">
+                        <span class="text-xl font-black text-stone-900 dark:text-white font-mono">${trustScore.toFixed(1)}%</span>
+                        <span class="text-[10px] uppercase font-bold text-stone-500">Chính trực</span>
+                      </div>
+                    </div>
+
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-1 text-amber-500">
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+                        <span class="text-sm font-black text-stone-900 dark:text-white ml-1 font-mono">5.0 / 5</span>
+                      </div>
+                      <p class="text-xs text-stone-500 leading-relaxed">
+                        Dựa trên <strong>${myParticipatedSurveys.length} đề tài</strong> đã hoàn thành và nghiệm thu câu trả lời.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- 2 Thanh tiến độ chuẩn Stitch -->
+                  <div class="space-y-3 pt-3 border-t border-stone-100 dark:border-stone-800">
+                    <div>
+                      <div class="flex justify-between text-xs font-semibold mb-1">
+                        <span class="text-stone-600 dark:text-stone-400">Vượt câu hỏi kiểm tra độ chú ý (Attention-check)</span>
+                        <span class="font-bold text-orange-600 font-mono">100%</span>
+                      </div>
+                      <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-orange-600 h-full w-full rounded-full"></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="flex justify-between text-xs font-semibold mb-1">
+                        <span class="text-stone-600 dark:text-stone-400">Thời gian làm bài khảo sát chuẩn định mức (Không speed-run)</span>
+                        <span class="font-bold text-amber-600 font-mono">100%</span>
+                      </div>
+                      <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-amber-500 h-full w-full rounded-full"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3 Huy hiệu bảo trợ học thuật -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
+                    <div class="flex items-center gap-1.5 text-orange-600">
+                      <i data-lucide="award" class="w-4 h-4"></i>
+                      <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Đáp Viên Vàng</h4>
+                    </div>
+                    <p class="text-[11px] text-stone-500 leading-relaxed">Hoàn thành các đề tài không vi phạm bẫy chú ý.</p>
+                  </div>
+
+                  <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
+                    <div class="flex items-center gap-1.5 text-emerald-600">
+                      <i data-lucide="check-circle" class="w-4 h-4"></i>
+                      <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Định Danh Edu</h4>
+                    </div>
+                    <p class="text-[11px] text-stone-500 leading-relaxed">${isStudentVerified ? 'Đã xác thực email trường, hợp lệ theo quy chuẩn bảo trợ.' : 'Kích hoạt xác thực email sinh viên để mở khóa.'}</p>
+                  </div>
+
+                  <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
+                    <div class="flex items-center gap-1.5 text-blue-600">
+                      <i data-lucide="activity" class="w-4 h-4"></i>
+                      <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Chuẩn Cronbach</h4>
+                    </div>
+                    <p class="text-[11px] text-stone-500 leading-relaxed">Hệ số tin cậy đạt tiêu chuẩn phân tích định lượng.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột phải: Danh sách nhận xét học thuật thực tế -->
+              <div class="lg:col-span-7 flex flex-col gap-4">
+                <div class="bg-white dark:bg-[#18181B] p-6 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-xs flex flex-col gap-4 h-full">
+                  <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+                    <h3 class="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">Nhận Xét Từ Các Chủ Đề Tài Nghiên Cứu</h3>
+                    <span class="text-[10px] font-black uppercase text-stone-400">Mới nhất</span>
+                  </div>
+
+                  ${myParticipatedSurveys.length > 0 ? myParticipatedSurveys.slice(0, 4).map(item => `
+                    <div class="bg-stone-50/80 dark:bg-stone-900/60 p-4 rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-2">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 font-bold text-xs flex items-center justify-center">
+                            ${(item.creator_name || 'NC').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <span class="text-xs font-black text-stone-900 dark:text-white">${item.creator_name || 'Chủ nhiệm đề tài'}</span>
+                            <span class="text-[11px] text-stone-500 block">${item.survey_title || 'Đề tài khảo sát'}</span>
+                          </div>
+                        </div>
+                        <div class="flex items-center text-amber-500 text-xs font-bold gap-0.5">
+                          <i data-lucide="star" class="w-3.5 h-3.5 fill-current"></i>
+                          <span class="font-mono">5.0</span>
+                        </div>
+                      </div>
+                      <p class="text-xs text-stone-600 dark:text-stone-400 italic leading-relaxed">
+                        "Phản hồi đã hoàn thành đầy đủ, đúng thời lượng quy định và được đối soát qua hệ thống Anti-Fraud. Đã nghiệm thu và chi trả ${item.points_rewarded || 0} xu vào ví."
+                      </p>
+                    </div>
+                  `).join('') : `
+                    <div class="p-8 text-center bg-stone-50/60 dark:bg-stone-900/40 rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 text-xs text-stone-500 space-y-2 my-auto">
+                      <i data-lucide="message-square" class="w-6 h-6 mx-auto text-stone-400"></i>
+                      <p class="font-medium">Chưa có nhận xét từ chủ nhiệm đề tài.</p>
+                      <p class="text-[11px] text-stone-400">Hãy tham gia điền các bài khảo sát để tích lũy nhận xét uy tín và điểm thưởng.</p>
+                      <button onclick="VibeApp.navigate('surveys')" class="mt-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs">
+                        Khám Phá Khảo Sát Ngay
+                      </button>
+                    </div>
+                  `}
+                </div>
+              </div>
             </div>
           </div>
 
-          ${isLocked ? `
-            <div class="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex items-center gap-3 shadow-xs">
-              <i data-lucide="lock" class="w-5 h-5 text-amber-600 shrink-0"></i>
-              <span>Hồ sơ nhân khẩu học đang được khóa an toàn đến ngày <strong>${lockDateStr}</strong> (Khóa 90 ngày sau khi lưu để đảm bảo tính khách quan của dữ liệu nghiên cứu thị trường).</span>
-            </div>
-          ` : ''}
-
-          <div class="bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 rounded-3xl p-6 sm:p-9 shadow-xs space-y-9">
-            
-            <!-- SECTION A: THÔNG TIN CÁ NHÂN & NƠI SINH SỐNG -->
-            <div class="space-y-5">
-              <div class="flex items-center gap-2 pb-3 border-b border-stone-100 dark:border-stone-800 text-xs font-black uppercase tracking-wider text-stone-800 dark:text-stone-200">
-                <i data-lucide="user" class="w-4 h-4 text-orange-600"></i>
-                <span>A. Thông tin cá nhân & Địa bàn sinh sống</span>
+          <!-- KHỐI 2: FORM THÔNG TIN NHÂN KHẨU HỌC (THIẾT KẾ THOÁNG ĐÃNG, RỘNG RÃI) -->
+          <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block mb-0.5">Hồ Sơ Nghiên Cứu</span>
+                <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Thông Tin Cá Nhân & Nhân Khẩu Học</h2>
               </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 sm:gap-y-7">
-                <!-- 1. Giới tính -->
-                <div class="relative space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Giới tính: *</label>
-                  <input type="hidden" id="demo-gender" value="${demographics.gender || 'MALE'}">
-                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-gender-menu', event)"
-                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                    <span id="demo-gender-label">${demographics.gender === 'FEMALE' ? 'Nữ' : (demographics.gender === 'OTHER' ? 'Khác / Không tiết lộ' : 'Nam')}</span>
-                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
-                  </button>
-                  ${!isLocked ? `
-                    <div id="demo-gender-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                      <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'MALE', 'Nam', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
-                        <span>Nam</span>
-                      </div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'FEMALE', 'Nữ', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
-                        <span>Nữ</span>
-                      </div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'OTHER', 'Khác / Không tiết lộ', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
-                        <span>Khác / Không tiết lộ</span>
-                      </div>
-                    </div>
-                  ` : ''}
-                </div>
-
-                <!-- 2. Ngày sinh -->
-                <div class="space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Ngày sinh: *</label>
-                  <input type="date" id="demo-birthdate" value="${demographics.birth_date || '2003-08-15'}" ${isLocked ? 'disabled' : ''}
-                         class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                </div>
-
-                <!-- 3. Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới) -->
-                <div class="relative space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới): *</label>
-                  <input type="hidden" id="demo-province" value="${demographics.province || 'Hà Nội'}">
-                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-province-menu', event)"
-                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                    <span id="demo-province-label">${demographics.province || 'Hà Nội'}</span>
-                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
-                  </button>
-                  ${!isLocked ? `
-                    <div id="demo-province-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto no-scrollbar p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                      ${(window.VIBE_34_PROVINCES || ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Quảng Ninh', 'Huế', 'Bắc Ninh', 'Bình Dương', 'Đồng Nai']).map(p => `
-                        <div onclick="VibeApp.selectCustomFormOption('demo-province', '${p}', '${p}', event)" 
-                             class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 ${demographics.province === p ? 'text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-stone-800' : 'text-stone-700 dark:text-stone-200'}">
-                          <span>${p}</span>
-                        </div>
-                      `).join('')}
-                    </div>
-                  ` : ''}
-                </div>
-
-                <!-- 4. Mức thu nhập hàng tháng -->
-                <div class="relative space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Mức thu nhập hàng tháng: *</label>
-                  <input type="hidden" id="demo-income" value="${demographics.monthly_income || (user.monthly_income || 'Dưới 5 triệu VNĐ')}">
-                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-income-menu', event)"
-                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                    <span id="demo-income-label">${demographics.monthly_income || user.monthly_income || 'Dưới 5 triệu VNĐ'}</span>
-                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
-                  </button>
-                  ${!isLocked ? `
-                    <div id="demo-income-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Dưới 5 triệu VNĐ', 'Dưới 5 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Dưới 5 triệu VNĐ</div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 5 - 10 triệu VNĐ', 'Từ 5 - 10 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Từ 5 - 10 triệu VNĐ</div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 10 - 20 triệu VNĐ', 'Từ 10 - 20 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Từ 10 - 20 triệu VNĐ</div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Trên 20 triệu VNĐ', 'Trên 20 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Trên 20 triệu VNĐ</div>
-                    </div>
-                  ` : ''}
-                </div>
+              <div class="bg-orange-50/80 dark:bg-orange-950/30 px-4 py-2.5 rounded-2xl border border-orange-200/80 dark:border-orange-900/40 flex items-center gap-2.5 text-xs text-orange-900 dark:text-orange-200 shadow-2xs">
+                <i data-lucide="shield-check" class="w-4 h-4 text-orange-600 shrink-0"></i>
+                <span>Hoàn thiện 100% hồ sơ để mở khóa thêm lượt mẫu miễn phí. Thông tin cốt lõi khóa 90 ngày.</span>
               </div>
             </div>
 
-            <!-- SECTION B: ĐỊNH DANH HỌC THUẬT & CHUYÊN MÔN -->
-            <div class="space-y-5 pt-3">
-              <div class="flex items-center gap-2 pb-3 border-b border-stone-100 dark:border-stone-800 text-xs font-black uppercase tracking-wider text-stone-800 dark:text-stone-200">
-                <i data-lucide="graduation-cap" class="w-4 h-4 text-orange-600"></i>
-                <span>B. Định danh học thuật & Chuyên môn</span>
+            ${isLocked ? `
+              <div class="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex items-center gap-3 shadow-xs">
+                <i data-lucide="lock" class="w-5 h-5 text-amber-600 shrink-0"></i>
+                <span>Hồ sơ nhân khẩu học đang được khóa an toàn đến ngày <strong>${lockDateStr}</strong> (Khóa 90 ngày sau khi lưu để đảm bảo tính khách quan của dữ liệu nghiên cứu thị trường).</span>
               </div>
+            ` : ''}
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 sm:gap-y-7">
-                <!-- 5. Nghề nghiệp / Đối tượng -->
-                <div class="relative space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Nghề nghiệp / Đối tượng: *</label>
-                  <input type="hidden" id="demo-occupation" value="${demographics.occupation || 'Học sinh / Sinh viên đại học'}">
-                  <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-occupation-menu', event)"
-                          class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                    <span id="demo-occupation-label">${demographics.occupation || 'Học sinh / Sinh viên đại học'}</span>
-                    <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
-                  </button>
-                  ${!isLocked ? `
-                    <div id="demo-occupation-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học sinh / Sinh viên đại học', 'Học sinh / Sinh viên đại học', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Học sinh / Sinh viên đại học</div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học viên cao học / NCS', 'Học viên cao học / NCS', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Học viên cao học / NCS</div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Giảng viên / Nhà nghiên cứu', 'Giảng viên / Nhà nghiên cứu', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Giảng viên / Nhà nghiên cứu</div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Người đi làm (Khối kỹ thuật & kinh tế)', 'Người đi làm (Khối kỹ thuật & kinh tế)', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Người đi làm (Khối kỹ thuật & kinh tế)</div>
-                      <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Khác', 'Khác', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Khác</div>
-                    </div>
-                  ` : ''}
+            <div class="bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 rounded-3xl p-6 sm:p-9 shadow-xs space-y-9">
+              <!-- SECTION A: THÔNG TIN CÁ NHÂN & NƠI SINH SỐNG -->
+              <div class="space-y-5">
+                <div class="flex items-center gap-2 pb-3 border-b border-stone-100 dark:border-stone-800 text-xs font-black uppercase tracking-wider text-stone-800 dark:text-stone-200">
+                  <i data-lucide="user" class="w-4 h-4 text-orange-600"></i>
+                  <span>A. Thông tin cá nhân & Địa bàn sinh sống</span>
                 </div>
 
-                <!-- 6. Trường Đại Học (293 trường) -->
-                <div class="relative space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Trường Đại học / Học Viện / Cao Đẳng: *</label>
-                  <div class="relative">
-                    <input type="text" id="demo-university" value="${demographics.university || (user.university || '')}" ${isLocked ? 'disabled' : ''} 
-                           placeholder="Gõ tìm trường (VD: Bách Khoa, Kinh Tế, FPT, FTU...)"
-                           onfocus="VibeApp.filterDemoUniversities(this.value)"
-                           oninput="VibeApp.filterDemoUniversities(this.value)"
-                           class="w-full h-12 px-4 pr-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                    <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute right-3.5 top-4 pointer-events-none"></i>
-                  </div>
-                  ${!isLocked ? `
-                    <div id="demo-uni-popover" class="hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto no-scrollbar p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                      <div id="demo-uni-dropdown-list" class="space-y-0.5"></div>
-                    </div>
-                  ` : ''}
-                </div>
-
-                <!-- 7. Ngành học / Chuyên môn -->
-                <div class="space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Ngành học / Chuyên môn: *</label>
-                  <input type="text" id="demo-major" value="${demographics.major || (user.major || '')}" ${isLocked ? 'disabled' : ''} placeholder="VD: Công nghệ thông tin, Marketing..."
-                         class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                </div>
-
-                <!-- 8. Năm tốt nghiệp -->
-                <div class="space-y-2">
-                  <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Năm tốt nghiệp (dự kiến): *</label>
-                  <input type="number" id="demo-gradyear" value="${demographics.graduation_year || (user.graduation_year || 2026)}" min="1980" max="2035" ${isLocked ? 'disabled' : ''}
-                         class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-black font-mono text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
-                </div>
-              </div>
-            </div>
-
-            <!-- FOOTER HÀNH ĐỘNG -->
-            <div class="pt-6 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p class="text-xs text-stone-500 flex items-center gap-1.5">
-                <i data-lucide="lock" class="w-3.5 h-3.5 text-stone-400"></i>
-                <span>Thông tin hồ sơ được bảo mật và mã hóa phục vụ đối soát mẫu khảo sát.</span>
-              </p>
-              ${!isLocked ? `
-                <button type="button" onclick="VibeApp.saveDemographicsAction()" class="h-12 px-8 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-black shadow-md shadow-orange-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto">
-                  <i data-lucide="save" class="w-4 h-4"></i>
-                  <span>Lưu & Cập Nhật Hồ Sơ Nhân Khẩu Học</span>
-                </button>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 2: ĐÁNH GIÁ & MỨC ĐỘ UY TÍN CHUẨN STITCH (LIÊN KẾT REAL DATA) -->
-        <div id="profile-tab-reputation" class="${activeTab === 'reputation' ? '' : 'hidden'} space-y-5">
-          <div>
-            <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block">Huy Hiệu & Đạo Đức Nghiên Cứu</span>
-            <h2 class="text-lg font-black text-stone-900 dark:text-white">Đánh Giá & Mức Độ Uy Tín Tài Khoản</h2>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <!-- Cột trái: Visual Metrics Bento -->
-            <div class="lg:col-span-5 flex flex-col gap-4">
-              <div class="bg-white dark:bg-[#18181B] p-6 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-xs flex flex-col gap-4">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-extrabold uppercase text-stone-500 tracking-wider">Chỉ Số Chất Lượng Đáp Viên</span>
-                  <span class="px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 text-[10px] font-extrabold">Xác minh AI</span>
-                </div>
-
-                <!-- SVG Circular Gauge & Rating sao thật -->
-                <div class="flex items-center gap-5 py-2">
-                  <div class="relative w-28 h-28 flex items-center justify-center shrink-0">
-                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                      <path class="text-stone-100 dark:text-stone-800 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-width="3.5"></path>
-                      <path class="text-orange-600 stroke-current" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke-dasharray="${trustScore}, 100" stroke-linecap="round" stroke-width="3.5"></path>
-                    </svg>
-                    <div class="absolute flex flex-col items-center">
-                      <span class="text-xl font-black text-stone-900 dark:text-white font-mono">${trustScore.toFixed(1)}%</span>
-                      <span class="text-[10px] uppercase font-bold text-stone-500">Chính trực</span>
-                    </div>
-                  </div>
-
-                  <div class="space-y-1">
-                    <div class="flex items-center gap-1 text-amber-500">
-                      <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                      <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                      <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                      <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                      <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                      <span class="text-sm font-black text-stone-900 dark:text-white ml-1 font-mono">5.0 / 5</span>
-                    </div>
-                    <p class="text-xs text-stone-500 leading-relaxed">
-                      Dựa trên <strong>${myParticipatedSurveys.length} đề tài</strong> đã hoàn thành và nghiệm thu câu trả lời.
-                    </p>
-                  </div>
-                </div>
-
-                <!-- 2 Thanh tiến độ chuẩn Stitch -->
-                <div class="space-y-3 pt-3 border-t border-stone-100 dark:border-stone-800">
-                  <div>
-                    <div class="flex justify-between text-xs font-semibold mb-1">
-                      <span class="text-stone-600 dark:text-stone-400">Vượt câu hỏi kiểm tra độ chú ý (Attention-check)</span>
-                      <span class="font-bold text-orange-600">100%</span>
-                    </div>
-                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
-                      <div class="bg-orange-600 h-full w-full rounded-full"></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div class="flex justify-between text-xs font-semibold mb-1">
-                      <span class="text-stone-600 dark:text-stone-400">Thời gian làm bài khảo sát chuẩn định mức (Không speed-run)</span>
-                      <span class="font-bold text-amber-600">100%</span>
-                    </div>
-                    <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
-                      <div class="bg-amber-500 h-full w-full rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 3 Huy hiệu bảo trợ học thuật -->
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
-                  <div class="flex items-center gap-1.5 text-orange-600">
-                    <i data-lucide="award" class="w-4 h-4"></i>
-                    <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Đáp Viên Vàng</h4>
-                  </div>
-                  <p class="text-[11px] text-stone-500 leading-relaxed">Hoàn thành các đề tài không vi phạm bẫy chú ý (Attention Check).</p>
-                </div>
-
-                <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
-                  <div class="flex items-center gap-1.5 text-emerald-600">
-                    <i data-lucide="check-circle" class="w-4 h-4"></i>
-                    <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Định Danh Edu</h4>
-                  </div>
-                  <p class="text-[11px] text-stone-500 leading-relaxed">${isStudentVerified ? 'Đã xác thực email trường, hợp lệ theo quy chuẩn bảo trợ đề tài.' : 'Kích hoạt xác thực email sinh viên để mở khóa huy hiệu.'}</p>
-                </div>
-
-                <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
-                  <div class="flex items-center gap-1.5 text-blue-600">
-                    <i data-lucide="activity" class="w-4 h-4"></i>
-                    <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Chuẩn Cronbach</h4>
-                  </div>
-                  <p class="text-[11px] text-stone-500 leading-relaxed">Hệ số tin cậy câu trả lời đạt tiêu chuẩn phân tích định lượng.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Cột phải: Danh sách nhận xét học thuật thực tế -->
-            <div class="lg:col-span-7 flex flex-col gap-4">
-              <div class="bg-white dark:bg-[#18181B] p-6 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-xs flex flex-col gap-4">
-                <div class="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
-                  <h3 class="text-sm font-black text-stone-900 dark:text-white uppercase tracking-wider">Nhận Xét Từ Các Chủ Đề Tài Nghiên Cứu</h3>
-                  <span class="text-[10px] font-black uppercase text-stone-400">Mới nhất</span>
-                </div>
-
-                ${myParticipatedSurveys.length > 0 ? myParticipatedSurveys.slice(0, 5).map(item => `
-                  <div class="bg-stone-50/80 dark:bg-stone-900/60 p-4 rounded-2xl border border-stone-200/80 dark:border-stone-800 space-y-2">
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 font-bold text-xs flex items-center justify-center">
-                          ${(item.creator_name || 'NC').slice(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <span class="text-xs font-black text-stone-900 dark:text-white">${item.creator_name || 'Chủ nhiệm đề tài'}</span>
-                          <span class="text-[11px] text-stone-500 block">${item.survey_title || 'Đề tài khảo sát'}</span>
-                        </div>
-                      </div>
-                      <div class="flex items-center text-amber-500 text-xs font-bold gap-0.5">
-                        <i data-lucide="star" class="w-3.5 h-3.5 fill-current"></i>
-                        <span>5.0</span>
-                      </div>
-                    </div>
-                    <p class="text-xs text-stone-600 dark:text-stone-400 italic leading-relaxed">
-                      "Phản hồi đã hoàn thành đầy đủ, đúng thời lượng quy định và được đối soát qua hệ thống Anti-Fraud. Đã nghiệm thu và chi trả ${item.points_rewarded || 0} xu vào ví."
-                    </p>
-                  </div>
-                `).join('') : `
-                  <div class="p-8 text-center bg-stone-50/60 dark:bg-stone-900/40 rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 text-xs text-stone-500 space-y-2">
-                    <i data-lucide="message-square" class="w-6 h-6 mx-auto text-stone-400"></i>
-                    <p class="font-medium">Chưa có nhận xét từ chủ nhiệm đề tài.</p>
-                    <p class="text-[11px] text-stone-400">Hãy tham gia điền các bài khảo sát để tích lũy nhận xét uy tín và điểm thưởng.</p>
-                    <button onclick="VibeApp.navigate('surveys')" class="mt-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs">
-                      Khám Phá Khảo Sát Ngay
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 sm:gap-y-7">
+                  <!-- 1. Giới tính -->
+                  <div class="relative space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Giới tính: *</label>
+                    <input type="hidden" id="demo-gender" value="${demographics.gender || 'MALE'}">
+                    <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-gender-menu', event)"
+                            class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                      <span id="demo-gender-label">${demographics.gender === 'FEMALE' ? 'Nữ' : (demographics.gender === 'OTHER' ? 'Khác / Không tiết lộ' : 'Nam')}</span>
+                      <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
                     </button>
+                    ${!isLocked ? `
+                      <div id="demo-gender-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                        <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'MALE', 'Nam', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
+                          <span>Nam</span>
+                        </div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'FEMALE', 'Nữ', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
+                          <span>Nữ</span>
+                        </div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-gender', 'OTHER', 'Khác / Không tiết lộ', event)" class="flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">
+                          <span>Khác / Không tiết lộ</span>
+                        </div>
+                      </div>
+                    ` : ''}
                   </div>
-                `}
+
+                  <!-- 2. Ngày sinh -->
+                  <div class="space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Ngày sinh: *</label>
+                    <input type="date" id="demo-birthdate" value="${demographics.birth_date || '2003-08-15'}" ${isLocked ? 'disabled' : ''}
+                           class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                  </div>
+
+                  <!-- 3. Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới) -->
+                  <div class="relative space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Tỉnh / Thành phố sinh sống (34 Tỉnh Thành Mới): *</label>
+                    <input type="hidden" id="demo-province" value="${demographics.province || 'Hà Nội'}">
+                    <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-province-menu', event)"
+                            class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                      <span id="demo-province-label">${demographics.province || 'Hà Nội'}</span>
+                      <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
+                    </button>
+                    ${!isLocked ? `
+                      <div id="demo-province-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto no-scrollbar p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                        ${(window.VIBE_34_PROVINCES || ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ', 'Quảng Ninh', 'Huế', 'Bắc Ninh', 'Bình Dương', 'Đồng Nai']).map(p => `
+                          <div onclick="VibeApp.selectCustomFormOption('demo-province', '${p}', '${p}', event)" 
+                               class="flex items-center justify-between px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 ${demographics.province === p ? 'text-orange-600 dark:text-orange-400 font-bold bg-orange-50 dark:bg-stone-800' : 'text-stone-700 dark:text-stone-200'}">
+                            <span>${p}</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+
+                  <!-- 4. Mức thu nhập hàng tháng -->
+                  <div class="relative space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Mức thu nhập hàng tháng: *</label>
+                    <input type="hidden" id="demo-income" value="${demographics.monthly_income || (user.monthly_income || 'Dưới 5 triệu VNĐ')}">
+                    <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-income-menu', event)"
+                            class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                      <span id="demo-income-label">${demographics.monthly_income || user.monthly_income || 'Dưới 5 triệu VNĐ'}</span>
+                      <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
+                    </button>
+                    ${!isLocked ? `
+                      <div id="demo-income-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                        <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Dưới 5 triệu VNĐ', 'Dưới 5 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Dưới 5 triệu VNĐ</div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 5 - 10 triệu VNĐ', 'Từ 5 - 10 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Từ 5 - 10 triệu VNĐ</div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Từ 10 - 20 triệu VNĐ', 'Từ 10 - 20 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Từ 10 - 20 triệu VNĐ</div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-income', 'Trên 20 triệu VNĐ', 'Trên 20 triệu VNĐ', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Trên 20 triệu VNĐ</div>
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION B: ĐỊNH DANH HỌC THUẬT & CHUYÊN MÔN -->
+              <div class="space-y-5 pt-3">
+                <div class="flex items-center gap-2 pb-3 border-b border-stone-100 dark:border-stone-800 text-xs font-black uppercase tracking-wider text-stone-800 dark:text-stone-200">
+                  <i data-lucide="graduation-cap" class="w-4 h-4 text-orange-600"></i>
+                  <span>B. Định danh học thuật & Chuyên môn</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 sm:gap-y-7">
+                  <!-- 5. Nghề nghiệp / Đối tượng -->
+                  <div class="relative space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Nghề nghiệp / Đối tượng: *</label>
+                    <input type="hidden" id="demo-occupation" value="${demographics.occupation || 'Học sinh / Sinh viên đại học'}">
+                    <button type="button" ${isLocked ? 'disabled' : ''} onclick="VibeApp.toggleCustomDropdown('demo-occupation-menu', event)"
+                            class="custom-dropdown-trigger w-full h-12 flex items-center justify-between px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 hover:border-orange-500 transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                      <span id="demo-occupation-label">${demographics.occupation || 'Học sinh / Sinh viên đại học'}</span>
+                      <i data-lucide="chevron-down" class="dropdown-trigger-icon w-4 h-4 stroke-[2] text-stone-400 transition-transform duration-200 pointer-events-none"></i>
+                    </button>
+                    ${!isLocked ? `
+                      <div id="demo-occupation-menu" class="custom-dropdown-menu hidden absolute left-0 right-0 z-50 mt-1 p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                        <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học sinh / Sinh viên đại học', 'Học sinh / Sinh viên đại học', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Học sinh / Sinh viên đại học</div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Học viên cao học / NCS', 'Học viên cao học / NCS', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Học viên cao học / NCS</div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Giảng viên / Nhà nghiên cứu', 'Giảng viên / Nhà nghiên cứu', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Giảng viên / Nhà nghiên cứu</div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Người đi làm (Khối kỹ thuật & kinh tế)', 'Người đi làm (Khối kỹ thuật & kinh tế)', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Người đi làm (Khối kỹ thuật & kinh tế)</div>
+                        <div onclick="VibeApp.selectCustomFormOption('demo-occupation', 'Khác', 'Khác', event)" class="px-3.5 py-2.5 rounded-lg text-xs font-semibold cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200">Khác</div>
+                      </div>
+                    ` : ''}
+                  </div>
+
+                  <!-- 6. Trường Đại Học (293 trường) -->
+                  <div class="relative space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Trường Đại học / Học Viện / Cao Đẳng: *</label>
+                    <div class="relative">
+                      <input type="text" id="demo-university" value="${demographics.university || (user.university || '')}" ${isLocked ? 'disabled' : ''} 
+                             placeholder="Gõ tìm trường (VD: Bách Khoa, Kinh Tế, FPT, FTU...)"
+                             onfocus="VibeApp.filterDemoUniversities(this.value)"
+                             oninput="VibeApp.filterDemoUniversities(this.value)"
+                             class="w-full h-12 px-4 pr-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                      <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute right-3.5 top-4 pointer-events-none"></i>
+                    </div>
+                    ${!isLocked ? `
+                      <div id="demo-uni-popover" class="hidden absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto no-scrollbar p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
+                        <div id="demo-uni-dropdown-list" class="space-y-0.5"></div>
+                      </div>
+                    ` : ''}
+                  </div>
+
+                  <!-- 7. Ngành học / Chuyên môn -->
+                  <div class="space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Ngành học / Chuyên môn: *</label>
+                    <input type="text" id="demo-major" value="${demographics.major || (user.major || '')}" ${isLocked ? 'disabled' : ''} placeholder="VD: Công nghệ thông tin, Marketing..."
+                           class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-semibold text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                  </div>
+
+                  <!-- 8. Năm tốt nghiệp -->
+                  <div class="space-y-2">
+                    <label class="block text-xs font-black text-stone-800 dark:text-stone-200">Năm tốt nghiệp (dự kiến): *</label>
+                    <input type="number" id="demo-gradyear" value="${demographics.graduation_year || (user.graduation_year || 2026)}" min="1980" max="2035" ${isLocked ? 'disabled' : ''}
+                           class="w-full h-12 px-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-white dark:hover:bg-stone-800 text-xs sm:text-sm font-black font-mono text-stone-900 dark:text-stone-100 focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-2xs ${isLocked ? 'opacity-70 cursor-not-allowed' : ''}">
+                  </div>
+                </div>
+              </div>
+
+              <!-- FOOTER HÀNH ĐỘNG -->
+              <div class="pt-6 border-t border-stone-100 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p class="text-xs text-stone-500 flex items-center gap-1.5">
+                  <i data-lucide="lock" class="w-3.5 h-3.5 text-stone-400"></i>
+                  <span>Thông tin hồ sơ được bảo mật và mã hóa phục vụ đối soát mẫu khảo sát.</span>
+                </p>
+                ${!isLocked ? `
+                  <button type="button" onclick="VibeApp.saveDemographicsAction()" class="h-12 px-8 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-black shadow-md shadow-orange-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    <span>Lưu & Cập Nhật Hồ Sơ Nhân Khẩu Học</span>
+                  </button>
+                ` : ''}
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TAB 3: KHẢO SÁT ĐÃ TẠO (FORM ĐÃ UP) - 100% REAL DATA -->
-        <div id="profile-tab-created-forms" class="${activeTab === 'created-forms' ? '' : 'hidden'} space-y-5">
+        <!-- PHÂN HỆ 2: QUẢN LÝ KHẢO SÁT (GỘP FORM ĐÃ TẠO VÀ ĐÃ THAM GIA) -->
+        <div id="profile-tab-surveys" class="${activeTab === 'surveys' ? '' : 'hidden'} space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block">Khảo Sát Của Tôi</span>
-              <h2 class="text-lg font-black text-stone-900 dark:text-white">Các Form Đã Tạo & Thu Thập Mẫu (${myCreatedSurveys.length})</h2>
+              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block mb-0.5">Dữ Liệu Khảo Sát Của Tôi</span>
+              <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Quản Lý & Theo Dõi Khảo Sát</h2>
             </div>
-            <div class="flex items-center gap-2">
+
+            <!-- Segmented Sub-Toggle: Chuyển đổi giữa Đã Tạo và Đã Tham Gia -->
+            <div class="inline-flex p-1 rounded-xl bg-stone-100 dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 text-xs font-bold shrink-0 self-start sm:self-center shadow-2xs">
+              <button type="button" onclick="VibeApp.switchSurveySubTab('created')" 
+                      class="py-2 px-4 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${surveySubTab === 'created' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5' : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'}">
+                <i data-lucide="file-plus" class="w-3.5 h-3.5"></i>
+                <span>Form Đã Tạo (${myCreatedSurveys.length})</span>
+              </button>
+              <button type="button" onclick="VibeApp.switchSurveySubTab('filled')" 
+                      class="py-2 px-4 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${surveySubTab === 'filled' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5' : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'}">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                <span>Đã Tham Gia (${myParticipatedSurveys.length})</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- PHÂN MỤC A: KHẢO SÁT ĐÃ TẠO -->
+          <div id="survey-subview-created" class="${surveySubTab === 'created' ? '' : 'hidden'} space-y-5">
+            <div class="flex items-center justify-between">
+              <p class="text-xs text-stone-500">Các bài khảo sát bạn đã thiết lập để thu thập mẫu từ cộng đồng.</p>
               <button onclick="VibeApp.navigate('create-survey')" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>+ Tạo Khảo Sát Mới</span>
               </button>
             </div>
-          </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            ${myCreatedSurveys.length > 0 ? myCreatedSurveys.map(s => {
-              const curr = s.collected_responses || s.current_responses || 0;
-              const target = s.target_responses || 100;
-              const pct = Math.min(100, Math.round((curr / target) * 100));
-              const isCompleted = s.status === 'COMPLETED' || curr >= target;
-              return `
-                <div class="bg-white dark:bg-[#18181B] rounded-3xl p-6 border border-stone-200/90 dark:border-stone-800 shadow-xs flex flex-col justify-between gap-4 group hover:shadow-md transition-all">
-                  <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold ${isCompleted ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400'}">
-                          ${isCompleted ? 'Đã hoàn thành 100%' : 'Đang thu thập'}
-                        </span>
-                        <span class="bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300 text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                          ${s.category || 'Nghiên cứu học thuật'}
-                        </span>
-                      </div>
-                      <span class="text-[11px] text-stone-400">${s.created_at ? new Date(s.created_at).toLocaleDateString('vi-VN') : ''}</span>
-                    </div>
-                    <h3 class="text-sm font-black text-stone-900 dark:text-white group-hover:text-orange-600 transition-colors">
-                      ${s.title}
-                    </h3>
-                    <p class="text-xs text-stone-500 line-clamp-2 leading-relaxed">
-                      ${s.description || 'Khảo sát phục vụ nghiên cứu thực tế trên SurvHub.'}
-                    </p>
-                    <div class="space-y-1">
-                      <div class="flex justify-between text-xs font-semibold">
-                        <span class="text-stone-500">Tiến độ phản hồi: <strong class="text-stone-900 dark:text-white font-mono">${curr} / ${target} mẫu</strong></span>
-                        <span class="${isCompleted ? 'text-emerald-600' : 'text-orange-600'} font-bold font-mono">${pct}% ${isCompleted ? 'Đạt' : ''}</span>
-                      </div>
-                      <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
-                        <div class="${isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-orange-600 to-amber-500'} h-full rounded-full" style="width: ${pct}%;"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-stone-100 dark:border-stone-800">
-                    <div class="flex items-center gap-1.5">
-                      <button onclick="VibeApp.navigate('analytics', { surveyId: '${s.id}' })" class="px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer">
-                        <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
-                        <span>Báo cáo</span>
-                      </button>
-                      <button onclick="VibeApp.navigate('create-survey', { editId: '${s.id}' })" class="px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer">
-                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                        <span>Sửa</span>
-                      </button>
-                    </div>
-                    <!-- Nút XÓA KHẢO SÁT THẬT HOẠT ĐỘNG HOÀN TOÀN -->
-                    <button onclick="VibeApp.deleteSurveyAction('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer" title="Xóa vĩnh viễn bài khảo sát này">
-                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                      <span>Xóa</span>
-                    </button>
-                  </div>
-                </div>
-              `;
-            }).join('') : `
-              <div class="col-span-1 lg:col-span-2 p-12 text-center bg-white dark:bg-[#18181B] rounded-3xl border border-dashed border-stone-200 dark:border-stone-800 space-y-3">
-                <i data-lucide="file-plus" class="w-8 h-8 mx-auto text-stone-400"></i>
-                <h4 class="text-sm font-bold text-stone-900 dark:text-white">Bạn chưa tạo bài khảo sát nào</h4>
-                <p class="text-xs text-stone-500 max-w-sm mx-auto">Tạo bài khảo sát đầu tiên để thu thập phản hồi chuẩn xác cho đề tài của bạn ngay hôm nay.</p>
-                <button onclick="VibeApp.navigate('create-survey')" class="mt-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer shadow-xs">
-                  + Tạo Khảo Sát Mới
-                </button>
-              </div>
-            `}
-          </div>
-        </div>
-
-        <!-- TAB 4: KHẢO SÁT ĐÃ THAM GIA - 100% REAL DATA -->
-        <div id="profile-tab-filled-forms" class="${activeTab === 'filled-forms' ? '' : 'hidden'} space-y-5">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block">Lịch Sử Trợ Giúp Nghiên Cứu</span>
-              <h2 class="text-lg font-black text-stone-900 dark:text-white">Các Khảo Sát Đã Tham Gia Hoàn Thành</h2>
-            </div>
-            <span class="text-xs text-stone-500">Tổng cộng: <strong class="text-stone-900 dark:text-white font-mono">${myParticipatedSurveys.length} đề tài đã phản hồi</strong></span>
-          </div>
-
-          <div class="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-xs overflow-hidden">
-            ${myParticipatedSurveys.length > 0 ? `
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                  <thead class="bg-stone-50 dark:bg-stone-900/60 text-stone-700 dark:text-stone-300 font-black uppercase tracking-wider border-b border-stone-100 dark:border-stone-800">
-                    <tr>
-                      <th class="py-3 px-5">Tên đề tài khảo sát</th>
-                      <th class="py-3 px-4">Đơn vị / Tác giả</th>
-                      <th class="py-3 px-4">Thời gian nạp</th>
-                      <th class="py-3 px-4">Thưởng Xu</th>
-                      <th class="py-3 px-4">Trạng thái duyệt</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
-                    ${myParticipatedSurveys.map(item => `
-                      <tr class="hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition-colors">
-                        <td class="py-3.5 px-5 font-semibold text-stone-900 dark:text-white max-w-xs">
-                          <div class="font-bold text-stone-900 dark:text-white">${item.survey_title || 'Đề tài khảo sát'}</div>
-                          <span class="text-stone-400 text-[11px]">Thời gian làm bài: ${item.duration_sec ? Math.round(item.duration_sec / 60) + ' phút' : 'N/A'}</span>
-                        </td>
-                        <td class="py-3.5 px-4 text-stone-500">${item.creator_name || item.brand_name || 'Chủ nhiệm đề tài'}</td>
-                        <td class="py-3.5 px-4 text-stone-500">${item.submitted_at ? new Date(item.submitted_at).toLocaleDateString('vi-VN') : 'Mới đây'}</td>
-                        <td class="py-3.5 px-4 font-black font-mono text-orange-600 dark:text-orange-400">+${item.points_rewarded || 0} Xu</td>
-                        <td class="py-3.5 px-4">
-                          <span class="inline-flex items-center gap-1 ${item.response_status === 'REJECTED' ? 'text-red-600 bg-red-50 dark:bg-red-950/60' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'} font-bold text-[11px] px-2.5 py-0.5 rounded-full">
-                            <i data-lucide="${item.response_status === 'REJECTED' ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
-                            ${item.response_status === 'REJECTED' ? 'Bị từ chối' : 'Đã nghiệm thu'}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              ${myCreatedSurveys.length > 0 ? myCreatedSurveys.map(s => {
+                const curr = s.collected_responses || s.current_responses || 0;
+                const target = s.target_responses || 100;
+                const pct = Math.min(100, Math.round((curr / target) * 100));
+                const isCompleted = s.status === 'COMPLETED' || curr >= target;
+                return `
+                  <div class="bg-white dark:bg-[#18181B] rounded-3xl p-6 border border-stone-200/90 dark:border-stone-800 shadow-xs flex flex-col justify-between gap-4 group hover:shadow-md transition-all">
+                    <div class="space-y-3">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <span class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold ${isCompleted ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400'}">
+                            ${isCompleted ? 'Đã hoàn thành 100%' : 'Đang thu thập'}
                           </span>
-                        </td>
+                          <span class="bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300 text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                            ${s.category || 'Nghiên cứu học thuật'}
+                          </span>
+                        </div>
+                        <span class="text-[11px] text-stone-400">${s.created_at ? new Date(s.created_at).toLocaleDateString('vi-VN') : ''}</span>
+                      </div>
+                      <h3 class="text-sm font-black text-stone-900 dark:text-white group-hover:text-orange-600 transition-colors">
+                        ${s.title}
+                      </h3>
+                      <p class="text-xs text-stone-500 line-clamp-2 leading-relaxed">
+                        ${s.description || 'Khảo sát phục vụ nghiên cứu thực tế trên SurvHub.'}
+                      </p>
+                      <div class="space-y-1">
+                        <div class="flex justify-between text-xs font-semibold">
+                          <span class="text-stone-500">Tiến độ phản hồi: <strong class="text-stone-900 dark:text-white font-mono">${curr} / ${target} mẫu</strong></span>
+                          <span class="${isCompleted ? 'text-emerald-600' : 'text-orange-600'} font-bold font-mono">${pct}% ${isCompleted ? 'Đạt' : ''}</span>
+                        </div>
+                        <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
+                          <div class="${isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-orange-600 to-amber-500'} h-full rounded-full" style="width: ${pct}%;"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-stone-100 dark:border-stone-800">
+                      <div class="flex items-center gap-1.5">
+                        <button onclick="VibeApp.navigate('analytics', { surveyId: '${s.id}' })" class="px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer">
+                          <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                          <span>Báo cáo</span>
+                        </button>
+                        <button onclick="VibeApp.navigate('create-survey', { editId: '${s.id}' })" class="px-2.5 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                          <span>Sửa</span>
+                        </button>
+                      </div>
+                      <!-- Nút XÓA KHẢO SÁT THẬT HOẠT ĐỘNG HOÀN TOÀN -->
+                      <button onclick="VibeApp.deleteSurveyAction('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer" title="Xóa vĩnh viễn bài khảo sát này">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Xóa</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('') : `
+                <div class="col-span-1 lg:col-span-2 p-12 text-center bg-white dark:bg-[#18181B] rounded-3xl border border-dashed border-stone-200 dark:border-stone-800 space-y-3">
+                  <i data-lucide="file-plus" class="w-8 h-8 mx-auto text-stone-400"></i>
+                  <h4 class="text-sm font-bold text-stone-900 dark:text-white">Bạn chưa tạo bài khảo sát nào</h4>
+                  <p class="text-xs text-stone-500 max-w-sm mx-auto">Tạo bài khảo sát đầu tiên để thu thập phản hồi chuẩn xác cho đề tài của bạn ngay hôm nay.</p>
+                  <button onclick="VibeApp.navigate('create-survey')" class="mt-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer shadow-xs">
+                    + Tạo Khảo Sát Mới
+                  </button>
+                </div>
+              `}
+            </div>
+          </div>
+
+          <!-- PHÂN MỤC B: KHẢO SÁT ĐÃ THAM GIA -->
+          <div id="survey-subview-filled" class="${surveySubTab === 'filled' ? '' : 'hidden'} space-y-4">
+            <div class="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-xs overflow-hidden">
+              ${myParticipatedSurveys.length > 0 ? `
+                <div class="overflow-x-auto no-scrollbar">
+                  <table class="w-full text-left text-xs">
+                    <thead class="bg-stone-50 dark:bg-stone-900/60 text-stone-700 dark:text-stone-300 font-black uppercase tracking-wider border-b border-stone-100 dark:border-stone-800">
+                      <tr>
+                        <th class="py-3.5 px-5">Tên đề tài khảo sát</th>
+                        <th class="py-3.5 px-4">Đơn vị / Tác giả</th>
+                        <th class="py-3.5 px-4">Thời gian nạp</th>
+                        <th class="py-3.5 px-4">Thưởng Xu</th>
+                        <th class="py-3.5 px-4">Trạng thái duyệt</th>
                       </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            ` : `
-              <div class="p-12 text-center space-y-3">
-                <i data-lucide="check-circle-2" class="w-8 h-8 mx-auto text-stone-400"></i>
-                <h4 class="text-sm font-bold text-stone-900 dark:text-white">Bạn chưa tham gia bài khảo sát nào</h4>
-                <p class="text-xs text-stone-500 max-w-sm mx-auto">Khám phá các đề tài đang cần người điền để đóng góp ý kiến và nhận thưởng điểm ngay.</p>
-                <button onclick="VibeApp.navigate('surveys')" class="mt-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer shadow-xs">
-                  Xem Danh Sách Khảo Sát
-                </button>
-              </div>
-            `}
+                    </thead>
+                    <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
+                      ${myParticipatedSurveys.map(item => `
+                        <tr class="hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition-colors">
+                          <td class="py-3.5 px-5 font-semibold text-stone-900 dark:text-white max-w-xs">
+                            <div class="font-bold text-stone-900 dark:text-white">${item.survey_title || 'Đề tài khảo sát'}</div>
+                            <span class="text-stone-400 text-[11px]">Thời gian làm bài: ${item.duration_sec ? Math.round(item.duration_sec / 60) + ' phút' : 'N/A'}</span>
+                          </td>
+                          <td class="py-3.5 px-4 text-stone-500">${item.creator_name || item.brand_name || 'Chủ nhiệm đề tài'}</td>
+                          <td class="py-3.5 px-4 text-stone-500">${item.submitted_at ? new Date(item.submitted_at).toLocaleDateString('vi-VN') : 'Mới đây'}</td>
+                          <td class="py-3.5 px-4 font-black font-mono text-orange-600 dark:text-orange-400">+${item.points_rewarded || 0} Xu</td>
+                          <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center gap-1 ${item.response_status === 'REJECTED' ? 'text-red-600 bg-red-50 dark:bg-red-950/60' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'} font-bold text-[11px] px-2.5 py-0.5 rounded-full">
+                              <i data-lucide="${item.response_status === 'REJECTED' ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
+                              ${item.response_status === 'REJECTED' ? 'Bị từ chối' : 'Đã nghiệm thu'}
+                            </span>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <div class="p-12 text-center space-y-3">
+                  <i data-lucide="check-circle-2" class="w-8 h-8 mx-auto text-stone-400"></i>
+                  <h4 class="text-sm font-bold text-stone-900 dark:text-white">Bạn chưa tham gia bài khảo sát nào</h4>
+                  <p class="text-xs text-stone-500 max-w-sm mx-auto">Khám phá các đề tài đang cần người điền để đóng góp ý kiến và nhận thưởng điểm ngay.</p>
+                  <button onclick="VibeApp.navigate('surveys')" class="mt-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer shadow-xs">
+                    Xem Danh Sách Khảo Sát
+                  </button>
+                </div>
+              `}
+            </div>
           </div>
         </div>
 
-        <!-- TAB 5: BÀI VIẾT TRÊN DIỄN ĐÀN - 100% REAL DATA CÓ NÚT XÓA THẬT -->
+        <!-- PHÂN HỆ 3: BÀI VIẾT TRÊN DIỄN ĐÀN -->
         <div id="profile-tab-forum-posts" class="${activeTab === 'forum-posts' ? '' : 'hidden'} space-y-5">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block">Cộng Đồng Học Thuật</span>
-              <h2 class="text-lg font-black text-stone-900 dark:text-white">Các Bài Viết Đã Đăng Trên Diễn Đàn (${myPosts.length})</h2>
+              <span class="text-[11px] font-black uppercase tracking-wider text-orange-600 block mb-0.5">Cộng Đồng Học Thuật</span>
+              <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Các Bài Viết Đã Đăng Trên Diễn Đàn (${myPosts.length})</h2>
             </div>
             <button onclick="VibeApp.openCreateForumPostModal()" class="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
               <i data-lucide="plus-circle" class="w-4 h-4"></i>
@@ -15715,8 +15738,8 @@ if (totalCount === 0) {
             `).join('') : `
               <div class="col-span-1 md:col-span-2 lg:col-span-3 p-12 text-center bg-white dark:bg-[#18181B] rounded-3xl border border-dashed border-stone-200 dark:border-stone-800 space-y-3">
                 <i data-lucide="messages-square" class="w-8 h-8 mx-auto text-stone-400"></i>
-                <h4 class="text-sm font-bold text-stone-900 dark:text-white">Bạn chưa có bài viết nào trên diễn đàn</h4>
-                <p class="text-xs text-stone-500 max-w-sm mx-auto">Chia sẻ kinh nghiệm thiết kế bảng hỏi, trao đổi mẫu khảo sát hoặc thảo luận học thuật cùng cộng đồng.</p>
+                <h4 class="text-sm font-bold text-stone-900 dark:text-white">Bạn chưa đăng bài viết nào trên diễn đàn</h4>
+                <p class="text-xs text-stone-500 max-w-sm mx-auto">Chia sẻ kinh nghiệm làm nghiên cứu khoa học, bẫy khảo sát hoặc trao đổi mẫu điền chéo cùng cộng đồng.</p>
                 <button onclick="VibeApp.openCreateForumPostModal()" class="mt-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs cursor-pointer shadow-xs">
                   + Đăng Bài Thảo Luận Mới
                 </button>
@@ -15896,7 +15919,21 @@ if (totalCount === 0) {
 
   switchProfileTab(tabName) {
     this.haptic('selection');
-    this.state.profileTab = tabName;
+    if (['demographics', 'reputation'].includes(tabName)) {
+      this.state.profileTab = 'overview';
+    } else if (['created-forms', 'filled-forms'].includes(tabName)) {
+      this.state.profileTab = 'surveys';
+      this.state.surveySubTab = tabName === 'created-forms' ? 'created' : 'filled';
+    } else {
+      this.state.profileTab = tabName;
+    }
+    const root = document.getElementById('app-root');
+    this.renderProfileView(root);
+  },
+
+  switchSurveySubTab(subTab) {
+    this.haptic('selection');
+    this.state.surveySubTab = subTab;
     const root = document.getElementById('app-root');
     this.renderProfileView(root);
   },
