@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ed71de10-226e-413e-9da5-b4db748bdc7c",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\architecture-vibesurvey-system-20261102-173200\\candidate.json",
+  "output": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\architecture-vibesurvey-system-20261102-173200\\vibesurvey-system.html",
+  "specification": {
+    "sha256": "ba2517ef00b7f1e023e6b559ef980e7667cf53badbbb34c704b0e625d6103c06",
+    "bytes": 5948
+  },
+  "artifact": {
+    "sha256": "4d0f23d3fb2c1376a5a556300d37c9286737af53a879ec777162ddf1ee879f27",
+    "bytes": 855419
+  }
+}

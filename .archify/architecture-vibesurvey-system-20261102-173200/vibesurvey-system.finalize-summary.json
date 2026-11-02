@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\architecture-vibesurvey-system-20261102-173200\\candidate.json",
+    "sha256": "ba2517ef00b7f1e023e6b559ef980e7667cf53badbbb34c704b0e625d6103c06",
+    "bytes": 5948
+  },
+  "artifact": {
+    "path": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\architecture-vibesurvey-system-20261102-173200\\vibesurvey-system.html",
+    "sha256": "4d0f23d3fb2c1376a5a556300d37c9286737af53a879ec777162ddf1ee879f27",
+    "bytes": 855419
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\architecture-vibesurvey-system-20261102-173200\\vibesurvey-system.finalize.json",
+    "summaryReceipt": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\architecture-vibesurvey-system-20261102-173200\\vibesurvey-system.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\Lenovo\\Downloads\\Linh\\.archify\\architecture-vibesurvey-system-20261102-173200\\vibesurvey-system.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-02T10:33:00.296Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5711,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

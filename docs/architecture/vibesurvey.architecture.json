@@ -3,31 +3,168 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "VibeSurvey System Architecture & Business Engines",
-    "output": "vibesurvey-architecture.html",
-    "quality_profile": "standard"
+    "output": "vibesurvey-system.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/trungdzid3/Surv_Hub.git",
+      "provider": "github",
+      "revision": "33caedbb371acf94fc6809c84222d1d7dd8c88fd"
+    }
   },
   "components": [
-    { "id": "respondent", "type": "external", "label": "Respondent", "sublabel": "Web & Android App", "pos": [40, 220], "size": [140, 60] },
-    { "id": "creator", "type": "external", "label": "Creator / Enterprise", "sublabel": "Survey Designer", "pos": [40, 360], "size": [140, 60] },
-    
-    { "id": "cloudflare", "type": "cloud", "label": "Cloudflare Tunnel", "sublabel": "WAF & SSL :443", "pos": [240, 290], "size": [140, 60], "tag": "Zero Trust" },
-    
-    { "id": "client_app", "type": "frontend", "label": "Client Interface", "sublabel": "Vanilla JS SPA & Capacitor", "pos": [440, 290], "size": [150, 60], "tag": "Tailwind + Montserrat" },
-    
-    { "id": "api_gateway", "type": "backend", "label": "Express API Server", "sublabel": "Node.js 24 :3000", "pos": [660, 290], "size": [150, 60] },
-    
-    { "id": "antifraud_svc", "type": "security", "label": "Anti-Fraud Engine", "sublabel": "5 Validation Gates", "pos": [660, 140], "size": [150, 60], "tag": "Trust Score 85" },
-    { "id": "pricing_svc", "type": "backend", "label": "Pricing & Escrow", "sublabel": "3 Segments x 3 Sizes", "pos": [660, 440], "size": [150, 60], "tag": "Take Rate 10-36%" },
-    { "id": "ledger_svc", "type": "backend", "label": "Fintech Ledger", "sublabel": "Double-Entry ACID", "pos": [880, 440], "size": [150, 60], "tag": "Points & Credit" },
-    
-    { "id": "sqlite_db", "type": "database", "label": "SQLite Database", "sublabel": "WAL Mode : ACID", "pos": [880, 290], "size": [150, 60] },
-    
-    { "id": "vietqr_momo", "type": "external", "label": "VietQR / MoMo", "sublabel": "Reward Payout Gateway", "pos": [1100, 440], "size": [150, 60] },
-    { "id": "gsheets", "type": "cloud", "label": "Google Sheets", "sublabel": "Realtime Webhook Sync", "pos": [1100, 290], "size": [150, 60] }
+    {
+      "id": "respondent",
+      "type": "external",
+      "label": "Respondent",
+      "sublabel": "Web & Mobile Users",
+      "pos": [40, 220],
+      "size": [140, 60]
+    },
+    {
+      "id": "creator",
+      "type": "external",
+      "label": "Creator / Enterprise",
+      "sublabel": "Survey Designer",
+      "pos": [40, 360],
+      "size": [140, 60]
+    },
+    {
+      "id": "cloudflare",
+      "type": "cloud",
+      "label": "Cloudflare Tunnel",
+      "sublabel": "WAF & SSL :443",
+      "pos": [240, 290],
+      "size": [140, 60],
+      "tag": "Zero Trust"
+    },
+    {
+      "id": "client_app",
+      "type": "frontend",
+      "label": "Client Interface",
+      "sublabel": "Vanilla JS SPA & Capacitor",
+      "pos": [440, 290],
+      "size": [150, 60],
+      "tag": "Tailwind + Montserrat",
+      "sources": [
+        {
+          "path": "public/app.js",
+          "line": 1,
+          "end_line": 50,
+          "label": "SPA Entrypoint"
+        }
+      ]
+    },
+    {
+      "id": "api_gateway",
+      "type": "backend",
+      "label": "Express API Server",
+      "sublabel": "Node.js 24 :3000",
+      "pos": [660, 290],
+      "size": [150, 60],
+      "sources": [
+        {
+          "path": "server/app.js",
+          "line": 1,
+          "end_line": 35,
+          "label": "Express Bootstrap"
+        }
+      ]
+    },
+    {
+      "id": "antifraud_svc",
+      "type": "security",
+      "label": "Anti-Fraud Engine",
+      "sublabel": "5 Validation Gates",
+      "pos": [660, 140],
+      "size": [150, 60],
+      "tag": "Trust Score 85",
+      "sources": [
+        {
+          "path": "server/services/antiFraudService.js",
+          "line": 1,
+          "end_line": 25,
+          "label": "5 Fraud Gates"
+        }
+      ]
+    },
+    {
+      "id": "pricing_svc",
+      "type": "backend",
+      "label": "Pricing & Escrow",
+      "sublabel": "3 Segments x 3 Sizes",
+      "pos": [660, 440],
+      "size": [150, 60],
+      "tag": "Take Rate 10-36%",
+      "sources": [
+        {
+          "path": "server/services/surveyPricingService.js",
+          "line": 1,
+          "end_line": 30,
+          "label": "Unit Economics"
+        }
+      ]
+    },
+    {
+      "id": "ledger_svc",
+      "type": "backend",
+      "label": "Fintech Ledger",
+      "sublabel": "Double-Entry ACID",
+      "pos": [880, 440],
+      "size": [150, 60],
+      "tag": "Points & Credit",
+      "sources": [
+        {
+          "path": "server/services/ledgerService.js",
+          "line": 1,
+          "end_line": 25,
+          "label": "Double-Entry Ledger"
+        }
+      ]
+    },
+    {
+      "id": "sqlite_db",
+      "type": "database",
+      "label": "SQLite Database",
+      "sublabel": "WAL Mode : ACID",
+      "pos": [880, 290],
+      "size": [150, 60],
+      "sources": [
+        {
+          "path": "server/db/database.js",
+          "line": 1,
+          "end_line": 25,
+          "label": "SQLite WAL Bootstrap"
+        }
+      ]
+    },
+    {
+      "id": "vietqr_momo",
+      "type": "external",
+      "label": "VietQR / MoMo",
+      "sublabel": "Reward Payout Gateway",
+      "pos": [1100, 440],
+      "size": [150, 60]
+    },
+    {
+      "id": "gsheets",
+      "type": "cloud",
+      "label": "Google Sheets",
+      "sublabel": "Realtime Webhook Sync",
+      "pos": [1100, 290],
+      "size": [150, 60]
+    }
   ],
   "boundaries": [
-    { "kind": "region", "label": "VibeSurvey Core Engine (Oracle Always Free)", "wraps": ["api_gateway", "antifraud_svc", "pricing_svc", "ledger_svc", "sqlite_db"] },
-    { "kind": "security-group", "label": "Frontend Clients", "wraps": ["client_app"] }
+    {
+      "kind": "region",
+      "label": "VibeSurvey Core Engine (Oracle Always Free)",
+      "wraps": ["api_gateway", "antifraud_svc", "pricing_svc", "ledger_svc", "sqlite_db"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Frontend Clients",
+      "wraps": ["client_app"]
+    }
   ],
   "connections": [
     { "id": "resp_to_cf", "from": "respondent", "to": "cloudflare", "label": "HTTPS", "variant": "emphasis" },
