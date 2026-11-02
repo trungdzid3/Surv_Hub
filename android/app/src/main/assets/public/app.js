@@ -19536,9 +19536,10 @@ if (totalCount === 0) {
           <h2 class="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-snug">
             ${this.escapeHtml(post.title)}
           </h2>
-          <div class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 whitespace-pre-line leading-relaxed">
-            ${this.escapeHtml(post.content)}
+          <div class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed space-y-1">
+            ${this.formatForumContent(post.content)}
           </div>
+          ${post.images && post.images.length > 0 ? this._renderForumPostImagesHtml(post.images, post.title) : ''}
         </div>
 
         <!-- THẺ KHẢO SÁT ĐÍNH KÈM HOẶC THÔNG TIN THẢO LUẬN TỰ DO -->
@@ -19672,6 +19673,9 @@ if (totalCount === 0) {
       return;
     }
 
+    // Khởi tạo danh sách ảnh đính kèm sạch sẽ
+    this.state.forumAttachedImages = [];
+
     const user = this.state.currentUser;
     const isEduUser = this.isStudentUser(user);
 
@@ -19688,7 +19692,7 @@ if (totalCount === 0) {
 
     this.showModal({
       title: 'Đăng Bài Viết Lên Diễn Đàn SurvHub',
-      maxWidth: 'max-w-xl',
+      maxWidth: 'max-w-2xl',
       content: `
         <form onsubmit="VibeApp.submitCreateForumPost(event)" class="space-y-4 text-xs">
           
@@ -19769,12 +19773,84 @@ if (totalCount === 0) {
             <p class="text-[10.5px] text-stone-500 dark:text-stone-400">Bạn không cần sở hữu khảo sát vẫn đăng bài trao đổi bình thường. Nếu muốn đính kèm để kêu gọi đáp viên, hãy chọn bài đang ACTIVE của bạn.</p>
           </div>
 
-          <!-- Nội dung chia sẻ -->
+          <!-- Nội dung chia sẻ & Thanh công cụ Rich Text -->
           <div class="space-y-1.5">
-            <label class="font-bold text-stone-800 dark:text-stone-200">Nội dung chia sẻ & Thảo luận (*):</label>
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-stone-800 dark:text-stone-200">Nội dung chia sẻ & Thảo luận (*):</label>
+              <span class="text-[10px] text-stone-400">Ctrl+B: In đậm • Ctrl+I: In nghiêng</span>
+            </div>
+
+            <!-- Thanh công cụ định dạng chữ và căn lề danh sách -->
+            <div class="flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-800/80 rounded-xl border border-stone-200 dark:border-stone-700/80 flex-wrap">
+              <button type="button" onclick="VibeApp.insertForumMarkdown('**', '**', 'nội dung in đậm')" 
+                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+                      title="In đậm (Ctrl+B)">
+                <i data-lucide="bold" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                <span class="text-[11px]">Đậm</span>
+              </button>
+              <button type="button" onclick="VibeApp.insertForumMarkdown('*', '*', 'nội dung in nghiêng')" 
+                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+                      title="In nghiêng (Ctrl+I)">
+                <i data-lucide="italic" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                <span class="text-[11px] italic">Nghiêng</span>
+              </button>
+              <div class="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5"></div>
+              <button type="button" onclick="VibeApp.insertForumList('bullet')" 
+                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+                      title="Danh sách dấu chấm (•)">
+                <i data-lucide="list" class="w-3.5 h-3.5 stroke-[2.2]"></i>
+                <span class="text-[11px]">Dấu chấm</span>
+              </button>
+              <button type="button" onclick="VibeApp.insertForumList('number')" 
+                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+                      title="Danh sách số (1, 2, 3...)">
+                <i data-lucide="list-ordered" class="w-3.5 h-3.5 stroke-[2.2]"></i>
+                <span class="text-[11px]">Số (1,2..)</span>
+              </button>
+              <button type="button" onclick="VibeApp.insertForumList('abc')" 
+                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+                      title="Danh sách chữ cái (a, b, c...)">
+                <span class="font-mono text-xs font-extrabold text-orange-600">abc.</span>
+                <span class="text-[11px]">Chữ cái</span>
+              </button>
+              <div class="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5"></div>
+              <button type="button" onclick="VibeApp.insertForumIndent()" 
+                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+                      title="Căn lề / Thụt dòng">
+                <i data-lucide="indent" class="w-3.5 h-3.5 stroke-[2.2]"></i>
+                <span class="text-[11px]">Thụt lề</span>
+              </button>
+            </div>
+
             <textarea id="forum-post-content-input" rows="5" required
-                      placeholder="Chia sẻ bối cảnh đề tài, câu hỏi thảo luận, kinh nghiệm thiết kế form hoặc nội dung bạn muốn trao đổi cùng cộng đồng..."
-                      class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs text-stone-900 dark:text-white focus:outline-none focus:border-orange-500"></textarea>
+                      onkeydown="if((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') { event.preventDefault(); VibeApp.insertForumMarkdown('**', '**', 'nội dung in đậm'); } else if((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') { event.preventDefault(); VibeApp.insertForumMarkdown('*', '*', 'nội dung in nghiêng'); }"
+                      placeholder="Chia sẻ bối cảnh đề tài, câu hỏi thảo luận hoặc nội dung trao đổi... (Hỗ trợ **in đậm**, *in nghiêng*, danh sách • dấu chấm, 1. số hoặc a. abc)"
+                      class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs text-stone-900 dark:text-white focus:outline-none focus:border-orange-500 font-sans"></textarea>
+          </div>
+
+          <!-- Đính Kèm Hình Ảnh Minh Họa (Tối đa 10 ảnh, tối đa 10MB/ảnh chuẩn Facebook) -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <label class="font-bold text-stone-800 dark:text-stone-200">Hình ảnh minh họa:</label>
+                <span id="forum-images-count-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500 font-bold font-mono">0/10 ảnh</span>
+              </div>
+              <span class="text-[10.5px] text-stone-400">Tối đa 10 ảnh • Chuẩn Facebook (&le;10MB/ảnh)</span>
+            </div>
+
+            <div class="space-y-2.5">
+              <input type="file" id="forum-post-images-file-input" accept="image/png,image/jpeg,image/webp,image/jpg" multiple class="hidden" onchange="VibeApp.handleForumImagesSelected(this)">
+              
+              <div id="forum-attached-images-container" class="flex flex-wrap gap-2.5 empty:hidden"></div>
+
+              <button type="button" 
+                      id="forum-add-images-btn"
+                      onclick="document.getElementById('forum-post-images-file-input').click()" 
+                      class="w-full py-2.5 px-3 border border-dashed border-stone-300 dark:border-stone-700 hover:border-orange-500 dark:hover:border-orange-500 rounded-xl bg-stone-50/50 dark:bg-stone-900/50 text-stone-600 dark:text-stone-300 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer group">
+                <i data-lucide="image-plus" class="w-4 h-4 text-orange-600 group-hover:scale-110 transition-transform"></i>
+                <span>Đính kèm hình ảnh minh họa (Chọn từ thiết bị)</span>
+              </button>
+            </div>
           </div>
 
           <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-900/60 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed space-y-1">
@@ -19820,18 +19896,42 @@ if (totalCount === 0) {
     const btn = document.getElementById('forum-post-submit-btn');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Đang đăng bài...</span>';
+      btn.innerHTML = '<div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Đang chuẩn bị đăng bài...</span>';
     }
 
     try {
+      // 1. Upload hình ảnh minh họa đính kèm (nếu có)
+      let uploadedImageUrls = [];
+      const attachedImages = this.state.forumAttachedImages || [];
+      if (attachedImages.length > 0) {
+        if (btn) {
+          btn.innerHTML = `<div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Đang tải lên ${attachedImages.length} ảnh...</span>`;
+        }
+        for (let i = 0; i < attachedImages.length; i++) {
+          const img = attachedImages[i];
+          const uploadRes = await this.api('/upload/image', {
+            method: 'POST',
+            body: JSON.stringify({ image_data: img.dataUrl, type: 'forum' })
+          });
+          if (uploadRes && uploadRes.success && uploadRes.url) {
+            uploadedImageUrls.push(uploadRes.url);
+          }
+        }
+      }
+
+      if (btn) {
+        btn.innerHTML = '<div class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Đang lưu bài viết...</span>';
+      }
+
       const res = await this.api('/forum/posts', {
         method: 'POST',
-        body: JSON.stringify({ title, survey_id, content, post_type })
+        body: JSON.stringify({ title, survey_id, content, images: uploadedImageUrls, post_type })
       });
 
       if (res && res.success) {
         this.haptic('success');
         this.showToast('Đăng bài viết lên diễn đàn thành công!', 'success');
+        this.state.forumAttachedImages = [];
         this.closeModal();
         if (this.state.forumFilter) {
           this.state.forumFilter.hub = post_type;
@@ -19849,6 +19949,313 @@ if (totalCount === 0) {
         if (window.lucide) window.lucide.createIcons();
       }
     }
+  },
+
+  // ==================== SOẠN THẢO RICH TEXT & ĐỊNH DẠNG DIỄN ĐÀN ====================
+  insertForumMarkdown(before, after, defaultText = '') {
+    const textarea = document.getElementById('forum-post-content-input');
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end) || defaultText;
+    const replacement = before + selected + after;
+    textarea.value = text.substring(0, start) + replacement + text.substring(end);
+    textarea.focus();
+    textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
+  },
+
+  insertForumList(type) {
+    const textarea = document.getElementById('forum-post-content-input');
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    const defaultPlaceholder = type === 'bullet' ? 'Mục danh sách' : (type === 'number' ? 'Mục số một' : 'Mục a');
+    const lines = (selected || defaultPlaceholder).split('\n');
+    const formatted = lines.map((line, idx) => {
+      let prefix = '• ';
+      if (type === 'number') prefix = `${idx + 1}. `;
+      else if (type === 'abc') prefix = `${String.fromCharCode(97 + (idx % 26))}. `;
+      const cleanLine = line.replace(/^[•\-\*]\s+|^\d+\.\s+|^[a-zA-Z]\.\s+/, '');
+      return prefix + cleanLine;
+    }).join('\n');
+
+    textarea.value = text.substring(0, start) + formatted + text.substring(end);
+    textarea.focus();
+    textarea.setSelectionRange(start, start + formatted.length);
+  },
+
+  insertForumIndent() {
+    const textarea = document.getElementById('forum-post-content-input');
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end);
+    if (selected) {
+      const lines = selected.split('\n');
+      const indented = lines.map(l => '    ' + l).join('\n');
+      textarea.value = text.substring(0, start) + indented + text.substring(end);
+      textarea.setSelectionRange(start, start + indented.length);
+    } else {
+      textarea.value = text.substring(0, start) + '    ' + text.substring(end);
+      textarea.setSelectionRange(start + 4, start + 4);
+    }
+    textarea.focus();
+  },
+
+  formatForumContent(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    // 1. Escape HTML chống XSS an toàn
+    let escaped = raw
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    // 2. Chuyển đổi Markdown in đậm: **text** -> strong
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-stone-900 dark:text-white">$1</strong>');
+
+    // 3. Chuyển đổi Markdown in nghiêng: *text* -> em
+    escaped = escaped.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em class="italic">$2</em>');
+
+    // 4. Phân tích từng dòng nhận diện danh sách & thụt lề
+    const lines = escaped.split('\n');
+    const output = [];
+    let currentListType = null; // 'ul', 'ol-num', 'ol-abc'
+
+    const closeListIfOpen = () => {
+      if (currentListType === 'ul') {
+        output.push('</ul>');
+      } else if (currentListType === 'ol-num' || currentListType === 'ol-abc') {
+        output.push('</ol>');
+      }
+      currentListType = null;
+    };
+
+    for (let line of lines) {
+      const isIndented = line.startsWith('    ') || line.startsWith('\t');
+      let contentLine = isIndented ? line.replace(/^( {4}|\t)/, '') : line;
+
+      const bulletMatch = contentLine.match(/^[•\-\*]\s+(.*)$/);
+      const numMatch = contentLine.match(/^(\d+)\.\s+(.*)$/);
+      const abcMatch = contentLine.match(/^([a-zA-Z])\.\s+(.*)$/);
+
+      if (bulletMatch) {
+        if (currentListType !== 'ul') {
+          closeListIfOpen();
+          output.push('<ul class="list-disc list-inside space-y-1 my-1 pl-1 text-stone-700 dark:text-stone-300">');
+          currentListType = 'ul';
+        }
+        output.push(`<li class="leading-relaxed ${isIndented ? 'pl-4 border-l-2 border-stone-200 dark:border-stone-700' : ''}">${bulletMatch[1]}</li>`);
+      } else if (numMatch) {
+        if (currentListType !== 'ol-num') {
+          closeListIfOpen();
+          output.push('<ol class="list-decimal list-inside space-y-1 my-1 pl-1 text-stone-700 dark:text-stone-300">');
+          currentListType = 'ol-num';
+        }
+        output.push(`<li class="leading-relaxed ${isIndented ? 'pl-4 border-l-2 border-stone-200 dark:border-stone-700' : ''}">${numMatch[2]}</li>`);
+      } else if (abcMatch) {
+        if (currentListType !== 'ol-abc') {
+          closeListIfOpen();
+          output.push('<ol class="list-[lower-alpha] list-inside space-y-1 my-1 pl-1 text-stone-700 dark:text-stone-300">');
+          currentListType = 'ol-abc';
+        }
+        output.push(`<li class="leading-relaxed ${isIndented ? 'pl-4 border-l-2 border-stone-200 dark:border-stone-700' : ''}">${abcMatch[2]}</li>`);
+      } else {
+        closeListIfOpen();
+        if (line.trim().length === 0) {
+          output.push('<div class="h-2"></div>');
+        } else if (isIndented) {
+          output.push(`<div class="pl-4 my-1 border-l-2 border-orange-500/50 text-stone-700 dark:text-stone-300 italic">${contentLine}</div>`);
+        } else {
+          output.push(`<p class="leading-relaxed">${line}</p>`);
+        }
+      }
+    }
+    closeListIfOpen();
+
+    return output.join('');
+  },
+
+  // ==================== QUẢN LÝ ĐÍNH KÈM & GALLERY HÌNH ẢNH DIỄN ĐÀN ====================
+  async handleForumImagesSelected(input) {
+    if (!input || !input.files || input.files.length === 0) return;
+    const files = Array.from(input.files);
+    input.value = '';
+
+    if (!this.state.forumAttachedImages) {
+      this.state.forumAttachedImages = [];
+    }
+
+    const maxImages = 10;
+    const currentCount = this.state.forumAttachedImages.length;
+    const availableSlots = maxImages - currentCount;
+
+    if (availableSlots <= 0) {
+      this.showToast('Bạn đã đính kèm tối đa 10 ảnh minh họa cho bài viết!', 'warning');
+      return;
+    }
+
+    let filesToProcess = files;
+    if (files.length > availableSlots) {
+      this.showToast(`Chỉ có thể thêm tối đa ${availableSlots} ảnh nữa (tổng cộng tối đa 10 ảnh). Đã chọn ${availableSlots} ảnh đầu tiên.`, 'info');
+      filesToProcess = files.slice(0, availableSlots);
+    }
+
+    // Quy định dung lượng tiêu chuẩn Facebook: tối đa 10MB mỗi ảnh
+    const maxFileSizeBytes = 10 * 1024 * 1024;
+    for (const file of filesToProcess) {
+      if (file.size > maxFileSizeBytes) {
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+        this.showToast(`Ảnh "${file.name}" dung lượng ${sizeMb}MB vượt quá giới hạn 10MB (quy định tiêu chuẩn Facebook).`, 'warning');
+        return;
+      }
+    }
+
+    this.showToast('Đang nén và tối ưu hóa ảnh...', 'info');
+
+    for (const file of filesToProcess) {
+      try {
+        const compressed = await this.compressImageFile(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 });
+        this.state.forumAttachedImages.push({
+          name: file.name,
+          size: file.size,
+          compressedSize: compressed.compressedSize,
+          dataUrl: compressed.dataUrl,
+          width: compressed.width,
+          height: compressed.height
+        });
+      } catch (err) {
+        console.error('Lỗi nén ảnh:', err);
+        this.showToast(`Không thể đọc ảnh "${file.name}": ${err.message}`, 'error');
+      }
+    }
+
+    this._renderForumAttachedImagesPreview();
+  },
+
+  removeForumAttachedImage(index) {
+    if (this.state.forumAttachedImages && index >= 0 && index < this.state.forumAttachedImages.length) {
+      this.state.forumAttachedImages.splice(index, 1);
+      this._renderForumAttachedImagesPreview();
+    }
+  },
+
+  _renderForumAttachedImagesPreview() {
+    const container = document.getElementById('forum-attached-images-container');
+    const badge = document.getElementById('forum-images-count-badge');
+    const addBtn = document.getElementById('forum-add-images-btn');
+    const images = this.state.forumAttachedImages || [];
+
+    if (badge) {
+      badge.textContent = `${images.length}/10 ảnh`;
+      if (images.length >= 10) {
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400 font-bold font-mono';
+      } else {
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500 font-bold font-mono';
+      }
+    }
+
+    if (addBtn) {
+      if (images.length >= 10) {
+        addBtn.classList.add('hidden');
+      } else {
+        addBtn.classList.remove('hidden');
+      }
+    }
+
+    if (!container) return;
+
+    if (images.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = images.map((img, idx) => `
+      <div class="relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 group shrink-0">
+        <img src="${img.dataUrl}" alt="Ảnh minh họa ${idx + 1}" class="w-full h-full object-cover">
+        <button type="button" onclick="VibeApp.removeForumAttachedImage(${idx})" 
+                class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer" 
+                title="Gỡ ảnh này">
+          <i data-lucide="x" class="w-3 h-3 stroke-[2.5]"></i>
+        </button>
+        <div class="absolute bottom-0 inset-x-0 bg-black/60 text-[9px] font-mono text-white text-center py-0.5 truncate px-1">
+          ${this._formatFileSize(img.compressedSize || img.size)}
+        </div>
+      </div>
+    `).join('');
+
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  _renderForumPostImagesHtml(images, title = 'Ảnh minh họa bài viết') {
+    if (!images || !Array.isArray(images) || images.length === 0) return '';
+    const safeTitle = this.escapeHtml(title).replace(/'/g, "\\'");
+    const count = images.length;
+
+    if (count === 1) {
+      const img = images[0];
+      return `
+        <div class="mt-3 rounded-2xl overflow-hidden border border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 max-h-96 w-full flex items-center justify-center">
+          <img src="${this.escapeHtml(img)}" 
+               alt="${safeTitle}" 
+               loading="lazy"
+               onclick="VibeApp.previewFullImage('${this.escapeHtml(img)}', '${safeTitle}')"
+               class="w-full h-auto max-h-96 object-contain cursor-pointer hover:opacity-95 transition-opacity">
+        </div>
+      `;
+    }
+
+    if (count === 2) {
+      return `
+        <div class="mt-3 grid grid-cols-2 gap-2 rounded-2xl overflow-hidden">
+          ${images.map(img => `
+            <div class="relative aspect-4/3 overflow-hidden rounded-xl border border-stone-200/80 dark:border-stone-800 bg-stone-100 dark:bg-stone-900">
+              <img src="${this.escapeHtml(img)}" 
+                   alt="${safeTitle}" 
+                   loading="lazy"
+                   onclick="VibeApp.previewFullImage('${this.escapeHtml(img)}', '${safeTitle}')"
+                   class="w-full h-full object-cover cursor-pointer hover:scale-102 transition-transform">
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    if (count === 3) {
+      return `
+        <div class="mt-3 grid grid-cols-3 gap-2 rounded-2xl overflow-hidden">
+          ${images.map(img => `
+            <div class="relative aspect-square overflow-hidden rounded-xl border border-stone-200/80 dark:border-stone-800 bg-stone-100 dark:bg-stone-900">
+              <img src="${this.escapeHtml(img)}" 
+                   alt="${safeTitle}" 
+                   loading="lazy"
+                   onclick="VibeApp.previewFullImage('${this.escapeHtml(img)}', '${safeTitle}')"
+                   class="w-full h-full object-cover cursor-pointer hover:scale-102 transition-transform">
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // 4 ảnh trở lên (tối đa 10 ảnh)
+    return `
+      <div class="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 rounded-2xl overflow-hidden">
+        ${images.map(img => `
+          <div class="relative aspect-square overflow-hidden rounded-xl border border-stone-200/80 dark:border-stone-800 bg-stone-100 dark:bg-stone-900">
+            <img src="${this.escapeHtml(img)}" 
+                 alt="${safeTitle}" 
+                 loading="lazy"
+                 onclick="VibeApp.previewFullImage('${this.escapeHtml(img)}', '${safeTitle}')"
+                 class="w-full h-full object-cover cursor-pointer hover:scale-102 transition-transform">
+          </div>
+        `).join('')}
+      </div>
+    `;
   },
 
   shareForumPost(postId) {

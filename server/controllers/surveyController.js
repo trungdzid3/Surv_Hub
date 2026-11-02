@@ -2164,9 +2164,9 @@ class SurveyController {
       const base64Content = matches[2];
       const buffer = Buffer.from(base64Content, 'base64');
 
-      // Giới hạn dung lượng tối đa 3MB (ảnh WebP từ client sau khi nén thường chỉ 30KB - 80KB)
-      if (buffer.length > 3 * 1024 * 1024) {
-        return res.status(400).json({ success: false, message: 'Dung lượng tệp sau khi nén vượt quá 3MB' });
+      // Giới hạn dung lượng tối đa 10MB (quy định tiêu chuẩn ảnh Facebook)
+      if (buffer.length > 10 * 1024 * 1024) {
+        return res.status(400).json({ success: false, message: 'Dung lượng tệp vượt quá 10MB (giới hạn tiêu chuẩn Facebook)' });
       }
 
       // Đảm bảo thư mục public/uploads tồn tại
@@ -2175,7 +2175,7 @@ class SurveyController {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
 
-      const prefix = type === 'question' ? 'q' : 'cover';
+      const prefix = type === 'question' ? 'q' : (type === 'forum' ? 'forum' : 'cover');
       const filename = `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
       const filePath = path.join(uploadDir, filename);
 

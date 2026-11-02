@@ -237,9 +237,28 @@ c:\Users\Lenovo\Downloads\Linh\
 - **Kiểm Chuẩn & Bộ Test Toàn Diện**:
   - Thêm bộ kiểm thử toàn trình `tests/test_survey_full_flow.js` kiểm tra bóc tách, lưu DB, đọc ra và rẽ nhánh.
   - Bộ kiểm thử tự hành đa tầng `npm test` đạt 17/17 Suites PASS (100.0%).
+### J. Phân Hệ Diễn Đàn Rich Text & Tải Lên 10 Ảnh Minh Họa Chuẩn Facebook (v4.9.5)
+- **Thanh Công Cụ Soạn Thảo Rich Text & Định Dạng Danh Sách**:
+  - Hỗ trợ trực tiếp trên khung soạn thảo:
+    + **In đậm**: Bọc hoặc chèn `**nội dung**` (phím tắt `Ctrl+B` / `Cmd+B`).
+    + **In nghiêng**: Bọc hoặc chèn `*nội dung*` (phím tắt `Ctrl+I` / `Cmd+I`).
+    + **Danh sách dấu chấm (Bullet List)**: Tự động đánh dấu `• ` từng dòng.
+    + **Danh sách số (Numbered List)**: Tự động đánh số thứ tự `1. `, `2. ` từng dòng.
+    + **Danh sách chữ cái (ABC List)**: Tự động đánh chỉ mục `a. `, `b. `, `c. ` từng dòng.
+    + **Thụt lề / Căn dòng (Indent)**: Thụt lùi đầu dòng 4 khoảng trắng kết hợp đường viền cam chỉ báo.
+  - Bộ phân tích cú pháp an toàn (`formatForumContent`): Escape 100% mã độc HTML (chống XSS), bọc thẻ semantic `<strong>`, `<em>`, `<ul>`, `<ol>`, và `<p>` phân cấp chuẩn mực.
+- **Đính Kèm Hình Ảnh Minh Họa Chuẩn Facebook**:
+  - **Giới hạn số lượng**: Cho phép tải lên tối đa **10 hình ảnh minh họa** cho mỗi bài viết.
+  - **Dung lượng tiêu chuẩn Facebook**: Quy định kích thước tệp tối đa **10MB/ảnh** (chuẩn tải ảnh chất lượng cao của Facebook).
+  - **Nén WebP client-side tự động**: Tối ưu hóa trước khi gửi lên máy chủ qua `compressImageFile` (co giãn tỷ lệ tối đa 1600x1600px, chất lượng 0.85, giảm dung lượng còn ~100KB-300KB).
+  - **Lưu trữ CSDL & Backend**:
+    + Thêm cột `images TEXT DEFAULT '[]'` vào bảng `forum_posts`.
+    + Backend `forumController` kiểm duyệt nghiêm ngặt: kiểm tra độ dài URL, giới hạn mảng ảnh tối đa 10 phần tử và chặn triệt để URL ngoài.
+    + Tuyến tải ảnh `/upload/image` hỗ trợ tiền tố `forum_` với ngưỡng buffer 10MB.
+  - **Hiển thị thư viện ảnh (Photo Gallery) & Lightbox**:
+    + Bố cục lưới thông minh theo số lượng ảnh: 1 ảnh (full-width), 2 ảnh (2 cột), 3 ảnh (3 cột), 4-10 ảnh (lưới 2-4 cột linh hoạt).
+    + Tích hợp trực tiếp với bộ xem ảnh phóng to toàn màn hình `VibeApp.previewFullImage(url, title)` chuẩn `DESIGN.md` Mục 5.4.
   - Đồng bộ Capacitor Android assets hoàn tất.
-
-
 
 ### Phân Hệ Hồ Sơ Tài Khoản Thực Tế, Tải Lên Avatar & Loại Bỏ 100% Mock Data (v4.7.9)
 - **Đơn Giản Hóa Toàn Diện & Chuẩn Hóa Phân Quyền Vai Trò**:

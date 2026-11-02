@@ -154,7 +154,7 @@ class ForumController {
       const currentUserId = user ? user.id : '';
       const listSql = `
         SELECT 
-          p.id, p.title, p.content, p.post_type, p.category, p.is_hidden, p.audit_flag, p.views_count, p.likes_count, p.created_at, p.updated_at,
+          p.id, p.title, p.content, p.images, p.post_type, p.category, p.is_hidden, p.audit_flag, p.views_count, p.likes_count, p.created_at, p.updated_at,
           u.id AS author_id, u.name AS author_name, u.role AS author_role, u.is_student_verified AS author_is_student_verified,
           s.id AS survey_id, s.title AS survey_title, s.description AS survey_description, s.category AS survey_category,
           s.target_responses, s.collected_responses, s.reward_points_per_response, s.cost_per_response,
@@ -172,39 +172,50 @@ class ForumController {
       const posts = db.prepare(listSql).all(currentUserId, ...params, limitNum, offset);
 
       // Dinh dang du lieu tra ve client
-      const formattedPosts = posts.map(row => ({
-        id: row.id,
-        title: row.title,
-        content: row.content,
-        post_type: row.post_type || 'COMMUNITY',
-        category: row.category || 'ALL',
-        is_hidden: row.is_hidden === 1,
-        audit_flag: row.audit_flag || null,
-        views_count: row.views_count || 0,
-        likes_count: row.likes_count || 0,
-        comments_count: row.comments_count || 0,
-        is_liked: Boolean(row.is_liked),
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-        author: {
-          id: row.author_id,
-          name: row.author_name,
-          role: row.author_role,
-          is_student_verified: row.author_is_student_verified === 1
-        },
-        survey: row.survey_id ? {
-          id: row.survey_id,
-          title: row.survey_title,
-          description: row.survey_description,
-          category: row.survey_category,
-          target_responses: row.target_responses,
-          collected_responses: row.collected_responses,
-          reward_points_per_response: row.reward_points_per_response,
-          status: row.survey_status,
-          is_student_exchange: row.is_student_exchange === 1,
-          cover_image_url: row.survey_cover_image_url
-        } : null
-      }));
+      const formattedPosts = posts.map(row => {
+        let postImages = [];
+        try {
+          postImages = JSON.parse(row.images || '[]');
+          if (!Array.isArray(postImages)) postImages = [];
+        } catch {
+          postImages = [];
+        }
+
+        return {
+          id: row.id,
+          title: row.title,
+          content: row.content,
+          images: postImages,
+          post_type: row.post_type || 'COMMUNITY',
+          category: row.category || 'ALL',
+          is_hidden: row.is_hidden === 1,
+          audit_flag: row.audit_flag || null,
+          views_count: row.views_count || 0,
+          likes_count: row.likes_count || 0,
+          comments_count: row.comments_count || 0,
+          is_liked: Boolean(row.is_liked),
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          author: {
+            id: row.author_id,
+            name: row.author_name,
+            role: row.author_role,
+            is_student_verified: row.author_is_student_verified === 1
+          },
+          survey: row.survey_id ? {
+            id: row.survey_id,
+            title: row.survey_title,
+            description: row.survey_description,
+            category: row.survey_category,
+            target_responses: row.target_responses,
+            collected_responses: row.collected_responses,
+            reward_points_per_response: row.reward_points_per_response,
+            status: row.survey_status,
+            is_student_exchange: row.is_student_exchange === 1,
+            cover_image_url: row.survey_cover_image_url
+          } : null
+        };
+      });
 
       return res.json({
         success: true,
@@ -233,7 +244,7 @@ class ForumController {
 
       const postRow = db.prepare(`
         SELECT 
-          p.id, p.title, p.content, p.post_type, p.category, p.is_hidden, p.audit_flag, p.views_count, p.likes_count, p.created_at, p.updated_at,
+          p.id, p.title, p.content, p.images, p.post_type, p.category, p.is_hidden, p.audit_flag, p.views_count, p.likes_count, p.created_at, p.updated_at,
           u.id AS author_id, u.name AS author_name, u.role AS author_role, u.is_student_verified AS author_is_student_verified,
           s.id AS survey_id, s.title AS survey_title, s.description AS survey_description, s.category AS survey_category,
           s.target_responses, s.collected_responses, s.reward_points_per_response, s.cost_per_response,
@@ -308,12 +319,21 @@ class ForumController {
         }
       }));
 
+      let postImages = [];
+      try {
+        postImages = JSON.parse(postRow.images || '[]');
+        if (!Array.isArray(postImages)) postImages = [];
+      } catch (e) {
+        postImages = [];
+      }
+
       return res.json({
         success: true,
         post: {
           id: postRow.id,
           title: postRow.title,
           content: postRow.content,
+          images: postImages,
           post_type: postRow.post_type || 'COMMUNITY',
           category: postRow.category || 'ALL',
           is_hidden: postRow.is_hidden === 1,
@@ -366,6 +386,7 @@ class ForumController {
       const {
         title,
         content,
+        images = [],
         survey_id = null,
         post_type = 'COMMUNITY',
         category = 'ALL'
@@ -378,6 +399,34 @@ class ForumController {
 
       if (!content || typeof content !== 'string' || content.trim().length < 5 || content.trim().length > 5000) {
         return res.status(400).json({ success: false, message: 'Noi dung bai viet phai tu 5 den 5,000 ky tu' });
+      }
+
+      // Kiem dinh danh sach anh minh hoa (toi da 10 anh)
+      let validImages = [];
+      if (Array.isArray(images)) {
+        validImages = images
+          .filter(img => typeof img === 'string' && img.trim().length > 0)
+          .map(img => img.trim());
+
+        if (validImages.length > 10) {
+          return res.status(400).json({
+            success: false,
+            message: 'Mỗi bài viết chỉ được đính kèm tối đa 10 ảnh minh họa.'
+          });
+        }
+
+        for (const imgUrl of validImages) {
+          if (imgUrl.length > 500) {
+            return res.status(400).json({ success: false, message: 'Đường dẫn ảnh đính kèm không hợp lệ.' });
+          }
+          if (containsExternalLink(imgUrl)) {
+            return res.status(400).json({ success: false, message: 'Ảnh đính kèm không được chứa liên kết ngoài trái phép.' });
+          }
+          // Chỉ chấp nhận ảnh tải lên trực tiếp trong hệ thống
+          if (!imgUrl.startsWith('/uploads/') && !imgUrl.startsWith('data:image/')) {
+            return res.status(400).json({ success: false, message: 'Ảnh đính kèm phải được tải lên trực tiếp trên hệ thống SurvHub.' });
+          }
+        }
       }
 
       // 2. RÀNG BUỘC CỐT LÕI: Chặn chèn link ngoài (Anti-URL Spoofing)
@@ -437,9 +486,9 @@ class ForumController {
 
       const postId = crypto.randomUUID();
       db.prepare(`
-        INSERT INTO forum_posts (id, user_id, survey_id, title, content, post_type, category)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(postId, user.id, validSurveyId, title.trim(), content.trim(), effectivePostType, category || 'ALL');
+        INSERT INTO forum_posts (id, user_id, survey_id, title, content, images, post_type, category)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(postId, user.id, validSurveyId, title.trim(), content.trim(), JSON.stringify(validImages), effectivePostType, category || 'ALL');
 
       return res.status(201).json({
         success: true,
