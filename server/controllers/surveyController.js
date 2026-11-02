@@ -965,6 +965,24 @@ class SurveyController {
         params.push(cleanUrl);
       }
 
+      if (req.body.external_form_url !== undefined) {
+        const cleanFormUrl = req.body.external_form_url && typeof req.body.external_form_url === 'string' ? req.body.external_form_url.trim() : null;
+        let normalizedFormUrl = null;
+        if (cleanFormUrl) {
+          normalizedFormUrl = antiFraudService.normalizeFormUrl(cleanFormUrl);
+          const dupCheck = antiFraudService.checkDuplicateFormUrl(normalizedFormUrl, id);
+          if (dupCheck.isDuplicate) {
+            return res.status(400).json({
+              success: false,
+              isDuplicateForm: true,
+              message: 'Đường link biểu mẫu này đã được sử dụng trong hệ thống bởi một khảo sát khác. Mỗi liên kết Google/MS Forms chỉ được đăng ký một lần duy nhất.'
+            });
+          }
+        }
+        updates.push('external_form_url = ?', 'normalized_form_url = ?');
+        params.push(cleanFormUrl, normalizedFormUrl);
+      }
+
       if (title !== undefined && typeof title === 'string') {
         if (title.trim().length < 3 || title.trim().length > 255) {
           return res.status(400).json({ success: false, message: 'Tiêu đề khảo sát phải từ 3 đến 255 ký tự' });
@@ -1151,22 +1169,28 @@ class SurveyController {
       
       // Tự động kiểm tra hoặc nhận cờ sử dụng gói khảo sát dùng thử miễn phí (First Survey Free Trial)
       let useFreeTrial = req.body && req.body.use_free_trial === true;
+      const freshUser = db.prepare('SELECT credit_balance, free_trial_surveys_available, free_quota_remaining, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
+
       if (!useFreeTrial && req.body && req.body.use_free_trial === undefined) {
         // Nếu user thiếu số dư nhưng còn suất dùng thử miễn phí và khảo sát <= 25 phản hồi: tự động kích hoạt
-        const freshUser = db.prepare('SELECT credit_balance, free_trial_surveys_available, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
-        if (freshUser && (freshUser.free_trial_surveys_available || 0) > 0 && survey.target_responses <= 25 && (freshUser.credit_balance || 0) < totalEscrow) {
+        if (freshUser && ((freshUser.free_trial_surveys_available || 0) > 0 || (freshUser.free_quota_remaining || 0) > 0) && survey.target_responses <= 25 && (freshUser.credit_balance || 0) < totalEscrow) {
           useFreeTrial = true;
         }
       }
 
       // Kiểm tra điều kiện bảo mật: Bắt buộc liên kết Google hoặc xác thực Email mới được nhận ưu đãi Free Trial
       if (useFreeTrial) {
-        const freshUser = db.prepare('SELECT credit_balance, free_trial_surveys_available, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
         if (!freshUser || (!freshUser.is_google_linked && !freshUser.is_email_verified)) {
           return res.status(400).json({
             success: false,
             requireVerification: true,
             message: 'Yêu cầu bảo mật: Bạn cần liên kết tài khoản Google hoặc xác thực Email để kích hoạt 25 lượt khảo sát dùng thử miễn phí.'
+          });
+        }
+        if ((freshUser.free_trial_surveys_available || 0) <= 0 && (freshUser.free_quota_remaining || 0) <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Bạn đã sử dụng hết lượt khảo sát dùng thử miễn phí. Vui lòng nạp thêm Credit để ký quỹ.'
           });
         }
       }
@@ -1195,13 +1219,15 @@ class SurveyController {
       return res.json({
         success: true,
         message: result.isFreeTrial 
-          ? 'Xuất bản chiến dịch khảo sát Dùng Thử Miễn Phí thành công (Nền tảng tài trợ 100%)!' 
+          ? `Xuất bản chiến dịch khảo sát Dùng Thử Miễn Phí thành công (Sàn tài trợ ${result.freeResponses || 25} lượt)!` 
           : 'Xuất bản và ký quỹ chiến dịch khảo sát thành công!',
         isFreeTrial: !!result.isFreeTrial,
+        freeResponses: result.freeResponses || 0,
         totalEscrowVnd: result.isFreeTrial ? 0 : totalEscrow,
         sponsoredEscrowVnd: result.isFreeTrial ? totalEscrow : 0,
         newCreditBalance: result.newCreditBalance,
-        freeTrialSurveysAvailable: result.freeTrialSurveysAvailable !== undefined ? result.freeTrialSurveysAvailable : user.free_trial_surveys_available
+        freeTrialSurveysAvailable: result.freeTrialSurveysAvailable !== undefined ? result.freeTrialSurveysAvailable : user.free_trial_surveys_available,
+        freeQuotaRemaining: result.freeQuotaRemaining !== undefined ? result.freeQuotaRemaining : (freshUser ? freshUser.free_quota_remaining : 0)
       });
     } catch (err) {
       console.error('Lỗi publishSurvey:', err);
@@ -2429,8 +2455,14 @@ class SurveyController {
 
       if (url) {
         const normalizedUrl = antiFraudService.normalizeFormUrl(url);
-        const dupCheck = antiFraudService.checkDuplicateFormUrl(normalizedUrl);
-        // Bóc tách nội dung câu hỏi bình thường, không chặn đứng thao tác preview đồng bộ
+        const dupCheck = antiFraudService.checkDuplicateFormUrl(normalizedUrl, req.body.excludeSurveyId || null);
+        if (dupCheck.isDuplicate) {
+          return res.status(400).json({
+            success: false,
+            isDuplicateForm: true,
+            message: 'Đường link biểu mẫu này đã được sử dụng trong hệ thống bởi một khảo sát khác. Để chống tạo nhiều tài khoản trục lợi dùng thử miễn phí, mỗi liên kết Google/MS Forms chỉ được đăng ký một lần duy nhất.'
+          });
+        }
 
         const result = await formParserService.parseFromUrl(url, googleCookie);
         return res.json({

@@ -173,6 +173,21 @@ c:\Users\Lenovo\Downloads\Linh\
   - Chốt chặn Server-Side: `submitSurvey` tại `surveyController.js` thẩm định toàn diện các quy tắc ràng buộc (NUMBER BETWEEN, EMAIL, URL, LENGTH) và tự động nhận diện tập hợp câu hỏi thuộc luồng rẽ nhánh hợp lệ (Active Path DAG) để tránh báo lỗi thiếu đáp án trên các phân đoạn không được duyệt.
 - **Hệ thống Kiểm thử**: 17/17 test suites đạt 100% PASS (16.57s). Đã kiểm chuẩn thực tế trên biểu mẫu Microsoft Forms của người dùng (bóc tách hoàn hảo 94/94 mục, câu 6 đi sang câu 7 tuần tự, câu 4 chặn chính xác số ngoài dải, câu 16 rẽ nhánh chuẩn xác).
 
+### J. Phân Hệ Chống Trùng Link Biểu Mẫu, Cố Định Kích Thước UI & Khấu Trừ Chuẩn Lượt Free (v4.9.6)
+- **Cố Định Chiều Rộng Nút "Đồng Bộ Ngay" Tuyệt Đối (No Layout Shift)**:
+  - Cố định nút `#sync-external-form-btn` với class `w-[160px] min-w-[160px] max-w-[160px] shrink-0`, văn bản loading rút gọn thành `Đang đồng bộ...` kèm spinner mảnh, đảm bảo 0% thay đổi kích thước hay co kéo ô dán link input bên cạnh.
+  - Tự động hoàn nguyên đầy đủ icon Lucide `refresh-cw` khi quá trình đồng bộ hoàn tất hoặc gặp lỗi.
+- **Cơ Chế Ngăn Chặn Trùng Lặp 1 Link Biểu Mẫu Cốt Lõi (Anti-Duplicate Form Engine)**:
+  - Chuẩn hóa canonical form URL trong `antiFraudService.normalizeFormUrl`: Microsoft Forms chuẩn hóa qua tham số `id` (`forms.office.com/pages/responsepage.aspx?id=...`), loại bỏ chênh lệch giữa các domain biến thể (`forms.cloud.microsoft` vs `forms.office.com` vs `DesignPageV2.aspx`); Google Forms chuẩn hóa qua Form ID và link `forms.gle`.
+  - Kiểm tra đối soát trùng lặp 2 lớp: `antiFraudService.checkDuplicateFormUrl` so khớp URL chuẩn hóa và Core Form ID trên toàn bộ bài khảo sát đang hoạt động (`status NOT IN ('CANCELLED', 'DELETED')`).
+  - Chặn đứng trực tiếp tại cả 3 API: `POST /surveys/parse-external`, `POST /surveys` và `PUT /surveys/:id`.
+  - Bảo toàn `external_form_url` trong `public/app.js`: Khi đồng bộ chuyển tab sang Canvas BUILDER, giá trị link form ngoài vẫn được giữ nguyên vẹn trong `this.state.externalFormUrl` và gửi lên server thay vì bị gán `null`.
+- **Cơ Chế Khấu Trừ Chuẩn Lượt Free Của Tài Khoản & Khảo Sát**:
+  - Tại `ledgerService.lockEscrowForSurvey`: Khi kích hoạt `useFreeTrial = true`, hệ thống khấu trừ trực tiếp `free_quota_remaining` và `free_trial_surveys_available` trong CSDL, đồng thời trả về `freeQuotaRemaining` cập nhật cho client.
+  - Ngăn chặn hoàn toàn việc tái sử dụng ưu đãi dùng thử miễn phí khi tài khoản đã hết định mức (`free_quota_remaining <= 0` và `free_trial_surveys_available <= 0`).
+  - Tại `ledgerService.refundRemainingEscrow`: Chỉ hoàn lại lượt free khi khảo sát chưa thu được bất kỳ phản hồi nào (`collected_responses === 0`); nếu đã có đáp viên làm bài (`collected_responses > 0`) tuyệt đối không hoàn lượt free để chống lách luật.
+  - Sửa logic khởi tạo admin trong `database.js`: Sử dụng `COALESCE` thay vì `MAX` để không tự động khôi phục lượt free của admin sau mỗi lần restart server.
+
 ### G. Phân Hệ Đồ Họa 3D Độc Bản Tự Tạo 100% & Khắc Phục Triệt Để Chữ Bóng Ma (v4.7.5)
 - **Tự Tạo Đồ Họa 3D Render Độc Bản 100% Thay Thế Hoàn Toàn Ảnh Cắt Mẫu (Pure Independent 3D Rendering)**:
   - Chấm dứt hoàn toàn phương pháp trích xuất từ ảnh chụp màn hình mẫu (nguyên nhân gây ra hiện tượng chữ bóng ma "1%", "Tất cả (0)", "0,5%", "Nạp Credit" in đè lên giao diện thật).

@@ -200,29 +200,50 @@ class LedgerService {
 
       // 2a. Nếu kích hoạt Gói Dùng Thử Miễn Phí (First Survey Free Trial - 25 Lượt Đầu Miễn Phí)
       if (options.useFreeTrial) {
-        const user = db.prepare('SELECT id, credit_balance, free_trial_surveys_available FROM users WHERE id = ?').get(userId);
-        if (!user || (user.free_trial_surveys_available || 0) < 1) {
+        const user = db.prepare('SELECT id, credit_balance, free_trial_surveys_available, free_quota_remaining, account_tier FROM users WHERE id = ?').get(userId);
+        const freeTrials = user ? (user.free_trial_surveys_available || 0) : 0;
+        const freeQuota = user ? (user.free_quota_remaining || 0) : 0;
+
+        if (!user || (freeTrials < 1 && freeQuota < 1)) {
           throw new Error('Bạn đã sử dụng hết lượt khảo sát dùng thử miễn phí');
         }
 
         const target = survey.target_responses || 1;
         const costPerResp = Math.round(escrowAmount / target);
-        const freeResponses = Math.min(25, target);
+
+        // Khấu trừ số lượt free hợp lệ (Gói Cá nhân tối đa 25 lượt, Gói Sinh viên theo định mức)
+        let freeResponses = 0;
+        if (user.account_tier === 'STUDENT') {
+          const maxStudentEligible = Math.min(30, Math.floor(target / 50) * 10);
+          const quotaToUse = freeQuota > 0 ? freeQuota : 25;
+          freeResponses = Math.min(quotaToUse, maxStudentEligible > 0 ? maxStudentEligible : Math.min(25, target));
+        } else {
+          const quotaToUse = freeQuota > 0 ? freeQuota : 25;
+          freeResponses = Math.min(quotaToUse, Math.min(25, target));
+        }
+        if (freeResponses <= 0) {
+          freeResponses = Math.min(25, target);
+        }
+
         const paidResponses = Math.max(0, target - freeResponses);
         const sponsoredAmount = freeResponses * costPerResp;
         const userPaidAmount = paidResponses * costPerResp;
 
         if (userPaidAmount > 0 && user.credit_balance < userPaidAmount) {
-          throw new Error(`Gói dùng thử miễn phí chỉ tài trợ tối đa 25 lượt phản hồi đầu tay. Với bài khảo sát ${target} mẫu, bạn được tặng 25 lượt miễn phí, ${paidResponses} lượt còn lại cần ${userPaidAmount.toLocaleString('vi-VN')} đ (Số dư hiện tại: ${user.credit_balance.toLocaleString('vi-VN')} đ). Vui lòng nạp thêm quỹ.`);
+          throw new Error(`Gói dùng thử miễn phí chỉ tài trợ tối đa ${freeResponses} lượt phản hồi đầu tay. Với bài khảo sát ${target} mẫu, bạn được tặng ${freeResponses} lượt miễn phí, ${paidResponses} lượt còn lại cần ${userPaidAmount.toLocaleString('vi-VN')} đ (Số dư hiện tại: ${user.credit_balance.toLocaleString('vi-VN')} đ). Vui lòng nạp thêm quỹ.`);
         }
 
-        // Trừ 1 lượt dùng thử và trừ tiền phần vượt quá (nếu có)
+        // Trừ 1 lượt dùng thử và khấu trừ trực tiếp vào free_quota_remaining của tài khoản
+        const newFreeTrials = Math.max(0, freeTrials - 1);
+        const newFreeQuota = Math.max(0, freeQuota - freeResponses);
+
         db.prepare(`
           UPDATE users 
-          SET free_trial_surveys_available = free_trial_surveys_available - 1,
+          SET free_trial_surveys_available = ?,
+              free_quota_remaining = ?,
               credit_balance = credit_balance - ? 
           WHERE id = ?
-        `).run(userPaidAmount, userId);
+        `).run(newFreeTrials, newFreeQuota, userPaidAmount, userId);
 
         // Kích hoạt khảo sát sang ACTIVE và nạp đủ quỹ ký quỹ (phần sàn tài trợ + phần người dùng trả)
         db.prepare(`
@@ -246,7 +267,7 @@ class LedgerService {
           db.prepare(`
             INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
             VALUES (?, ?, ?, 'ESCROW_LOCK', 'VND', ?, ?, ?)
-          `).run(txPaidId, userId, surveyId, -userPaidAmount, newBal, `Ký quỹ ${paidResponses} lượt khảo sát (vượt gói 25 lượt miễn phí): ${surveyId}`);
+          `).run(txPaidId, userId, surveyId, -userPaidAmount, newBal, `Ký quỹ ${paidResponses} lượt khảo sát (vượt gói ${freeResponses} lượt miễn phí): ${surveyId}`);
         }
 
         db.exec('COMMIT');
@@ -259,7 +280,8 @@ class LedgerService {
           userPaidAmount,
           newCreditBalance: newBal,
           newEscrowBalance: escrowAmount,
-          freeTrialSurveysAvailable: (user.free_trial_surveys_available - 1)
+          freeTrialSurveysAvailable: newFreeTrials,
+          freeQuotaRemaining: newFreeQuota
         };
       }
 
@@ -386,7 +408,7 @@ class LedgerService {
   refundRemainingEscrow(surveyId, creatorId) {
     db.exec('BEGIN IMMEDIATE TRANSACTION');
     try {
-      const survey = db.prepare('SELECT id, escrow_locked_balance, is_free_trial, status FROM surveys WHERE id = ? AND creator_id = ?').get(surveyId, creatorId);
+      const survey = db.prepare('SELECT id, escrow_locked_balance, is_free_trial, collected_responses, status FROM surveys WHERE id = ? AND creator_id = ?').get(surveyId, creatorId);
       if (!survey) throw new Error('Khảo sát không tồn tại hoặc không thuộc quyền sở hữu');
       if (survey.status === 'CLOSED') throw new Error('Khảo sát đã được đóng trước đó');
 
@@ -397,7 +419,7 @@ class LedgerService {
         return { success: true, refundedAmount: 0 };
       }
 
-      // Nếu khảo sát là gói dùng thử miễn phí do sàn tài trợ: thu hồi về sàn, không hoàn tiền vào ví user
+      // Nếu khảo sát là gói dùng thử miễn phí do sàn tài trợ: thu hồi về sàn, không hoàn tiền mặt
       if (survey.is_free_trial === 1) {
         const updateSurvey = db.prepare(`
           UPDATE surveys 
@@ -409,7 +431,18 @@ class LedgerService {
           throw new Error('Quỹ ký quỹ đã thay đổi hoặc khảo sát đã bị đóng');
         }
 
-        const updatedUser = db.prepare('SELECT credit_balance FROM users WHERE id = ?').get(creatorId);
+        // Khôi phục lượt free nếu CHƯA có bất kỳ ai làm (collected_responses == 0) theo TUONG_LAI_HE_THONG.md
+        if ((survey.collected_responses || 0) === 0) {
+          const u = db.prepare('SELECT account_tier, free_quota_remaining, free_trial_surveys_available FROM users WHERE id = ?').get(creatorId);
+          if (u) {
+            const addQuota = u.account_tier === 'STUDENT' ? 10 : 25;
+            const restoredFreeQuota = (u.free_quota_remaining || 0) + addQuota;
+            const restoredTrials = (u.free_trial_surveys_available || 0) + 1;
+            db.prepare('UPDATE users SET free_quota_remaining = ?, free_trial_surveys_available = ? WHERE id = ?').run(restoredFreeQuota, restoredTrials, creatorId);
+          }
+        }
+
+        const updatedUser = db.prepare('SELECT credit_balance, free_quota_remaining, free_trial_surveys_available FROM users WHERE id = ?').get(creatorId);
         const txId = crypto.randomUUID();
         db.prepare(`
           INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
@@ -417,7 +450,14 @@ class LedgerService {
         `).run(txId, creatorId, surveyId, updatedUser.credit_balance, `Thu hồi ngân sách tài trợ dùng thử của sàn cho khảo sát: ${surveyId}`);
 
         db.exec('COMMIT');
-        return { success: true, isFreeTrial: true, refundedAmount: 0, newCreditBalance: updatedUser.credit_balance };
+        return { 
+          success: true, 
+          isFreeTrial: true, 
+          refundedAmount: 0, 
+          newCreditBalance: updatedUser.credit_balance,
+          freeQuotaRemaining: updatedUser.free_quota_remaining,
+          freeTrialSurveysAvailable: updatedUser.free_trial_surveys_available
+        };
       }
 
       // Đóng survey và thu hồi escrow nguyên tử

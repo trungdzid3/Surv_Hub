@@ -540,14 +540,49 @@ class AntiFraudService {
     try {
       const trimmed = rawUrl.trim();
       const parsed = new URL(trimmed);
-
+      const hostname = parsed.hostname.toLowerCase();
       let pathname = parsed.pathname.replace(/\/+$/, '');
+
+      // 1. Chuẩn hóa Microsoft Forms về dạng chuẩn duy nhất
+      if (
+        hostname.includes('office.com') ||
+        hostname.includes('microsoft.com') ||
+        hostname.includes('forms.office') ||
+        hostname.includes('forms.cloud.microsoft') ||
+        hostname.includes('form.cloud.microsoft')
+      ) {
+        const formId = parsed.searchParams.get('id');
+        if (formId) {
+          return `https://forms.office.com/pages/responsepage.aspx?id=${formId.trim()}`;
+        }
+        const rMatch = pathname.match(/\/r\/([a-zA-Z0-9_-]+)/i);
+        if (rMatch && rMatch[1]) {
+          return `https://forms.office.com/r/${rMatch[1].trim().toLowerCase()}`;
+        }
+      }
+
+      // 2. Chuẩn hóa Google Forms về dạng chuẩn duy nhất
+      if (hostname.includes('google.com') || hostname.includes('forms.gle')) {
+        const gleMatch = trimmed.match(/forms\.gle\/([a-zA-Z0-9_-]+)/i);
+        if (gleMatch && gleMatch[1]) {
+          return `https://forms.gle/${gleMatch[1].trim()}`;
+        }
+        const pubMatch = pathname.match(/\/forms\/d\/e\/([a-zA-Z0-9_-]+)/i);
+        if (pubMatch && pubMatch[1]) {
+          return `https://docs.google.com/forms/d/e/${pubMatch[1].trim()}/viewform`;
+        }
+        const docMatch = pathname.match(/\/forms\/d\/([a-zA-Z0-9_-]+)/i);
+        if (docMatch && docMatch[1] && docMatch[1] !== 'e') {
+          return `https://docs.google.com/forms/d/${docMatch[1].trim()}/viewform`;
+        }
+      }
+
+      // 3. Làm sạch chung cho các liên kết khác (loại bỏ tracking parameters)
       const trackingParams = ['usp', 'fbclid', 'utm_source', 'utm_medium', 'utm_campaign', 'ref', 'authuser'];
       trackingParams.forEach(p => parsed.searchParams.delete(p));
 
       const cleanSearch = parsed.searchParams.toString();
-      const cleanUrl = `${parsed.protocol}//${parsed.hostname.toLowerCase()}${pathname}${cleanSearch ? '?' + cleanSearch : ''}`;
-      return cleanUrl;
+      return `${parsed.protocol}//${hostname}${pathname}${cleanSearch ? '?' + cleanSearch : ''}`;
     } catch (e) {
       return rawUrl.trim().toLowerCase().replace(/\/+$/, '');
     }
@@ -559,12 +594,41 @@ class AntiFraudService {
   checkDuplicateFormUrl(normalizedUrl, excludeSurveyId = null) {
     if (!normalizedUrl) return { isDuplicate: false };
 
+    // Trích xuất mã ID định danh cốt lõi (Core Form ID)
+    let coreFormId = null;
+    try {
+      const parsed = new URL(normalizedUrl);
+      if (parsed.searchParams.has('id')) {
+        coreFormId = parsed.searchParams.get('id');
+      } else {
+        const gMatch = normalizedUrl.match(/\/forms\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/i);
+        if (gMatch && gMatch[1]) {
+          coreFormId = gMatch[1];
+        } else {
+          const gleMatch = normalizedUrl.match(/forms\.gle\/([a-zA-Z0-9_-]+)/i);
+          if (gleMatch && gleMatch[1]) {
+            coreFormId = gleMatch[1];
+          }
+        }
+      }
+    } catch (e) {}
+
     let query = `
       SELECT id, creator_id, title, status, is_free_trial 
       FROM surveys 
-      WHERE (normalized_form_url = ? OR external_form_url = ?)
+      WHERE status NOT IN ('CANCELLED', 'DELETED')
+        AND (
+          normalized_form_url = ? 
+          OR external_form_url = ?
     `;
     const params = [normalizedUrl, normalizedUrl];
+
+    if (coreFormId && coreFormId.length >= 6) {
+      query += ` OR normalized_form_url LIKE ? OR external_form_url LIKE ?`;
+      params.push(`%${coreFormId}%`, `%${coreFormId}%`);
+    }
+
+    query += ` )`;
 
     if (excludeSurveyId) {
       query += ' AND id != ?';

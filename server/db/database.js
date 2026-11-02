@@ -838,9 +838,10 @@ function ensureEssentialAccounts() {
               student_email = COALESCE(student_email, ?),
               fast_track_tickets = MAX(COALESCE(fast_track_tickets, 0), ?),
               credit_balance = MAX(COALESCE(credit_balance, 0), ?),
-              free_trial_surveys_available = MAX(COALESCE(free_trial_surveys_available, 0), ?)
+              free_trial_surveys_available = COALESCE(free_trial_surveys_available, ?),
+              free_quota_remaining = COALESCE(free_quota_remaining, 25)
           WHERE id = ?
-        `).run(hash, u.fast_track_tickets || 0, u.credit_balance || 0, u.free_trial_surveys_available || 0, existing.id);
+        `).run(hash, u.fast_track_tickets || 0, u.credit_balance || 0, u.free_trial_surveys_available !== undefined ? u.free_trial_surveys_available : 1, existing.id);
       }
     }
     console.log('[DB Bootstrap] Đã tự động đảm bảo các tài khoản quản trị cốt lõi.');

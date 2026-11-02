@@ -10413,6 +10413,7 @@ if (totalCount === 0) {
     this.state.draftDesc = '';
     this.state.draftCoverImageUrl = '';
     this.state.draftCategory = 'Thị trường';
+    this.state.externalFormUrl = '';
     this.state.allowEditResponse = false;
     this.state.allowViewResponse = true;
     this.state.builderQuestions = null;
@@ -11185,7 +11186,7 @@ if (totalCount === 0) {
     const oldBtnHtml = btn ? btn.innerHTML : '';
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = `<div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div><span>Đang kết nối & bóc tách dữ liệu...</span>`;
+      btn.innerHTML = `<div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent shrink-0"></div><span class="truncate">Đang đồng bộ...</span>`;
     }
 
     const isMs = url.includes('office.com') || url.includes('microsoft.com') || url.includes('forms.office') || url.includes('forms.cloud.microsoft') || url.includes('form.cloud.microsoft');
@@ -11292,6 +11293,7 @@ if (totalCount === 0) {
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = oldBtnHtml;
+        if (window.lucide) window.lucide.createIcons();
       }
     }
   },
@@ -11999,7 +12001,7 @@ if (totalCount === 0) {
                              class="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all">
                     </div>
                     <button type="button" id="sync-external-form-btn" onclick="VibeApp.syncExternalFormNow()" 
-                            class="py-3 px-6 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-sm transition-all whitespace-nowrap flex-shrink-0">
+                            class="w-[160px] min-w-[160px] max-w-[160px] py-3 bg-orange-600 hover:bg-orange-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-sm transition-all whitespace-nowrap shrink-0">
                       <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                       <span>Đồng Bộ Ngay</span>
                     </button>
@@ -12313,12 +12315,18 @@ if (totalCount === 0) {
 
     // Free Quota deduction
     let freeDeductionSamples = 0;
+    const userFreeQuota = user ? (user.free_quota_remaining !== undefined ? user.free_quota_remaining : 0) : 0;
+    const userFreeTrials = user ? (user.free_trial_surveys_available || 0) : 0;
+
     if (tier === 'STUDENT' && user?.account_tier === 'STUDENT') {
       // 30 lượt/tháng: trừ tối đa 10 lượt cho mỗi 50 mẫu đăng
+      const studentQuota = userFreeQuota > 0 ? userFreeQuota : (userFreeTrials > 0 ? 30 : 0);
       const batches = Math.floor(targetN / 50);
-      freeDeductionSamples = Math.min(30, batches * 10);
-    } else if (user?.free_trial_surveys_available > 0) {
-      freeDeductionSamples = Math.min(targetN, 25);
+      const maxEligible = Math.min(30, batches * 10);
+      freeDeductionSamples = Math.min(studentQuota, maxEligible);
+    } else if (userFreeQuota > 0 || userFreeTrials > 0) {
+      const quota = userFreeQuota > 0 ? userFreeQuota : 25;
+      freeDeductionSamples = Math.min(targetN, Math.min(quota, 25));
     }
 
     const freeDeductionVnd = freeDeductionSamples * effectivePrice;
@@ -14908,17 +14916,21 @@ if (totalCount === 0) {
       return;
     }
 
+    let effectiveFormUrl = (formUrl || this.state.externalFormUrl || '').trim();
     let source = 'INTERNAL_BUILDER';
     let externalUrl = null;
     let questionsPayload = [];
 
+    if (effectiveFormUrl) {
+      externalUrl = effectiveFormUrl;
+      source = (effectiveFormUrl.includes('google.com') || effectiveFormUrl.includes('forms.gle')) ? 'GOOGLE_FORMS' : 'MS_FORMS';
+    }
+
     if (currentTab === 'EXTERNAL_URL') {
-      if (!formUrl) {
+      if (!externalUrl) {
         this.showToast('Vui lòng nhập đường link Google Forms hoặc MS Forms!', 'warning');
         return;
       }
-      externalUrl = formUrl;
-      source = (formUrl.includes('google.com') || formUrl.includes('forms.gle')) ? 'GOOGLE_FORMS' : 'MS_FORMS';
       if (this.state.builderQuestions && this.state.builderQuestions.length > 0 && this.state.builderQuestions[0].id !== 'q_init_1') {
         questionsPayload = this.state.builderQuestions;
       } else {
@@ -14934,7 +14946,9 @@ if (totalCount === 0) {
         ];
       }
     } else {
-      source = 'INTERNAL_BUILDER';
+      if (!externalUrl) {
+        source = 'INTERNAL_BUILDER';
+      }
       const rawQuestions = this.state.builderQuestions || [];
       const cleanQuestions = [];
 
@@ -15134,6 +15148,7 @@ if (totalCount === 0) {
           if (this.state.currentUser) {
             if (pubRes.newCreditBalance !== undefined) this.state.currentUser.credit_balance = pubRes.newCreditBalance;
             if (pubRes.freeTrialSurveysAvailable !== undefined) this.state.currentUser.free_trial_surveys_available = pubRes.freeTrialSurveysAvailable;
+            if (pubRes.freeQuotaRemaining !== undefined) this.state.currentUser.free_quota_remaining = pubRes.freeQuotaRemaining;
             if (isExchange && this.state.currentUser.student_karma !== undefined) {
               this.state.currentUser.student_karma = Math.max(0, this.state.currentUser.student_karma - 1);
             }

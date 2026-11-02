@@ -440,7 +440,7 @@ class AuthController {
         WHERE id = ?
       `).run(newName, demographicsJson, user.id);
 
-      const updatedUser = db.prepare('SELECT id, email, name, role, avatar_url, credit_balance, point_balance, student_karma, is_student_verified, account_tier, trust_score, status, free_trial_surveys_available, fast_track_tickets, demographics_json FROM users WHERE id = ?').get(user.id);
+      const updatedUser = db.prepare('SELECT id, email, name, role, avatar_url, credit_balance, point_balance, student_karma, is_student_verified, account_tier, trust_score, status, free_trial_surveys_available, free_quota_remaining, fast_track_tickets, demographics_json FROM users WHERE id = ?').get(user.id);
 
       let parsedDemo = null;
       if (updatedUser.demographics_json) {
