@@ -30,6 +30,7 @@ function initSchema() {
       credit_balance REAL DEFAULT 0.0,
       point_balance INTEGER DEFAULT 0,
       student_karma INTEGER DEFAULT 0,
+      avatar_url TEXT,
       trust_score REAL DEFAULT 100.0,
       status TEXT DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'SUSPENDED', 'BANNED')),
       free_trial_surveys_available INTEGER DEFAULT 1,
@@ -555,6 +556,7 @@ function initSchema() {
     'CREATE INDEX IF NOT EXISTS idx_audit_target ON admin_audit_logs(target_type, target_id);',
     'CREATE INDEX IF NOT EXISTS idx_audit_created ON admin_audit_logs(created_at);',
     'ALTER TABLE users ADD COLUMN student_karma INTEGER DEFAULT 0;',
+    'ALTER TABLE users ADD COLUMN avatar_url TEXT;',
     'ALTER TABLE surveys ADD COLUMN is_student_exchange INTEGER DEFAULT 0;',
     'CREATE INDEX IF NOT EXISTS idx_surveys_student_exchange ON surveys(is_student_exchange);',
     `CREATE TABLE IF NOT EXISTS forum_posts (

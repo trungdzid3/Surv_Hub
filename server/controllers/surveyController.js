@@ -10,6 +10,7 @@ const formParserService = require('../services/formParserService');
 const matchingService = require('../services/matchingService');
 const webhookService = require('../services/webhookService');
 const pushNotificationService = require('../services/pushNotificationService');
+const surveyRepository = require('../repositories/surveyRepository');
 
 class SurveyController {
 
@@ -763,39 +764,37 @@ class SurveyController {
         const insertQ = db.prepare(`
           INSERT INTO questions (
             id, survey_id, order_index, type, content, 
-            options_json, rows_json, columns_json, is_required, 
+            options_json, rows_json, columns_json, logic_json, is_required, 
             min_label, max_label, image_url, video_url,
             is_attention_check, expected_answer, is_screener, qualifying_answer
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
-        for (let i = 0; i < questions.length; i++) {
-          const q = questions[i];
-          const qId = crypto.randomUUID();
-          const rowsJson = q.rows && Array.isArray(q.rows) ? JSON.stringify(q.rows) : null;
-          const colsJson = q.columns && Array.isArray(q.columns) ? JSON.stringify(q.columns) : null;
-          const optionsJson = q.options ? JSON.stringify(q.options) : (colsJson || null);
-          const isReq = (q.is_required !== undefined && (q.is_required === 0 || q.is_required === false)) ? 0 : 1;
+        const { preparedQuestions, idMap } = surveyRepository._buildQuestionIdMap(questions);
+        for (let i = 0; i < preparedQuestions.length; i++) {
+          const { q, qId } = preparedQuestions[i];
+          const processed = surveyRepository._processQuestionForInsert(q, qId, i, idMap, questions.length);
 
           insertQ.run(
-            qId,
+            processed.qId,
             surveyId,
-            i + 1,
-            q.type,
-            q.content.trim(),
-            optionsJson,
-            rowsJson,
-            colsJson,
-            isReq,
-            q.min_label || null,
-            q.max_label || null,
-            q.image_url || null,
-            q.video_url || null,
-            q.is_attention_check ? 1 : 0,
-            q.expected_answer || null,
-            q.is_screener ? 1 : 0,
-            q.qualifying_answer || null
+            processed.orderIndex,
+            processed.type,
+            processed.content,
+            processed.optionsJson,
+            processed.rowsJson,
+            processed.colsJson,
+            processed.logicJson,
+            processed.isReq,
+            processed.minLabel,
+            processed.maxLabel,
+            processed.imageUrl,
+            processed.videoUrl,
+            processed.isAttentionCheck,
+            processed.expectedAnswer,
+            processed.isScreener,
+            processed.qualifyingAnswer
           );
         }
 
@@ -929,26 +928,38 @@ class SurveyController {
           const insertQ = db.prepare(`
             INSERT INTO questions (
               id, survey_id, order_index, type, content, 
-              options_json, rows_json, columns_json, is_required, 
+              options_json, rows_json, columns_json, logic_json, is_required, 
               min_label, max_label, image_url, video_url,
               is_attention_check, expected_answer, is_screener, qualifying_answer
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `);
 
           const qList = req.body.questions;
-          for (let i = 0; i < qList.length; i++) {
-            const q = qList[i];
-            const qId = crypto.randomUUID();
-            const rowsJson = q.rows && Array.isArray(q.rows) ? JSON.stringify(q.rows) : null;
-            const colsJson = q.columns && Array.isArray(q.columns) ? JSON.stringify(q.columns) : null;
-            const optionsJson = q.options ? JSON.stringify(q.options) : (colsJson || null);
-            const isReq = (q.is_required !== undefined && (q.is_required === 0 || q.is_required === false)) ? 0 : 1;
+          const { preparedQuestions, idMap } = surveyRepository._buildQuestionIdMap(qList);
+          for (let i = 0; i < preparedQuestions.length; i++) {
+            const { q, qId } = preparedQuestions[i];
+            const processed = surveyRepository._processQuestionForInsert(q, qId, i, idMap, qList.length);
 
             insertQ.run(
-              qId, id, i + 1, q.type, (q.content || '').trim(), optionsJson, rowsJson, colsJson, isReq,
-              q.min_label || null, q.max_label || null, q.image_url || null, q.video_url || null,
-              q.is_attention_check ? 1 : 0, q.expected_answer || null, q.is_screener ? 1 : 0, q.qualifying_answer || null
+              processed.qId,
+              id,
+              processed.orderIndex,
+              processed.type,
+              processed.content,
+              processed.optionsJson,
+              processed.rowsJson,
+              processed.colsJson,
+              processed.logicJson,
+              processed.isReq,
+              processed.minLabel,
+              processed.maxLabel,
+              processed.imageUrl,
+              processed.videoUrl,
+              processed.isAttentionCheck,
+              processed.expectedAnswer,
+              processed.isScreener,
+              processed.qualifyingAnswer
             );
           }
         }

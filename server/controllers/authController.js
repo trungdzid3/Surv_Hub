@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const config = require('../config');
 const db = require('../db/database');
 const antiFraudService = require('../services/antiFraudService');
@@ -354,6 +356,7 @@ class AuthController {
           email: user.email,
           name: user.name,
           role: user.role,
+          avatar_url: user.avatar_url || null,
           credit_balance: user.credit_balance,
           point_balance: user.point_balance,
           trust_score: user.trust_score,
@@ -386,13 +389,17 @@ class AuthController {
 
   getMe(req, res) {
     let demographics = null;
-    if (req.user.demographics_json) {
-      try { demographics = JSON.parse(req.user.demographics_json); } catch (e) {}
+    const freshUser = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id) || req.user;
+    delete freshUser.password_hash;
+    delete freshUser.email_otp;
+    delete freshUser.student_otp;
+    if (freshUser.demographics_json) {
+      try { demographics = JSON.parse(freshUser.demographics_json); } catch (e) {}
     }
     return res.json({
       success: true,
       user: {
-        ...req.user,
+        ...freshUser,
         demographics
       }
     });
@@ -403,7 +410,7 @@ class AuthController {
       const user = req.user;
       const { name, demographics } = req.body;
 
-      let demographicsJson = user.demographics_json;
+      let demographicsJson = (user.demographics_json !== undefined && user.demographics_json !== null) ? user.demographics_json : null;
       if (demographics && typeof demographics === 'object') {
         demographicsJson = JSON.stringify(demographics);
       }
@@ -416,7 +423,7 @@ class AuthController {
         WHERE id = ?
       `).run(newName, demographicsJson, user.id);
 
-      const updatedUser = db.prepare('SELECT id, email, name, role, credit_balance, point_balance, student_karma, is_student_verified, account_tier, trust_score, status, free_trial_surveys_available, fast_track_tickets, demographics_json FROM users WHERE id = ?').get(user.id);
+      const updatedUser = db.prepare('SELECT id, email, name, role, avatar_url, credit_balance, point_balance, student_karma, is_student_verified, account_tier, trust_score, status, free_trial_surveys_available, fast_track_tickets, demographics_json FROM users WHERE id = ?').get(user.id);
 
       let parsedDemo = null;
       if (updatedUser.demographics_json) {
@@ -1459,6 +1466,110 @@ class AuthController {
     }
   }
 
+  /**
+   * Tải lên và cập nhật ảnh đại diện người dùng
+   * POST /api/v1/auth/avatar
+   */
+  uploadAvatar(req, res) {
+    try {
+      const user = req.user;
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Yêu cầu đăng nhập' });
+      }
+
+      const rawInput = req.body.avatar_base64 || req.body.avatar || req.body.image;
+      if (!rawInput || typeof rawInput !== 'string') {
+        return res.status(400).json({ success: false, message: 'Vui lòng cung cấp dữ liệu ảnh' });
+      }
+
+      const cleanInput = rawInput.trim();
+      let buffer = null;
+      let ext = 'png';
+
+      const matches = cleanInput.match(/^data:([A-Za-z0-9\-+\/\.]+);base64,([\s\S]+)$/);
+
+      if (matches && matches.length === 3) {
+        const mime = matches[1].toLowerCase();
+        if (mime.includes('jpeg') || mime.includes('jpg')) ext = 'jpg';
+        else if (mime.includes('webp')) ext = 'webp';
+        else if (mime.includes('png')) ext = 'png';
+        else {
+          return res.status(400).json({ success: false, message: 'Định dạng ảnh không hỗ trợ. Vui lòng chọn PNG, JPG hoặc WebP' });
+        }
+        buffer = Buffer.from(matches[2], 'base64');
+      } else if (cleanInput.startsWith('http://') || cleanInput.startsWith('https://') || cleanInput.startsWith('/uploads/')) {
+        db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(cleanInput, user.id);
+        const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+        delete updatedUser.password_hash;
+        delete updatedUser.email_otp;
+        delete updatedUser.student_otp;
+        if (updatedUser.demographics_json) {
+          try { updatedUser.demographics = JSON.parse(updatedUser.demographics_json); } catch (e) {}
+        }
+        return res.json({
+          success: true,
+          message: 'Cập nhật ảnh đại diện thành công',
+          avatar_url: cleanInput,
+          user: updatedUser
+        });
+      } else {
+        // Hỗ trợ trường hợp base64 thuần (không có tiền tố data URI)
+        try {
+          buffer = Buffer.from(cleanInput, 'base64');
+          if (!buffer || buffer.length === 0) {
+            return res.status(400).json({ success: false, message: 'Dữ liệu ảnh không hợp lệ' });
+          }
+          if (buffer.length >= 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+            ext = 'png';
+          } else if (buffer.length >= 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+            ext = 'jpg';
+          } else if (buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') {
+            ext = 'webp';
+          }
+        } catch (e) {
+          return res.status(400).json({ success: false, message: 'Dữ liệu ảnh không hợp lệ' });
+        }
+      }
+
+      if (!buffer || buffer.length === 0) {
+        return res.status(400).json({ success: false, message: 'Dữ liệu ảnh không hợp lệ' });
+      }
+
+      if (buffer.length > 5 * 1024 * 1024) {
+        return res.status(400).json({ success: false, message: 'Dung lượng ảnh tối đa 5MB' });
+      }
+
+      const uploadDir = path.join(__dirname, '../../public/uploads/avatars');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const fileName = `avatar_${user.id}_${Date.now()}.${ext}`;
+      const filePath = path.join(uploadDir, fileName);
+      fs.writeFileSync(filePath, buffer);
+
+      const avatarUrl = `/uploads/avatars/${fileName}`;
+      db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, user.id);
+
+      const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+      delete updatedUser.password_hash;
+      delete updatedUser.email_otp;
+      delete updatedUser.student_otp;
+      if (updatedUser.demographics_json) {
+        try { updatedUser.demographics = JSON.parse(updatedUser.demographics_json); } catch (e) {}
+      }
+
+      return res.json({
+        success: true,
+        message: 'Cập nhật ảnh đại diện thành công',
+        avatar_url: avatarUrl,
+        user: updatedUser
+      });
+    } catch (err) {
+      console.error('Lỗi uploadAvatar:', err);
+      return res.status(500).json({ success: false, message: 'Lỗi tải lên ảnh đại diện: ' + err.message });
+    }
+  }
 }
 
 module.exports = new AuthController();

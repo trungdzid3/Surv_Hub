@@ -191,6 +191,29 @@ c:\Users\Lenovo\Downloads\Linh\
   - Đồng bộ Capacitor Android assets hoàn tất.
 
 
+### Phân Hệ Hồ Sơ Tài Khoản Thực Tế, Tải Lên Avatar & Loại Bỏ 100% Mock Data (v4.7.9)
+- **Đơn Giản Hóa Toàn Diện & Chuẩn Hóa Phân Quyền Vai Trò**:
+  + Gom giao diện Hồ Sơ về 3 Tab tinh gọn chuẩn Minimalist Modern: Thông Tin Cá Nhân (demographics), Khảo Sát Của Tôi (surveys), Bài Viết Diễn Đàn Của Tôi (forum-posts).
+  + Xóa bỏ triệt để Tab "Đánh giá & Mức độ uy tín" (reputation) cùng toàn bộ các nhận xét giả (GS. Đặng Minh Tuấn, TS. Vũ Thị Hoàng Yến, HV. Nguyễn Thu Thảo) và các chỉ số ảo (99.8%, 186 chủ nhiệm đề tài).
+  + Khắc phục triệt để phân quyền nút/huy hiệu trên Header:
+    * Người điền phổ thông: Chỉ hiển thị nút "Xác Thực Sinh Viên (.edu.vn)" khi chưa xác thực. Tuyệt đối KHÔNG hiển thị nút "Hồ Sơ Doanh Nghiệp".
+    * Doanh nghiệp: Chỉ hiển thị nút "Hồ Sơ Doanh Nghiệp & MST". Tuyệt đối KHÔNG hiển thị nút Gói Sinh Viên.
+    * Sinh viên: Hiển thị huy hiệu "Gói Sinh Viên (.edu.vn) Đã Xác Thực".
+  + Sửa logic switchAdminTier: Khi chuyển PERSONAL bắt buộc đặt is_student_verified = 0, khi chuyển STUDENT đặt is_student_verified = 1, khi chuyển ENTERPRISE đặt is_student_verified = 0. Đặt lại tài khoản admin trungdzid3@gmail.com về chuẩn xác.
+- **Tính Năng Tải Lên Ảnh Đại Diện Thật (Avatar Upload Engine)**:
+  + CSDL: Thêm cột avatar_url TEXT trong bảng users.
+  + Backend: Tuyến đường POST /api/v1/auth/avatar (và PUT /api/v1/auth/avatar) nhận ảnh base64/URL, lưu trữ an toàn trong public/uploads/avatars/ và cập nhật cơ sở dữ liệu.
+  + Frontend: Nút Camera tại Avatar Profile, chọn ảnh từ thiết bị, đọc Data URL, gọi API và cập nhật tức thì avatar trên Profile, thanh điều hướng và Dropdown tài khoản mà không cần reload trang.
+- **Liên Kết 100% Real Data & Hỗ Trợ Xóa Thật**:
+  + Khảo sát đã tạo: Kết nối API GET /api/v1/surveys/creator, hiển thị khảo sát thực tế, xóa bỏ 2 form demo tĩnh. Tích hợp nút Xóa khảo sát thật qua DELETE /api/v1/surveys/:id có hộp thoại xác nhận.
+  + Khảo sát đã tham gia: Kết nối API GET /api/v1/surveys/history, hiển thị lịch sử làm bài thực tế, xóa bỏ 5 dòng demo tĩnh và số 52 ảo.
+  + Bài viết diễn đàn: Lọc bài viết thực tế của user từ API /api/v1/forum/posts, xóa bỏ 3 bài demo tĩnh. Tích hợp nút Xóa bài viết thật qua DELETE /api/v1/forum/posts/:id có hộp thoại xác nhận.
+- **Kiểm Chuẩn & Bảo Toàn**:
+  + node -c tất cả các file backend và frontend đạt PASS 100%.
+  + Bộ kiểm thử tự hành 16/16 Test Suites PASS 100%.
+  + Đồng bộ Capacitor Android (npm run sync:android) thành công.
+  + Tăng cache-buster lên v=4.7.9_profile_avatar_real trong public/index.html.
+
 ### H. Phân Hệ Khảo Sát Đề Xuất (Surveys View Bento Redesign - v4.7.0)
 - **Biểu đồ Đường Trực Quan Xu Hướng Sàn (Interactive SVG Trends Chart)**:
   - Tự xây dựng thuần túy bằng SVG và JavaScript nội bộ (không sử dụng bất kỳ thư viện ngoài nào như Chart.js hay Recharts), đáp ứng 100% phong cách Minimalist Modern Bento Grid.

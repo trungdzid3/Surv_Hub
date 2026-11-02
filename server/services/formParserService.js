@@ -544,6 +544,7 @@ class FormParserService {
             if (item[0] !== undefined && item[0] !== null) {
               qObj.origin_id = String(item[0]);
             }
+            qObj.id = `q_${qObj.origin_id || qObj.order_index}`;
 
             if (qDesc) qObj.description = qDesc;
             if (logic) qObj.logic = logic;
@@ -2228,6 +2229,7 @@ class FormParserService {
     if (qId !== null && qId !== undefined && qId !== '') {
       res.origin_id = String(qId);
     }
+    res.id = `q_${res.origin_id || res.order_index}`;
 
     if (subtitle) res.description = subtitle;
     if (placeholder) res.placeholder = placeholder;

@@ -362,7 +362,7 @@ class AdminController {
           status: result.status,
           admin_note: safeAdminNote
         },
-        ip_address: req.ip || req.headers['x-forwarded-for'] || null
+        ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
       });
 
       return res.json({
@@ -525,7 +525,7 @@ class AdminController {
           previous_status: user.status,
           restored_trust_score: newTrustScore
         },
-        ip_address: req.ip || req.headers['x-forwarded-for'] || null
+        ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
       });
 
       return res.json({
@@ -597,7 +597,7 @@ class AdminController {
         target_type: 'IP',
         target_id: ip_address,
         details: { ip_address },
-        ip_address: req.ip || req.headers['x-forwarded-for'] || null
+        ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
       });
 
       return res.json({ success: true, message: `Đã gỡ cấm thành công cho địa chỉ IP ${ip_address}` });
@@ -834,7 +834,7 @@ class AdminController {
             target_type: 'USER',
             target_id: user.id,
             details: { email: user.email, reason, command: rawCommand },
-            ip_address: req.ip || req.headers['x-forwarded-for'] || null
+            ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
           });
           return res.json({
             success: true,
@@ -860,7 +860,7 @@ class AdminController {
             target_type: 'USER',
             target_id: user.id,
             details: { email: user.email, command: rawCommand },
-            ip_address: req.ip || req.headers['x-forwarded-for'] || null
+            ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
           });
           return res.json({
             success: true,
@@ -884,7 +884,7 @@ class AdminController {
             target_type: 'IP',
             target_id: ip,
             details: { ip, reason, command: rawCommand },
-            ip_address: req.ip || req.headers['x-forwarded-for'] || null
+            ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
           });
           return res.json({
             success: true,
@@ -907,7 +907,7 @@ class AdminController {
             target_type: 'IP',
             target_id: ip,
             details: { ip, command: rawCommand },
-            ip_address: req.ip || req.headers['x-forwarded-for'] || null
+            ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
           });
           return res.json({
             success: true,
@@ -937,7 +937,7 @@ class AdminController {
             target_type: 'USER',
             target_id: user.id,
             details: { email: user.email, role, command: rawCommand },
-            ip_address: req.ip || req.headers['x-forwarded-for'] || null
+            ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
           });
           return res.json({
             success: true,
@@ -957,7 +957,8 @@ class AdminController {
           }
           let tier = args[1].toUpperCase();
           if (tier === 'REGULAR') tier = 'PERSONAL';
-          db.prepare('UPDATE users SET account_tier = ? WHERE id = ?').run(tier, user.id);
+          const isStudent = (tier === 'STUDENT') ? 1 : 0;
+          db.prepare('UPDATE users SET account_tier = ?, is_student_verified = ? WHERE id = ?').run(tier, isStudent, user.id);
           auditLogService.logAction({
             admin_id: req.user ? req.user.id : 'ADMIN',
             admin_name: req.user ? req.user.name : 'Quản trị viên',
@@ -965,7 +966,7 @@ class AdminController {
             target_type: 'USER',
             target_id: user.id,
             details: { email: user.email, tier, command: rawCommand },
-            ip_address: req.ip || req.headers['x-forwarded-for'] || null
+            ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
           });
           return res.json({
             success: true,
@@ -992,7 +993,7 @@ class AdminController {
             target_type: 'USER',
             target_id: user.id,
             details: { email: user.email, trust_score: score, command: rawCommand },
-            ip_address: req.ip || req.headers['x-forwarded-for'] || null
+            ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
           });
           return res.json({
             success: true,
@@ -1140,17 +1141,35 @@ class AdminController {
         return res.status(400).json({ success: false, message: 'Phân hạng gói không hợp lệ. Hỗ trợ: STUDENT, PERSONAL, ENTERPRISE' });
       }
 
-      db.prepare('UPDATE users SET account_tier = ? WHERE id = ?').run(normalized, req.user.id);
-      const updatedUser = db.prepare('SELECT id, name, email, role, status, credit_balance, point_balance, account_tier, fast_track_tickets, enterprise_verify_level FROM users WHERE id = ?').get(req.user.id);
+      let isStudentVerified = 0;
+      if (normalized === 'STUDENT') {
+        isStudentVerified = 1;
+      } else if (normalized === 'PERSONAL') {
+        isStudentVerified = 0;
+      } else if (normalized === 'ENTERPRISE') {
+        isStudentVerified = 0;
+      }
+
+      const targetUser = (req.body.target || req.body.userId || req.body.email)
+        ? (this._findTargetUser(req.body.target || req.body.userId || req.body.email, req.user) || req.user)
+        : req.user;
+
+      db.prepare('UPDATE users SET account_tier = ?, is_student_verified = ? WHERE id = ?').run(normalized, isStudentVerified, targetUser.id);
+      const updatedUser = db.prepare('SELECT id, name, email, role, status, credit_balance, point_balance, account_tier, is_student_verified, fast_track_tickets, free_trial_surveys_available, enterprise_verify_level, avatar_url, demographics_json FROM users WHERE id = ?').get(targetUser.id);
+
+      if (targetUser.id === req.user.id) {
+        req.user.account_tier = normalized;
+        req.user.is_student_verified = isStudentVerified;
+      }
 
       auditLogService.logAction({
         admin_id: req.user ? req.user.id : 'ADMIN',
         admin_name: req.user ? req.user.name : 'Quản trị viên',
         action: 'SWITCH_ADMIN_TIER',
         target_type: 'USER',
-        target_id: req.user.id,
-        details: { new_tier: normalized },
-        ip_address: req.ip || req.headers['x-forwarded-for'] || null
+        target_id: targetUser.id,
+        details: { new_tier: normalized, is_student_verified: isStudentVerified },
+        ip_address: req.ip || (req.headers && req.headers['x-forwarded-for']) || null
       });
 
       const label = normalized === 'STUDENT' ? 'Sinh Viên (Ưu đãi học thuật)' : (normalized === 'ENTERPRISE' ? 'Doanh Nghiệp' : 'Cá Nhân (Nghiên cứu tiêu chuẩn)');
