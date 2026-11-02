@@ -19554,8 +19554,8 @@ if (totalCount === 0) {
         <!-- HEADER BÀI VIẾT: TÁC GIẢ + ROLE + THỜI GIAN + NÚT XÓA -->
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-stone-900 text-white dark:bg-stone-700 flex items-center justify-center font-bold text-xs shrink-0">
-              ${firstLetter}
+            <div class="w-9 h-9 rounded-xl overflow-hidden bg-stone-900 text-white dark:bg-stone-700 flex items-center justify-center font-bold text-xs shrink-0">
+              ${post.author && post.author.avatar_url ? `<img src="${post.author.avatar_url}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${firstLetter}';">` : firstLetter}
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
@@ -20481,8 +20481,8 @@ if (totalCount === 0) {
             const timeStr = this._formatTimeAgo(c.created_at);
             return `
               <div class="p-2.5 rounded-xl bg-white dark:bg-[#1C1C20] border border-stone-200/70 dark:border-stone-800 flex items-start gap-2.5 text-xs">
-                <div class="w-7 h-7 rounded-lg bg-stone-800 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                  ${letter}
+                <div class="w-7 h-7 rounded-lg overflow-hidden bg-stone-800 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                  ${c.author && c.author.avatar_url ? `<img src="${c.author.avatar_url}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${letter}';">` : letter}
                 </div>
                 <div class="flex-1 min-w-0 space-y-0.5">
                   <div class="flex items-center justify-between">

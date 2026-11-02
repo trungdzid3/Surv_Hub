@@ -20481,8 +20481,8 @@ if (totalCount === 0) {
             const timeStr = this._formatTimeAgo(c.created_at);
             return `
               <div class="p-2.5 rounded-xl bg-white dark:bg-[#1C1C20] border border-stone-200/70 dark:border-stone-800 flex items-start gap-2.5 text-xs">
-                <div class="w-7 h-7 rounded-lg bg-stone-800 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                  ${letter}
+                <div class="w-7 h-7 rounded-lg overflow-hidden bg-stone-800 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
+                  ${c.author && c.author.avatar_url ? `<img src="${c.author.avatar_url}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${letter}';">` : letter}
                 </div>
                 <div class="flex-1 min-w-0 space-y-0.5">
                   <div class="flex items-center justify-between">
