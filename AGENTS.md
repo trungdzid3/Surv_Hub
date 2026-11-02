@@ -47,6 +47,9 @@ Tài liệu quy chiếu SSOT:
 - **Tách biệt dữ liệu**: Tách riêng biệt logic backend, giao diện frontend (HTML/CSS) và tài nguyên (ảnh, icon), tránh viết gộp vào một file.
 - **Tên biến & Hàm**: Rõ ràng, tự giải thích (CamelCase cho JS, snake_case cho Python/DB).
 
+### 4. Chấp hành luật toàn cục GEMINI.md
+- **Chấp hành tuyệt đối**: Không làm trái, tuyệt đối tuân thủ.
+
 ---
 
 ## III. KIẾN TRÚC CHIẾN LƯỢC & ĐIỀU PHỐI ĐA ĐẠI LÝ

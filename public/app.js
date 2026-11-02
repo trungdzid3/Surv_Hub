@@ -239,17 +239,8 @@ const RestrictionEngine = {
     const text = `${title || ''} ${description || ''}`.trim().toLowerCase();
     if (!text) return null;
 
-    // 1. Email ("Email", "Email HUST", "Thư điện tử", ...)
-    if (/\b(email|e-mail|thư điện tử|thu dien tu)\b/i.test(text) || text.includes('email') || text.includes('thư điện tử') || text.includes('thu dien tu')) {
-      return {
-        type: 'EMAIL',
-        rule: 'EMAIL',
-        placeholder: 'Vui lòng nhập email',
-        error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
-      };
-    }
-
-    // 2. Dải số cụ thể (Quét toàn diện: "20000000 ~ 20270000", "20000000 – 20270000", "từ 18 đến 60", "1 ~ 100", ...)
+    // 1. Dải số cụ thể (Ưu tiên số 1 tuyệt đối: "20000000 ~ 202700000", "18 đến 60", "1 ~ 100", ...)
+    // Ngăn chặn hoàn toàn việc nhận diện MSSV / SĐT / Số tự động ép về IS_NUMBER khi đã có dải số!
     const range = this.extractNumberRange(text);
     if (range) {
       return {
@@ -259,6 +250,16 @@ const RestrictionEngine = {
         max: range.max,
         placeholder: 'Số phải nằm trong khoảng từ ' + range.min + ' ~ ' + range.max,
         error_message: 'Số phải nằm trong khoảng từ ' + range.min + ' đến ' + range.max
+      };
+    }
+
+    // 2. Email ("Email", "Email HUST", "Thư điện tử", ...)
+    if (/\b(email|e-mail|thư điện tử|thu dien tu)\b/i.test(text) || text.includes('email') || text.includes('thư điện tử') || text.includes('thu dien tu')) {
+      return {
+        type: 'EMAIL',
+        rule: 'EMAIL',
+        placeholder: 'Vui lòng nhập email',
+        error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
       };
     }
 
@@ -295,7 +296,7 @@ const RestrictionEngine = {
       };
     }
 
-    // 4. Website ("Website", "URL", "Trang web", ...)
+    // 6. Website ("Website", "URL", "Trang web", ...)
     if (/\b(website|url|trang web|link web)\b/i.test(text) ||
         text.includes('website') || text.includes('url') || text.includes('trang web') || text.includes('link web')) {
       return {
@@ -452,6 +453,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       isCompressing: false,
       isUploading: false,
       urlInput: ''
+    },
+    surveyRunner: {
+      visited_sections: new Set()
     },
   },
 
@@ -5928,6 +5932,9 @@ if (totalCount === 0) {
     const session = this.state.activeSession;
     if (!session) return;
     session.hasStartedQuiz = true;
+    this.state.surveyRunner = {
+      visited_sections: new Set()
+    };
     if (!session.timerId) {
       session.timerId = setInterval(() => {
         if (this.state.activeSession && this.state.activeSession.hasStartedQuiz) {
@@ -5958,7 +5965,8 @@ if (totalCount === 0) {
         id: 'section-0',
         title: (this.state && this.state.activeSession && this.state.activeSession.survey && this.state.activeSession.survey.title) || 'Bài khảo sát',
         description: (this.state && this.state.activeSession && this.state.activeSession.survey && this.state.activeSession.survey.description) || '',
-        defaultAction: 'NEXT',
+        defaultAction: 'NEXT_PAGE',
+        target: null,
         questions: []
       }];
     }
@@ -5975,14 +5983,15 @@ if (totalCount === 0) {
         if (curSection) {
           sections.push(curSection);
         }
+        const defAction = (q.logic && q.logic.default_action) ? q.logic.default_action : ((q.logic && q.logic.target) ? 'GO_TO_PAGE' : 'NEXT_PAGE');
+        const tgt = (q.logic && q.logic.target !== undefined && q.logic.target !== null && q.logic.target !== '') ? q.logic.target : null;
         curSection = {
           id: q.id || `section-${sections.length}`,
           headerQuestionId: q.id,
           title: q.content || `Mục ${sections.length + 1}`,
           description: (q.rows && q.rows[0]) ? q.rows[0] : (q.description || ''),
-          defaultAction: (q.logic && q.logic.target)
-            ? { action: q.logic.default_action || 'GO_TO_PAGE', target: q.logic.target }
-            : ((q.logic && q.logic.default_action) || 'NEXT'),
+          defaultAction: defAction,
+          target: tgt,
           questions: []
         };
       } else {
@@ -5991,7 +6000,8 @@ if (totalCount === 0) {
             id: 'section-0',
             title: defaultTitle,
             description: defaultDesc,
-            defaultAction: 'NEXT',
+            defaultAction: 'NEXT_PAGE',
+            target: null,
             questions: []
           };
         }
@@ -6008,7 +6018,8 @@ if (totalCount === 0) {
         id: 'section-0',
         title: defaultTitle,
         description: defaultDesc,
-        defaultAction: 'NEXT',
+        defaultAction: 'NEXT_PAGE',
+        target: null,
         questions: questions.filter(q => q.type !== 'SECTION_HEADER')
       });
     }
@@ -7147,23 +7158,28 @@ if (totalCount === 0) {
   resolveSectionTarget(rawTarget, sections, optText = null, currentSection = null) {
     if (!rawTarget && !optText) return null;
     let targetVal = rawTarget;
+    let action = null;
     if (typeof rawTarget === 'object' && rawTarget !== null) {
-      if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT') return 'SUBMIT';
-      targetVal = rawTarget.target || rawTarget.action;
+      action = rawTarget.action || null;
+      if (action === 'SUBMIT' || action === 'SUBMIT_FORM' || rawTarget.target === 'SUBMIT' || rawTarget.target === 'SUBMIT_FORM') return 'SUBMIT';
+      if ((action === 'NEXT' || action === 'NEXT_PAGE') && !rawTarget.target) return 'NEXT';
+      targetVal = rawTarget.target !== undefined && rawTarget.target !== null ? rawTarget.target : rawTarget.action;
     }
-    if (targetVal === 'SUBMIT') return 'SUBMIT';
-    if (targetVal === 'NEXT' && !optText) return 'NEXT';
+    if (targetVal === 'SUBMIT' || targetVal === 'SUBMIT_FORM') return 'SUBMIT';
+    if ((targetVal === 'NEXT' || targetVal === 'NEXT_PAGE') && !optText) return 'NEXT';
 
     // Trường hợp đặc biệt: Người dùng chọn chỉ tham gia NV1 / Bỏ qua NV2 -> Nhảy đến Section chung cuối cùng
     if (optText && typeof optText === 'string' && /chỉ\s*muốn\s*tham\s*gia|không\s*có\s*nguyện\s*vọng\s*2|bỏ\s*qua\s*nv2/i.test(optText)) {
       if (sections.length > 0) return sections.length - 1;
     }
 
+    const curIdx = currentSection ? sections.findIndex(s => s.id === currentSection.id || (currentSection.headerQuestionId && s.headerQuestionId === currentSection.headerQuestionId)) : -1;
+
     // 1. Parse dạng số nguyên trực tiếp (0, 1, 2...)
-    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT' && targetVal !== 'NEXT_PAGE') {
       const parsed = parseInt(targetVal, 10);
       if (!isNaN(parsed) && parsed >= 0 && parsed < sections.length && String(parsed) === String(targetVal)) {
-        return parsed;
+        if (parsed !== curIdx) return parsed;
       }
     }
 
@@ -7173,30 +7189,34 @@ if (totalCount === 0) {
       if (!isNaN(orderNum)) {
         for (let sIdx = 0; sIdx < sections.length; sIdx++) {
           const sec = sections[sIdx];
-          if (sec.headerQuestionId && String(sec.headerQuestionId).includes(`_${orderNum}`)) return sIdx;
+          if (sec.headerQuestionId && String(sec.headerQuestionId).includes(`_${orderNum}`)) {
+            if (sIdx !== curIdx) return sIdx;
+          }
           const foundQ = sec.questions && sec.questions.some(q => q.order_index === orderNum);
-          if (foundQ) return sIdx;
+          if (foundQ) {
+            if (sIdx !== curIdx) return sIdx;
+          }
         }
       }
     }
 
     // 2. Khớp theo ID của Section hoặc headerQuestionId
-    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT' && targetVal !== 'NEXT_PAGE') {
       const secIdx = sections.findIndex(sec => String(sec.id) === String(targetVal) || String(sec.headerQuestionId) === String(targetVal));
-      if (secIdx !== -1) return secIdx;
+      if (secIdx !== -1 && secIdx !== curIdx) return secIdx;
     }
 
     // 3. Khớp nếu target là một question ID thuộc Section nào đó
-    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+    if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT' && targetVal !== 'NEXT_PAGE') {
       for (let sIdx = 0; sIdx < sections.length; sIdx++) {
         const foundQ = sections[sIdx].questions.some(q => String(q.id) === String(targetVal));
-        if (foundQ) return sIdx;
+        if (foundQ && sIdx !== curIdx) return sIdx;
       }
     }
 
     // 4. Smart Name / Title Matching có hỗ trợ phân cấp ngữ cảnh NV1 / NV2
     const matchQueries = [];
-    if (targetVal && typeof targetVal === 'string' && targetVal !== 'NEXT' && targetVal !== 'SUBMIT') {
+    if (targetVal && typeof targetVal === 'string' && targetVal !== 'NEXT' && targetVal !== 'NEXT_PAGE' && targetVal !== 'SUBMIT' && targetVal !== 'SUBMIT_FORM') {
       matchQueries.push(targetVal);
     }
     if (optText && typeof optText === 'string') {
@@ -7210,22 +7230,22 @@ if (totalCount === 0) {
     // Ưu tiên khớp trong danh sách ứng viên phù hợp với ngữ cảnh
     for (const query of matchQueries) {
       if (isNV1Context) {
-        const nv1Idx = sections.findIndex(sec => /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(sec.title) && (this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query))));
+        const nv1Idx = sections.findIndex((sec, idx) => idx !== curIdx && /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(sec.title) && (this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query))));
         if (nv1Idx !== -1) return nv1Idx;
       } else if (isNV2Context) {
-        const nv2Idx = sections.findIndex(sec => /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(sec.title) && (this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query))));
+        const nv2Idx = sections.findIndex((sec, idx) => idx !== curIdx && /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(sec.title) && (this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query))));
         if (nv2Idx !== -1) return nv2Idx;
       }
 
       // Quét thông thường nếu không có ngữ cảnh hoặc chưa tìm thấy
-      const matchIdx = sections.findIndex(sec => this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query)));
+      const matchIdx = sections.findIndex((sec, idx) => idx !== curIdx && (this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query))));
       if (matchIdx !== -1) return matchIdx;
     }
 
     return null;
   },
 
-  // Điều hướng chuyển Section kế tiếp với Kiểm tra tính hợp lệ & Rẽ nhánh 2 Tầng (2-Tier Routing)
+  // Điều hướng chuyển Section kế tiếp với Kiểm tra tính hợp lệ & Rẽ nhánh 3 Tầng Chuẩn DAG (Option Branching -> Section Default -> Linear NEXT)
   async nextSection() {
     this.haptic('light');
     const session = this.state.activeSession;
@@ -7260,8 +7280,22 @@ if (totalCount === 0) {
       }
     }
 
-    // 3. Đánh giá Điều Hướng Rẽ Nhánh 2 Tầng (2-Tier Routing)
-    // Tầng 1: Option-level routing trong Section
+    // Khởi tạo và đồng bộ visited_sections trong state.surveyRunner để phòng chống vòng lặp vô tận (DAG Loop Prevention)
+    if (!this.state.surveyRunner) {
+      this.state.surveyRunner = { visited_sections: new Set() };
+    } else if (!(this.state.surveyRunner.visited_sections instanceof Set)) {
+      this.state.surveyRunner.visited_sections = new Set(this.state.surveyRunner.visited_sections || []);
+    }
+
+    const curSecId = curSec.id || curSec.headerQuestionId || String(curSectionIdx);
+    this.state.surveyRunner.visited_sections.add(curSecId);
+    this.state.surveyRunner.visited_sections.add(String(curSectionIdx));
+    if (curSec.headerQuestionId) this.state.surveyRunner.visited_sections.add(String(curSec.headerQuestionId));
+
+    // ĐÁNH GIÁ ĐIỀU HƯỚNG THEO 3 TẦNG ƯU TIÊN CHUẨN DAG:
+    // =========================================================================
+    // PRIORITY 1: OPTION BRANCHING (Lựa chọn đáp án trỏ đến target_section)
+    // =========================================================================
     let branchAction = null;
     let selectedOptionText = null;
     for (const q of (curSec.questions || [])) {
@@ -7295,39 +7329,28 @@ if (totalCount === 0) {
       }
     }
 
-    let resolved = null;
+    let resolvedOpt = null;
     if (branchAction) {
-      resolved = this.resolveSectionTarget(branchAction, sections, selectedOptionText, curSec);
+      resolvedOpt = this.resolveSectionTarget(branchAction, sections, selectedOptionText, curSec);
     } else if (selectedOptionText) {
-      resolved = this.resolveSectionTarget(null, sections, selectedOptionText, curSec);
+      resolvedOpt = this.resolveSectionTarget(null, sections, selectedOptionText, curSec);
     }
 
-    if (resolved === 'SUBMIT') {
+    if (resolvedOpt === 'SUBMIT') {
       await this.submitSurvey();
       return;
     }
-    if (typeof resolved === 'number') {
-      session.sectionHistory = session.sectionHistory || [];
-      session.sectionHistory.push(curSectionIdx);
-      session.currentSectionIndex = resolved;
-      this._saveActiveSessionToStorage();
-      if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
-      return;
-    }
-
-    // Tầng 2: Section defaultAction
-    if (curSec.defaultAction && curSec.defaultAction !== 'NEXT') {
-      const resolvedDef = this.resolveSectionTarget(curSec.defaultAction, sections, null, curSec);
-      if (resolvedDef === 'SUBMIT') {
-        await this.submitSurvey();
-        return;
-      }
-      if (typeof resolvedDef === 'number') {
+    if (typeof resolvedOpt === 'number') {
+      const targetSec = sections[resolvedOpt];
+      const isLoop = targetSec && (
+        this.state.surveyRunner.visited_sections.has(String(resolvedOpt)) ||
+        this.state.surveyRunner.visited_sections.has(String(targetSec.id)) ||
+        (targetSec.headerQuestionId && this.state.surveyRunner.visited_sections.has(String(targetSec.headerQuestionId)))
+      );
+      if (!isLoop) {
         session.sectionHistory = session.sectionHistory || [];
         session.sectionHistory.push(curSectionIdx);
-        session.currentSectionIndex = resolvedDef;
+        session.currentSectionIndex = resolvedOpt;
         this._saveActiveSessionToStorage();
         if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -7336,7 +7359,44 @@ if (totalCount === 0) {
       }
     }
 
-    // Tầng 3: Chống trôi tự do sang các phân đoạn của những tiểu ban khác
+    // =========================================================================
+    // PRIORITY 2: SECTION DEFAULT NAVIGATION (Thuộc tính defaultAction của Section)
+    // =========================================================================
+    if (curSec.defaultAction && curSec.defaultAction !== 'NEXT' && curSec.defaultAction !== 'NEXT_PAGE') {
+      if (curSec.defaultAction === 'SUBMIT' || curSec.defaultAction === 'SUBMIT_FORM') {
+        await this.submitSurvey();
+        return;
+      }
+      const navTarget = curSec.target || curSec.defaultAction;
+      const resolvedDef = this.resolveSectionTarget(navTarget, sections, null, curSec);
+      if (resolvedDef === 'SUBMIT') {
+        await this.submitSurvey();
+        return;
+      }
+      if (typeof resolvedDef === 'number') {
+        const targetDefSec = sections[resolvedDef];
+        const isLoop = targetDefSec && (
+          this.state.surveyRunner.visited_sections.has(String(resolvedDef)) ||
+          this.state.surveyRunner.visited_sections.has(String(targetDefSec.id)) ||
+          (targetDefSec.headerQuestionId && this.state.surveyRunner.visited_sections.has(String(targetDefSec.headerQuestionId)))
+        );
+        if (!isLoop) {
+          session.sectionHistory = session.sectionHistory || [];
+          session.sectionHistory.push(curSectionIdx);
+          session.currentSectionIndex = resolvedDef;
+          this._saveActiveSessionToStorage();
+          if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          this.renderTakeSurveyView(document.getElementById('app-root'), session.surveyId);
+          return;
+        }
+      }
+    }
+
+    // =========================================================================
+    // PRIORITY 3: TUYẾN TÍNH (NEXT & Điểm Hội Tụ Chung)
+    // =========================================================================
+    // Kiểm tra nhánh rẽ song song để tìm điểm hội tụ chung
     const branchSectionIndices = new Set();
     for (let s = 0; s < curSectionIdx; s++) {
       const prevSec = sections[s];
@@ -7367,8 +7427,13 @@ if (totalCount === 0) {
       let nextCommonSecIdx = -1;
       for (let s = curSectionIdx + 1; s < sections.length; s++) {
         if (!branchSectionIndices.has(s)) {
-          nextCommonSecIdx = s;
-          break;
+          const sSec = sections[s];
+          const isVisited = this.state.surveyRunner.visited_sections.has(String(s)) ||
+            (sSec && (this.state.surveyRunner.visited_sections.has(String(sSec.id)) || (sSec.headerQuestionId && this.state.surveyRunner.visited_sections.has(String(sSec.headerQuestionId)))));
+          if (!isVisited) {
+            nextCommonSecIdx = s;
+            break;
+          }
         }
       }
       if (nextCommonSecIdx !== -1) {
@@ -7386,11 +7451,22 @@ if (totalCount === 0) {
       }
     }
 
-    // Mặc định: Chuyển sang Section tiếp theo hoặc nộp bài nếu là Section cuối
-    if (curSectionIdx < sections.length - 1) {
+    // Tìm Section tiếp theo tuyến tính chưa ghé thăm (Loop Prevention)
+    let nextLinearSecIdx = -1;
+    for (let s = curSectionIdx + 1; s < sections.length; s++) {
+      const sSec = sections[s];
+      const isVisited = this.state.surveyRunner.visited_sections.has(String(s)) ||
+        (sSec && (this.state.surveyRunner.visited_sections.has(String(sSec.id)) || (sSec.headerQuestionId && this.state.surveyRunner.visited_sections.has(String(sSec.headerQuestionId)))));
+      if (!isVisited) {
+        nextLinearSecIdx = s;
+        break;
+      }
+    }
+
+    if (nextLinearSecIdx !== -1) {
       session.sectionHistory = session.sectionHistory || [];
       session.sectionHistory.push(curSectionIdx);
-      session.currentSectionIndex = curSectionIdx + 1;
+      session.currentSectionIndex = nextLinearSecIdx;
       this._saveActiveSessionToStorage();
       if (typeof this.triggerPacingLock === 'function') this.triggerPacingLock();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -7405,6 +7481,17 @@ if (totalCount === 0) {
     this.haptic('light');
     const session = this.state.activeSession;
     if (!session) return;
+    
+    if (this.state.surveyRunner && this.state.surveyRunner.visited_sections) {
+      const curSecIdx = session.currentSectionIndex || 0;
+      this.state.surveyRunner.visited_sections.delete(String(curSecIdx));
+      const sections = this.buildSurveySections(session.questions);
+      const curSec = sections[curSecIdx];
+      if (curSec) {
+        if (curSec.id) this.state.surveyRunner.visited_sections.delete(String(curSec.id));
+        if (curSec.headerQuestionId) this.state.surveyRunner.visited_sections.delete(String(curSec.headerQuestionId));
+      }
+    }
     
     if (session.sectionHistory && session.sectionHistory.length > 0) {
       session.currentSectionIndex = session.sectionHistory.pop();
@@ -12605,7 +12692,22 @@ if (totalCount === 0) {
 
         <!-- Question Footer: Duplicate, Trash, Required Switch, Screener & Branching -->
         <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2.5 text-xs" onclick="event.stopPropagation()">
-          
+          ${q.type === 'SECTION_HEADER' ? `
+            <div class="flex items-center gap-1.5 text-[11px] text-stone-400 font-medium italic">
+              <i data-lucide="split" class="w-3.5 h-3.5 text-orange-500/70"></i>
+              <span>Phân đoạn biểu mẫu (Chuyển tiếp trang)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="event.stopPropagation(); VibeApp.duplicateBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-orange-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Nhân đôi phân đoạn này">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+              ${list.length > 1 ? `
+                <button type="button" onclick="event.stopPropagation(); VibeApp.removeBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Xóa phân đoạn này">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              ` : ''}
+            </div>
+          ` : `
           <!-- Tùy chọn ngữ cảnh tinh gọn (Chips/Badges) -->
           <div class="flex flex-wrap items-center gap-1.5">
             <!-- Chip Sàng lọc đối tượng -->
@@ -12661,7 +12763,7 @@ if (totalCount === 0) {
               </button>
             </div>
           </div>
-
+          `}
         </div>
 
       </div>
@@ -12702,11 +12804,36 @@ if (totalCount === 0) {
 
     // 0b. KHỐI PHÂN ĐOẠN (SECTION_HEADER - Thêm phần ==)
     if (q.type === 'SECTION_HEADER') {
-      const totalSections = (this.state.builderQuestions || []).filter(item => item.type === 'SECTION_HEADER').length;
-      const currentSectionNum = (this.state.builderQuestions || []).slice(0, qIdx + 1).filter(item => item.type === 'SECTION_HEADER').length;
-      const curSectionTarget = (q.logic && q.logic.default_action) || 'NEXT';
-      const laterSections = (this.state.builderQuestions || []).map((item, idx) => ({ item, idx }))
-        .filter(entry => entry.idx > qIdx && entry.item.type === 'SECTION_HEADER');
+      const allQuestions = this.state.builderQuestions || [];
+      const totalSections = allQuestions.filter(item => item.type === 'SECTION_HEADER').length;
+      const currentSectionNum = allQuestions.slice(0, qIdx + 1).filter(item => item.type === 'SECTION_HEADER').length;
+
+      // Danh sách các Section khác trong toàn bộ biểu mẫu
+      const otherSections = allQuestions.map((item, idx) => ({ item, idx }))
+        .filter(entry => entry.idx !== qIdx && entry.item.type === 'SECTION_HEADER')
+        .map(entry => {
+          const secNum = allQuestions.slice(0, entry.idx + 1).filter(item => item.type === 'SECTION_HEADER').length;
+          const secTitle = (entry.item.content || '').trim() || `Mục ${secNum}`;
+          return {
+            id: entry.item.id,
+            num: secNum,
+            title: secTitle,
+            idx: entry.idx
+          };
+        });
+
+      const curAction = (q.logic && q.logic.default_action) ? q.logic.default_action : ((q.logic && q.logic.target) ? 'GO_TO_PAGE' : 'NEXT_PAGE');
+      const curTarget = (q.logic && q.logic.target) || null;
+
+      let curSecLabel = 'Tiếp tục sang phần tiếp theo';
+      if (curAction === 'SUBMIT_FORM' || curAction === 'SUBMIT') {
+        curSecLabel = 'Gửi biểu mẫu';
+      } else if (curAction === 'GO_TO_PAGE' && curTarget) {
+        const found = otherSections.find(s => String(s.id) === String(curTarget) || String(s.idx) === String(curTarget));
+        if (found) {
+          curSecLabel = `Chuyển đến Mục ${found.num}: ${found.title}`;
+        }
+      }
 
       return `
         <div class="p-4 sm:p-5 bg-gradient-to-r from-orange-50/60 to-transparent dark:from-stone-900 dark:to-transparent rounded-2xl border-2 border-orange-500/40 dark:border-stone-800 space-y-3">
@@ -12725,59 +12852,55 @@ if (totalCount === 0) {
                       placeholder="Nhập phần giải thích, hướng dẫn hoặc lưu ý cho đáp viên khi bắt đầu phần này..." 
                       class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs text-stone-800 dark:text-stone-200 focus:border-orange-600 focus:outline-none h-16 resize-none">${(q.rows && q.rows[0]) ? q.rows[0].replace(/"/g, '&quot;') : ''}</textarea>
           </div>
-          <div class="pt-2 border-t border-orange-200/60 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span class="text-[11px] font-bold text-stone-600 dark:text-stone-400">Sau phần này:</span>
-            ${(() => {
-              let curSecLabel = 'Tiếp tục đến phần tiếp theo';
-              if (curSectionTarget === 'SUBMIT') {
-                curSecLabel = 'Gửi biểu mẫu (Kết thúc)';
-              } else if (curSectionTarget !== 'NEXT') {
-                const foundSec = laterSections.find(s => String(s.idx) === String(curSectionTarget));
-                if (foundSec) {
-                  const secT = (foundSec.item.content || '').trim() || `Mục ${foundSec.idx + 1}`;
-                  curSecLabel = `Phân đoạn: ${secT.length > 18 ? secT.slice(0, 18) + '...' : secT}`;
-                }
-              }
-              return `
-                <div class="relative">
-                  <button type="button" 
-                          id="sec-logic-btn-${qIdx}"
-                          onclick="event.stopPropagation(); VibeApp.toggleCustomDropdown('sec-logic-menu-${qIdx}', 'sec-logic-icon-${qIdx}', event)"
-                          class="custom-dropdown-trigger h-8 px-2.5 text-xs font-medium bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-700 dark:text-stone-200 hover:border-orange-500 flex items-center justify-between gap-2 max-w-[260px] truncate shadow-2xs cursor-pointer">
-                    <span id="sec-logic-label-${qIdx}" class="truncate">${this.escapeHtml(curSecLabel)}</span>
-                    <i data-lucide="chevron-down" id="sec-logic-icon-${qIdx}" class="custom-dropdown-icon w-3.5 h-3.5 text-stone-400 shrink-0 transition-transform duration-200 pointer-events-none"></i>
-                  </button>
-                  <div id="sec-logic-menu-${qIdx}" class="custom-dropdown-menu hidden absolute right-0 top-[calc(100%+4px)] z-50 w-64 bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-xl shadow-2xl p-1 space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-thin text-left">
+
+          <!-- Thanh Cấu Hình Điều Hướng Chân Phân Đoạn Chuẩn Microsoft / Google Forms -->
+          <div class="pt-3 border-t border-orange-200/60 dark:border-stone-800 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-stone-700 dark:text-stone-300 shrink-0">
+              <i data-lucide="corner-down-right" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>
+              <span>Sau phần ${currentSectionNum}:</span>
+            </div>
+
+            <div class="relative">
+              <button type="button" 
+                      id="sec-nav-btn-${qIdx}"
+                      onclick="event.stopPropagation(); VibeApp.toggleCustomDropdown('sec-nav-menu-${qIdx}', 'sec-nav-icon-${qIdx}', event)"
+                      class="custom-dropdown-trigger h-8 px-3 text-xs font-semibold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg text-stone-800 dark:text-stone-100 hover:border-orange-500 flex items-center justify-between gap-2 max-w-[280px] sm:max-w-[340px] truncate shadow-2xs cursor-pointer">
+                <span id="sec-nav-label-${qIdx}" class="truncate">${this.escapeHtml(curSecLabel)}</span>
+                <i data-lucide="chevron-down" id="sec-nav-icon-${qIdx}" class="custom-dropdown-icon w-3.5 h-3.5 text-stone-400 shrink-0 transition-transform duration-200 pointer-events-none"></i>
+              </button>
+              
+              <div id="sec-nav-menu-${qIdx}" class="custom-dropdown-menu hidden absolute right-0 top-[calc(100%+4px)] z-50 w-72 sm:w-80 bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-xl shadow-2xl p-1.5 space-y-0.5 max-h-[260px] overflow-y-auto scrollbar-thin text-left">
+                <!-- 1. Tiếp tục sang phần tiếp theo -->
+                <button type="button" 
+                        onclick="event.stopPropagation(); VibeApp.setStudioSectionDefaultAction(${qIdx}, 'NEXT_PAGE', null); VibeApp.closeAllCustomDropdowns();"
+                        class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs transition-colors ${curAction === 'NEXT_PAGE' ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold' : 'hover:bg-stone-100 dark:hover:bg-[#24242A] text-stone-700 dark:text-stone-200'}">
+                  <span class="truncate">Tiếp tục sang phần tiếp theo</span>
+                  ${curAction === 'NEXT_PAGE' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>' : ''}
+                </button>
+
+                <!-- 2. Danh sách các Mục khác -->
+                ${otherSections.map(sec => {
+                  const isCur = curAction === 'GO_TO_PAGE' && (String(curTarget) === String(sec.id) || String(curTarget) === String(sec.idx));
+                  const optText = `Chuyển đến Mục ${sec.num}: ${sec.title}`;
+                  return `
                     <button type="button" 
-                            onclick="event.stopPropagation(); VibeApp.setStudioSectionLogicTarget(${qIdx}, 'NEXT'); const el = document.getElementById('sec-logic-label-${qIdx}'); if (el) el.textContent = 'Tiếp tục đến phần tiếp theo'; VibeApp.closeAllCustomDropdowns();"
-                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors ${curSectionTarget === 'NEXT' ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold' : 'hover:bg-stone-100 dark:hover:bg-[#24242A] text-stone-700 dark:text-stone-200'}">
-                      <span class="truncate">Tiếp tục đến phần tiếp theo</span>
-                      ${curSectionTarget === 'NEXT' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>' : ''}
+                            onclick="event.stopPropagation(); VibeApp.setStudioSectionDefaultAction(${qIdx}, 'GO_TO_PAGE', '${sec.id}'); VibeApp.closeAllCustomDropdowns();"
+                            class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs transition-colors ${isCur ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold' : 'hover:bg-stone-100 dark:hover:bg-[#24242A] text-stone-700 dark:text-stone-200'}">
+                      <span class="truncate">${this.escapeHtml(optText)}</span>
+                      ${isCur ? '<i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>' : ''}
                     </button>
-                    ${laterSections.map(sec => {
-                      const secTitle = (sec.item.content || '').trim() || `Mục ${sec.idx + 1}`;
-                      const shortSecTitle = secTitle.length > 25 ? secTitle.slice(0, 25) + '...' : secTitle;
-                      const isCur = String(curSectionTarget) === String(sec.idx);
-                      const safeShort = (shortSecTitle).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                      return `
-                        <button type="button" 
-                                onclick="event.stopPropagation(); VibeApp.setStudioSectionLogicTarget(${qIdx}, '${sec.idx}'); const el = document.getElementById('sec-logic-label-${qIdx}'); if (el) el.textContent = 'Phân đoạn: ${safeShort}'; VibeApp.closeAllCustomDropdowns();"
-                                class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors ${isCur ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold' : 'hover:bg-stone-100 dark:hover:bg-[#24242A] text-stone-700 dark:text-stone-200'}">
-                          <span class="truncate">Chuyển đến Phân đoạn: ${this.escapeHtml(shortSecTitle)}</span>
-                          ${isCur ? '<i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>' : ''}
-                        </button>
-                      `;
-                    }).join('')}
-                    <button type="button" 
-                            onclick="event.stopPropagation(); VibeApp.setStudioSectionLogicTarget(${qIdx}, 'SUBMIT'); const el = document.getElementById('sec-logic-label-${qIdx}'); if (el) el.textContent = 'Gửi biểu mẫu (Kết thúc)'; VibeApp.closeAllCustomDropdowns();"
-                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors ${curSectionTarget === 'SUBMIT' ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold' : 'hover:bg-stone-100 dark:hover:bg-[#24242A] text-stone-700 dark:text-stone-200'}">
-                      <span class="truncate">Gửi biểu mẫu (Kết thúc)</span>
-                      ${curSectionTarget === 'SUBMIT' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>' : ''}
-                    </button>
-                  </div>
-                </div>
-              `;
-            })()}
+                  `;
+                }).join('')}
+
+                <!-- 3. Gửi biểu mẫu -->
+                <button type="button" 
+                        onclick="event.stopPropagation(); VibeApp.setStudioSectionDefaultAction(${qIdx}, 'SUBMIT_FORM', null); VibeApp.closeAllCustomDropdowns();"
+                        class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs transition-colors ${curAction === 'SUBMIT_FORM' || curAction === 'SUBMIT' ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 font-bold' : 'hover:bg-stone-100 dark:hover:bg-[#24242A] text-stone-700 dark:text-stone-200'}">
+                  <span class="truncate">Gửi biểu mẫu</span>
+                  ${curAction === 'SUBMIT_FORM' || curAction === 'SUBMIT' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>' : ''}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -13351,11 +13474,24 @@ if (totalCount === 0) {
     }
   },
 
-  setStudioSectionLogicTarget(qIdx, target) {
+  setStudioSectionDefaultAction(qIdx, action, target = null) {
+    this.haptic('light');
     if (this.state.builderQuestions && this.state.builderQuestions[qIdx]) {
       const q = this.state.builderQuestions[qIdx];
       if (!q.logic) q.logic = {};
-      q.logic.default_action = target;
+      q.logic.default_action = action;
+      q.logic.target = target;
+      this.refreshStudioQuestionsView();
+    }
+  },
+
+  setStudioSectionLogicTarget(qIdx, target) {
+    if (target === 'NEXT' || target === 'NEXT_PAGE') {
+      this.setStudioSectionDefaultAction(qIdx, 'NEXT_PAGE', null);
+    } else if (target === 'SUBMIT' || target === 'SUBMIT_FORM') {
+      this.setStudioSectionDefaultAction(qIdx, 'SUBMIT_FORM', null);
+    } else {
+      this.setStudioSectionDefaultAction(qIdx, 'GO_TO_PAGE', target);
     }
   },
 
@@ -14233,14 +14369,17 @@ if (totalCount === 0) {
       }
 
       if (/(?:giá\s*trị\s*phải\s*là\s*(?:một\s*)?số|phải\s*là\s*(?:một\s*)?số|value\s*must\s*be\s*a\s*number|giới\s*hạn\s*số)/i.test(line)) {
-        currentItem.type = 'SHORT_TEXT';
-        currentItem.validation = {
-          type: 'NUMBER',
-          rule: 'IS_NUMBER',
-          placeholder: 'Giá trị phải là một số',
-          error_message: 'Giá trị phải là một số'
-        };
-        currentItem.placeholder = 'Giá trị phải là một số';
+        // Chỉ gán IS_NUMBER nếu chưa có ràng buộc dải số BETWEEN
+        if (!currentItem.validation || currentItem.validation.rule !== 'BETWEEN') {
+          currentItem.type = 'SHORT_TEXT';
+          currentItem.validation = {
+            type: 'NUMBER',
+            rule: 'IS_NUMBER',
+            placeholder: 'Giá trị phải là một số',
+            error_message: 'Giá trị phải là một số'
+          };
+          currentItem.placeholder = 'Giá trị phải là một số';
+        }
         continue;
       }
 
@@ -14380,6 +14519,17 @@ if (totalCount === 0) {
       if (q.validation) {
         if (!q.logic) q.logic = {};
         q.logic.validation = q.validation;
+      } else if (['SHORT_TEXT', 'PARAGRAPH'].includes(q.type) && q.content) {
+        const eng = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
+        if (eng && typeof eng.inferValidationFromTitle === 'function') {
+          const inf = eng.inferValidationFromTitle(q.content, q.placeholder || '');
+          if (inf) {
+            q.validation = { ...inf };
+            if (!q.logic) q.logic = {};
+            q.logic.validation = { ...inf };
+            if (inf.placeholder) q.placeholder = inf.placeholder;
+          }
+        }
       }
 
       return q;

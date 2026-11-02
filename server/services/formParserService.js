@@ -1203,6 +1203,19 @@ class FormParserService {
     }
     if (!text || typeof text !== 'string') return null;
 
+    const makeRange = (n1, n2) => {
+      const minVal = Math.min(n1, n2);
+      const maxVal = Math.max(n1, n2);
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: minVal,
+        max: maxVal,
+        placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
+        error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
+      };
+    };
+
     // 0. Làm sạch định dạng ngày tháng ISO, ngày tháng thông thường, timestamp và số điện thoại
     const sanitizedText = text
       .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:T\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?/gi, ' ')
@@ -1217,7 +1230,7 @@ class FormParserService {
       const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
       if (!isNaN(n1) && !isNaN(n2)) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+        return makeRange(n1, n2);
       }
     }
 
@@ -1239,7 +1252,7 @@ class FormParserService {
         const n1 = parseFloat(mMin[1].replace(/,/g, ''));
         const n2 = parseFloat(mMax[1].replace(/,/g, ''));
         if (!isNaN(n1) && !isNaN(n2)) {
-          return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+          return makeRange(n1, n2);
         }
       }
     }
@@ -1251,7 +1264,7 @@ class FormParserService {
       const n1 = parseFloat(vnMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(vnMatch[2].replace(/,/g, ''));
       if (!isNaN(n1) && !isNaN(n2)) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+        return makeRange(n1, n2);
       }
     }
 
@@ -1262,7 +1275,7 @@ class FormParserService {
       const n1 = parseFloat(fromToMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(fromToMatch[2].replace(/,/g, ''));
       if (!isNaN(n1) && !isNaN(n2)) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+        return makeRange(n1, n2);
       }
     }
 
@@ -1278,11 +1291,73 @@ class FormParserService {
       const n1 = parseFloat(matchTilde[1].replace(/,/g, ''));
       const n2 = parseFloat(matchTilde[2].replace(/,/g, ''));
       if (!isNaN(n1) && !isNaN(n2) && n1 !== n2) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+        return makeRange(n1, n2);
       }
     }
 
     return null;
+  }
+
+  /**
+   * Suy luận quy tắc xác thực (Validation) từ tiêu đề và ngữ cảnh câu hỏi
+   * BẢO TOÀN DẢI SỐ: Ưu tiên tuyệt đối dải số trước, không bao giờ fallback về IS_NUMBER nếu text có dải số.
+   * KHÓA DẢI SỐ: Nếu đối tượng đã có type === 'NUMBER' và rule === 'BETWEEN', không ghi đè thành IS_NUMBER.
+   */
+  inferValidationFromTitle(titleOrQ, context = '') {
+    if (!titleOrQ) return null;
+
+    // 1. Khóa dải số: Nếu truyền vào là question object hoặc validation object đã có NUMBER BETWEEN
+    if (typeof titleOrQ === 'object') {
+      const existingVal = titleOrQ.validation || (titleOrQ.rule ? titleOrQ : null);
+      if (existingVal && existingVal.type === 'NUMBER' && existingVal.rule === 'BETWEEN') {
+        return existingVal;
+      }
+      const titleText = titleOrQ.content || titleOrQ.title || '';
+      const contextText = `${titleOrQ.placeholder || ''} ${titleOrQ.description || ''} ${titleOrQ.subtitle || ''} ${context || ''}`.trim();
+      return this.inferValidationFromTitle(titleText, contextText);
+    }
+
+    const titleStr = typeof titleOrQ === 'string' ? titleOrQ.trim() : '';
+    const contextStr = typeof context === 'string' ? context.trim() : (context ? JSON.stringify(context) : '');
+    const combined = `${titleStr} ${contextStr}`.trim();
+    if (!combined) return null;
+
+    // 2. ƯU TIÊN TUYỆT ĐỐI DẢI SỐ TRƯỚC: Nếu có dải số trong combined text
+    const range = this.extractNumberRange(combined);
+    if (range) {
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: range.min,
+        max: range.max,
+        placeholder: range.placeholder || `Số phải nằm trong khoảng từ ${range.min} ~ ${range.max}`,
+        error_message: range.error_message || `Số phải nằm trong khoảng từ ${range.min} đến ${range.max}`
+      };
+    }
+
+    // 3. Phân tích các quy tắc khác thông qua _extractValidationRule
+    const val = this._extractValidationRule({
+      title: titleStr,
+      placeholder: contextStr,
+      description: contextStr
+    });
+
+    // 4. Chốt chặn chống ghi đè: Nếu val là IS_NUMBER nhưng text có dải số thì luôn chuyển sang BETWEEN
+    if (val && val.rule === 'IS_NUMBER') {
+      const doubleCheck = this.extractNumberRange(combined);
+      if (doubleCheck) {
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: doubleCheck.min,
+          max: doubleCheck.max,
+          placeholder: doubleCheck.placeholder || `Số phải nằm trong khoảng từ ${doubleCheck.min} ~ ${doubleCheck.max}`,
+          error_message: doubleCheck.error_message || `Số phải nằm trong khoảng từ ${doubleCheck.min} đến ${doubleCheck.max}`
+        };
+      }
+    }
+
+    return val;
   }
 
   _extractValidationRule({ title = '', subtitle = '', placeholder = '', description = '', questionInfoObj = null, rawRestrictions = null, rawValidationArray = null, rawQuestion = null }) {
@@ -1787,16 +1862,16 @@ class FormParserService {
       // 2.11 IS_NUMBER (Toán tử 9)
       const isNum = rawOp === 9 || rawOp === '9' || opStr.includes('isnumber') || opStr === 'number' || ((typeStr.includes('number') || typeStr === '1' || typeStr === 1) && !opStr);
       if (isNum) {
-        // Chỉ khi trong placeholder hoặc userFacingText có dải số tường minh rõ ràng
-        const rangeInContext = this.extractNumberRange(placeholder || subtitle || description);
+        // BẢO TOÀN DẢI SỐ: Ưu tiên dải số nếu trong userFacingText hoặc placeholder có dải số tường minh
+        const rangeInContext = this.extractNumberRange(userFacingText || placeholder || subtitle || description);
         if (rangeInContext) {
           return {
             type: 'NUMBER',
             rule: 'BETWEEN',
             min: rangeInContext.min,
             max: rangeInContext.max,
-            placeholder: `Số phải nằm trong khoảng từ ${rangeInContext.min} ~ ${rangeInContext.max}`,
-            error_message: `Số phải nằm trong khoảng từ ${rangeInContext.min} đến ${rangeInContext.max}`
+            placeholder: rangeInContext.placeholder || `Số phải nằm trong khoảng từ ${rangeInContext.min} ~ ${rangeInContext.max}`,
+            error_message: rangeInContext.error_message || `Số phải nằm trong khoảng từ ${rangeInContext.min} đến ${rangeInContext.max}`
           };
         }
         fallbackIsNumber = true;
@@ -1827,13 +1902,25 @@ class FormParserService {
           rule: 'BETWEEN',
           min: rangeFromPh.min,
           max: rangeFromPh.max,
-          placeholder: `Số phải nằm trong khoảng từ ${rangeFromPh.min} ~ ${rangeFromPh.max}`,
-          error_message: `Số phải nằm trong khoảng từ ${rangeFromPh.min} đến ${rangeFromPh.max}`
+          placeholder: rangeFromPh.placeholder || `Số phải nằm trong khoảng từ ${rangeFromPh.min} ~ ${rangeFromPh.max}`,
+          error_message: rangeFromPh.error_message || `Số phải nằm trong khoảng từ ${rangeFromPh.min} đến ${rangeFromPh.max}`
         };
       }
 
       // 3.2 Is Number từ Placeholder
       if (/(?:giá\s*trị\s*phải\s*là\s*(?:một\s*)?số|gia\s*tri\s*phai\s*la\s*(?:mot\s*)?so|phải\s*là\s*(?:một\s*)?số|phai\s*la\s*(?:mot\s*)?so|value\s*must\s*be\s*a\s*number|must\s*be\s*a\s*number|phải\s*là\s*số)/i.test(trimmedPlaceholder)) {
+        // Kiểm tra lại nếu userFacingText chứa dải số thì ưu tiên BETWEEN
+        const explicitRange = this.extractNumberRange(userFacingText);
+        if (explicitRange) {
+          return {
+            type: 'NUMBER',
+            rule: 'BETWEEN',
+            min: explicitRange.min,
+            max: explicitRange.max,
+            placeholder: explicitRange.placeholder || `Số phải nằm trong khoảng từ ${explicitRange.min} ~ ${explicitRange.max}`,
+            error_message: explicitRange.error_message || `Số phải nằm trong khoảng từ ${explicitRange.min} đến ${explicitRange.max}`
+          };
+        }
         return {
           type: 'NUMBER',
           rule: 'IS_NUMBER',
@@ -1895,8 +1982,19 @@ class FormParserService {
       }
     }
 
-    // 4. Nếu có fallbackIsNumber từ structured metadata mà không có range cụ thể
+    // 4. Nếu có fallbackIsNumber từ structured metadata: Ưu tiên kiểm tra dải số trước
     if (fallbackIsNumber) {
+      const explicitRange = this.extractNumberRange(userFacingText);
+      if (explicitRange) {
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: explicitRange.min,
+          max: explicitRange.max,
+          placeholder: explicitRange.placeholder || `Số phải nằm trong khoảng từ ${explicitRange.min} ~ ${explicitRange.max}`,
+          error_message: explicitRange.error_message || `Số phải nằm trong khoảng từ ${explicitRange.min} đến ${explicitRange.max}`
+        };
+      }
       return {
         type: 'NUMBER',
         rule: 'IS_NUMBER',
@@ -1905,7 +2003,7 @@ class FormParserService {
       };
     }
 
-    // 5. Heuristic Fallback cuối cùng: Phân tích văn bản hiển thị thuần túy (userFacingText)
+    // 5. Heuristic Fallback: Phân tích văn bản hiển thị thuần túy (userFacingText)
     if (userFacingText) {
       const textRange = this.extractNumberRange(userFacingText);
       if (textRange) {
@@ -1914,36 +2012,29 @@ class FormParserService {
           rule: 'BETWEEN',
           min: textRange.min,
           max: textRange.max,
-          placeholder: `Số phải nằm trong khoảng từ ${textRange.min} ~ ${textRange.max}`,
-          error_message: `Số phải nằm trong khoảng từ ${textRange.min} đến ${textRange.max}`
+          placeholder: textRange.placeholder || `Số phải nằm trong khoảng từ ${textRange.min} ~ ${textRange.max}`,
+          error_message: textRange.error_message || `Số phải nằm trong khoảng từ ${textRange.min} đến ${textRange.max}`
         };
       }
     }
-    // 4. Phân tích ngữ cảnh văn bản (Text / Subtitle / Placeholder / Title / Description)
+    // 6. Phân tích ngữ cảnh văn bản kết hợp (combinedText)
     const combinedText = `${title} ${subtitle} ${placeholder} ${description}`.trim();
     if (!combinedText) return null;
 
-    // 4.1 Ưu tiên quét dải số BETWEEN rõ ràng từ combinedText
-    const betweenMatch = combinedText.match(/(?:số\s+phải\s+nằm\s+trong\s+khoảng\s+từ|so\s+phai\s+nam\s+trong\s+khoang\s+tu|nằm\s+trong\s+khoảng\s+từ|nam\s+trong\s+khoang\s+tu|trong\s+khoảng\s+từ|trong\s+khoang\s+tu|khoảng\s+từ|khoang\s+tu|between|number\s+must\s+be\s+between)\s*([0-9.,]+)\s*(?:đến|và|~|-|den|va|to|and)\s*([0-9.,]+)/i) ||
-                         combinedText.match(/(?:^|[\s(:])(\d+(?:[.,]\d+)?)\s*(?:~|đến|den)\s*(\d+(?:[.,]\d+)?)(?:[\s):]|$)/i);
-    if (betweenMatch) {
-      const n1 = parseFloat(betweenMatch[1].replace(/,/g, ''));
-      const n2 = parseFloat(betweenMatch[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2)) {
-        const minVal = Math.min(n1, n2);
-        const maxVal = Math.max(n1, n2);
-        return {
-          type: 'NUMBER',
-          rule: 'BETWEEN',
-          min: minVal,
-          max: maxVal,
-          placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-          error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
-        };
-      }
+    // 6.1 Ưu tiên quét dải số BETWEEN rõ ràng từ combinedText
+    const rangeInCombined = this.extractNumberRange(combinedText);
+    if (rangeInCombined) {
+      return {
+        type: 'NUMBER',
+        rule: 'BETWEEN',
+        min: rangeInCombined.min,
+        max: rangeInCombined.max,
+        placeholder: rangeInCombined.placeholder || `Số phải nằm trong khoảng từ ${rangeInCombined.min} ~ ${rangeInCombined.max}`,
+        error_message: rangeInCombined.error_message || `Số phải nằm trong khoảng từ ${rangeInCombined.min} đến ${rangeInCombined.max}`
+      };
     }
 
-    // 4.2 Email
+    // 6.2 Email
     if (/(?:\bemail(?:\s+hust)?\b|thư\s*điện\s*tử|địa\s*chỉ\s*email)/i.test(combinedText)) {
       return {
         type: 'EMAIL',
@@ -1953,7 +2044,7 @@ class FormParserService {
       };
     }
 
-    // 4.3 Website / URL
+    // 6.3 Website / URL
     if (/(?:\burl\b|liên\s*kết|trang\s*web|website|\blink\b|https?:\/\/)/i.test(combinedText)) {
       return {
         type: 'URL',
@@ -1963,24 +2054,18 @@ class FormParserService {
       };
     }
 
-    // 4.4 Mã số sinh viên: Tuyệt đối KHÔNG gán cứng min=20000000, max=20270000 nếu form không quy định
+    // 6.4 Mã số sinh viên: Tuyệt đối KHÔNG gán cứng min=20000000, max=20270000 nếu form không quy định
     if (/(?:mã\s*số\s*sinh\s*viên|ma\s*so\s*sinh\s*vien|\bmssv\b|số\s*thẻ\s*sinh\s*viên|so\s*the\s*sinh\s*vien|mã\s*sinh\s*viên|ma\s*sinh\s*vien)/i.test(combinedText)) {
-      const rangeMatch = combinedText.match(/(\d+)\s*(?:đến|và|~|-|den|va|to)\s*(\d+)/i);
+      const rangeMatch = this.extractNumberRange(combinedText);
       if (rangeMatch) {
-        const n1 = parseInt(rangeMatch[1], 10);
-        const n2 = parseInt(rangeMatch[2], 10);
-        if (!isNaN(n1) && !isNaN(n2)) {
-          const minVal = Math.min(n1, n2);
-          const maxVal = Math.max(n1, n2);
-          return {
-            type: 'NUMBER',
-            rule: 'BETWEEN',
-            min: minVal,
-            max: maxVal,
-            placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-            error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
-          };
-        }
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: rangeMatch.min,
+          max: rangeMatch.max,
+          placeholder: rangeMatch.placeholder || `Số phải nằm trong khoảng từ ${rangeMatch.min} ~ ${rangeMatch.max}`,
+          error_message: rangeMatch.error_message || `Số phải nằm trong khoảng từ ${rangeMatch.min} đến ${rangeMatch.max}`
+        };
       }
       return {
         type: 'NUMBER',
@@ -1990,24 +2075,18 @@ class FormParserService {
       };
     }
 
-    // 4.5 Số điện thoại, số lượng & các trường số
+    // 6.5 Số điện thoại, số lượng & các trường số
     if (/(?:giá\s*trị\s*phải\s*là\s*(?:một\s*)?số|gia\s*tri\s*phai\s*la\s*(?:mot\s*)?so|phải\s*là\s*(?:một\s*)?số|phai\s*la\s*(?:mot\s*)?so|số\s*điện\s*thoại|so\s*dien\s*thoai|\bsđt\b|\bsdt\b|điện\s*thoại|dien\s*thoai|phone\s*number|số\s*lượng|so\s*luong|độ\s*tuổi|do\s*tuoi|\btuổi\b|\btuoi\b|năm\s*sinh|nam\s*sinh|điểm\s*số|diem\s*so|thứ\s*hạng|thu\s*hang|thu\s*nhập|thu\s*nhap|số\s*tiền|so\s*tien)/i.test(combinedText)) {
-      const rangeMatch = combinedText.match(/(\d+)\s*(?:đến|và|~|-|den|va|to)\s*(\d+)/i);
+      const rangeMatch = this.extractNumberRange(combinedText);
       if (rangeMatch) {
-        const n1 = parseInt(rangeMatch[1], 10);
-        const n2 = parseInt(rangeMatch[2], 10);
-        if (!isNaN(n1) && !isNaN(n2)) {
-          const minVal = Math.min(n1, n2);
-          const maxVal = Math.max(n1, n2);
-          return {
-            type: 'NUMBER',
-            rule: 'BETWEEN',
-            min: minVal,
-            max: maxVal,
-            placeholder: `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`,
-            error_message: `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`
-          };
-        }
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: rangeMatch.min,
+          max: rangeMatch.max,
+          placeholder: rangeMatch.placeholder || `Số phải nằm trong khoảng từ ${rangeMatch.min} ~ ${rangeMatch.max}`,
+          error_message: rangeMatch.error_message || `Số phải nằm trong khoảng từ ${rangeMatch.min} đến ${rangeMatch.max}`
+        };
       }
       return {
         type: 'NUMBER',
@@ -3046,13 +3125,19 @@ class FormParserService {
         }
 
         if (/(?:giá\s*trị\s*phải\s*là\s*(?:một\s*)?số|phải\s*là\s*(?:một\s*)?số|value\s*must\s*be\s*a\s*number|giới\s*hạn\s*số)/i.test(line)) {
-          currentQuestion.validation = {
-            type: 'NUMBER',
-            rule: 'IS_NUMBER',
-            placeholder: 'Giá trị phải là một số',
-            error_message: 'Giá trị phải là một số'
-          };
-          currentQuestion.placeholder = 'Giá trị phải là một số';
+          // BẢO TOÀN DẢI SỐ: Nếu đã có rule BETWEEN hoặc trong tiêu đề/placeholder có dải số thì không ghi đè thành IS_NUMBER
+          const hasExistingRange = (currentQuestion.validation && currentQuestion.validation.rule === 'BETWEEN') ||
+            this.extractNumberRange(currentQuestion.content) ||
+            this.extractNumberRange(currentQuestion.placeholder);
+          if (!hasExistingRange) {
+            currentQuestion.validation = {
+              type: 'NUMBER',
+              rule: 'IS_NUMBER',
+              placeholder: 'Giá trị phải là một số',
+              error_message: 'Giá trị phải là một số'
+            };
+            currentQuestion.placeholder = 'Giá trị phải là một số';
+          }
           continue;
         }
 
@@ -3193,7 +3278,9 @@ class FormParserService {
 
     // 0.5 Ưu tiên kiểu ép buộc nếu có forceType từ nhãn Microsoft Forms
     if (rawQ.forceType === 'PARAGRAPH') {
-      const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
+      const validation = (rawQ.validation && rawQ.validation.rule === 'BETWEEN')
+        ? rawQ.validation
+        : (rawQ.validation || this.inferValidationFromTitle(content, rawQ.placeholder || ''));
       const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
       if (validation) {
         qRes.validation = validation;
@@ -3205,7 +3292,9 @@ class FormParserService {
       return qRes;
     }
     if (rawQ.forceType === 'SHORT_TEXT') {
-      const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
+      const validation = (rawQ.validation && rawQ.validation.rule === 'BETWEEN')
+        ? rawQ.validation
+        : (rawQ.validation || this.inferValidationFromTitle(content, rawQ.placeholder || ''));
       const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
       if (validation) {
         qRes.validation = validation;
@@ -3301,7 +3390,9 @@ class FormParserService {
         return { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'FILE_UPLOAD', content, is_required: isRequired, options: null };
       }
       if (/đoạn\s*văn|tự\s*luận\s*dài|chia\s*sẻ\s*chi\s*tiết|mô\s*tả\s*cụ\s*thể|paragraph/i.test(content)) {
-        const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
+        const validation = (rawQ.validation && rawQ.validation.rule === 'BETWEEN')
+          ? rawQ.validation
+          : (rawQ.validation || this.inferValidationFromTitle(content, rawQ.placeholder || ''));
         const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
         if (validation) {
           qRes.validation = validation;
@@ -3312,7 +3403,9 @@ class FormParserService {
         }
         return qRes;
       }
-      const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
+      const validation = (rawQ.validation && rawQ.validation.rule === 'BETWEEN')
+        ? rawQ.validation
+        : (rawQ.validation || this.inferValidationFromTitle(content, rawQ.placeholder || ''));
       const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
       if (validation) {
         qRes.validation = validation;
@@ -3364,6 +3457,7 @@ class FormParserService {
    * Hậu xử lý và ánh xạ toàn diện Branching Logic (Rẽ nhánh điều hướng)
    * Chuẩn hóa các target từ Google Section ID, Microsoft Question ID, hoặc Tên phân đoạn
    * về đúng order_index của Section Header / Câu hỏi đích trong danh sách questions của VibeSurvey.
+   * Áp dụng giải thuật phân cụm theo thứ tự xuất hiện (Cluster Matching) và đồ thị DAG tổng quát.
    */
   _resolveAndMapBranchingTargets(questions) {
     if (!Array.isArray(questions) || questions.length === 0) {
@@ -3374,9 +3468,15 @@ class FormParserService {
     const sectionHeaders = [];
     const originIdMap = new Map();
     const orderIndexMap = new Map();
+    const idMap = new Map();
+    const questionParentSecMap = new Map();
 
+    let curSec = null;
     for (const q of questions) {
       if (!q) continue;
+      if (q.id) {
+        idMap.set(String(q.id).trim(), q);
+      }
       if (q.origin_id !== undefined && q.origin_id !== null && q.origin_id !== '') {
         originIdMap.set(String(q.origin_id).trim(), q);
       }
@@ -3385,8 +3485,16 @@ class FormParserService {
       }
       if (q.type === 'SECTION_HEADER') {
         sectionHeaders.push(q);
+        curSec = q;
+      } else if (curSec) {
+        questionParentSecMap.set(q, curSec);
       }
     }
+
+    // Gán chỉ số thứ tự trong danh sách Section Header cho từng Section
+    sectionHeaders.forEach((sec, idx) => {
+      sec._secIndex = idx;
+    });
 
     // Helper chuẩn hóa chuỗi để so sánh linh hoạt (bỏ dấu tiếng Việt, ký tự đặc biệt, khoảng trắng thừa)
     const cleanFuzzy = (str) => {
@@ -3405,31 +3513,87 @@ class FormParserService {
       return str.toLowerCase().replace(/\s+/g, ' ').trim();
     };
 
-    // Helper tìm câu hỏi / phân đoạn đích có hỗ trợ ngữ cảnh NV1 / NV2
-    const findTargetQuestion = (rawTarget, optLabel, qContext) => {
+    const getSecText = (s) => `${s.content || ''} ${Array.isArray(s.rows) ? s.rows.join(' ') : ''}`.trim();
+
+    // Helper trích xuất các Qualifiers (chỉ số nguyện vọng, giai đoạn, vòng, đợt) từ văn bản
+    const extractContextQualifiers = (text) => {
+      if (!text || typeof text !== 'string') return { nvList: [], numList: [] };
+      const cleaned = cleanFuzzy(text);
+      const nvList = [];
+      const numList = [];
+
+      // Nhận diện NV1, NV2, Nguyện vọng 1, Nguyện vọng 2, Vòng 1, Vòng 2, Đợt 1, Đợt 2, Lần 1...
+      const nvRegex = /\b(?:nv|nguyen\s*vong|nguyenvong|dot|vong|lan|buoc|phase|round|stage|uu\s*tien)\s*[:#-]?\s*([0-9]+|[a-z]|i{1,3}|iv|v)\b/gi;
+      let m;
+      while ((m = nvRegex.exec(cleaned)) !== null) {
+        let val = m[1].toLowerCase();
+        if (val === 'i') val = '1';
+        else if (val === 'ii') val = '2';
+        else if (val === 'iii') val = '3';
+        else if (val === 'iv') val = '4';
+        else if (val === 'v') val = '5';
+        nvList.push(val);
+      }
+
+      // Pattern (1), (2), (nv1), (nv2)...
+      const parenRegex = /\((?:nv\s*)?([0-9]+|i{1,3}|iv|v)\)/gi;
+      while ((m = parenRegex.exec(cleaned)) !== null) {
+        let val = m[1].toLowerCase();
+        if (val === 'i') val = '1';
+        else if (val === 'ii') val = '2';
+        else if (val === 'iii') val = '3';
+        else if (val === 'iv') val = '4';
+        else if (val === 'v') val = '5';
+        nvList.push(val);
+      }
+
+      // Pattern nv1, nv2 dính liền
+      const joinedRegex = /\bnv([0-9]+)\b/gi;
+      while ((m = joinedRegex.exec(cleaned)) !== null) {
+        nvList.push(m[1]);
+      }
+
+      const numRegex = /\b([0-9]+)\b/g;
+      while ((m = numRegex.exec(cleaned)) !== null) {
+        numList.push(m[1]);
+      }
+
+      return {
+        nvList: [...new Set(nvList)],
+        numList: [...new Set(numList)]
+      };
+    };
+
+    // Helper tìm câu hỏi / phân đoạn đích áp dụng Relevance Scoring & Context Matching
+    const findTargetQuestion = (rawTarget, optLabel, qContext, currentQOrder = 0, currentQ = null) => {
       // 1. Kiểm tra rawTarget trực tiếp
       if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
         const targetStr = String(rawTarget).trim();
 
-        // 1.1 Khớp theo origin_id (Google Section ID, Microsoft Question ID)
+        // 1.1 Khớp theo id chuẩn (q_1, ...)
+        if (idMap.has(targetStr)) {
+          return idMap.get(targetStr);
+        }
+
+        // 1.2 Khớp theo origin_id (Google Section ID, Microsoft Question ID)
         if (originIdMap.has(targetStr)) {
           return originIdMap.get(targetStr);
         }
 
-        // 1.2 Khớp nếu rawTarget là số thứ tự order_index hợp lệ
+        // 1.3 Khớp nếu rawTarget là số thứ tự order_index hợp lệ
         const numTgt = parseInt(targetStr, 10);
         if (!isNaN(numTgt) && orderIndexMap.has(numTgt)) {
           return orderIndexMap.get(numTgt);
         }
 
-        // 1.3 Khớp theo tiêu đề Section Header
+        // 1.4 Khớp theo tiêu đề Section Header
         const targetStrict = cleanStrict(targetStr);
         const targetFuzzy = cleanFuzzy(targetStr);
 
         for (const sec of sectionHeaders) {
-          const secContent = sec.content || '';
-          const secStrict = cleanStrict(secContent);
-          const secFuzzy = cleanFuzzy(secContent);
+          const secText = getSecText(sec);
+          const secStrict = cleanStrict(secText);
+          const secFuzzy = cleanFuzzy(secText);
 
           if (secStrict === targetStrict || secFuzzy === targetFuzzy) {
             return sec;
@@ -3440,68 +3604,113 @@ class FormParserService {
         }
       }
 
-      // 2. Nếu chưa tìm được bằng rawTarget, thử khớp với optLabel (nhãn của lựa chọn)
+      // 2. Khớp với optLabel áp dụng Relevance Scoring & Sequence Matching
       if (optLabel && typeof optLabel === 'string') {
         const optStrict = cleanStrict(optLabel);
         const optFuzzy = cleanFuzzy(optLabel);
 
-        // Trường hợp đặc biệt: Người dùng chọn chỉ tham gia NV1 / Không có NV2 -> Nhảy đến Section chung cuối cùng
-        if (/chỉ\s*muốn\s*tham\s*gia|không\s*có\s*nguyện\s*vọng\s*2|bỏ\s*qua\s*nv2/i.test(optLabel)) {
-          if (sectionHeaders.length > 0) {
-            return sectionHeaders[sectionHeaders.length - 1];
-          }
-        }
+        if (optFuzzy.length < 2) return null;
 
-        const isNV1Context = qContext && /(?:nguyện\s*vọng\s*1|nv1)\b/i.test(qContext);
-        const isNV2Context = qContext && /(?:nguyện\s*vọng\s*2|nv2)\b/i.test(qContext);
-
-        const getSecText = (s) => `${s.content || ''} ${Array.isArray(s.rows) ? s.rows.join(' ') : ''}`.trim();
-
-        // Lọc danh sách Section Header ứng viên phù hợp với ngữ cảnh
-        let candidateSections = sectionHeaders;
-        if (isNV1Context) {
-          const nv1Candidates = sectionHeaders.filter(s => /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(getSecText(s)));
-          if (nv1Candidates.length > 0) candidateSections = nv1Candidates;
-        } else if (isNV2Context) {
-          const nv2Candidates = sectionHeaders.filter(s => /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(getSecText(s)));
-          if (nv2Candidates.length > 0) candidateSections = nv2Candidates;
-        }
-
-        // 2.1 Khớp chính xác hoàn toàn với tiêu đề Section trong danh sách ứng viên
-        for (const sec of candidateSections) {
+        // Thu thập toàn bộ Section candidates phù hợp với tên của optLabel
+        const candidates = [];
+        for (const sec of sectionHeaders) {
           const secText = getSecText(sec);
-          if (cleanStrict(secText) === optStrict || cleanFuzzy(secText) === optFuzzy) {
-            return sec;
+          const secStrict = cleanStrict(secText);
+          const secFuzzy = cleanFuzzy(secText);
+
+          let matchType = 0;
+          if (secStrict === optStrict || secFuzzy === optFuzzy) {
+            matchType = 3; // Khớp chính xác
+          } else if (secFuzzy.includes(optFuzzy)) {
+            matchType = 2; // Section chứa tên option
+          } else if (optFuzzy.length >= 3 && optFuzzy.includes(secFuzzy)) {
+            matchType = 1; // Option chứa tên Section
+          }
+
+          if (matchType > 0) {
+            candidates.push({ sec, matchType });
           }
         }
 
-        // 2.2 Tên Section chứa tên lựa chọn (ví dụ: optLabel = "Truyền thông", sec = "Tiểu ban Truyền thông (NV1)")
-        if (optFuzzy.length >= 3) {
-          for (const sec of candidateSections) {
-            const secFuzzy = cleanFuzzy(getSecText(sec));
-            if (secFuzzy.includes(optFuzzy)) {
-              return sec;
+        if (candidates.length === 0) {
+          return null;
+        }
+
+        // Nếu chỉ có 1 candidate duy nhất: kiểm tra tính hợp lý
+        if (candidates.length === 1) {
+          return candidates[0].sec;
+        }
+
+        // Nếu có nhiều candidates: Tính điểm phù hợp ngữ cảnh (Relevance Scoring)
+        const parentSec = currentQ ? questionParentSecMap.get(currentQ) : null;
+        const fullQContext = `${parentSec ? getSecText(parentSec) : ''} ${qContext || (currentQ ? currentQ.content : '')}`.trim();
+        const qQuals = extractContextQualifiers(fullQContext);
+
+        // Đếm thứ tự xuất hiện của câu hỏi trong số các câu hỏi có cùng option này
+        let qIndexInSimilar = 0;
+        let countSimilar = 0;
+        for (const otherQ of questions) {
+          if (!otherQ || !Array.isArray(otherQ.options)) continue;
+          if (otherQ.options.some(o => cleanFuzzy(o) === optFuzzy)) {
+            if (otherQ === currentQ || otherQ.order_index === currentQOrder) {
+              qIndexInSimilar = countSimilar;
+            }
+            countSimilar++;
+          }
+        }
+
+        const scoredCandidates = candidates.map((item, candIdx) => {
+          const candSec = item.sec;
+          const candText = getSecText(candSec);
+          const candQuals = extractContextQualifiers(candText);
+          let score = 0;
+
+          // Điểm khớp tên cơ bản
+          if (item.matchType === 3) score += 300;
+          else if (item.matchType === 2) score += 150;
+          else if (item.matchType === 1) score += 100;
+
+          // Ưu tiên downstream (xuất hiện sau câu hỏi hiện tại)
+          if (candSec.order_index > currentQOrder) {
+            score += 100;
+          } else {
+            score -= 200; // Tránh nhảy ngược lên trước câu hỏi đang hỏi
+          }
+
+          // So khớp Qualifiers (NV1 vs NV2, Vòng 1 vs Vòng 2, v.v.)
+          if (qQuals.nvList.length > 0 && candQuals.nvList.length > 0) {
+            const hasCommonNV = qQuals.nvList.some(v => candQuals.nvList.includes(v));
+            if (hasCommonNV) {
+              score += 1000; // Điểm cộng quyết định khi trùng khớp chỉ số nguyện vọng/đợt!
+            } else {
+              score -= 1000; // Phạt nặng nếu xung đột nguyện vọng (ví dụ NV2 match NV1)!
+            }
+          } else if (qQuals.numList.length > 0 && candQuals.numList.length > 0) {
+            const hasCommonNum = qQuals.numList.some(n => candQuals.numList.includes(n));
+            if (hasCommonNum) {
+              score += 400;
+            } else {
+              score -= 200;
             }
           }
-        }
 
-        // 2.3 Tên lựa chọn chứa tên Section
-        for (const sec of candidateSections) {
-          const secFuzzy = cleanFuzzy(getSecText(sec));
-          if (secFuzzy.length >= 3 && optFuzzy.includes(secFuzzy)) {
-            return sec;
+          // Phân cụm tuần tự (Sequence Cluster Matching): Nếu nhiều câu hỏi có cùng options
+          // Câu hỏi thứ k ưu tiên candidate thứ k
+          if (countSimilar > 1 && candIdx === qIndexInSimilar) {
+            score += 250;
           }
-        }
 
-        // Fallback: Quét lại toàn bộ sectionHeaders nếu bộ lọc ứng viên chưa tìm thấy
-        if (candidateSections !== sectionHeaders) {
-          for (const sec of sectionHeaders) {
-            const secFuzzy = cleanFuzzy(getSecText(sec));
-            if (optFuzzy.length >= 3 && secFuzzy.includes(optFuzzy)) {
-              return sec;
-            }
+          // Ưu tiên khoảng cách gần hơn nếu điểm bằng nhau
+          if (candSec.order_index > currentQOrder) {
+            score += Math.max(0, 50 - Math.min(50, Math.floor((candSec.order_index - currentQOrder) / 2)));
           }
-        }
+
+          return { sec: candSec, score };
+        });
+
+        scoredCandidates.sort((a, b) => b.score - a.score);
+
+        return scoredCandidates[0].score > 0 ? scoredCandidates[0].sec : null;
       }
 
       return null;
@@ -3555,11 +3764,11 @@ class FormParserService {
 
           for (let i = 0; i < q.options.length; i++) {
             const opt = q.options[i];
-            const matchedSec = findTargetQuestion(null, opt, q.content);
+            const matchedSec = findTargetQuestion(null, opt, q.content, q.order_index, q);
             if (matchedSec && matchedSec.order_index !== q.order_index) {
               inferredOptions[opt] = {
                 action: 'GO_TO_PAGE',
-                target: matchedSec.order_index
+                target: matchedSec.id || (matchedSec.origin_id ? String(matchedSec.origin_id) : `order:${matchedSec.order_index}`)
               };
               matchedCount++;
               matchedSecOrders.add(matchedSec.order_index);
@@ -3615,7 +3824,7 @@ class FormParserService {
             }
 
             // Tìm câu hỏi / Section Header đích
-            const targetQ = findTargetQuestion(rawTarget, key, q.content);
+            const targetQ = findTargetQuestion(rawTarget, key, q.content, q.order_index, q);
             if (targetQ) {
               resolvedOptions[key] = {
                 action: 'GO_TO_PAGE',
@@ -3652,7 +3861,8 @@ class FormParserService {
       }
 
       // B. Xử lý điều hướng cuối phân đoạn của SECTION_HEADER
-      if (q.type === 'SECTION_HEADER' && q.logic) {
+      if (q.type === 'SECTION_HEADER') {
+        q.logic = q.logic || {};
         const rawDefAction = q.logic.default_action || q.logic.action;
         const rawTarget = q.logic.target;
 
@@ -3663,7 +3873,7 @@ class FormParserService {
           q.logic.default_action = 'RESTART_FORM';
           q.logic.target = null;
         } else if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
-          const targetQ = findTargetQuestion(rawTarget, null, q.content);
+          const targetQ = findTargetQuestion(rawTarget, null, q.content, q.order_index, q);
           if (targetQ) {
             q.logic.default_action = 'GO_TO_PAGE';
             q.logic.target = targetQ.id || (targetQ.origin_id ? String(targetQ.origin_id) : `order:${targetQ.order_index}`);
@@ -3678,28 +3888,170 @@ class FormParserService {
       }
     }
 
-    // 3. Tự động thiết lập Điểm Hội Tụ (Return / Convergence Targets) cho biểu mẫu phân nhánh NV1/NV2
-    const secNV2 = sectionHeaders.find(s => /(?:nguyện\s*vọng\s*2|nv2)\b/i.test(s.content || ''));
-    const secEnd = sectionHeaders.length > 0 ? sectionHeaders[sectionHeaders.length - 1] : null;
-
-    for (const sec of sectionHeaders) {
-      if (!sec) continue;
-      const secContent = sec.content || '';
-      const isNV1Section = /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(secContent);
-      const isNV2Section = /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(secContent) && sec !== secNV2;
-
-      if (isNV1Section && secNV2) {
-        if (!sec.logic || !sec.logic.default_action || sec.logic.default_action === 'NEXT') {
-          sec.logic = sec.logic || {};
-          sec.logic.default_action = 'GO_TO_PAGE';
-          sec.logic.target = secNV2.id || (secNV2.origin_id ? String(secNV2.origin_id) : `order:${secNV2.order_index}`);
+    // 3. TỔNG QUÁT HÓA PHÂN CỤM ĐỒ THỊ RẼ NHÁNH: HỒI QUY VÀ HỘI TỤ (DAG LOOP & CONVERGENCE)
+    // Mỗi Section Header là 1 Node trong đồ thị DAG
+    // Khi câu hỏi rẽ nhánh trỏ đến các Section nhánh con (Branch Nodes):
+    // - Nếu có Section luồng chính nằm giữa Section câu hỏi và các nhánh con: các nhánh con tự động HỒI QUY (Return) về Section luồng chính đó.
+    // - Nếu không có: các nhánh con tự động HỘI TỤ (Convergence) về Section chung kế tiếp sau cụm nhánh con.
+    const helperResolveSection = (tgt) => {
+      if (!tgt) return null;
+      const tgtStr = String(tgt);
+      if (idMap.has(tgtStr)) {
+        const item = idMap.get(tgtStr);
+        if (item.type === 'SECTION_HEADER') return item;
+      }
+      if (originIdMap.has(tgtStr)) {
+        const item = originIdMap.get(tgtStr);
+        if (item.type === 'SECTION_HEADER') return item;
+      }
+      const num = parseInt(tgtStr, 10);
+      if (!isNaN(num) && orderIndexMap.has(num)) {
+        const item = orderIndexMap.get(num);
+        if (item.type === 'SECTION_HEADER') return item;
+      }
+      for (const s of sectionHeaders) {
+        if (s.id === tgtStr || String(s.origin_id) === tgtStr || `order:${s.order_index}` === tgtStr) {
+          return s;
         }
-      } else if (isNV2Section && secEnd && secEnd !== sec) {
-        if (!sec.logic || !sec.logic.default_action || sec.logic.default_action === 'NEXT') {
-          sec.logic = sec.logic || {};
-          sec.logic.default_action = 'GO_TO_PAGE';
-          sec.logic.target = secEnd.id || (secEnd.origin_id ? String(secEnd.origin_id) : `order:${secEnd.order_index}`);
+      }
+      return null;
+    };
+
+    // Thu thập tất cả các Section được trỏ tới bởi bất kỳ câu hỏi rẽ nhánh nào
+    const allBranchTargetSecIndices = new Set();
+    const branchMapByQuestion = new Map();
+
+    for (const q of questions) {
+      if (!q || !q.logic || !q.logic.options) continue;
+
+      const targetSecList = [];
+      for (const rule of Object.values(q.logic.options)) {
+        if (!rule || rule.action !== 'GO_TO_PAGE' || !rule.target) continue;
+        const resolvedSec = helperResolveSection(rule.target);
+        if (resolvedSec && resolvedSec._secIndex !== undefined) {
+          targetSecList.push(resolvedSec);
+          allBranchTargetSecIndices.add(resolvedSec._secIndex);
         }
+      }
+
+      if (targetSecList.length > 0) {
+        branchMapByQuestion.set(q, targetSecList);
+      }
+    }
+
+    // Duyệt từng câu hỏi rẽ nhánh để thiết lập điểm Hồi Quy (Return) hoặc Hội Tụ (Convergence)
+    for (const [q, targetSecList] of branchMapByQuestion.entries()) {
+      if (!targetSecList || targetSecList.length === 0) continue;
+
+      // Xác định Section cha chứa câu hỏi q
+      let parentSec = questionParentSecMap.get(q);
+      if (!parentSec) {
+        for (let i = sectionHeaders.length - 1; i >= 0; i--) {
+          if (sectionHeaders[i].order_index <= q.order_index) {
+            parentSec = sectionHeaders[i];
+            break;
+          }
+        }
+      }
+      const parentSecIdx = parentSec ? parentSec._secIndex : -1;
+
+      const branchSecIndices = targetSecList.map(s => s._secIndex);
+      const minBranchIdx = Math.min(...branchSecIndices);
+      const maxBranchIdx = Math.max(...branchSecIndices);
+
+      // 1. Tìm Điểm Hồi Quy (Return Node):
+      // Section luồng chính nằm giữa parentSec và minBranchIdx
+      let returnSec = null;
+      if (parentSecIdx >= 0) {
+        for (let idx = parentSecIdx + 1; idx < minBranchIdx; idx++) {
+          const candidateMainSec = sectionHeaders[idx];
+          if (candidateMainSec && !allBranchTargetSecIndices.has(candidateMainSec._secIndex)) {
+            returnSec = candidateMainSec;
+            break;
+          }
+        }
+      }
+
+      // 2. Tìm Điểm Hội Tụ (Convergence Node):
+      // Section đầu tiên nằm sau toàn bộ cụm nhánh con mà không phải là nhánh con
+      let convSec = null;
+      for (let idx = maxBranchIdx + 1; idx < sectionHeaders.length; idx++) {
+        const candidateConv = sectionHeaders[idx];
+        if (candidateConv && !allBranchTargetSecIndices.has(candidateConv._secIndex)) {
+          convSec = candidateConv;
+          break;
+        }
+      }
+      if (!convSec && maxBranchIdx + 1 < sectionHeaders.length) {
+        convSec = sectionHeaders[maxBranchIdx + 1];
+      }
+
+      // 3. Tự động gán default_action cho các Section nhánh con của câu hỏi này
+      for (const bSec of targetSecList) {
+        if (!bSec) continue;
+
+        bSec.logic = bSec.logic || {};
+        const currentAction = bSec.logic.default_action;
+
+        // Chỉ gán nếu chưa có điều hướng tường minh hoặc đang là NEXT_PAGE / NEXT
+        if (!currentAction || currentAction === 'NEXT_PAGE' || currentAction === 'NEXT') {
+          if (returnSec) {
+            bSec.logic.default_action = 'GO_TO_PAGE';
+            bSec.logic.target = returnSec.id || (returnSec.origin_id ? String(returnSec.origin_id) : `order:${returnSec.order_index}`);
+          } else if (convSec) {
+            bSec.logic.default_action = 'GO_TO_PAGE';
+            bSec.logic.target = convSec.id || (convSec.origin_id ? String(convSec.origin_id) : `order:${convSec.order_index}`);
+          } else {
+            bSec.logic.default_action = 'SUBMIT_FORM';
+            bSec.logic.target = null;
+          }
+        }
+      }
+
+      // 4. Tự động trỏ các lựa chọn mang ý nghĩa bỏ qua / không tham gia
+      const skipTargetSec = returnSec || convSec;
+
+      for (const [optKey, optRule] of Object.entries(q.logic.options)) {
+        if (/^(?:không|khong|bỏ\s*qua|bo\s*qua|skip|none|thoát|exit|chỉ\s*muốn|chi\s*muon|không\s*có|khong\s*co|không\s*tham\s*gia|khong\s*tham\s*gia)\b/i.test(optKey)) {
+          if (skipTargetSec) {
+            q.logic.options[optKey] = {
+              action: 'GO_TO_PAGE',
+              target: skipTargetSec.id || (skipTargetSec.origin_id ? String(skipTargetSec.origin_id) : `order:${skipTargetSec.order_index}`)
+            };
+          } else {
+            q.logic.options[optKey] = {
+              action: 'SUBMIT_FORM',
+              target: null
+            };
+          }
+        }
+      }
+
+      // Quét thêm cả các lựa chọn trong q.options nếu chưa có trong logic.options
+      if (Array.isArray(q.options)) {
+        q.options.forEach((optText, optIdx) => {
+          if (/^(?:không|khong|bỏ\s*qua|bo\s*qua|skip|none|thoát|exit|chỉ\s*muốn|chi\s*muon|không\s*có|khong\s*co|không\s*tham\s*gia|khong\s*tham\s*gia)\b/i.test(optText)) {
+            const rule = skipTargetSec ? {
+              action: 'GO_TO_PAGE',
+              target: skipTargetSec.id || (skipTargetSec.origin_id ? String(skipTargetSec.origin_id) : `order:${skipTargetSec.order_index}`)
+            } : {
+              action: 'SUBMIT_FORM',
+              target: null
+            };
+            q.logic.options[optText] = rule;
+            q.logic.options[optIdx] = rule;
+          }
+        });
+      }
+    }
+
+    // 4. Section cuối cùng của form nếu chưa có logic điều hướng thì mặc định là SUBMIT_FORM
+    if (sectionHeaders.length > 0) {
+      const lastSec = sectionHeaders[sectionHeaders.length - 1];
+      lastSec.logic = lastSec.logic || {};
+      if (!lastSec.logic.default_action || lastSec.logic.default_action === 'NEXT_PAGE' || lastSec.logic.default_action === 'NEXT') {
+        lastSec.logic.default_action = 'SUBMIT_FORM';
+        lastSec.logic.target = null;
       }
     }
 
