@@ -906,23 +906,50 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           const hasOpenDropdown = document.querySelector('.custom-dropdown-menu:not(.hidden)');
           if (hasOpenModal || hasOpenDropdown) return;
 
-          const isLast = session.currentIndex >= session.questions.length - 1;
-
           if (e.target.tagName === 'TEXTAREA') {
             if (e.shiftKey) {
               // Giữ nguyên mặc định (xuống dòng)
               return;
             }
-            if (e.ctrlKey || e.metaKey) {
+            if (e.ctrlKey || e.metaKey || !e.target.value.trim()) {
               e.preventDefault();
               this.nextQuestion();
+              return;
             }
           } else if (e.target.tagName === 'INPUT') {
             e.preventDefault();
             this.nextQuestion();
+            return;
           } else {
             e.preventDefault();
             this.nextQuestion();
+            return;
+          }
+        }
+
+        // 3. Phím Mũi tên điều hướng câu hỏi (ArrowRight/ArrowDown -> Next, ArrowLeft/ArrowUp -> Prev)
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          const isText = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+          if (!isText || (e.target.selectionStart === e.target.value.length && e.key === 'ArrowRight')) {
+            const hasOpenModal = document.querySelector('.modal-backdrop, [id$="-modal"]:not(.hidden)');
+            const hasOpenDropdown = document.querySelector('.custom-dropdown-menu:not(.hidden)');
+            if (!hasOpenModal && !hasOpenDropdown) {
+              e.preventDefault();
+              this.nextQuestion();
+              return;
+            }
+          }
+        }
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          const isText = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+          if (!isText || (e.target.selectionStart === 0 && e.key === 'ArrowLeft')) {
+            const hasOpenModal = document.querySelector('.modal-backdrop, [id$="-modal"]:not(.hidden)');
+            const hasOpenDropdown = document.querySelector('.custom-dropdown-menu:not(.hidden)');
+            if (!hasOpenModal && !hasOpenDropdown) {
+              e.preventDefault();
+              this.prevQuestion();
+              return;
+            }
           }
         }
       }
@@ -7523,13 +7550,11 @@ if (totalCount === 0) {
 
     const curQ = session.questions[session.currentIndex];
     // Tự động đồng bộ câu trả lời từ DOM input/textarea nếu có (phòng ngừa độ trễ oninput hoặc autocomplete)
-    const activeInput = document.querySelector('#app-root input[type="text"], #app-root textarea, #app-root input[type="number"], #app-root input[type="date"], #app-root input[type="time"]');
+    const activeInput = document.getElementById(`survey-answer-input-${curQ.id}`) || document.querySelector('#app-root input[type="text"], #app-root textarea, #app-root input[type="number"], #app-root input[type="date"], #app-root input[type="time"]');
     if (activeInput && activeInput.value !== undefined && activeInput.value !== null) {
-      if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT', 'DATE', 'TIME'].includes(curQ.type)) {
-        if (!session.answers) session.answers = {};
-        session.answers[curQ.id] = activeInput.value;
-        this._saveActiveSessionToStorage();
-      }
+      if (!session.answers) session.answers = {};
+      session.answers[curQ.id] = activeInput.value;
+      this._saveActiveSessionToStorage();
     }
 
     const ans = session.answers ? session.answers[curQ.id] : undefined;
@@ -7646,11 +7671,11 @@ if (totalCount === 0) {
       if (!rawTarget && !optText) return null;
       let targetVal = rawTarget;
       if (typeof rawTarget === 'object' && rawTarget !== null) {
-        if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT' || rawTarget.action === 'SUBMIT_FORM') return 'SUBMIT';
-        targetVal = rawTarget.target || rawTarget.action;
+        if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT' || rawTarget.action === 'SUBMIT_FORM' || rawTarget.default_action === 'SUBMIT_FORM' || rawTarget.default_action === 'SUBMIT') return 'SUBMIT';
+        targetVal = rawTarget.target || rawTarget.action || (rawTarget.default_action !== 'GO_TO_PAGE' && rawTarget.default_action !== 'NEXT_PAGE' && rawTarget.default_action !== 'NEXT' ? rawTarget.default_action : null);
       }
       if (targetVal === 'SUBMIT' || targetVal === 'SUBMIT_FORM' || targetVal === 'ENDOFFORM' || targetVal === '-1') return 'SUBMIT';
-      if (targetVal === 'NEXT' && !optText) return 'NEXT';
+      if ((targetVal === 'NEXT' || targetVal === 'NEXT_PAGE') && !optText) return 'NEXT';
 
       const strTarget = String(targetVal || '').trim();
 
@@ -7753,8 +7778,8 @@ if (totalCount === 0) {
         const optIdx = curQ.options.findIndex(o => String(o).trim() === String(ans).trim());
         if (optIdx !== -1 && curQ.logic.options[optIdx] !== undefined) branchAction = curQ.logic.options[optIdx];
       }
-    } else if (curQ.type === 'SECTION_HEADER' && curQ.logic && curQ.logic.default_action) {
-      branchAction = curQ.logic.default_action;
+    } else if (curQ.type === 'SECTION_HEADER' && curQ.logic) {
+      branchAction = curQ.logic.target || curQ.logic.default_action;
     }
 
     let resolvedBranch = null;
@@ -7793,11 +7818,12 @@ if (totalCount === 0) {
         }
       }
 
-      // Bước 1: Ưu tiên default_action được cấu hình tường minh của phân đoạn hiện tại
-      if (currentSectionHeader && currentSectionHeader.logic && currentSectionHeader.logic.default_action) {
-        const defAction = currentSectionHeader.logic.default_action;
-        if (defAction && defAction !== 'NEXT') {
-          const resolvedSectionAction = resolveTarget(defAction);
+      // Bước 1: Ưu tiên default_action/target được cấu hình tường minh của phân đoạn hiện tại
+      if (currentSectionHeader && currentSectionHeader.logic) {
+        const secLogic = currentSectionHeader.logic;
+        const navTarget = secLogic.target || secLogic.default_action;
+        if (navTarget && navTarget !== 'NEXT' && navTarget !== 'NEXT_PAGE') {
+          const resolvedSectionAction = resolveTarget(secLogic);
           if (resolvedSectionAction === 'SUBMIT') {
             await this.submitSurvey();
             return;
@@ -7904,12 +7930,13 @@ if (totalCount === 0) {
 
   triggerPacingLock() {
     if (this.state.activeSession) {
+      if (this._pacingTimer) clearTimeout(this._pacingTimer);
       this.state.activeSession.isPacingLocked = true;
-      setTimeout(() => {
+      this._pacingTimer = setTimeout(() => {
         if (this.state.activeSession) {
           this.state.activeSession.isPacingLocked = false;
         }
-      }, 300);
+      }, 150);
     }
   },
 
@@ -8011,13 +8038,11 @@ if (totalCount === 0) {
     const curQ = session.questions[session.currentIndex];
 
     // Tự động đồng bộ câu trả lời từ DOM input/textarea nếu có (phòng ngừa độ trễ oninput hoặc autocomplete)
-    const activeInput = document.querySelector('#app-root input[type="text"], #app-root textarea, #app-root input[type="number"], #app-root input[type="date"], #app-root input[type="time"]');
+    const activeInput = document.getElementById(`survey-answer-input-${curQ.id}`) || document.querySelector('#app-root input[type="text"], #app-root textarea, #app-root input[type="number"], #app-root input[type="date"], #app-root input[type="time"]');
     if (activeInput && activeInput.value !== undefined && activeInput.value !== null) {
-      if (['SHORT_TEXT', 'PARAGRAPH', 'OPEN_TEXT', 'DATE', 'TIME'].includes(curQ.type)) {
-        if (!session.answers) session.answers = {};
-        session.answers[curQ.id] = activeInput.value;
-        this._saveActiveSessionToStorage();
-      }
+      if (!session.answers) session.answers = {};
+      session.answers[curQ.id] = activeInput.value;
+      this._saveActiveSessionToStorage();
     }
 
     const ans = session.answers[curQ.id];

@@ -2576,3 +2576,31 @@ c:\Users\Lenovo\Downloads\Linh\
 - Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (19.97s).
 - Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` thành công.
 - Tự động commit và push lên GitHub (`origin/main`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: ĐIỀU HƯỚNG BÀN PHÍM & KHẮC PHỤC TRIỆT ĐỂ LỖI KẸT CHUYỂN CÂU HỎI (SURVEY RUNNER - THÁNG 11/2026)
+
+### 1. Hiện Tượng & Nguyên Nhân
+- **Hiện tượng**: Khi làm bài khảo sát, người dùng cảm giác bị lag, kẹt không chuyển được câu hỏi hoặc khi đến cuối một phân đoạn thì bị đứng im hoặc submit sai mục tiêu.
+- **Nguyên nhân cốt lõi**:
+  1. Trong `nextQuestion` (`public/app.js`): Điều hướng cuối phân đoạn chỉ truyền chuỗi `default_action` (giá trị là `'GO_TO_PAGE'`) vào `resolveTarget(defAction)`. Vì thiếu thuộc tính `target`, `resolveTarget` trả về `null`, dẫn đến việc bỏ qua đích chuyển tiếp và gây kẹt điều hướng.
+  2. Hàm `triggerPacingLock()` đặt thời gian khóa 300ms mà không hủy timer cũ bằng `clearTimeout`, khiến người dùng thao tác nhanh hoặc gõ liên tục bị chặn lại bởi thông báo đọc kỹ câu hỏi.
+  3. Quá trình đồng bộ câu trả lời từ DOM vào session trước khi chuyển câu chỉ dùng bộ chọn `querySelector` tổng quát thay vì tìm đích danh `survey-answer-input-${curQ.id}`, gây sai lệch giá trị câu hỏi hiện tại.
+
+### 2. Giải Pháp Triển Khai
+- **Bổ sung Điều hướng Bàn phím Toàn Cục (Keyboard Shortcuts Engine)**:
+  + Phím `Enter`: Chuyển ngay sang câu tiếp theo (`nextQuestion()`). Hỗ trợ cả trong thẻ input và textarea (khi ấn `Ctrl+Enter` / `Cmd+Enter` hoặc khi ô textarea trống).
+  + Phím `ArrowRight` / `ArrowDown`: Chuyển sang câu kế tiếp (`nextQuestion()`).
+  + Phím `ArrowLeft` / `ArrowUp`: Quay lại câu hỏi trước đó (`prevQuestion()`).
+  + Bảo vệ an toàn ngữ cảnh: Tự động bỏ qua khi có Modal hoặc Dropdown đang mở, hoặc khi con trỏ văn bản đang nằm giữa chuỗi nhập liệu.
+- **Khắc Phục Lỗi Điều Hướng Phân Đoạn & Pacing Lock**:
+  + Nâng cấp `resolveTarget`: Hỗ trợ đầy đủ đối tượng logic chứa cả `default_action` và `target`, đồng thời nhận diện chuẩn xác các hành động `SUBMIT`, `SUBMIT_FORM`, `NEXT`, `NEXT_PAGE`.
+  + Tối ưu `triggerPacingLock()`: Giảm thời gian khóa xuống 150ms và dùng `clearTimeout(this._pacingTimer)` để loại bỏ triệt để hiện tượng kẹt thao tác.
+  + Đồng bộ dữ liệu DOM chính xác: Ưu tiên tìm element theo ID `survey-answer-input-${curQ.id}` trước khi trích xuất giá trị câu trả lời.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Kiểm tra cú pháp: `node -c public/app.js` đạt mã 0 (PASS).
+- Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (19.29s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` thành công.
+- Tự động commit và push lên GitHub (`origin/main`).
