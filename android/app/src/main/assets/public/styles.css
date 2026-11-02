@@ -1578,3 +1578,60 @@ html.dark .vibe-switch.active:hover,
   filter: grayscale(20%);
 }
 
+/* =========================================================
+   FORUM WYSIWYG RICH TEXT EDITOR & LISTS
+   Hiển thị trực quan in đậm, in nghiêng, danh sách không dùng dấu *
+   ========================================================= */
+.forum-rich-editor {
+  outline: none;
+  min-height: 140px;
+  max-height: 320px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.forum-rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: #9CA3AF;
+  pointer-events: none;
+}
+
+.forum-rich-editor strong,
+.forum-rich-editor b {
+  font-weight: 700 !important;
+}
+
+.forum-rich-editor em,
+.forum-rich-editor i {
+  font-style: italic !important;
+}
+
+.forum-rich-editor ul,
+.forum-post-body ul {
+  list-style-type: disc !important;
+  padding-left: 1.25rem !important;
+  margin: 0.35rem 0 !important;
+}
+
+.forum-rich-editor ol,
+.forum-post-body ol {
+  list-style-type: decimal !important;
+  padding-left: 1.25rem !important;
+  margin: 0.35rem 0 !important;
+}
+
+.forum-rich-editor ol[type="a"],
+.forum-rich-editor ol.list-alpha,
+.forum-post-body ol[type="a"],
+.forum-post-body ol.list-alpha {
+  list-style-type: lower-alpha !important;
+}
+
+.forum-rich-editor blockquote,
+.forum-post-body blockquote {
+  padding-left: 0.75rem !important;
+  border-left: 3px solid rgba(234, 88, 12, 0.45) !important;
+  margin: 0.35rem 0 !important;
+  font-style: italic !important;
+}
+

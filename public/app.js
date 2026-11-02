@@ -19536,9 +19536,7 @@ if (totalCount === 0) {
           <h2 class="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-snug">
             ${this.escapeHtml(post.title)}
           </h2>
-          <div class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed space-y-1">
-            ${this.formatForumContent(post.content)}
-          </div>
+          ${this._renderForumPostContentWithToggle(post)}
           ${post.images && post.images.length > 0 ? this._renderForumPostImagesHtml(post.images, post.title) : ''}
         </div>
 
@@ -19780,52 +19778,48 @@ if (totalCount === 0) {
               <span class="text-[10px] text-stone-400">Ctrl+B: In đậm • Ctrl+I: In nghiêng</span>
             </div>
 
-            <!-- Thanh công cụ định dạng chữ và căn lề danh sách -->
+            <!-- Thanh công cụ định dạng chữ và căn lề danh sách (Biểu tượng thuần túy, không nhãn chữ) -->
             <div class="flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-800/80 rounded-xl border border-stone-200 dark:border-stone-700/80 flex-wrap">
-              <button type="button" onclick="VibeApp.insertForumMarkdown('**', '**', 'nội dung in đậm')" 
-                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('bold')" 
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
                       title="In đậm (Ctrl+B)">
-                <i data-lucide="bold" class="w-3.5 h-3.5 stroke-[2.5]"></i>
-                <span class="text-[11px]">Đậm</span>
+                <i data-lucide="bold" class="w-4 h-4 stroke-[2.5]"></i>
               </button>
-              <button type="button" onclick="VibeApp.insertForumMarkdown('*', '*', 'nội dung in nghiêng')" 
-                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('italic')" 
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
                       title="In nghiêng (Ctrl+I)">
-                <i data-lucide="italic" class="w-3.5 h-3.5 stroke-[2.5]"></i>
-                <span class="text-[11px] italic">Nghiêng</span>
+                <i data-lucide="italic" class="w-4 h-4 stroke-[2.5]"></i>
               </button>
               <div class="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5"></div>
-              <button type="button" onclick="VibeApp.insertForumList('bullet')" 
-                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
-                      title="Danh sách dấu chấm (•)">
-                <i data-lucide="list" class="w-3.5 h-3.5 stroke-[2.2]"></i>
-                <span class="text-[11px]">Dấu chấm</span>
+              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('insertUnorderedList')" 
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
+                      title="Danh sách dấu chấm">
+                <i data-lucide="list" class="w-4 h-4 stroke-[2.2]"></i>
               </button>
-              <button type="button" onclick="VibeApp.insertForumList('number')" 
-                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
-                      title="Danh sách số (1, 2, 3...)">
-                <i data-lucide="list-ordered" class="w-3.5 h-3.5 stroke-[2.2]"></i>
-                <span class="text-[11px]">Số (1,2..)</span>
+              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('insertOrderedList')" 
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
+                      title="Danh sách số">
+                <i data-lucide="list-ordered" class="w-4 h-4 stroke-[2.2]"></i>
               </button>
-              <button type="button" onclick="VibeApp.insertForumList('abc')" 
-                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('abcList')" 
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
                       title="Danh sách chữ cái (a, b, c...)">
-                <span class="font-mono text-xs font-extrabold text-orange-600">abc.</span>
-                <span class="text-[11px]">Chữ cái</span>
+                <i data-lucide="type" class="w-4 h-4 stroke-[2.2]"></i>
               </button>
               <div class="h-4 w-px bg-stone-300 dark:bg-stone-700 mx-0.5"></div>
-              <button type="button" onclick="VibeApp.insertForumIndent()" 
-                      class="px-2.5 py-1 rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs" 
+              <button type="button" onmousedown="event.preventDefault(); VibeApp.formatForumEditor('indent')" 
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-stone-700 dark:text-stone-200 hover:bg-white dark:hover:bg-stone-700 hover:text-orange-600 transition-colors cursor-pointer shadow-2xs" 
                       title="Căn lề / Thụt dòng">
-                <i data-lucide="indent" class="w-3.5 h-3.5 stroke-[2.2]"></i>
-                <span class="text-[11px]">Thụt lề</span>
+                <i data-lucide="indent" class="w-4 h-4 stroke-[2.2]"></i>
               </button>
             </div>
 
-            <textarea id="forum-post-content-input" rows="5" required
-                      onkeydown="if((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') { event.preventDefault(); VibeApp.insertForumMarkdown('**', '**', 'nội dung in đậm'); } else if((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'i') { event.preventDefault(); VibeApp.insertForumMarkdown('*', '*', 'nội dung in nghiêng'); }"
-                      placeholder="Chia sẻ bối cảnh đề tài, câu hỏi thảo luận hoặc nội dung trao đổi... (Hỗ trợ **in đậm**, *in nghiêng*, danh sách • dấu chấm, 1. số hoặc a. abc)"
-                      class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs text-stone-900 dark:text-white focus:outline-none focus:border-orange-500 font-sans"></textarea>
+            <div id="forum-post-editor" 
+                 contenteditable="true" 
+                 role="textbox"
+                 aria-multiline="true"
+                 data-placeholder="Chia sẻ bối cảnh đề tài, câu hỏi thảo luận hoặc nội dung trao đổi... (Định dạng in đậm, in nghiêng hiển thị trực quan ngay lập tức)"
+                 class="forum-rich-editor w-full p-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs text-stone-900 dark:text-white focus:outline-none focus:border-orange-500 font-sans leading-relaxed"></div>
           </div>
 
           <!-- Đính Kèm Hình Ảnh Minh Họa (Tối đa 10 ảnh, tối đa 10MB/ảnh chuẩn Facebook) -->
@@ -19884,11 +19878,13 @@ if (totalCount === 0) {
 
     const title = (document.getElementById('forum-post-title-input')?.value || '').trim();
     const survey_id = (document.getElementById('forum-post-survey-select')?.value || '').trim() || null;
-    const content = (document.getElementById('forum-post-content-input')?.value || '').trim();
+    const editor = document.getElementById('forum-post-editor');
+    const content = editor ? editor.innerHTML.trim() : '';
+    const plainText = editor ? (editor.innerText || editor.textContent || '').trim() : '';
     const hubRadio = document.querySelector('input[name="forum-hub-choice"]:checked');
     const post_type = hubRadio ? hubRadio.value : 'COMMUNITY';
 
-    if (!title || !content) {
+    if (!title || !plainText) {
       this.showToast('Vui lòng điền đầy đủ tiêu đề và nội dung bài viết!', 'warning');
       return;
     }
@@ -19951,64 +19947,47 @@ if (totalCount === 0) {
     }
   },
 
-  // ==================== SOẠN THẢO RICH TEXT & ĐỊNH DẠNG DIỄN ĐÀN ====================
-  insertForumMarkdown(before, after, defaultText = '') {
-    const textarea = document.getElementById('forum-post-content-input');
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const selected = text.substring(start, end) || defaultText;
-    const replacement = before + selected + after;
-    textarea.value = text.substring(0, start) + replacement + text.substring(end);
-    textarea.focus();
-    textarea.setSelectionRange(start + before.length, start + before.length + selected.length);
-  },
+  // ==================== SOẠN THẢO TRỰC QUAN WYSIWYG & ĐỊNH DẠNG DIỄN ĐÀN ====================
+  formatForumEditor(cmd) {
+    const editor = document.getElementById('forum-post-editor');
+    if (!editor) return;
+    editor.focus();
 
-  insertForumList(type) {
-    const textarea = document.getElementById('forum-post-content-input');
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const selected = text.substring(start, end);
-    const defaultPlaceholder = type === 'bullet' ? 'Mục danh sách' : (type === 'number' ? 'Mục số một' : 'Mục a');
-    const lines = (selected || defaultPlaceholder).split('\n');
-    const formatted = lines.map((line, idx) => {
-      let prefix = '• ';
-      if (type === 'number') prefix = `${idx + 1}. `;
-      else if (type === 'abc') prefix = `${String.fromCharCode(97 + (idx % 26))}. `;
-      const cleanLine = line.replace(/^[•\-\*]\s+|^\d+\.\s+|^[a-zA-Z]\.\s+/, '');
-      return prefix + cleanLine;
-    }).join('\n');
-
-    textarea.value = text.substring(0, start) + formatted + text.substring(end);
-    textarea.focus();
-    textarea.setSelectionRange(start, start + formatted.length);
-  },
-
-  insertForumIndent() {
-    const textarea = document.getElementById('forum-post-content-input');
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const selected = text.substring(start, end);
-    if (selected) {
-      const lines = selected.split('\n');
-      const indented = lines.map(l => '    ' + l).join('\n');
-      textarea.value = text.substring(0, start) + indented + text.substring(end);
-      textarea.setSelectionRange(start, start + indented.length);
+    if (cmd === 'abcList') {
+      document.execCommand('insertOrderedList', false, null);
+      const sel = window.getSelection();
+      if (sel && sel.anchorNode) {
+        let node = sel.anchorNode;
+        while (node && node !== editor && node.nodeName !== 'OL') {
+          node = node.parentNode;
+        }
+        if (node && node.nodeName === 'OL') {
+          node.setAttribute('type', 'a');
+          node.classList.add('list-alpha');
+        }
+      }
     } else {
-      textarea.value = text.substring(0, start) + '    ' + text.substring(end);
-      textarea.setSelectionRange(start + 4, start + 4);
+      document.execCommand(cmd, false, null);
     }
-    textarea.focus();
   },
 
   formatForumContent(raw) {
     if (!raw || typeof raw !== 'string') return '';
-    // 1. Escape HTML chống XSS an toàn
+
+    // Nếu chứa HTML từ Rich Text Editor: làm sạch an toàn
+    const hasHtmlTags = /<(?:strong|b|em|i|u|ul|ol|li|p|div|br|blockquote)[\s>]/i.test(raw);
+
+    if (hasHtmlTags) {
+      return raw
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+        .replace(/\son\w+="[^"]*"/gi, '')
+        .replace(/\son\w+='[^']*'/gi, '')
+        .replace(/javascript:/gi, '');
+    }
+
+    // Fallback cho bài viết cũ dạng Markdown:
     let escaped = raw
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -20016,23 +19995,16 @@ if (totalCount === 0) {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
 
-    // 2. Chuyển đổi Markdown in đậm: **text** -> strong
     escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-stone-900 dark:text-white">$1</strong>');
-
-    // 3. Chuyển đổi Markdown in nghiêng: *text* -> em
     escaped = escaped.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em class="italic">$2</em>');
 
-    // 4. Phân tích từng dòng nhận diện danh sách & thụt lề
     const lines = escaped.split('\n');
     const output = [];
     let currentListType = null; // 'ul', 'ol-num', 'ol-abc'
 
     const closeListIfOpen = () => {
-      if (currentListType === 'ul') {
-        output.push('</ul>');
-      } else if (currentListType === 'ol-num' || currentListType === 'ol-abc') {
-        output.push('</ol>');
-      }
+      if (currentListType === 'ul') output.push('</ul>');
+      else if (currentListType === 'ol-num' || currentListType === 'ol-abc') output.push('</ol>');
       currentListType = null;
     };
 
@@ -20079,6 +20051,67 @@ if (totalCount === 0) {
     closeListIfOpen();
 
     return output.join('');
+  },
+
+  _renderForumPostContentWithToggle(post) {
+    const formattedHtml = this.formatForumContent(post.content || '');
+
+    // Đếm số từ thực tế của bài viết
+    let plainText = '';
+    if (typeof document !== 'undefined') {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = formattedHtml;
+      plainText = (tempDiv.innerText || tempDiv.textContent || '').trim();
+    } else {
+      plainText = formattedHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    const words = plainText.split(/\s+/).filter(Boolean);
+
+    // Nếu bài viết dưới hoặc bằng 100 từ: hiển thị trọn vẹn
+    if (words.length <= 100) {
+      return `
+        <div class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed forum-post-body space-y-1">
+          ${formattedHtml}
+        </div>
+      `;
+    }
+
+    // Nếu bài viết dài hơn 100 từ: cắt 100 từ đầu tiên
+    const truncatedWords = words.slice(0, 100).join(' ');
+    const shortHtml = this.formatForumContent(truncatedWords);
+
+    return `
+      <div id="forum-post-content-short-${post.id}" class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed forum-post-body space-y-1">
+        ${shortHtml}...
+        <button type="button" onclick="VibeApp.toggleForumPostContent('${post.id}')" 
+                class="text-orange-600 hover:text-orange-700 dark:text-orange-400 font-bold text-xs inline-flex items-center gap-1 cursor-pointer ml-1 select-none">
+          <span>Xem thêm</span>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <div id="forum-post-content-full-${post.id}" class="hidden text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed forum-post-body space-y-1">
+        ${formattedHtml}
+        <div class="pt-1.5">
+          <button type="button" onclick="VibeApp.toggleForumPostContent('${post.id}')" 
+                  class="text-orange-600 hover:text-orange-700 dark:text-orange-400 font-bold text-xs inline-flex items-center gap-1 cursor-pointer select-none">
+            <span>Thu gọn</span>
+            <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  },
+
+  toggleForumPostContent(postId) {
+    const shortEl = document.getElementById(`forum-post-content-short-${postId}`);
+    const fullEl = document.getElementById(`forum-post-content-full-${postId}`);
+    if (shortEl && fullEl) {
+      shortEl.classList.toggle('hidden');
+      fullEl.classList.toggle('hidden');
+      if (window.lucide) window.lucide.createIcons();
+    }
   },
 
   // ==================== QUẢN LÝ ĐÍNH KÈM & GALLERY HÌNH ẢNH DIỄN ĐÀN ====================
