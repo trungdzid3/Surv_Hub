@@ -6562,16 +6562,21 @@ if (totalCount === 0) {
         placeholder = this.generateValidationPlaceholder(validation) || (engine && engine.getMeta(validation)?.placeholder) || validation.placeholder || 'Nhập câu trả lời của bạn';
       }
 
+      const isNum = validation && String(validation.type).toUpperCase() === 'NUMBER';
+
       return `
         <div class="space-y-2">
           <!-- oninput="VibeApp.updateOpenText('${q.id}', this.value)" -->
-          <input type="text" value="${(textVal).replace(/"/g, '&quot;')}" 
+          <input type="text" 
+                 ${isNum ? 'inputmode="numeric"' : ''}
+                 value="${(textVal).replace(/"/g, '&quot;')}" 
                  id="survey-answer-input-${q.id}"
                  oninput="VibeApp.handleSurveyInputRealtime('${q.id}', this)"
                  onblur="VibeApp.handleSurveyInputRealtime('${q.id}', this)"
                  onchange="VibeApp.updateOpenText('${q.id}', this.value)"
                  placeholder="${placeholder.replace(/"/g, '&quot;')}"
                  class="w-full p-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors">
+          <div id="val-err-${q.id}" class="hidden text-xs text-red-500 flex items-center gap-1.5 mt-1.5 font-medium"></div>
         </div>
       `;
     }
@@ -6603,6 +6608,7 @@ if (totalCount === 0) {
                     rows="4"
                     placeholder="${placeholder.replace(/"/g, '&quot;')}"
                     class="w-full p-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-medium leading-relaxed transition-colors">${textVal}</textarea>
+          <div id="val-err-${q.id}" class="hidden text-xs text-red-500 flex items-center gap-1.5 mt-1.5 font-medium"></div>
         </div>
       `;
     }
@@ -7010,6 +7016,10 @@ if (totalCount === 0) {
     if (!q) return;
 
     const val = inputEl.value;
+    if (!session.answers) session.answers = {};
+    session.answers[qId] = val;
+    this._saveActiveSessionToStorage();
+
     const res = this.validateQuestionInput(q, val);
     const errEl = document.getElementById(`val-err-${qId}`) || document.getElementById(`survey-error-${qId}`);
 
@@ -7182,14 +7192,17 @@ if (totalCount === 0) {
     const n = this._normalizeSmartText(needle);
     if (!h || !n) return false;
     if (h === n) return true;
-    if (h.length >= 3 && n.length >= 3) {
+    if (h.length >= 4 && n.length >= 4) {
       if (h.includes(n) || n.includes(h)) return true;
     }
     const wordsH = h.split(' ').filter(w => w.length >= 2);
     const wordsN = n.split(' ').filter(w => w.length >= 2);
     if (wordsH.length >= 2 && wordsN.length >= 2) {
-      const common = wordsH.filter(w => wordsN.includes(w));
-      if (common.length >= Math.min(wordsH.length, wordsN.length) * 0.7) {
+      const setH = new Set(wordsH);
+      const setN = new Set(wordsN);
+      const common = [...setN].filter(w => setH.has(w));
+      const minLen = Math.min(setH.size, setN.size);
+      if (minLen >= 2 && common.length >= minLen * 0.75) {
         return true;
       }
     }
@@ -7613,18 +7626,37 @@ if (totalCount === 0) {
     if (validation && validation.type && validation.type !== 'NONE') {
       const valStr = (ans !== undefined && ans !== null) ? String(ans).trim() : '';
       const inputEl = document.getElementById(`survey-answer-input-${curQ.id}`) || activeInput;
+      const errEl = document.getElementById(`val-err-${curQ.id}`) || document.getElementById(`survey-error-${curQ.id}`);
       if (valStr.length > 0 || isReq) {
         if (validation.type === 'EMAIL') {
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valStr)) {
-            this.showToast('Vui lòng nhập đúng định dạng email (VD: name@domain.com)', 'warning');
-            if (inputEl) inputEl.focus();
+            const msg = validation.error_message || 'Vui lòng nhập đúng định dạng email (VD: name@domain.com)';
+            this.showToast(msg, 'warning');
+            if (inputEl) {
+              inputEl.focus();
+              inputEl.classList.add('border-red-500');
+            }
+            if (errEl) {
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.classList.remove('hidden');
+              if (window.lucide) window.lucide.createIcons({ root: errEl });
+            }
             return;
           }
         } else if (validation.type === 'NUMBER') {
-          const rule = validation.rule || 'IS_NUMBER';
+          const rule = String(validation.rule || 'IS_NUMBER').toUpperCase();
           if (!/^-?\d+(\.\d+)?$/.test(valStr)) {
-            this.showToast('Giá trị phải là một số', 'warning');
-            if (inputEl) inputEl.focus();
+            const msg = 'Giá trị phải là một số';
+            this.showToast(msg, 'warning');
+            if (inputEl) {
+              inputEl.focus();
+              inputEl.classList.add('border-red-500');
+            }
+            if (errEl) {
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.classList.remove('hidden');
+              if (window.lucide) window.lucide.createIcons({ root: errEl });
+            }
             return;
           }
           const num = parseFloat(valStr);
@@ -7632,40 +7664,124 @@ if (totalCount === 0) {
           const max = (validation.max !== undefined && validation.max !== null && String(validation.max).trim() !== '') ? parseFloat(validation.max) : null;
           if (rule === 'BETWEEN') {
             if (min !== null && max !== null && (num < min || num > max)) {
-              this.showToast(`Số phải nằm trong khoảng từ ${validation.min} ~ ${validation.max}`, 'warning');
-              if (inputEl) inputEl.focus();
+              const msg = validation.error_message || `Số phải nằm trong khoảng từ ${min} ~ ${max}`;
+              this.showToast(msg, 'warning');
+              if (inputEl) {
+                inputEl.focus();
+                inputEl.classList.add('border-red-500');
+              }
+              if (errEl) {
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons({ root: errEl });
+              }
               return;
             }
           } else if (rule === 'GREATER_THAN') {
             if (min !== null && num <= min) {
-              this.showToast(`Số phải lớn hơn ${validation.min}`, 'warning');
-              if (inputEl) inputEl.focus();
+              const msg = validation.error_message || `Số phải lớn hơn ${min}`;
+              this.showToast(msg, 'warning');
+              if (inputEl) {
+                inputEl.focus();
+                inputEl.classList.add('border-red-500');
+              }
+              if (errEl) {
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons({ root: errEl });
+              }
               return;
             }
           } else if (rule === 'LESS_THAN') {
             if (max !== null && num >= max) {
-              this.showToast(`Số phải nhỏ hơn ${validation.max}`, 'warning');
-              if (inputEl) inputEl.focus();
+              const msg = validation.error_message || `Số phải nhỏ hơn ${max}`;
+              this.showToast(msg, 'warning');
+              if (inputEl) {
+                inputEl.focus();
+                inputEl.classList.add('border-red-500');
+              }
+              if (errEl) {
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons({ root: errEl });
+              }
+              return;
+            }
+          } else if (rule === 'GREATER_THAN_OR_EQUAL') {
+            if (min !== null && num < min) {
+              const msg = validation.error_message || `Số phải lớn hơn hoặc bằng ${min}`;
+              this.showToast(msg, 'warning');
+              if (inputEl) {
+                inputEl.focus();
+                inputEl.classList.add('border-red-500');
+              }
+              if (errEl) {
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons({ root: errEl });
+              }
+              return;
+            }
+          } else if (rule === 'LESS_THAN_OR_EQUAL') {
+            if (max !== null && num > max) {
+              const msg = validation.error_message || `Số phải nhỏ hơn hoặc bằng ${max}`;
+              this.showToast(msg, 'warning');
+              if (inputEl) {
+                inputEl.focus();
+                inputEl.classList.add('border-red-500');
+              }
+              if (errEl) {
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.classList.remove('hidden');
+                if (window.lucide) window.lucide.createIcons({ root: errEl });
+              }
               return;
             }
           }
         } else if (validation.type === 'URL') {
           if (!/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i.test(valStr)) {
-            this.showToast('Vui lòng nhập đường dẫn URL hợp lệ', 'warning');
-            if (inputEl) inputEl.focus();
+            const msg = validation.error_message || 'Vui lòng nhập đường dẫn URL hợp lệ';
+            this.showToast(msg, 'warning');
+            if (inputEl) {
+              inputEl.focus();
+              inputEl.classList.add('border-red-500');
+            }
+            if (errEl) {
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.classList.remove('hidden');
+              if (window.lucide) window.lucide.createIcons({ root: errEl });
+            }
             return;
           }
         } else if (validation.type === 'LENGTH') {
           const maxL = validation.max || 500;
           const minL = validation.min || 1;
           if (validation.rule === 'MAX_LENGTH' && valStr.length > maxL) {
-            this.showToast(`Độ dài không được vượt quá ${maxL} ký tự`, 'warning');
-            if (inputEl) inputEl.focus();
+            const msg = validation.error_message || `Độ dài không được vượt quá ${maxL} ký tự`;
+            this.showToast(msg, 'warning');
+            if (inputEl) {
+              inputEl.focus();
+              inputEl.classList.add('border-red-500');
+            }
+            if (errEl) {
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.classList.remove('hidden');
+              if (window.lucide) window.lucide.createIcons({ root: errEl });
+            }
             return;
           }
           if (validation.rule === 'MIN_LENGTH' && valStr.length < minL) {
-            this.showToast(`Độ dài phải có ít nhất ${minL} ký tự`, 'warning');
-            if (inputEl) inputEl.focus();
+            const msg = validation.error_message || `Độ dài phải có ít nhất ${minL} ký tự`;
+            this.showToast(msg, 'warning');
+            if (inputEl) {
+              inputEl.focus();
+              inputEl.classList.add('border-red-500');
+            }
+            if (errEl) {
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.classList.remove('hidden');
+              if (window.lucide) window.lucide.createIcons({ root: errEl });
+            }
             return;
           }
         }
@@ -7685,9 +7801,13 @@ if (totalCount === 0) {
 
       const strTarget = String(targetVal || '').trim();
 
-      // 1. Kiểm tra theo ID chính xác (UUID hoặc q_...)
+      // 1. Kiểm tra theo ID chính xác (UUID hoặc origin_id hoặc q_...)
       if (strTarget && strTarget !== 'NEXT') {
-        const foundIdx = session.questions.findIndex(item => String(item.id).trim() === strTarget);
+        const foundIdx = session.questions.findIndex(item => 
+          String(item.id).trim() === strTarget || 
+          (item.origin_id && String(item.origin_id).trim() === strTarget) ||
+          (item.id && `q_${item.origin_id}` === strTarget)
+        );
         if (foundIdx !== -1) return foundIdx;
       }
 
@@ -7723,38 +7843,20 @@ if (totalCount === 0) {
         }
       }
 
-      // 5. Smart Name / Title Matching:
-      // Tìm Section Header hoặc câu hỏi có tiêu đề tương đồng với strTarget hoặc optText
-      const matchQueries = [];
+      // 5. Khớp theo Section Header có tiêu đề tương đồng với strTarget (chỉ dành cho SECTION_HEADER, cấm đoán câu hỏi thường)
       if (strTarget && strTarget !== 'NEXT' && !/^\d+$/.test(strTarget)) {
-        matchQueries.push(strTarget);
-      }
-      if (optText && typeof optText === 'string') {
-        matchQueries.push(optText);
-      }
-
-      for (const query of matchQueries) {
-        // Ưu tiên 5a: Tìm trong các câu hỏi SECTION_HEADER trước
         const secHeaderIdx = session.questions.findIndex(item => 
-          item.type === 'SECTION_HEADER' && (this._isSmartTextMatch(item.content, query) || this._isSmartTextMatch(item.title, query))
+          item.type === 'SECTION_HEADER' && (this._isSmartTextMatch(item.content, strTarget) || this._isSmartTextMatch(item.title, strTarget))
         );
         if (secHeaderIdx !== -1) return secHeaderIdx;
-
-        // Ưu tiên 5b: Tìm trong các câu hỏi thông thường
-        const qIdx = session.questions.findIndex(item => 
-          item.type !== 'SECTION_HEADER' && this._isSmartTextMatch(item.content, query)
-        );
-        if (qIdx !== -1) return qIdx;
       }
 
       // 6. Fallback số thuần:
       if (strTarget && strTarget !== 'NEXT') {
         const parsed = parseInt(strTarget, 10);
         if (!isNaN(parsed) && String(parsed) === strTarget) {
-          // Ưu tiên kiểm tra xem có câu nào mang order_index === parsed (1-based)
           const matchOrder = session.questions.findIndex(item => Number(item.order_index) === parsed);
           if (matchOrder !== -1) return matchOrder;
-          // Sau đó mới xét mảng 0-based index
           if (parsed >= 0 && parsed < session.questions.length) return parsed;
         }
       }
@@ -7777,12 +7879,20 @@ if (totalCount === 0) {
     }
 
     let branchAction = null;
-    if (['SINGLE_CHOICE', 'DROPDOWN'].includes(curQ.type) && curQ.logic && curQ.logic.enabled && curQ.logic.options) {
-      if (curQ.logic.options[ans] !== undefined) {
-        branchAction = curQ.logic.options[ans];
-      } else if (curQ.options) {
-        const optIdx = curQ.options.findIndex(o => String(o).trim() === String(ans).trim());
-        if (optIdx !== -1 && curQ.logic.options[optIdx] !== undefined) branchAction = curQ.logic.options[optIdx];
+    if (['SINGLE_CHOICE', 'DROPDOWN'].includes(curQ.type) && curQ.logic && curQ.logic.enabled) {
+      if (curQ.logic.options) {
+        if (curQ.logic.options[ans] !== undefined) {
+          branchAction = curQ.logic.options[ans];
+        } else if (curQ.options) {
+          const optIdx = curQ.options.findIndex(o => String(o).trim() === String(ans).trim());
+          if (optIdx !== -1 && curQ.logic.options[optIdx] !== undefined) branchAction = curQ.logic.options[optIdx];
+          else if (selectedOptionText && curQ.logic.options[selectedOptionText] !== undefined) branchAction = curQ.logic.options[selectedOptionText];
+        }
+      }
+      // Nếu câu hỏi đã bật rẽ nhánh (logic.enabled === true) nhưng tùy chọn này chưa cấu hình target ID cụ thể:
+      // Cho phép khớp tên phân đoạn Mục tiêu (CHỈ khớp với SECTION_HEADER)
+      if (!branchAction && selectedOptionText) {
+        branchAction = selectedOptionText;
       }
     } else if (curQ.type === 'SECTION_HEADER' && curQ.logic) {
       // SECTION_HEADER không được tự ý rẽ nhánh khi vừa bắt đầu hiển thị tiêu đề,
@@ -7798,8 +7908,6 @@ if (totalCount === 0) {
     let resolvedBranch = null;
     if (branchAction) {
       resolvedBranch = resolveTarget(branchAction, selectedOptionText);
-    } else if (selectedOptionText && ['SINGLE_CHOICE', 'DROPDOWN'].includes(curQ.type)) {
-      resolvedBranch = resolveTarget(null, selectedOptionText);
     }
 
     if (resolvedBranch === 'SUBMIT') {
@@ -7867,14 +7975,6 @@ if (totalCount === 0) {
             Object.values(q.logic.options).forEach(t => {
               const res = resolveTarget(t);
               if (typeof res === 'number') qBranchTargets.add(res);
-            });
-          }
-          if (q.options && Array.isArray(q.options)) {
-            q.options.forEach(opt => {
-              const res = resolveTarget(null, opt);
-              if (typeof res === 'number' && session.questions[res] && session.questions[res].type === 'SECTION_HEADER') {
-                qBranchTargets.add(res);
-              }
             });
           }
 

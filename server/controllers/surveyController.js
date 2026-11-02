@@ -284,6 +284,103 @@ class SurveyController {
   }
 
   /**
+   * Helper xác định tập hợp câu hỏi hợp lệ/được duyệt (visited/active path) nếu khảo sát có phân đoạn rẽ nhánh DAG
+   */
+  _getActiveQuestionIdsForAnswers(dbQuestions, answers) {
+    const activeIds = new Set();
+    if (!Array.isArray(dbQuestions) || dbQuestions.length === 0) return activeIds;
+
+    const hasBranching = dbQuestions.some(q => {
+      if (!q.logic_json) return false;
+      try {
+        const l = JSON.parse(q.logic_json);
+        return (l.enabled && l.options && Object.keys(l.options).length > 0) || (l.target || l.default_action === 'GO_TO_PAGE');
+      } catch(e) { return false; }
+    });
+
+    if (!hasBranching) {
+      dbQuestions.forEach(q => activeIds.add(q.id));
+      return activeIds;
+    }
+
+    const sections = [];
+    let curSec = null;
+    for (const q of dbQuestions) {
+      if (q.type === 'SECTION_HEADER') {
+        if (curSec) sections.push(curSec);
+        let secLogic = null;
+        if (q.logic_json) {
+          try { secLogic = JSON.parse(q.logic_json); } catch(e) {}
+        }
+        curSec = {
+          headerId: q.id,
+          target: secLogic ? (secLogic.target || secLogic.default_action) : null,
+          questions: [q]
+        };
+      } else {
+        if (!curSec) {
+          curSec = { headerId: null, target: null, questions: [] };
+        }
+        curSec.questions.push(q);
+      }
+    }
+    if (curSec) sections.push(curSec);
+
+    let secIdx = 0;
+    const visitedSecIndices = new Set();
+    const maxSteps = sections.length * 2;
+    let steps = 0;
+
+    while (secIdx >= 0 && secIdx < sections.length && steps < maxSteps) {
+      if (visitedSecIndices.has(secIdx)) break;
+      visitedSecIndices.add(secIdx);
+      steps++;
+
+      const sec = sections[secIdx];
+      let branchTargetId = null;
+
+      for (const q of sec.questions) {
+        activeIds.add(q.id);
+
+        if (['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type) && q.logic_json) {
+          try {
+            const l = JSON.parse(q.logic_json);
+            if (l.enabled && l.options) {
+              const userAns = answers[q.id] ?? answers[q.order_index] ?? answers['q' + q.order_index];
+              if (userAns !== undefined && userAns !== null) {
+                const optRule = l.options[userAns] || l.options[String(userAns).trim()];
+                if (optRule) {
+                  if (typeof optRule === 'object') {
+                    if (optRule.action === 'SUBMIT_FORM' || optRule.action === 'SUBMIT') branchTargetId = 'SUBMIT_FORM';
+                    else if (optRule.target) branchTargetId = optRule.target;
+                  } else if (typeof optRule === 'string') {
+                    if (optRule === 'SUBMIT_FORM' || optRule === 'SUBMIT') branchTargetId = 'SUBMIT_FORM';
+                    else branchTargetId = optRule;
+                  }
+                }
+              }
+            }
+          } catch(e) {}
+        }
+      }
+
+      if (branchTargetId) {
+        if (branchTargetId === 'SUBMIT' || branchTargetId === 'SUBMIT_FORM') break;
+        const nextIdx = sections.findIndex(s => s.headerId === branchTargetId || (s.questions[0] && s.questions[0].id === branchTargetId));
+        secIdx = nextIdx !== -1 ? nextIdx : secIdx + 1;
+      } else if (sec.target && sec.target !== 'NEXT' && sec.target !== 'NEXT_PAGE') {
+        if (sec.target === 'SUBMIT' || sec.target === 'SUBMIT_FORM') break;
+        const nextIdx = sections.findIndex(s => s.headerId === sec.target || (s.questions[0] && s.questions[0].id === sec.target));
+        secIdx = nextIdx !== -1 ? nextIdx : secIdx + 1;
+      } else {
+        secIdx++;
+      }
+    }
+
+    return activeIds;
+  }
+
+  /**
    * Helper áp dụng logic Adaptive Auto-Screener
    */
   _applyAdaptiveScreener(survey, dbQuestions, user, isOwnerOrAdmin = false) {
@@ -1443,8 +1540,15 @@ class SurveyController {
         }
       }
 
-      // 1. Kiểm tra tính bắt buộc (is_required) cho tất cả các câu hỏi
+      // Xác định tập hợp câu hỏi thuộc luồng rẽ nhánh hợp lệ của người điền (Active Path)
+      const activeQuestionIds = this._getActiveQuestionIdsForAnswers(dbQuestions, answers);
+
+      // 1. Kiểm tra tính bắt buộc (is_required) cho các câu hỏi thuộc Active Path
       for (const q of dbQuestions) {
+        if (!activeQuestionIds.has(q.id)) {
+          continue;
+        }
+
         const isReq = q.is_required !== undefined ? (q.is_required === 0 ? 0 : 1) : 1;
         // Nếu là câu screener mà đã được bypass thì bỏ qua kiểm tra client submit
         if (q.is_screener === 1 && isBypassed) {
@@ -1518,6 +1622,119 @@ class SurveyController {
                     missingRow: rowItem
                   });
                 }
+              }
+            }
+          }
+        }
+      }
+
+      // 1.2. Kiểm tra quy tắc định dạng ràng buộc phía máy chủ (Validation Rules: NUMBER / BETWEEN, EMAIL, URL, LENGTH)
+      for (const q of dbQuestions) {
+        if (!activeQuestionIds.has(q.id)) {
+          continue;
+        }
+
+        let val = answers[q.id];
+        if (val === undefined) val = answers[q.order_index];
+        if (val === undefined) val = answers['q' + q.order_index];
+        if (val === undefined) val = answers['question_' + q.order_index];
+
+        if (val !== undefined && val !== null && String(val).trim().length > 0) {
+          let logicObj = null;
+          if (q.logic_json) {
+            try { logicObj = JSON.parse(q.logic_json); } catch (e) {}
+          }
+          const validation = (logicObj && logicObj.validation) ? logicObj.validation : null;
+          if (validation && validation.type && validation.type !== 'NONE') {
+            const vType = String(validation.type).toUpperCase();
+            const valStr = String(val).trim();
+
+            if (vType === 'NUMBER') {
+              const rule = String(validation.rule || 'IS_NUMBER').toUpperCase();
+              if (!/^-?\d+(\.\d+)?$/.test(valStr)) {
+                return res.status(400).json({
+                  success: false,
+                  message: `Câu hỏi "${q.content}" yêu cầu giá trị phải là một số hợp lệ.`,
+                  questionId: q.id
+                });
+              }
+              const num = parseFloat(valStr);
+              const min = (validation.min !== undefined && validation.min !== null && String(validation.min).trim() !== '') ? parseFloat(validation.min) : null;
+              const max = (validation.max !== undefined && validation.max !== null && String(validation.max).trim() !== '') ? parseFloat(validation.max) : null;
+
+              if (rule === 'BETWEEN' && min !== null && max !== null) {
+                if (num < min || num > max) {
+                  return res.status(400).json({
+                    success: false,
+                    message: validation.error_message || `Câu hỏi "${q.content}": Số phải nằm trong khoảng từ ${min} đến ${max}.`,
+                    questionId: q.id
+                  });
+                }
+              } else if (rule === 'GREATER_THAN' && min !== null) {
+                if (num <= min) {
+                  return res.status(400).json({
+                    success: false,
+                    message: validation.error_message || `Câu hỏi "${q.content}": Giá trị phải lớn hơn ${min}.`,
+                    questionId: q.id
+                  });
+                }
+              } else if (rule === 'LESS_THAN' && max !== null) {
+                if (num >= max) {
+                  return res.status(400).json({
+                    success: false,
+                    message: validation.error_message || `Câu hỏi "${q.content}": Giá trị phải nhỏ hơn ${max}.`,
+                    questionId: q.id
+                  });
+                }
+              } else if (rule === 'GREATER_THAN_OR_EQUAL' && min !== null) {
+                if (num < min) {
+                  return res.status(400).json({
+                    success: false,
+                    message: validation.error_message || `Câu hỏi "${q.content}": Giá trị phải lớn hơn hoặc bằng ${min}.`,
+                    questionId: q.id
+                  });
+                }
+              } else if (rule === 'LESS_THAN_OR_EQUAL' && max !== null) {
+                if (num > max) {
+                  return res.status(400).json({
+                    success: false,
+                    message: validation.error_message || `Câu hỏi "${q.content}": Giá trị phải nhỏ hơn hoặc bằng ${max}.`,
+                    questionId: q.id
+                  });
+                }
+              }
+            } else if (vType === 'EMAIL') {
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valStr)) {
+                return res.status(400).json({
+                  success: false,
+                  message: `Câu hỏi "${q.content}" yêu cầu định dạng email hợp lệ.`,
+                  questionId: q.id
+                });
+              }
+            } else if (vType === 'URL') {
+              if (!/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i.test(valStr)) {
+                return res.status(400).json({
+                  success: false,
+                  message: `Câu hỏi "${q.content}" yêu cầu đường dẫn URL hợp lệ.`,
+                  questionId: q.id
+                });
+              }
+            } else if (vType === 'LENGTH') {
+              const maxL = validation.max ? parseInt(validation.max, 10) : 500;
+              const minL = validation.min ? parseInt(validation.min, 10) : 1;
+              if (validation.rule === 'MAX_LENGTH' && valStr.length > maxL) {
+                return res.status(400).json({
+                  success: false,
+                  message: `Câu hỏi "${q.content}" không được vượt quá ${maxL} ký tự.`,
+                  questionId: q.id
+                });
+              }
+              if (validation.rule === 'MIN_LENGTH' && valStr.length < minL) {
+                return res.status(400).json({
+                  success: false,
+                  message: `Câu hỏi "${q.content}" phải có ít nhất ${minL} ký tự.`,
+                  questionId: q.id
+                });
               }
             }
           }

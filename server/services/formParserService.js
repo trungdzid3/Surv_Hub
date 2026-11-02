@@ -3279,9 +3279,9 @@ class FormParserService {
       }
     }
 
-    // Ánh xạ Branching Logic đích đến đúng order_index của Section Header / Câu hỏi
+    // Ánh xạ Branching Logic đích đến đúng order_index của Section Header / Câu hỏi (Bật allowInference cho Smart Paste)
     if (questions.length > 0) {
-      this._resolveAndMapBranchingTargets(questions);
+      this._resolveAndMapBranchingTargets(questions, true);
     }
 
     return {
@@ -3515,7 +3515,7 @@ class FormParserService {
    * về đúng order_index của Section Header / Câu hỏi đích trong danh sách questions của VibeSurvey.
    * Áp dụng giải thuật phân cụm theo thứ tự xuất hiện (Cluster Matching) và đồ thị DAG tổng quát.
    */
-  _resolveAndMapBranchingTargets(questions) {
+  _resolveAndMapBranchingTargets(questions, allowInference = false) {
     if (!Array.isArray(questions) || questions.length === 0) {
       return questions;
     }
@@ -3812,8 +3812,8 @@ class FormParserService {
 
       // A. Xử lý cho câu hỏi Choice có logic.options
       if (['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type)) {
-        // Tự động suy luận logic rẽ nhánh nếu các lựa chọn khớp với các Section Headers
-        if ((!q.logic || !q.logic.options) && Array.isArray(q.options) && q.options.length >= 2 && sectionHeaders.length >= 2) {
+        // Tự động suy luận logic rẽ nhánh nếu các lựa chọn khớp với các Section Headers (CHỈ áp dụng cho SMART_PASTE văn bản thô)
+        if (allowInference && (!q.logic || !q.logic.options) && Array.isArray(q.options) && q.options.length >= 2 && sectionHeaders.length >= 2) {
           const inferredOptions = {};
           let matchedCount = 0;
           const matchedSecOrders = new Set();

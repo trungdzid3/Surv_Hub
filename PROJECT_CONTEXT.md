@@ -156,19 +156,22 @@ c:\Users\Lenovo\Downloads\Linh\
   - `npm run test:ai-agent`: 7/7 kịch bản PASS 100%. Tự động chụp ảnh màn hình lưu tại `tests/reports/screenshots/` và xuất báo cáo `tests/reports/ai_qa_suite_report.json`.
   - Toàn bộ test suite `npm test`: 17/17 Suites PASS 100% (17.30s).
 
-### H. Phân Hệ Định Tuyến Rẽ Nhánh Tổng Quát & Microsoft Forms Parser Hoàn Chỉnh (v4.7.6)
+### H. Phân Hệ Định Tuyến Rẽ Nhánh Tổng Quát & Xác Thực Ràng Buộc Dải Số Hoàn Chỉnh (v4.7.7)
 - **Chuẩn hóa URL Microsoft Forms (DesignPageV2 -> ResponsePage)**:
   - Tự động phát hiện các URL thiết kế/chia sẻ (`DesignPageV2.aspx`, `DesignPage.aspx`, `ShareFormPage`), bóc tách `id` và chuyển sang `ResponsePage.aspx?id=...` để lấy dữ liệu công khai 100% không yêu cầu đăng nhập.
 - **Bóc tách Toàn vẹn 16 Phân Đoạn (SECTION_HEADER) từ `descriptiveQuestions`**:
   - Microsoft Forms lưu các Phân đoạn trong `data.descriptiveQuestions` (`Question.ColumnGroup`). Parser đã gộp và sắp xếp theo `order` để sinh đầy đủ các `SECTION_HEADER`, bảo toàn tiêu đề, mô tả (`rows`) và ID gốc.
-- **Bóc tách Dải Số (BETWEEN) Chính Chủ từ Thuộc Tính Boundary**:
-  - Thu thập chính xác `numberMinBoundary`, `NumberMinBoundary`, `numberMaxBoundary`, `NumberMaxBoundary` từ `Validation` và `NumberValidationRule: "Between"`. Câu 3 (Mã số sinh viên) hiển thị chuẩn `min: 20000000, max: 202700000`, loại bỏ hoàn toàn lỗi fallback về `IS_NUMBER`.
-- **Trích Xuất Nhánh Rẽ Chính Chủ (`BranchInfo.TargetQuestionId`)**:
-  - Đọc trực tiếp `BranchInfo` từ từng lựa chọn của câu hỏi Choice và từng Section Header.
-  - Phân đoạn nhánh con tự động hồi quy về Nguyện vọng 2 (`re5be307...`), phân đoạn nhánh con NV2 tự động hội tụ về Mục cảm ơn cuối cùng (`r968caee...`), và tùy chọn bỏ qua NV2 tự động trỏ `SUBMIT_FORM`.
-- **Cấu hình Điều Hướng Cuối Phân Đoạn trên Creator Studio**:
-  - Custom Dropdown Popover chuẩn `DESIGN.md` trên từng thẻ `SECTION_HEADER`: "Tiếp tục sang phần tiếp theo", "Chuyển đến Mục X: ...", "Gửi biểu mẫu".
-- **Hệ thống Kiểm thử**: 17/17 test suites đạt 100% PASS (20.57s). Đã kiểm thử thực tế trên chính form Microsoft Forms của người dùng (bóc tách hoàn hảo 94/94 mục).
+- **Triệt Tiêu Hoàn Toàn Lỗi Nhảy Cóc Định Hướng Nhầm Phần (No Implicit Routing & Exact ID Matching)**:
+  - Tuân thủ khuyến nghị từ Tổng Công Trình Sư Argon: Loại bỏ 100% cơ chế tự ý rẽ nhánh (implicit routing) và fuzzy text matching bừa bãi khi người dùng chọn đáp án trên các câu hỏi không có cấu hình phân nhánh (ví dụ Câu 6 Dropdown trường học chuyển tuần tự sang Câu 7 thay vì nhảy cóc sang Câu 57).
+  - Thuật toán `_isSmartTextMatch` áp dụng Set deduplication chống đếm lặp từ khóa trong câu hỏi tự luận dài, nâng ngưỡng so khớp lên `>= 75%`.
+  - Khóa chặt `formParserService`: Chỉ áp dụng suy luận rẽ nhánh mờ cho Smart Paste văn bản thô, cấm tự ý gán logic rẽ nhánh cho biểu mẫu có cấu trúc JSON chính chủ (Google Forms/MS Forms).
+- **Cơ Chế Giới Hạn Khoảng Số Toàn Diện 4 Tầng (Number Range Between Validation)**:
+  - Bóc tách chuẩn xác `min: 20000000, max: 202700000` từ `Validation` và `NumberValidationRule: "Between"`.
+  - Bổ sung container `#val-err-{id}` nội dòng bên dưới ô nhập SHORT_TEXT và PARAGRAPH, tự động hiển thị cảnh báo đỏ khi nhập sai khoảng số.
+  - Tự động gắn thuộc tính `inputmode="numeric"` cho các câu hỏi ràng buộc số.
+  - Đồng bộ `session.answers` tức thì trong `handleSurveyInputRealtime`, chặn bấm "Câu tiếp theo" nếu số nằm ngoài khoảng cho phép.
+  - Chốt chặn Server-Side: `submitSurvey` tại `surveyController.js` thẩm định toàn diện các quy tắc ràng buộc (NUMBER BETWEEN, EMAIL, URL, LENGTH) và tự động nhận diện tập hợp câu hỏi thuộc luồng rẽ nhánh hợp lệ (Active Path DAG) để tránh báo lỗi thiếu đáp án trên các phân đoạn không được duyệt.
+- **Hệ thống Kiểm thử**: 17/17 test suites đạt 100% PASS (16.57s). Đã kiểm chuẩn thực tế trên biểu mẫu Microsoft Forms của người dùng (bóc tách hoàn hảo 94/94 mục, câu 6 đi sang câu 7 tuần tự, câu 4 chặn chính xác số ngoài dải, câu 16 rẽ nhánh chuẩn xác).
 
 ### G. Phân Hệ Đồ Họa 3D Độc Bản Tự Tạo 100% & Khắc Phục Triệt Để Chữ Bóng Ma (v4.7.5)
 - **Tự Tạo Đồ Họa 3D Render Độc Bản 100% Thay Thế Hoàn Toàn Ảnh Cắt Mẫu (Pure Independent 3D Rendering)**:
