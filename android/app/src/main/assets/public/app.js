@@ -410,322 +410,7 @@ window.DEFAULT_STUDIO_CATALOG_VOUCHERS = [
  */
 
 
-// ==============================================================
-// RESTRICTION & VALIDATION ENGINE (CHUẨN MICROSOFT / GOOGLE FORMS)
-// ==============================================================
-window.RestrictionEngine = {
-  getMeta(restriction) {
-    if (!restriction || !restriction.type || restriction.type === 'NONE') {
-      return { placeholder: '', defaultError: '', validate: () => ({ valid: true }) };
-    }
 
-    const type = String(restriction.type).toUpperCase();
-    if (type === 'EMAIL') {
-      const defaultErr = restriction.error_message || 'Vui lòng nhập địa chỉ email hợp lệ';
-      const placeholder = restriction.placeholder || 'Vui lòng nhập email';
-      return {
-        placeholder: placeholder,
-        defaultError: defaultErr,
-        validate: (val) => {
-          if (!val || String(val).trim() === '') return { valid: true };
-          const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val).trim());
-          return { valid: isValid, error: isValid ? '' : defaultErr };
-        }
-      };
-    }
-
-    if (type === 'NUMBER') {
-      const rule = String(restriction.rule || 'IS_NUMBER').toUpperCase();
-
-      if (rule === 'BETWEEN') {
-        const hasMin = restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '' && !isNaN(Number(restriction.min));
-        const hasMax = restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '' && !isNaN(Number(restriction.max));
-        if (hasMin && hasMax) {
-          const minVal = parseFloat(restriction.min);
-          const maxVal = parseFloat(restriction.max);
-          const defaultErr = restriction.error_message || `Số phải nằm trong khoảng từ ${minVal} đến ${maxVal}`;
-          const placeholder = `Số phải nằm trong khoảng từ ${minVal} ~ ${maxVal}`;
-          return {
-            placeholder: placeholder,
-            defaultError: defaultErr,
-            validate: (val) => {
-              if (!val || String(val).trim() === '') return { valid: true };
-              const n = Number(String(val).trim());
-              if (isNaN(n) || String(val).trim() === '') {
-                return { valid: false, error: 'Giá trị phải là một số' };
-              }
-              const isValid = n >= minVal && n <= maxVal;
-              return { valid: isValid, error: isValid ? '' : defaultErr };
-            }
-          };
-        }
-
-        // Nếu restriction KHÔNG có hoặc chỉ có 1 vế:
-        // Trả về placeholder: 'Giá trị phải là một số' và validate kiểm tra số hợp lệ (IS_NUMBER).
-        const defaultErr = restriction.error_message || 'Giá trị phải là một số';
-        const placeholder = 'Giá trị phải là một số';
-        return {
-          placeholder: placeholder,
-          defaultError: defaultErr,
-          validate: (val) => {
-            if (!val || String(val).trim() === '') return { valid: true };
-            const isValid = !isNaN(Number(String(val).trim())) && String(val).trim() !== '';
-            return { valid: isValid, error: isValid ? '' : defaultErr };
-          }
-        };
-      }
-
-      if (rule === 'GREATER_THAN') {
-        const minVal = (restriction.min !== undefined && restriction.min !== null && String(restriction.min).trim() !== '') ? parseFloat(restriction.min) : 0;
-        const defaultErr = restriction.error_message || `Số phải lớn hơn ${minVal}`;
-        const placeholder = restriction.placeholder || defaultErr;
-        return {
-          placeholder: placeholder,
-          defaultError: defaultErr,
-          validate: (val) => {
-            if (!val || String(val).trim() === '') return { valid: true };
-            const n = Number(String(val).trim());
-            if (isNaN(n) || String(val).trim() === '') return { valid: false, error: 'Giá trị phải là một số' };
-            const isValid = n > minVal;
-            return { valid: isValid, error: isValid ? '' : defaultErr };
-          }
-        };
-      }
-
-      if (rule === 'LESS_THAN') {
-        const maxVal = (restriction.max !== undefined && restriction.max !== null && String(restriction.max).trim() !== '') ? parseFloat(restriction.max) : 100;
-        const defaultErr = restriction.error_message || `Số phải nhỏ hơn ${maxVal}`;
-        const placeholder = restriction.placeholder || defaultErr;
-        return {
-          placeholder: placeholder,
-          defaultError: defaultErr,
-          validate: (val) => {
-            if (!val || String(val).trim() === '') return { valid: true };
-            const n = Number(String(val).trim());
-            if (isNaN(n) || String(val).trim() === '') return { valid: false, error: 'Giá trị phải là một số' };
-            const isValid = n < maxVal;
-            return { valid: isValid, error: isValid ? '' : defaultErr };
-          }
-        };
-      }
-
-      // Mặc định IS_NUMBER
-      const defaultErr = restriction.error_message || 'Giá trị phải là một số';
-      const placeholder = 'Giá trị phải là một số';
-      return {
-        placeholder: placeholder,
-        defaultError: defaultErr,
-        validate: (val) => {
-          if (!val || String(val).trim() === '') return { valid: true };
-          const isValid = !isNaN(Number(String(val).trim())) && String(val).trim() !== '';
-          return { valid: isValid, error: isValid ? '' : defaultErr };
-        }
-      };
-    }
-
-    if (type === 'LENGTH') {
-      const rule = String(restriction.rule || 'MAX_LENGTH').toUpperCase();
-      const limit = parseInt(restriction.min || restriction.max || 100, 10) || 100;
-      const isMin = rule === 'MIN_LENGTH';
-      const defaultErr = restriction.error_message || (isMin ? `Độ dài ký tự tối thiểu là ${limit}` : `Độ dài ký tự tối đa là ${limit}`);
-      const placeholder = restriction.placeholder || defaultErr;
-      return {
-        placeholder: placeholder,
-        defaultError: defaultErr,
-        validate: (val) => {
-          if (!val || String(val).trim() === '') return { valid: true };
-          const len = String(val).length;
-          const isValid = isMin ? len >= limit : len <= limit;
-          return { valid: isValid, error: isValid ? '' : defaultErr };
-        }
-      };
-    }
-
-    if (type === 'URL') {
-      const defaultErr = restriction.error_message || 'Vui lòng nhập đường dẫn URL hợp lệ';
-      const placeholder = restriction.placeholder || 'Vui lòng nhập URL hợp lệ';
-      return {
-        placeholder: placeholder,
-        defaultError: defaultErr,
-        validate: (val) => {
-          if (!val || String(val).trim() === '') return { valid: true };
-          try {
-            const parsed = new URL(String(val).trim());
-            const isValid = parsed.protocol === 'http:' || parsed.protocol === 'https:';
-            return { valid: isValid, error: isValid ? '' : defaultErr };
-          } catch {
-            return { valid: false, error: defaultErr };
-          }
-        }
-      };
-    }
-
-    return { placeholder: '', defaultError: '', validate: () => ({ valid: true }) };
-  },
-
-  extractNumberRange(str) {
-    if (!str) return null;
-    let text = typeof str === 'string' ? str : '';
-    if (!text && typeof str === 'object') {
-      try {
-        if (str.title || str.placeholder || str.subtitle || str.description) {
-          text = [str.title, str.subtitle, str.placeholder, str.description].filter(Boolean).join(' ');
-        } else {
-          text = JSON.stringify(str);
-        }
-      } catch {
-        return null;
-      }
-    }
-    if (!text || typeof text !== 'string') return null;
-
-    // 0. Làm sạch định dạng ngày tháng ISO, ngày tháng thông thường, timestamp và số điện thoại
-    const sanitizedText = text
-      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:T\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?/gi, ' ')
-      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/g, ' ')
-      .replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b/g, ' ')
-      .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ')
-      .replace(/\b0\d{1,3}[-.]\d{3,4}[-.]\d{3,4}\b/g, ' ');
-
-    // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [18, 60]
-    const jsonArrMatch = sanitizedText.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
-    if (jsonArrMatch) {
-      const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
-      const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2)) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
-      }
-    }
-
-    // 2. Cặp số trong thuộc tính JSON: min/max, minValue/maxValue, lowerBound/upperBound, restrictionValue1/restrictionValue2, operand1/operand2, value1/value2
-    const jsonPropPatterns = [
-      /(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i,
-      /(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
-    ];
-    for (const pat of jsonPropPatterns) {
-      const m = sanitizedText.match(pat);
-      if (m) {
-        const n1 = parseFloat(m[1].replace(/,/g, ''));
-        const n2 = parseFloat(m[2].replace(/,/g, ''));
-        if (!isNaN(n1) && !isNaN(n2)) {
-          return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
-        }
-      }
-    }
-
-    // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ...", "trong khoảng ... đến ...", "từ ... ~ ..."
-    const explicitRangeMatch = sanitizedText.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|và|va|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i);
-    if (explicitRangeMatch) {
-      const n1 = parseFloat(explicitRangeMatch[1].replace(/,/g, ''));
-      const n2 = parseFloat(explicitRangeMatch[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2)) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
-      }
-    }
-
-    // 3b. Mẫu "từ X đến/tới Y"
-    const fromToPattern = /(?:^|[^\w])(?:từ|tu|from)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
-    const fromToMatch = sanitizedText.match(fromToPattern);
-    if (fromToMatch) {
-      const n1 = parseFloat(fromToMatch[1].replace(/,/g, ''));
-      const n2 = parseFloat(fromToMatch[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2)) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
-      }
-    }
-
-    // 4. Dải số có ký tự nối/từ nối: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, đến, den, to, và, va, and
-    const normalized = sanitizedText
-      .replace(/[\uFF5E\u223C\u02DC]/g, '~')
-      .replace(/[\u2013\u2014\u2212]/g, '~')
-      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
-      .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
-
-    const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
-    if (match) {
-      const n1 = parseFloat(match[1].replace(/,/g, ''));
-      const n2 = parseFloat(match[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2) && n1 !== n2) {
-        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
-      }
-    }
-    return null;
-  },
-
-  inferValidationFromTitle(title, description = '') {
-    const text = `${title || ''} ${description || ''}`.trim().toLowerCase();
-    if (!text) return null;
-
-    // 1. Email ("Email", "Email HUST", "Thư điện tử", ...)
-    if (/\b(email|e-mail|thư điện tử|thu dien tu)\b/i.test(text) || text.includes('email') || text.includes('thư điện tử') || text.includes('thu dien tu')) {
-      return {
-        type: 'EMAIL',
-        rule: 'EMAIL',
-        placeholder: 'Vui lòng nhập email',
-        error_message: 'Vui lòng nhập địa chỉ email hợp lệ'
-      };
-    }
-
-    // 2. Dải số cụ thể (Quét toàn diện: "20000000 ~ 20270000", "20000000 – 20270000", "từ 18 đến 60", "1 ~ 100", ...)
-    const range = this.extractNumberRange(text);
-    if (range) {
-      return {
-        type: 'NUMBER',
-        rule: 'BETWEEN',
-        min: range.min,
-        max: range.max,
-        placeholder: 'Số phải nằm trong khoảng từ ' + range.min + ' ~ ' + range.max,
-        error_message: 'Số phải nằm trong khoảng từ ' + range.min + ' đến ' + range.max
-      };
-    }
-
-    // 3. Mã số sinh viên ("Mã số sinh viên", "MSSV", "Số thẻ sinh viên", "Mã SV", ...) khi KHÔNG có dải số kèm theo
-    if (/\b(mssv|mã số sinh viên|ma so sinh vien|số thẻ sinh viên|so the sinh vien|mã sinh viên|ma sinh vien|mã sv|ma sv)\b/i.test(text) ||
-        text.includes('mssv') || text.includes('mã số sinh viên') || text.includes('ma so sinh vien') || text.includes('số thẻ sinh viên') || text.includes('so the sinh vien') || text.includes('mã sinh viên') || text.includes('ma sinh vien') || text.includes('mã sv') || text.includes('ma sv')) {
-      return {
-        type: 'NUMBER',
-        rule: 'IS_NUMBER',
-        placeholder: 'Giá trị phải là một số',
-        error_message: 'Giá trị phải là một số'
-      };
-    }
-
-    // 4. Số điện thoại ("Số điện thoại", "SĐT", "Điện thoại", ...) khi KHÔNG có dải số kèm theo
-    if (/\b(số điện thoại|so dien thoai|sđt|sdt|điện thoại|dien thoai|phone|hotline)\b/i.test(text) ||
-        text.includes('số điện thoại') || text.includes('so dien thoai') || text.includes('sđt') || text.includes('sdt') || text.includes('điện thoại') || text.includes('dien thoai')) {
-      return {
-        type: 'NUMBER',
-        rule: 'IS_NUMBER',
-        placeholder: 'Giá trị phải là một số',
-        error_message: 'Giá trị phải là một số'
-      };
-    }
-
-    // 5. Tuổi, năm sinh hoặc số lượng tổng quát nếu không có dải số
-    if (/\b(tuổi|độ tuổi|do tuoi|năm sinh|nam sinh)\b/i.test(text) ||
-        text.includes('độ tuổi') || text.includes('do tuoi')) {
-      return {
-        type: 'NUMBER',
-        rule: 'IS_NUMBER',
-        placeholder: 'Giá trị phải là một số',
-        error_message: 'Giá trị phải là một số'
-      };
-    }
-
-    // 4. Website ("Website", "URL", "Trang web", ...)
-    if (/\b(website|url|trang web|link web)\b/i.test(text) ||
-        text.includes('website') || text.includes('url') || text.includes('trang web') || text.includes('link web')) {
-      return {
-        type: 'URL',
-        rule: 'URL',
-        placeholder: 'Vui lòng nhập URL hợp lệ',
-        error_message: 'Vui lòng nhập đường dẫn URL hợp lệ'
-      };
-    }
-
-    return null;
-  }
-};
 
 window.VibeApp = window.VibeApp || {};
 const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
@@ -6295,7 +5980,9 @@ if (totalCount === 0) {
           headerQuestionId: q.id,
           title: q.content || `Mục ${sections.length + 1}`,
           description: (q.rows && q.rows[0]) ? q.rows[0] : (q.description || ''),
-          defaultAction: (q.logic && q.logic.default_action) || 'NEXT',
+          defaultAction: (q.logic && q.logic.target)
+            ? { action: q.logic.default_action || 'GO_TO_PAGE', target: q.logic.target }
+            : ((q.logic && q.logic.default_action) || 'NEXT'),
           questions: []
         };
       } else {
@@ -7457,7 +7144,7 @@ if (totalCount === 0) {
     return false;
   },
 
-  resolveSectionTarget(rawTarget, sections, optText = null) {
+  resolveSectionTarget(rawTarget, sections, optText = null, currentSection = null) {
     if (!rawTarget && !optText) return null;
     let targetVal = rawTarget;
     if (typeof rawTarget === 'object' && rawTarget !== null) {
@@ -7467,11 +7154,29 @@ if (totalCount === 0) {
     if (targetVal === 'SUBMIT') return 'SUBMIT';
     if (targetVal === 'NEXT' && !optText) return 'NEXT';
 
+    // Trường hợp đặc biệt: Người dùng chọn chỉ tham gia NV1 / Bỏ qua NV2 -> Nhảy đến Section chung cuối cùng
+    if (optText && typeof optText === 'string' && /chỉ\s*muốn\s*tham\s*gia|không\s*có\s*nguyện\s*vọng\s*2|bỏ\s*qua\s*nv2/i.test(optText)) {
+      if (sections.length > 0) return sections.length - 1;
+    }
+
     // 1. Parse dạng số nguyên trực tiếp (0, 1, 2...)
     if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
       const parsed = parseInt(targetVal, 10);
       if (!isNaN(parsed) && parsed >= 0 && parsed < sections.length && String(parsed) === String(targetVal)) {
         return parsed;
+      }
+    }
+
+    // 1b. Khớp dạng prefix 'order:X'
+    if (typeof targetVal === 'string' && targetVal.startsWith('order:')) {
+      const orderNum = parseInt(targetVal.replace('order:', ''), 10);
+      if (!isNaN(orderNum)) {
+        for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+          const sec = sections[sIdx];
+          if (sec.headerQuestionId && String(sec.headerQuestionId).includes(`_${orderNum}`)) return sIdx;
+          const foundQ = sec.questions && sec.questions.some(q => q.order_index === orderNum);
+          if (foundQ) return sIdx;
+        }
       }
     }
 
@@ -7489,8 +7194,7 @@ if (totalCount === 0) {
       }
     }
 
-    // 4. Smart Name / Title Matching:
-    // NẾU TARGET CHƯA MATCH: Tìm Section có tiêu đề tương đồng với targetVal hoặc optText
+    // 4. Smart Name / Title Matching có hỗ trợ phân cấp ngữ cảnh NV1 / NV2
     const matchQueries = [];
     if (targetVal && typeof targetVal === 'string' && targetVal !== 'NEXT' && targetVal !== 'SUBMIT') {
       matchQueries.push(targetVal);
@@ -7499,7 +7203,21 @@ if (totalCount === 0) {
       matchQueries.push(optText);
     }
 
+    const curTitle = (currentSection?.title || '') + ' ' + (currentSection?.description || '');
+    const isNV1Context = /(?:nguyện\s*vọng\s*1|nv1)\b/i.test(curTitle);
+    const isNV2Context = /(?:nguyện\s*vọng\s*2|nv2)\b/i.test(curTitle);
+
+    // Ưu tiên khớp trong danh sách ứng viên phù hợp với ngữ cảnh
     for (const query of matchQueries) {
+      if (isNV1Context) {
+        const nv1Idx = sections.findIndex(sec => /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(sec.title) && (this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query))));
+        if (nv1Idx !== -1) return nv1Idx;
+      } else if (isNV2Context) {
+        const nv2Idx = sections.findIndex(sec => /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(sec.title) && (this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query))));
+        if (nv2Idx !== -1) return nv2Idx;
+      }
+
+      // Quét thông thường nếu không có ngữ cảnh hoặc chưa tìm thấy
       const matchIdx = sections.findIndex(sec => this._isSmartTextMatch(sec.title, query) || (sec.description && this._isSmartTextMatch(sec.description, query)));
       if (matchIdx !== -1) return matchIdx;
     }
@@ -7579,9 +7297,9 @@ if (totalCount === 0) {
 
     let resolved = null;
     if (branchAction) {
-      resolved = this.resolveSectionTarget(branchAction, sections, selectedOptionText);
+      resolved = this.resolveSectionTarget(branchAction, sections, selectedOptionText, curSec);
     } else if (selectedOptionText) {
-      resolved = this.resolveSectionTarget(null, sections, selectedOptionText);
+      resolved = this.resolveSectionTarget(null, sections, selectedOptionText, curSec);
     }
 
     if (resolved === 'SUBMIT') {
@@ -7601,7 +7319,7 @@ if (totalCount === 0) {
 
     // Tầng 2: Section defaultAction
     if (curSec.defaultAction && curSec.defaultAction !== 'NEXT') {
-      const resolvedDef = this.resolveSectionTarget(curSec.defaultAction, sections);
+      const resolvedDef = this.resolveSectionTarget(curSec.defaultAction, sections, null, curSec);
       if (resolvedDef === 'SUBMIT') {
         await this.submitSurvey();
         return;
@@ -13657,6 +13375,10 @@ if (totalCount === 0) {
       if (['SHORT_TEXT', 'PARAGRAPH'].includes(q.type)) {
         const curType = q.validation?.type;
         const curRule = q.validation?.rule;
+        // Bảo toàn dải số BETWEEN đã có, không bao giờ bị ghi đè thành IS_NUMBER
+        if (curType === 'NUMBER' && curRule === 'BETWEEN') {
+          return;
+        }
         const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
         if (engine && typeof engine.inferValidationFromTitle === 'function') {
           const inferred = engine.inferValidationFromTitle(val, (q.placeholder || q.description || ''));
@@ -14308,64 +14030,93 @@ if (totalCount === 0) {
 
     const detectTypeAndClean = (rawTitle) => {
       let title = rawTitle.trim();
+      let isRequired = false;
       let detectedType = null;
       let minLabel = null;
       let maxLabel = null;
 
+      // Bóc tách nhãn Bắt buộc trả lời của Microsoft Forms / Google Forms
+      if (/bắt\s*buộc\s*trả\s*lời\.?|bắt\s*buộc\.?|\(\s*bắt\s*buộc\s*\)|\[\s*bắt\s*buộc\s*\]|\*+/i.test(title)) {
+        isRequired = true;
+        title = title
+          .replace(/bắt\s*buộc\s*trả\s*lời\.?/gi, '')
+          .replace(/\(\s*bắt\s*buộc\s*\)|\[\s*bắt\s*buộc\s*\]/gi, '')
+          .replace(/\s*\*+\s*$/, '')
+          .trim();
+      }
+
+      // 0. Bóc tách nhãn loại câu hỏi đặc thù của Microsoft Forms
+      if (/văn\s*bản\s*nhiều\s*dòng\.?/i.test(title)) {
+        detectedType = 'PARAGRAPH';
+        title = title.replace(/văn\s*bản\s*nhiều\s*dòng\.?/gi, '').trim();
+      } else if (/văn\s*bản\s*một\s*dòng\.?/i.test(title)) {
+        detectedType = 'SHORT_TEXT';
+        title = title.replace(/văn\s*bản\s*một\s*dòng\.?/gi, '').trim();
+      } else if (/nhiều\s*lựa\s*chọn\.?/i.test(title)) {
+        detectedType = 'MULTIPLE_CHOICE';
+        title = title.replace(/nhiều\s*lựa\s*chọn\.?/gi, '').trim();
+      } else if (/một\s*lựa\s*chọn\.?/i.test(title)) {
+        detectedType = 'SINGLE_CHOICE';
+        title = title.replace(/một\s*lựa\s*chọn\.?/gi, '').trim();
+      } else if (/xếp\s*loại\.?|đánh\s*giá\s*sao\.?/i.test(title)) {
+        detectedType = 'RATING_STARS';
+        title = title.replace(/xếp\s*loại\.?|đánh\s*giá\s*sao\.?/gi, '').trim();
+      }
+
       // 1. Net Promoter Score / NPS
-      if (/Net\s*Promoter\s*Score|NPS/i.test(title)) {
+      if (!detectedType && (/Net\s*Promoter\s*Score|NPS/i.test(title))) {
         detectedType = 'LINEAR_SCALE';
         title = title.replace(/(?:\.|\s)*Net\s*Promoter\s*Score[\.\s]*$/i, '').trim();
         minLabel = 'Hoàn toàn không có khả năng';
         maxLabel = 'Rất có khả năng';
       }
       // 2. Văn bản nhiều dòng / Đoạn văn (Paragraph)
-      else if (/văn\s*bản\s*nhiều\s*dòng|đoạn\s*văn|paragraph|long\s*text/i.test(title)) {
+      else if (!detectedType && (/văn\s*bản\s*nhiều\s*dòng|đoạn\s*văn|paragraph|long\s*text/i.test(title))) {
         detectedType = 'PARAGRAPH';
         title = title.replace(/(?:\.|\s)*(?:văn\s*bản\s*nhiều\s*dòng|đoạn\s*văn|paragraph|long\s*text)[\.\s]*$/i, '').trim();
       }
       // 3. Xếp loại / Rating stars
-      else if (/xếp\s*loại|đánh\s*giá\s*sao|rating|stars?/i.test(title)) {
+      else if (!detectedType && (/xếp\s*loại|đánh\s*giá\s*sao|rating|stars?/i.test(title))) {
         detectedType = 'RATING_STARS';
         title = title.replace(/(?:\.|\s)*(?:xếp\s*loại|đánh\s*giá\s*sao|rating|stars?)[\.\s]*$/i, '').trim();
       }
       // 4. Ngày tháng (Date)
-      else if (/ngày\s*tháng|ngày|date/i.test(title) && !/ngày\s*sinh\s*của/i.test(title)) {
+      else if (!detectedType && (/ngày\s*tháng|ngày|date/i.test(title) && !/ngày\s*sinh\s*của/i.test(title))) {
         detectedType = 'DATE_INPUT';
         title = title.replace(/(?:\.|\s)*(?:ngày\s*tháng|ngày|date)[\.\s]*$/i, '').trim();
       }
       // 5. Giờ phút (Time)
-      else if (/giờ\s*phút|thời\s*gian|time/i.test(title)) {
+      else if (!detectedType && (/giờ\s*phút|thời\s*gian|time/i.test(title))) {
         detectedType = 'TIME_INPUT';
         title = title.replace(/(?:\.|\s)*(?:giờ\s*phút|thời\s*gian|time)[\.\s]*$/i, '').trim();
       }
       // 6. Likert / Grid
-      else if (/likert|lưới\s*trắc\s*nghiệm|choice\s*grid|ma\s*trận/i.test(title)) {
+      else if (!detectedType && (/likert|lưới\s*trắc\s*nghiệm|choice\s*grid|ma\s*trận/i.test(title))) {
         detectedType = 'CHOICE_GRID';
         title = title.replace(/(?:\.|\s)*(?:likert|lưới\s*trắc\s*nghiệm|choice\s*grid|ma\s*trận)[\.\s]*$/i, '').trim();
       }
       // 7. Lưới hộp kiểm (Checkbox Grid)
-      else if (/lưới\s*hộp\s*kiểm|checkbox\s*grid/i.test(title)) {
+      else if (!detectedType && (/lưới\s*hộp\s*kiểm|checkbox\s*grid/i.test(title))) {
         detectedType = 'CHECKBOX_GRID';
         title = title.replace(/(?:\.|\s)*(?:lưới\s*hộp\s*kiểm|checkbox\s*grid)[\.\s]*$/i, '').trim();
       }
       // 8. Nhiều lựa chọn (Checkbox)
-      else if (/nhiều\s*lựa\s*chọn|hộp\s*kiểm|checkbox|multiple\s*choice|chọn\s*nhiều/i.test(title)) {
+      else if (!detectedType && (/nhiều\s*lựa\s*chọn|hộp\s*kiểm|checkbox|multiple\s*choice|chọn\s*nhiều/i.test(title))) {
         detectedType = 'MULTIPLE_CHOICE';
         title = title.replace(/(?:\.|\s)*(?:nhiều\s*lựa\s*chọn|hộp\s*kiểm|checkbox|multiple\s*choice|chọn\s*nhiều)[\.\s]*$/i, '').trim();
       }
       // 9. Xếp thứ tự (Ranking)
-      else if (/xếp\s*thứ\s*tự|thứ\s*tự\s*ưu\s*tiên|ranking|thứ\s*tự/i.test(title)) {
+      else if (!detectedType && (/xếp\s*thứ\s*tự|thứ\s*tự\s*ưu\s*tiên|ranking|thứ\s*tự/i.test(title))) {
         detectedType = 'SINGLE_CHOICE';
         title = title.replace(/(?:\.|\s)*(?:xếp\s*thứ\s*tự|thứ\s*tự\s*ưu\s*tiên|ranking|thứ\s*tự)[\.\s]*$/i, '').trim();
       }
       // 10. Trắc nghiệm đơn
-      else if (/một\s*lựa\s*chọn|trắc\s*nghiệm|single\s*choice/i.test(title)) {
+      else if (!detectedType && (/một\s*lựa\s*chọn|trắc\s*nghiệm|single\s*choice/i.test(title))) {
         detectedType = 'SINGLE_CHOICE';
         title = title.replace(/(?:\.|\s)*(?:một\s*lựa\s*chọn|trắc\s*nghiệm|single\s*choice)[\.\s]*$/i, '').trim();
       }
       // 11. Trả lời ngắn / Văn bản 1 dòng
-      else if (/văn\s*bản|trả\s*lời\s*ngắn|short\s*text/i.test(title)) {
+      else if (!detectedType && (/văn\s*bản|trả\s*lời\s*ngắn|short\s*text/i.test(title))) {
         detectedType = 'SHORT_TEXT';
         title = title.replace(/(?:\.|\s)*(?:văn\s*bản|trả\s*lời\s*ngắn|short\s*text)[\.\s]*$/i, '').trim();
       }
@@ -14373,7 +14124,7 @@ if (totalCount === 0) {
       // Làm sạch ký tự thừa ở cuối: dấu chấm, hai chấm, gạch ngang, dấu hoa thị bắt buộc (*)
       title = title.replace(/[\.\:\-\*]+$/, '').trim();
 
-      return { title, detectedType, minLabel, maxLabel };
+      return { title, detectedType, minLabel, maxLabel, isRequired };
     };
 
     let hasMetQuestion = false;
@@ -14424,7 +14175,7 @@ if (totalCount === 0) {
           cleanLine = line.replace(/^\d+[\.\/\:\)]\s*/, '');
         }
 
-        const { title, detectedType, minLabel, maxLabel } = detectTypeAndClean(cleanLine);
+        const { title, detectedType, minLabel, maxLabel, isRequired } = detectTypeAndClean(cleanLine);
 
         currentItem = {
           id: 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
@@ -14435,7 +14186,7 @@ if (totalCount === 0) {
           columns: [],
           min_label: minLabel,
           max_label: maxLabel,
-          is_required: true,
+          is_required: isRequired !== undefined ? isRequired : true,
           is_screener: false
         };
         continue;
@@ -14633,6 +14384,80 @@ if (totalCount === 0) {
 
       return q;
     });
+
+    // Tự động suy luận Branching Logic & Điểm hội tụ cho Client Parser
+    const sectionHeaders = questions.filter(q => q.type === 'SECTION_HEADER');
+    if (sectionHeaders.length >= 2) {
+      const cleanFuzzy = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/gi, ' ').replace(/\s+/g, ' ').trim();
+      const getSecText = (s) => `${s.content || ''} ${Array.isArray(s.rows) ? s.rows.join(' ') : ''}`.trim();
+
+      for (const q of questions) {
+        if (!['SINGLE_CHOICE', 'DROPDOWN'].includes(q.type) || !Array.isArray(q.options) || q.options.length < 2) continue;
+        const qContext = q.content || '';
+        const isNV1 = /(?:nguyện\s*vọng\s*1|nv1)\b/i.test(qContext);
+        const isNV2 = /(?:nguyện\s*vọng\s*2|nv2)\b/i.test(qContext);
+
+        let candidateSecs = sectionHeaders;
+        if (isNV1) {
+          const nv1Secs = sectionHeaders.filter(s => /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(getSecText(s)));
+          if (nv1Secs.length > 0) candidateSecs = nv1Secs;
+        } else if (isNV2) {
+          const nv2Secs = sectionHeaders.filter(s => /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(getSecText(s)));
+          if (nv2Secs.length > 0) candidateSecs = nv2Secs;
+        }
+
+        const logicOpts = {};
+        let matched = 0;
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = q.options[i];
+          if (/chỉ\s*muốn\s*tham\s*gia|không\s*có\s*nguyện\s*vọng\s*2|bỏ\s*qua\s*nv2/i.test(opt)) {
+            const lastSec = sectionHeaders[sectionHeaders.length - 1];
+            logicOpts[opt] = { action: 'GO_TO_PAGE', target: lastSec.id };
+            logicOpts[i] = { action: 'GO_TO_PAGE', target: lastSec.id };
+            matched++;
+            continue;
+          }
+          const optFuzzy = cleanFuzzy(opt);
+          if (optFuzzy.length < 3) continue;
+
+          let targetSec = candidateSecs.find(s => cleanFuzzy(getSecText(s)).includes(optFuzzy));
+          if (!targetSec && candidateSecs !== sectionHeaders) {
+            targetSec = sectionHeaders.find(s => cleanFuzzy(getSecText(s)).includes(optFuzzy));
+          }
+          if (targetSec && targetSec.id !== q.id) {
+            logicOpts[opt] = { action: 'GO_TO_PAGE', target: targetSec.id };
+            logicOpts[i] = { action: 'GO_TO_PAGE', target: targetSec.id };
+            matched++;
+          }
+        }
+
+        if (matched >= 2) {
+          q.logic = q.logic || {};
+          q.logic.enabled = true;
+          q.logic.options = logicOpts;
+        }
+      }
+
+      // Tự động gắn điểm hội tụ
+      const secNV2 = sectionHeaders.find(s => /(?:nguyện\s*vọng\s*2|nv2)\b/i.test(getSecText(s)));
+      const secEnd = sectionHeaders[sectionHeaders.length - 1];
+
+      for (const sec of sectionHeaders) {
+        const secText = getSecText(sec);
+        const isNV1Sec = /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(secText);
+        const isNV2Sec = /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(secText) && sec !== secNV2;
+
+        if (isNV1Sec && secNV2) {
+          sec.logic = sec.logic || {};
+          sec.logic.default_action = 'GO_TO_PAGE';
+          sec.logic.target = secNV2.id;
+        } else if (isNV2Sec && secEnd && secEnd !== sec) {
+          sec.logic = sec.logic || {};
+          sec.logic.default_action = 'GO_TO_PAGE';
+          sec.logic.target = secEnd.id;
+        }
+      }
+    }
 
     questions.formTitle = formTitle;
     questions.formDesc = formDesc;

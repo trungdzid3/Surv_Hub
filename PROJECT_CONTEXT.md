@@ -2497,3 +2497,37 @@ c:\Users\Lenovo\Downloads\Linh\
 - Cập nhật cache-buster lên `public/index.html`.
 - Đồng bộ toàn diện sang Android Capacitor Native (`npm run sync:android`).
 - Tự động commit và push lên GitHub (`origin/main`).
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: CHUẨN HÓA BÓC TÁCH KHOẢNG SỐ MICROSOFT FORMS VÀ ĐIỀU HƯỚNG PHÂN NHÁNH ĐA TẦNG CÓ HỘI TỤ (THÁNG 11/2026)
+
+### 1. Hiện Tượng & Nguyên Nhân Sâu Xa
+- **Lỗi quét khoảng số**:
+  + Khi người dùng copy từ Microsoft Forms, các nhãn kỹ thuật như `Bắt buộc trả lời.`, `Văn bản một dòng.` dính liền vào tiêu đề câu hỏi (`3.Mã số sinh viênBắt buộc trả lời. Văn bản một dòng.`).
+  + Khi người dùng sửa tiêu đề câu hỏi trong Studio, sự kiện `updateBuilderQuestionContent` bị ghi đè dải số thành `IS_NUMBER` (`Giá trị phải là một số`), làm mất min/max của quy tắc `BETWEEN`.
+- **Lỗi điều hướng phân nhánh (Branching Logic) & Thiếu điểm hội tụ**:
+  + Biểu mẫu thực tế của người dùng có 2 câu hỏi định hướng liên tiếp: Nguyện vọng 1 (ở Mục 2) và Nguyện vọng 2 (ở Mục 3), cùng các phân đoạn chi tiết của từng tiểu ban (Truyền thông NV1, Truyền thông NV2, Đối ngoại NV1, Đối ngoại NV2,...).
+  + Thuật toán tìm Section đích bị match nhầm tên do cả Mục 4 lẫn Mục 5 đều chứa từ "Truyền thông". Khi ở Mục 3 chọn NV2 là "Truyền thông", hệ thống lại match ngược về Mục 4 (NV1), dẫn đến lặp lại câu hỏi định hướng.
+  + Trong `public/app.js`, hàm `buildSurveySections` bị mất thuộc tính `target` của `defaultAction` (`defaultAction: (q.logic && q.logic.default_action) || 'NEXT'`), khiến các Section Header không thể nhảy về phân đoạn chỉ định sau khi làm xong câu hỏi nhánh.
+  + Thiếu điểm hội tụ (Convergence / Call & Return): Khi điền xong Mục 4 (NV1), Runner tìm Section liền kề phía sau và nhảy sang Mục 5 (NV2), bỏ qua Mục 3 (chọn NV2) và bắt người dùng làm toàn bộ câu hỏi của tất cả các tiểu ban.
+
+### 2. Giải Pháp Toàn Diện Đã Triển Khai
+- **Làm Sạch Nhãn Microsoft Forms & Cố Định Validation BETWEEN**:
+  + Tại `server/services/formParserService.js` (`parseSmartText` và `_finalizeQuestion`) và `public/app.js` (`parseRawQuestionsText`): Tự động khử sạch các nhãn kỹ thuật `Bắt buộc trả lời.`, `Văn bản một dòng.`, `Văn bản Nhiều Dòng.`, `Một lựa chọn.`, `Nhiều lựa chọn.`, `Xếp loại.`, `*`.
+  + Trích xuất chính xác dải số `min: 20000000`, `max: 202700000` cho câu hỏi Mã số sinh viên, thiết lập quy tắc `BETWEEN` kèm placeholder chuẩn.
+  + Trong `updateBuilderQuestionContent`: Khóa bảo vệ nghiêm ngặt khi câu hỏi đã có quy tắc `BETWEEN`, tuyệt đối không ghi đè thành `IS_NUMBER` khi người dùng chỉnh sửa tiêu đề.
+  + Loại bỏ hoàn toàn khối code lặp thừa của `RestrictionEngine` trong `public/app.js`.
+- **Phân Định Ngữ Cảnh NV1 / NV2 & Tự Động Thiết Lập Điểm Hội Tụ**:
+  + Nâng cấp `findTargetQuestion` (backend) và `resolveSectionTarget` (frontend): Hỗ trợ ngữ cảnh câu hỏi nguồn (`qContext`). Nếu câu hỏi có ngữ cảnh NV1 -> ưu tiên khớp Section mang nhãn `(NV1)`. Nếu câu hỏi có ngữ cảnh NV2 -> ưu tiên khớp Section mang nhãn `(NV2)`. Lựa chọn *"Chỉ muốn tham gia tiểu ban ở NV1"* tự động ánh xạ đến Section chung cuối cùng.
+  + Sửa lỗi trong `buildSurveySections`: Lưu đầy đủ `{ action, target }` cho `defaultAction` của Section Header.
+  + Tự động cấu hình liên kết hồi quy và hội tụ (Convergence Targets):
+    * Các Section nhánh NV1 tự động có `default_action = 'GO_TO_PAGE'`, `target` trỏ về Mục 3 (Nguyện vọng 2).
+    * Các Section nhánh NV2 tự động có `default_action = 'GO_TO_PAGE'`, `target` trỏ về Mục chung cuối cùng (Mục 16 / SUBMIT_FORM).
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Suite kiểm thử toàn diện `tests/test_full_msforms_branching.js`: **100% PASS** toàn bộ 9 chốt chặn kiểm thử.
+- Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (25.20s).
+- Cập nhật cache-buster lên `public/index.html` (4.7.6_1793609653653).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android`.
+- Tự động commit và push lên GitHub (`origin/main`).

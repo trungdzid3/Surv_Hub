@@ -2898,21 +2898,60 @@ class FormParserService {
           questions.push(this._finalizeQuestion(currentQuestion, questions.length + 1));
         }
 
-        const rawContent = qMatch[5] ? qMatch[5].trim() : line;
+        let contentClean = (qMatch[5] ? qMatch[5].trim() : line).trim();
+        let isReq = false;
+        let forcedType = null;
+
+        // Cắt bỏ nhãn "Bắt buộc trả lời" của Microsoft Forms / Google Forms
+        if (/bắt\s*buộc\s*trả\s*lời\.?|bắt\s*buộc\.?|\(\s*bắt\s*buộc\s*\)|\[\s*bắt\s*buộc\s*\]|\*+/i.test(contentClean)) {
+          isReq = true;
+          contentClean = contentClean
+            .replace(/bắt\s*buộc\s*trả\s*lời\.?/gi, '')
+            .replace(/\(\s*bắt\s*buộc\s*\)|\[\s*bắt\s*buộc\s*\]/gi, '')
+            .replace(/\s*\*+\s*$/, '')
+            .trim();
+        }
+
+        // Cắt bỏ nhãn loại câu hỏi của Microsoft Forms
+        if (/văn\s*bản\s*nhiều\s*dòng\.?/i.test(contentClean)) {
+          forcedType = 'PARAGRAPH';
+          contentClean = contentClean.replace(/văn\s*bản\s*nhiều\s*dòng\.?/gi, '').trim();
+        } else if (/văn\s*bản\s*một\s*dòng\.?/i.test(contentClean)) {
+          forcedType = 'SHORT_TEXT';
+          contentClean = contentClean.replace(/văn\s*bản\s*một\s*dòng\.?/gi, '').trim();
+        } else if (/nhiều\s*lựa\s*chọn\.?/i.test(contentClean)) {
+          forcedType = 'MULTIPLE_CHOICE';
+          contentClean = contentClean.replace(/nhiều\s*lựa\s*chọn\.?/gi, '').trim();
+        } else if (/một\s*lựa\s*chọn\.?/i.test(contentClean)) {
+          forcedType = 'SINGLE_CHOICE';
+          contentClean = contentClean.replace(/một\s*lựa\s*chọn\.?/gi, '').trim();
+        } else if (/xếp\s*loại\.?|đánh\s*giá\s*sao\.?/i.test(contentClean)) {
+          forcedType = 'RATING_STARS';
+          contentClean = contentClean.replace(/xếp\s*loại\.?|đánh\s*giá\s*sao\.?/gi, '').trim();
+        }
+
         currentQuestion = {
-          content: rawContent || `Câu hỏi ${questions.length + 1}`,
+          content: contentClean || `Câu hỏi ${questions.length + 1}`,
           rawOptions: [],
           rows: null,
           columns: null,
-          hasCheckboxOptions: false
+          hasCheckboxOptions: false,
+          isRequired: isReq ? 1 : 0,
+          forceType: forcedType
         };
         readingMode = null;
         continue;
       }
 
       if (currentQuestion) {
-        // Nếu đang trong Section Header, các dòng tiếp theo là mô tả của Section
+        // Nếu đang trong Section Header, dòng đầu tiên nếu chưa có tiêu đề chi tiết sẽ là tiêu đề của Section
         if (currentQuestion.isSection) {
+          if (!currentQuestion.rows || currentQuestion.rows.length === 0) {
+            if (/^(?:mục|phần|section)\s*(\d+|[ivx]+)?$/i.test(currentQuestion.content)) {
+              currentQuestion.content += ': ' + line;
+              continue;
+            }
+          }
           if (!currentQuestion.rows) currentQuestion.rows = [];
           currentQuestion.rows.push(line);
           continue;
@@ -3048,8 +3087,21 @@ class FormParserService {
           continue;
         }
 
+        // 3. Xử lý các lựa chọn của câu hỏi trắc nghiệm (đặc biệt khi copy từ Microsoft / Google Forms không có bullet A, B, C)
+        const isChoiceMode = ['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN'].includes(currentQuestion.forceType);
+        if (isChoiceMode && line.length < 150 && !line.includes('?')) {
+          currentQuestion.rawOptions.push(line);
+          continue;
+        }
+
         // Nếu câu hỏi đã có options và dòng ngắn -> option tiếp theo
         if (currentQuestion.rawOptions.length > 0 && line.length < 100 && !line.includes('?')) {
+          currentQuestion.rawOptions.push(line);
+          continue;
+        }
+
+        // Nếu tiêu đề câu hỏi đã kết thúc bằng dấu hỏi (?) và dòng tiếp theo là dòng ngắn -> lựa chọn đầu tiên
+        if (currentQuestion.rawOptions.length === 0 && currentQuestion.content.trim().endsWith('?') && line.length < 80 && !line.includes('?')) {
           currentQuestion.rawOptions.push(line);
           continue;
         }
@@ -3105,7 +3157,7 @@ class FormParserService {
    */
   _finalizeQuestion(rawQ, orderIndex) {
     let content = rawQ.content.trim();
-    let isRequired = 0;
+    let isRequired = rawQ.isRequired !== undefined ? (rawQ.isRequired ? 1 : 0) : 0;
 
     // Kiểm tra cờ bắt buộc qua dấu * cuối câu hoặc cụm (bắt buộc)
     if (/\*$/.test(content) || /\*\s*$/.test(content) || /\(\s*bắt\s*buộc\s*\)|\[\s*bắt\s*buộc\s*\]|\(\s*required\s*\)/i.test(content)) {
@@ -3139,6 +3191,32 @@ class FormParserService {
       };
     }
 
+    // 0.5 Ưu tiên kiểu ép buộc nếu có forceType từ nhãn Microsoft Forms
+    if (rawQ.forceType === 'PARAGRAPH') {
+      const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
+      const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
+      if (validation) {
+        qRes.validation = validation;
+        qRes.logic = { validation };
+        qRes.placeholder = validation.placeholder || rawQ.placeholder || 'Nhập câu trả lời của bạn';
+      } else if (rawQ.placeholder) {
+        qRes.placeholder = rawQ.placeholder;
+      }
+      return qRes;
+    }
+    if (rawQ.forceType === 'SHORT_TEXT') {
+      const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
+      const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
+      if (validation) {
+        qRes.validation = validation;
+        qRes.logic = { validation };
+        qRes.placeholder = validation.placeholder || rawQ.placeholder || 'Nhập câu trả lời của bạn';
+      } else if (rawQ.placeholder) {
+        qRes.placeholder = rawQ.placeholder;
+      }
+      return qRes;
+    }
+
     // 1. Nếu có ma trận Hàng x Cột -> CHOICE_GRID hoặc CHECKBOX_GRID
     if (rows && columns && rows.length > 0 && columns.length > 0) {
       const isCheckbox = /hộp\s*kiểm|checkbox|nhiều/i.test(content) || /hộp\s*kiểm|checkbox/i.test(rawQ.content);
@@ -3158,6 +3236,16 @@ class FormParserService {
     const options = rawQ.rawOptions.map(opt => opt.trim()).filter(Boolean);
     const hasCheckboxOptions = rawQ.hasCheckboxOptions || options.some(opt => /^\[[ xX]?\]/.test(opt));
     const cleanOptions = options.map(opt => opt.replace(/^\[[ xX]?\]\s*/, '').trim());
+
+    if (rawQ.forceType === 'MULTIPLE_CHOICE' && cleanOptions.length > 0) {
+      return { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'MULTIPLE_CHOICE', content, is_required: isRequired, options: cleanOptions };
+    }
+    if (rawQ.forceType === 'SINGLE_CHOICE' && cleanOptions.length > 0) {
+      return { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'SINGLE_CHOICE', content, is_required: isRequired, options: cleanOptions };
+    }
+    if (rawQ.forceType === 'RATING_STARS') {
+      return { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'RATING_STARS', content, is_required: isRequired, options: ['1', '2', '3', '4', '5'] };
+    }
 
     // 2. Xếp hạng sao (RATING_STARS)
     if (/đánh\s*giá\s*sao|xếp\s*hạng\s*sao|số\s*sao|star\s*rating|(?:từ\s*)?1\s*(?:đến|-|–)\s*5\s*sao/i.test(content)) {
@@ -3317,8 +3405,8 @@ class FormParserService {
       return str.toLowerCase().replace(/\s+/g, ' ').trim();
     };
 
-    // Helper tìm câu hỏi / phân đoạn đích
-    const findTargetQuestion = (rawTarget, optLabel) => {
+    // Helper tìm câu hỏi / phân đoạn đích có hỗ trợ ngữ cảnh NV1 / NV2
+    const findTargetQuestion = (rawTarget, optLabel, qContext) => {
       // 1. Kiểm tra rawTarget trực tiếp
       if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
         const targetStr = String(rawTarget).trim();
@@ -3357,29 +3445,61 @@ class FormParserService {
         const optStrict = cleanStrict(optLabel);
         const optFuzzy = cleanFuzzy(optLabel);
 
-        // 2.1 Khớp chính xác hoàn toàn với tiêu đề Section
-        for (const sec of sectionHeaders) {
-          const secContent = sec.content || '';
-          if (cleanStrict(secContent) === optStrict || cleanFuzzy(secContent) === optFuzzy) {
+        // Trường hợp đặc biệt: Người dùng chọn chỉ tham gia NV1 / Không có NV2 -> Nhảy đến Section chung cuối cùng
+        if (/chỉ\s*muốn\s*tham\s*gia|không\s*có\s*nguyện\s*vọng\s*2|bỏ\s*qua\s*nv2/i.test(optLabel)) {
+          if (sectionHeaders.length > 0) {
+            return sectionHeaders[sectionHeaders.length - 1];
+          }
+        }
+
+        const isNV1Context = qContext && /(?:nguyện\s*vọng\s*1|nv1)\b/i.test(qContext);
+        const isNV2Context = qContext && /(?:nguyện\s*vọng\s*2|nv2)\b/i.test(qContext);
+
+        const getSecText = (s) => `${s.content || ''} ${Array.isArray(s.rows) ? s.rows.join(' ') : ''}`.trim();
+
+        // Lọc danh sách Section Header ứng viên phù hợp với ngữ cảnh
+        let candidateSections = sectionHeaders;
+        if (isNV1Context) {
+          const nv1Candidates = sectionHeaders.filter(s => /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(getSecText(s)));
+          if (nv1Candidates.length > 0) candidateSections = nv1Candidates;
+        } else if (isNV2Context) {
+          const nv2Candidates = sectionHeaders.filter(s => /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(getSecText(s)));
+          if (nv2Candidates.length > 0) candidateSections = nv2Candidates;
+        }
+
+        // 2.1 Khớp chính xác hoàn toàn với tiêu đề Section trong danh sách ứng viên
+        for (const sec of candidateSections) {
+          const secText = getSecText(sec);
+          if (cleanStrict(secText) === optStrict || cleanFuzzy(secText) === optFuzzy) {
             return sec;
           }
         }
 
-        // 2.2 Tên Section chứa tên lựa chọn (ví dụ: optLabel = "Truyền thông", sec.content = "Tiểu ban Truyền thông")
+        // 2.2 Tên Section chứa tên lựa chọn (ví dụ: optLabel = "Truyền thông", sec = "Tiểu ban Truyền thông (NV1)")
         if (optFuzzy.length >= 3) {
-          for (const sec of sectionHeaders) {
-            const secFuzzy = cleanFuzzy(sec.content || '');
+          for (const sec of candidateSections) {
+            const secFuzzy = cleanFuzzy(getSecText(sec));
             if (secFuzzy.includes(optFuzzy)) {
               return sec;
             }
           }
         }
 
-        // 2.3 Tên lựa chọn chứa tên Section (ví dụ: optLabel = "Chuyển đến phần Thông tin liên hệ", sec.content = "Thông tin liên hệ")
-        for (const sec of sectionHeaders) {
-          const secFuzzy = cleanFuzzy(sec.content || '');
+        // 2.3 Tên lựa chọn chứa tên Section
+        for (const sec of candidateSections) {
+          const secFuzzy = cleanFuzzy(getSecText(sec));
           if (secFuzzy.length >= 3 && optFuzzy.includes(secFuzzy)) {
             return sec;
+          }
+        }
+
+        // Fallback: Quét lại toàn bộ sectionHeaders nếu bộ lọc ứng viên chưa tìm thấy
+        if (candidateSections !== sectionHeaders) {
+          for (const sec of sectionHeaders) {
+            const secFuzzy = cleanFuzzy(getSecText(sec));
+            if (optFuzzy.length >= 3 && secFuzzy.includes(optFuzzy)) {
+              return sec;
+            }
           }
         }
       }
@@ -3435,7 +3555,7 @@ class FormParserService {
 
           for (let i = 0; i < q.options.length; i++) {
             const opt = q.options[i];
-            const matchedSec = findTargetQuestion(null, opt);
+            const matchedSec = findTargetQuestion(null, opt, q.content);
             if (matchedSec && matchedSec.order_index !== q.order_index) {
               inferredOptions[opt] = {
                 action: 'GO_TO_PAGE',
@@ -3495,7 +3615,7 @@ class FormParserService {
             }
 
             // Tìm câu hỏi / Section Header đích
-            const targetQ = findTargetQuestion(rawTarget, key);
+            const targetQ = findTargetQuestion(rawTarget, key, q.content);
             if (targetQ) {
               resolvedOptions[key] = {
                 action: 'GO_TO_PAGE',
@@ -3543,7 +3663,7 @@ class FormParserService {
           q.logic.default_action = 'RESTART_FORM';
           q.logic.target = null;
         } else if (rawTarget !== null && rawTarget !== undefined && rawTarget !== '') {
-          const targetQ = findTargetQuestion(rawTarget, null);
+          const targetQ = findTargetQuestion(rawTarget, null, q.content);
           if (targetQ) {
             q.logic.default_action = 'GO_TO_PAGE';
             q.logic.target = targetQ.id || (targetQ.origin_id ? String(targetQ.origin_id) : `order:${targetQ.order_index}`);
@@ -3554,6 +3674,31 @@ class FormParserService {
         } else if (isNextPageAction(rawDefAction, null)) {
           q.logic.default_action = 'NEXT_PAGE';
           q.logic.target = null;
+        }
+      }
+    }
+
+    // 3. Tự động thiết lập Điểm Hội Tụ (Return / Convergence Targets) cho biểu mẫu phân nhánh NV1/NV2
+    const secNV2 = sectionHeaders.find(s => /(?:nguyện\s*vọng\s*2|nv2)\b/i.test(s.content || ''));
+    const secEnd = sectionHeaders.length > 0 ? sectionHeaders[sectionHeaders.length - 1] : null;
+
+    for (const sec of sectionHeaders) {
+      if (!sec) continue;
+      const secContent = sec.content || '';
+      const isNV1Section = /(?:nv1|nguyện\s*vọng\s*1)\b/i.test(secContent);
+      const isNV2Section = /(?:nv2|nguyện\s*vọng\s*2)\b/i.test(secContent) && sec !== secNV2;
+
+      if (isNV1Section && secNV2) {
+        if (!sec.logic || !sec.logic.default_action || sec.logic.default_action === 'NEXT') {
+          sec.logic = sec.logic || {};
+          sec.logic.default_action = 'GO_TO_PAGE';
+          sec.logic.target = secNV2.id || (secNV2.origin_id ? String(secNV2.origin_id) : `order:${secNV2.order_index}`);
+        }
+      } else if (isNV2Section && secEnd && secEnd !== sec) {
+        if (!sec.logic || !sec.logic.default_action || sec.logic.default_action === 'NEXT') {
+          sec.logic = sec.logic || {};
+          sec.logic.default_action = 'GO_TO_PAGE';
+          sec.logic.target = secEnd.id || (secEnd.origin_id ? String(secEnd.origin_id) : `order:${secEnd.order_index}`);
         }
       }
     }
