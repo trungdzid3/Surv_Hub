@@ -653,7 +653,8 @@ class SurveyController {
       const allowedTypes = [
         'SHORT_TEXT', 'PARAGRAPH', 'SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN',
         'LINEAR_SCALE', 'LIKERT_SCALE', 'RATING_STARS', 'CHOICE_GRID', 'CHECKBOX_GRID',
-        'DATE_INPUT', 'TIME_INPUT', 'FILE_UPLOAD', 'NUMBER_INPUT', 'OPEN_TEXT'
+        'DATE_INPUT', 'TIME_INPUT', 'FILE_UPLOAD', 'NUMBER_INPUT', 'OPEN_TEXT',
+        'SECTION_HEADER', 'TEXT_BLOCK', 'VIDEO_BLOCK'
       ];
 
       for (let i = 0; i < questions.length; i++) {

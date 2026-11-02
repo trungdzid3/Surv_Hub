@@ -26,8 +26,8 @@ class AntiFraudService {
       if (!q) continue;
       const type = String(q.type || '').toUpperCase();
 
-      if (type === 'OPEN_TEXT' || type === 'SHORT_TEXT' || type === 'PARAGRAPH') {
-        // Tự luận = 0 giây theo quy chuẩn KE_HOACH_TONG_THE.md
+      if (type === 'OPEN_TEXT' || type === 'SHORT_TEXT' || type === 'PARAGRAPH' || type === 'SECTION_HEADER' || type === 'TEXT_BLOCK' || type === 'VIDEO_BLOCK') {
+        // Tự luận & khối phân đoạn/nội dung tĩnh = 0 giây theo quy chuẩn KE_HOACH_TONG_THE.md
         continue;
       } else if (type === 'LIKERT_SCALE' || type === 'LINEAR_SCALE' || type === 'RATING_STARS') {
         totalStandardSec += 12;

@@ -6452,6 +6452,12 @@ if (totalCount === 0) {
     // Tính toán phân đoạn hiện tại (nếu form có SECTION_HEADER)
     const currentSectionNum = (session.questions.slice(0, curIdx + 1).filter(item => item.type === 'SECTION_HEADER').length) + 1;
     const totalSections = Math.max(1, session.questions.filter(item => item.type === 'SECTION_HEADER').length + 1);
+    const progressText = totalSections > 1
+      ? `Mục ${currentSectionNum} / ${totalSections} • Câu #${curIdx + 1}`
+      : `Câu ${curIdx + 1} / ${totalQ} (${progressPct}%)`;
+    const progressPctVal = totalSections > 1
+      ? Math.min(100, Math.round((currentSectionNum / totalSections) * 100))
+      : progressPct;
 
     // Timer display
     const sec = session.durationSec || 0;
@@ -6535,7 +6541,7 @@ if (totalCount === 0) {
           <div class="flex items-center space-x-3">
             <span class="font-mono text-stone-700 dark:text-stone-300 font-bold" id="session-timer-text">${initialTimeStr}</span>
             <span class="text-stone-300 dark:text-stone-700">|</span>
-            <span class="font-extrabold text-orange-600 dark:text-orange-400">Câu ${curIdx + 1} / ${totalQ} (${progressPct}%)</span>
+            <span class="font-extrabold text-orange-600 dark:text-orange-400">${progressText}</span>
           </div>
         </div>
 
@@ -6553,7 +6559,7 @@ if (totalCount === 0) {
 
         <!-- Top Progress Line -->
         <div class="w-full bg-stone-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
-          <div class="bg-orange-600 h-full rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+          <div class="bg-orange-600 h-full rounded-full transition-all duration-300" style="width: ${progressPctVal}%"></div>
         </div>
 
         ${q.type === 'SECTION_HEADER' ? `
@@ -7772,62 +7778,86 @@ if (totalCount === 0) {
       if (!rawTarget && !optText) return null;
       let targetVal = rawTarget;
       if (typeof rawTarget === 'object' && rawTarget !== null) {
-        if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT') return 'SUBMIT';
+        if (rawTarget.action === 'SUBMIT' || rawTarget.target === 'SUBMIT' || rawTarget.action === 'SUBMIT_FORM') return 'SUBMIT';
         targetVal = rawTarget.target || rawTarget.action;
       }
-      if (targetVal === 'SUBMIT') return 'SUBMIT';
+      if (targetVal === 'SUBMIT' || targetVal === 'SUBMIT_FORM' || targetVal === 'ENDOFFORM' || targetVal === '-1') return 'SUBMIT';
       if (targetVal === 'NEXT' && !optText) return 'NEXT';
 
-      // 1. Kiểm tra số index trực tiếp (ví dụ: '14' hoặc 14)
-      if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
-        const parsed = parseInt(targetVal, 10);
-        if (!isNaN(parsed) && parsed >= 0 && parsed < session.questions.length && String(parsed) === String(targetVal)) {
-          return parsed;
-        }
-      }
+      const strTarget = String(targetVal || '').trim();
 
-      // 2. Kiểm tra theo ID UUID trực tiếp trong session.questions
-      if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
-        const foundIdx = session.questions.findIndex(item => String(item.id) === String(targetVal));
+      // 1. Kiểm tra theo ID chính xác (UUID hoặc q_...)
+      if (strTarget && strTarget !== 'NEXT') {
+        const foundIdx = session.questions.findIndex(item => String(item.id).trim() === strTarget);
         if (foundIdx !== -1) return foundIdx;
       }
 
-      // 3. Khớp theo Section Header ID hoặc Section ID trong buildSurveySections
-      if (targetVal !== null && targetVal !== undefined && targetVal !== '' && targetVal !== 'NEXT') {
+      // 2. Kiểm tra nếu có tiền tố 'order:16' hoặc 'order_16' (1-based)
+      if (strTarget.startsWith('order:') || strTarget.startsWith('order_')) {
+        const oNum = parseInt(strTarget.replace(/^(order:|order_)/, ''), 10);
+        if (!isNaN(oNum)) {
+          const foundIdx = session.questions.findIndex(item => Number(item.order_index) === oNum);
+          if (foundIdx !== -1) return foundIdx;
+          if (oNum >= 1 && oNum <= session.questions.length) return oNum - 1;
+        }
+      }
+
+      // 3. Kiểm tra nếu có tiền tố 'index:15' (0-based)
+      if (strTarget.startsWith('index:')) {
+        const iNum = parseInt(strTarget.replace(/^index:/, ''), 10);
+        if (!isNaN(iNum) && iNum >= 0 && iNum < session.questions.length) {
+          return iNum;
+        }
+      }
+
+      // 4. Khớp theo Section Header ID hoặc Section ID trong buildSurveySections
+      if (strTarget && strTarget !== 'NEXT') {
         const sections = this.buildSurveySections(session.questions);
-        const foundSec = sections.find(sec => String(sec.id) === String(targetVal) || String(sec.headerQuestionId) === String(targetVal));
+        const foundSec = sections.find(sec => String(sec.id).trim() === strTarget || String(sec.headerQuestionId).trim() === strTarget);
         if (foundSec) {
-          const headerIdx = session.questions.findIndex(item => String(item.id) === String(foundSec.headerQuestionId || foundSec.id));
+          const headerIdx = session.questions.findIndex(item => String(item.id).trim() === String(foundSec.headerQuestionId || foundSec.id).trim());
           if (headerIdx !== -1) return headerIdx;
           if (foundSec.questions && foundSec.questions.length > 0) {
-            const firstQIdx = session.questions.findIndex(item => String(item.id) === String(foundSec.questions[0].id));
+            const firstQIdx = session.questions.findIndex(item => String(item.id).trim() === String(foundSec.questions[0].id).trim());
             if (firstQIdx !== -1) return firstQIdx;
           }
         }
       }
 
-      // 4. Smart Name / Title Matching:
-      // NẾU TARGET CHƯA MATCH: Tìm Section Header hoặc câu hỏi có tiêu đề tương đồng với targetVal hoặc optText
+      // 5. Smart Name / Title Matching:
+      // Tìm Section Header hoặc câu hỏi có tiêu đề tương đồng với strTarget hoặc optText
       const matchQueries = [];
-      if (targetVal && typeof targetVal === 'string' && targetVal !== 'NEXT' && targetVal !== 'SUBMIT') {
-        matchQueries.push(targetVal);
+      if (strTarget && strTarget !== 'NEXT' && !/^\d+$/.test(strTarget)) {
+        matchQueries.push(strTarget);
       }
       if (optText && typeof optText === 'string') {
         matchQueries.push(optText);
       }
 
       for (const query of matchQueries) {
-        // Ưu tiên 4a: Tìm trong các câu hỏi SECTION_HEADER trước
+        // Ưu tiên 5a: Tìm trong các câu hỏi SECTION_HEADER trước
         const secHeaderIdx = session.questions.findIndex(item => 
           item.type === 'SECTION_HEADER' && (this._isSmartTextMatch(item.content, query) || this._isSmartTextMatch(item.title, query))
         );
         if (secHeaderIdx !== -1) return secHeaderIdx;
 
-        // Ưu tiên 4b: Tìm trong các câu hỏi thông thường
+        // Ưu tiên 5b: Tìm trong các câu hỏi thông thường
         const qIdx = session.questions.findIndex(item => 
           item.type !== 'SECTION_HEADER' && this._isSmartTextMatch(item.content, query)
         );
         if (qIdx !== -1) return qIdx;
+      }
+
+      // 6. Fallback số thuần:
+      if (strTarget && strTarget !== 'NEXT') {
+        const parsed = parseInt(strTarget, 10);
+        if (!isNaN(parsed) && String(parsed) === strTarget) {
+          // Ưu tiên kiểm tra xem có câu nào mang order_index === parsed (1-based)
+          const matchOrder = session.questions.findIndex(item => Number(item.order_index) === parsed);
+          if (matchOrder !== -1) return matchOrder;
+          // Sau đó mới xét mảng 0-based index
+          if (parsed >= 0 && parsed < session.questions.length) return parsed;
+        }
       }
 
       return null;
@@ -14203,7 +14233,7 @@ if (totalCount === 0) {
     let currentItem = null;
 
     const isSectionHeader = (line) => {
-      return /^(mục|phần|section)\s*(\d+|[ivx]+)[\.\:\-\s]*(.*)/i.test(line);
+      return /^(?:\d+[\.\/\:\)]\s*)?(?:mục|phần|section)\s*(\d+|[ivx]+)?[\.\:\-\s]*(.*)/i.test(line);
     };
 
     const isQuestionStart = (line) => {
@@ -14300,13 +14330,15 @@ if (totalCount === 0) {
         continue;
       }
 
-      // Phát hiện Section Header (Mục 1, Phần 2:...)
+      // Phát hiện Section Header (Mục 1, Phần 2:..., 15. Mục:...)
       if (isSectionHeader(line)) {
         hasMetQuestion = true;
         if (currentItem) items.push(currentItem);
 
-        const secMatch = /^(mục|phần|section)\s*(\d+|[ivx]+)[\.\:\-\s]*(.*)/i.exec(line);
-        const secName = secMatch ? (secMatch[1] + ' ' + secMatch[2] + (secMatch[3] ? ': ' + secMatch[3] : '')) : line;
+        const secMatch = /^(?:\d+[\.\/\:\)]\s*)?(mục|phần|section)\s*(\d+|[ivx]+)?[\.\:\-\s]*(.*)/i.exec(line);
+        const secNum = secMatch && secMatch[2] ? ' ' + secMatch[2] : '';
+        const secTitle = secMatch && secMatch[3] ? (secMatch[3].startsWith(':') ? secMatch[3] : ': ' + secMatch[3]) : '';
+        const secName = `Mục${secNum}${secTitle}`.trim() || line;
 
         currentItem = {
           id: 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),

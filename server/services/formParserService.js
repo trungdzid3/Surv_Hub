@@ -2874,6 +2874,27 @@ class FormParserService {
     for (let i = startIndex; i < lines.length; i++) {
       const line = lines[i];
 
+      // 0. Kiểm tra Section Header (Mục 1, Phần 2:..., 15. Mục: ...)
+      const secMatch = line.match(/^(?:\d+[.)/:-]\s*)?(?:mục|phần|section)\s*(\d+|[ivx]+)?[:：\-\.]?\s*(.*)$/i);
+      if (secMatch && (secMatch[1] || secMatch[2])) {
+        if (currentQuestion) {
+          questions.push(this._finalizeQuestion(currentQuestion, questions.length + 1));
+        }
+        const secNum = secMatch[1] ? ` ${secMatch[1]}` : '';
+        const secTitle = secMatch[2] ? (secMatch[2].startsWith(':') ? secMatch[2] : `: ${secMatch[2]}`) : '';
+        const fullSecName = `Mục${secNum}${secTitle}`.trim() || line;
+        currentQuestion = {
+          isSection: true,
+          content: fullSecName,
+          rawOptions: [],
+          rows: null,
+          columns: null,
+          hasCheckboxOptions: false
+        };
+        readingMode = null;
+        continue;
+      }
+
       const qMatch = line.match(questionStartRegex);
 
       if (qMatch) {
@@ -2895,6 +2916,13 @@ class FormParserService {
       }
 
       if (currentQuestion) {
+        // Nếu đang trong Section Header, các dòng tiếp theo là mô tả của Section
+        if (currentQuestion.isSection) {
+          if (!currentQuestion.rows) currentQuestion.rows = [];
+          currentQuestion.rows.push(line);
+          continue;
+        }
+
         // 1. Kiểm tra dòng chuyển chế độ Hàng / Cột cho Ma trận
         if (/^(?:hàng|rows)[:：]?$/i.test(line)) {
           readingMode = 'ROWS';
@@ -3103,12 +3131,26 @@ class FormParserService {
       }
     }
 
+    // 0. Phân đoạn biểu mẫu (SECTION_HEADER)
+    if (rawQ.isSection || /^(?:mục|phần|section)\s*(\d+|[ivx]+)?[:：\-\.]/i.test(content) || /^(?:mục|phần|section)\s*\d+/i.test(content)) {
+      return {
+        order_index: orderIndex,
+        id: rawQ.id || `q_${orderIndex}`,
+        type: 'SECTION_HEADER',
+        content,
+        is_required: 0,
+        options: null,
+        rows: rawQ.rows && rawQ.rows.length > 0 ? rawQ.rows : null
+      };
+    }
+
     // 1. Nếu có ma trận Hàng x Cột -> CHOICE_GRID hoặc CHECKBOX_GRID
     if (rows && columns && rows.length > 0 && columns.length > 0) {
       const isCheckbox = /hộp\s*kiểm|checkbox|nhiều/i.test(content) || /hộp\s*kiểm|checkbox/i.test(rawQ.content);
       const qType = isCheckbox ? 'CHECKBOX_GRID' : 'CHOICE_GRID';
       return {
         order_index: orderIndex,
+        id: rawQ.id || `q_${orderIndex}`,
         type: qType,
         content,
         is_required: isRequired,
@@ -3126,6 +3168,7 @@ class FormParserService {
     if (/đánh\s*giá\s*sao|xếp\s*hạng\s*sao|số\s*sao|star\s*rating|(?:từ\s*)?1\s*(?:đến|-|–)\s*5\s*sao/i.test(content)) {
       return {
         order_index: orderIndex,
+        id: rawQ.id || `q_${orderIndex}`,
         type: 'RATING_STARS',
         content,
         is_required: isRequired,
@@ -3140,6 +3183,7 @@ class FormParserService {
       const maxLab = cleanOptions[1] || (/hài\s*lòng/i.test(content) ? 'Rất hài lòng' : 'Hoàn toàn đồng ý');
       return {
         order_index: orderIndex,
+        id: rawQ.id || `q_${orderIndex}`,
         type: 'LINEAR_SCALE',
         content,
         is_required: isRequired,
@@ -3153,6 +3197,7 @@ class FormParserService {
     if (rawQ.forceType === 'DROPDOWN') {
       return {
         order_index: orderIndex,
+        id: rawQ.id || `q_${orderIndex}`,
         type: 'DROPDOWN',
         content,
         is_required: isRequired,
@@ -3164,17 +3209,17 @@ class FormParserService {
     // 4. Không có options -> Xét các dạng tự luận / input đặc thù
     if (cleanOptions.length === 0) {
       if (/ngày\s*(?:sinh|tháng|bắt\s*đầu|kết\s*thúc)|chọn\s*ngày|date/i.test(content)) {
-        return { order_index: orderIndex, type: 'DATE_INPUT', content, is_required: isRequired, options: null };
+        return { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'DATE_INPUT', content, is_required: isRequired, options: null };
       }
       if (/giờ|thời\s*gian\s*\((?:giờ|phút)\)|time/i.test(content)) {
-        return { order_index: orderIndex, type: 'TIME_INPUT', content, is_required: isRequired, options: null };
+        return { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'TIME_INPUT', content, is_required: isRequired, options: null };
       }
       if (/tải\s*(?:lên\s*)?tệp|đính\s*kèm\s*file|upload\s*file|tải\s*ảnh/i.test(content)) {
-        return { order_index: orderIndex, type: 'FILE_UPLOAD', content, is_required: isRequired, options: null };
+        return { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'FILE_UPLOAD', content, is_required: isRequired, options: null };
       }
       if (/đoạn\s*văn|tự\s*luận\s*dài|chia\s*sẻ\s*chi\s*tiết|mô\s*tả\s*cụ\s*thể|paragraph/i.test(content)) {
         const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
-        const qRes = { order_index: orderIndex, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
+        const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'PARAGRAPH', content, is_required: isRequired, options: null };
         if (validation) {
           qRes.validation = validation;
           qRes.logic = { validation };
@@ -3185,7 +3230,7 @@ class FormParserService {
         return qRes;
       }
       const validation = rawQ.validation || this._extractValidationRule({ title: content, placeholder: rawQ.placeholder || '' });
-      const qRes = { order_index: orderIndex, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
+      const qRes = { order_index: orderIndex, id: rawQ.id || `q_${orderIndex}`, type: 'SHORT_TEXT', content, is_required: isRequired, options: null };
       if (validation) {
         qRes.validation = validation;
         qRes.logic = { validation };
@@ -3200,6 +3245,7 @@ class FormParserService {
     if (/menu\s*thả\s*xuống|dropdown|danh\s*sách\s*thả/i.test(content)) {
       return {
         order_index: orderIndex,
+        id: rawQ.id || `q_${orderIndex}`,
         type: 'DROPDOWN',
         content,
         is_required: isRequired,
@@ -3212,6 +3258,7 @@ class FormParserService {
     if (isMultiple) {
       return {
         order_index: orderIndex,
+        id: rawQ.id || `q_${orderIndex}`,
         type: 'MULTIPLE_CHOICE',
         content,
         is_required: isRequired,
@@ -3222,6 +3269,7 @@ class FormParserService {
     // 7. Mặc định là Trắc nghiệm 1 lựa chọn (SINGLE_CHOICE)
     return {
       order_index: orderIndex,
+      id: rawQ.id || `q_${orderIndex}`,
       type: 'SINGLE_CHOICE',
       content,
       is_required: isRequired,
@@ -3456,7 +3504,7 @@ class FormParserService {
             if (targetQ) {
               resolvedOptions[key] = {
                 action: 'GO_TO_PAGE',
-                target: targetQ.order_index
+                target: targetQ.id || (targetQ.origin_id ? String(targetQ.origin_id) : `order:${targetQ.order_index}`)
               };
             } else if (isNextPageAction(rawAction, rawTarget)) {
               resolvedOptions[key] = {
@@ -3503,7 +3551,7 @@ class FormParserService {
           const targetQ = findTargetQuestion(rawTarget, null);
           if (targetQ) {
             q.logic.default_action = 'GO_TO_PAGE';
-            q.logic.target = targetQ.order_index;
+            q.logic.target = targetQ.id || (targetQ.origin_id ? String(targetQ.origin_id) : `order:${targetQ.order_index}`);
           } else if (isNextPageAction(rawDefAction, rawTarget)) {
             q.logic.default_action = 'NEXT_PAGE';
             q.logic.target = null;

@@ -109,6 +109,12 @@ const testSuites = [
     name: 'Tầng 16: Stepper Routing, Smart Branching & Anti-Bleed Suite',
     description: 'Kiểm tra điều hướng Single-Question Stepper, Smart Name/Title Matching, UUID/Index & Chống trôi tự do sang tiểu ban khác',
     file: 'test_stepper_routing_and_smart_branching.js'
+  },
+  {
+    id: 17,
+    name: 'Tầng 17: Survey Full Flow, ID Map & Database Logic Sync Suite',
+    description: 'Kiểm tra parseSmartText, logic_json persistence, ID Map remap targets và đồng bộ CSDL',
+    file: 'test_survey_full_flow.js'
   }
 ];
 

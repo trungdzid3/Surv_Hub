@@ -170,25 +170,26 @@ c:\Users\Lenovo\Downloads\Linh\
   - Đồng bộ Capacitor Android (`npm run sync:android`) thành công.
   - Nâng cache-buster lên `v=4.7.8_realtime_stats` trong `public/index.html`.
 
-### H. Nâng Cấp Bóc Tách Khoảng Số & Tái Thiết Kế Studio Question Card Tinh Gọn (v4.7.9)
-- **Nâng Cấp Bóc Tách Dải Số Chuẩn Microsoft Forms & Google Forms**:
-  - Giải quyết triệt để lỗi mất dải số giới hạn (ví dụ `Số phải nằm trong khoảng từ 20000000 ~ 202700000` bị fallback ép về `IS_NUMBER` "Giá trị phải là một số").
-  - Mở rộng hàm `extractNumberRange` nhận diện đa dạng mẫu câu tiếng Việt/Anh: "số phải nằm trong khoảng từ X ~ Y", "trong khoảng X ~ Y", "X đến Y", "X ~ Y", mảng JSON, thuộc tính JSON `Value1/Value2`, `Operand1/Operand2`, `Min/Max`.
-  - Nâng cấp `formParserService._parseMicrosoftQuestion` quét đệ quy cấu trúc JSON lồng nhau (`questionInfo.Validation.Restrictions`, `rawRestrictions`, `placeholder`, `description`), truyền `rawQuestion` toàn diện vào `_extractValidationRule`.
-  - Khắc phục lỗi fallback `IS_NUMBER` chạy trước khi phân tích placeholder; luôn ưu tiên trích xuất dải số `BETWEEN` khi tìm thấy khoảng số trong ngữ cảnh câu hỏi.
-- **Tái Thiết Kế Studio Question Card Gọn Gàng, Tinh Tế (Minimalist Modern)**:
-  - Loại bỏ hoàn toàn khối card lồng card 3 tầng cồng kềnh `Giới hạn (Restrictions)` chiếm diện tích.
-  - Khi không có giới hạn: Không hiển thị hộp xám thừa; chỉ hiển thị nút chip `+ Thêm giới hạn` ở footer khi cần.
-  - Khi có giới hạn: Hiển thị thanh ngang Single-Row Inline Bar nhỏ gọn (cao 32px) gồm Icon khiên, Dropdown loại giới hạn, Dropdown điều kiện, Ô Min ~ Max, nút `[x]` gỡ bỏ nhanh.
-  - Footer Question Card được tinh gọn:
-    * Bỏ checkbox "Câu trả lời dài" trùng lặp.
-    * Thay checkbox dài "Câu hỏi sàng lọc đối tượng (Auto-Screener)" bằng nút chip `[Sàng lọc]` gọn gàng.
-    * Nhóm nút thao tác bên phải: Icon Copy, Icon Trash, Vạch ngăn, Switch Bắt buộc mượt mà.
-  - Header Question Card: Ẩn badge giới hạn cồng kềnh khi card đang mở chỉnh sửa, giữ thanh tiêu đề thoáng đãng.
-- **Kiểm Chuẩn & Bảo Toàn**:
-  - `node -c server/services/formParserService.js`, `node -c public/app.js` đạt PASS 100%.
-  - Bộ kiểm thử tự hành 15 tầng (`npm test`) đạt 15/15 Suites PASS (100%).
+### I. Khắc Phục Triệt Để Rẽ Nhánh Phân Đoạn & Bảo Toàn Ràng Buộc logic_json (v4.8.0)
+- **Gốc Rễ Lỗi Bị Mất Ràng Buộc & Không Rẽ Nhánh**:
+  - Phát hiện nguyên nhân cốt lõi khiến khoảng giá trị và phân loại câu hỏi (rẽ nhánh) liên tục thất bại: Câu lệnh SQL `INSERT INTO questions` trong hàm `createSurvey` và `updateSurvey` của `server/controllers/surveyController.js` ban đầu chỉ có 17 cột, bỏ quên hoàn toàn cột `logic_json`. Khi người dùng tạo hoặc cập nhật khảo sát, toàn bộ dữ liệu ràng buộc `validation` (Min, Max, Between số) và cấu hình rẽ nhánh `logic.options` đều bị bỏ rơi và lưu thành `NULL` trong cơ sở dữ liệu.
+  - Khi đáp viên làm bài, hệ thống đọc ra `logic_json: null` nên Runner không có dữ liệu điều hướng (tự động rơi vào duyệt tuần tự `currentIndex++`, khiến chọn Tiểu ban NV1 ở Câu 14 nhưng lại bị ép làm câu của Tiểu ban khác ở Câu 16).
+- **Giải Pháp Đồng Bộ Toàn Vẹn CSDL & Controller**:
+  - Tích hợp `surveyRepository._buildQuestionIdMap` và `surveyRepository._processQuestionForInsert` vào cả `createSurvey` và `updateSurvey`.
+  - Cập nhật câu lệnh `INSERT INTO questions` đầy đủ 18 cột (bao gồm `logic_json`), bảo toàn 100% dữ liệu `validation` và `logic.options` khi lưu vào SQLite.
+  - Cập nhật danh sách loại câu hỏi hợp lệ `allowedTypes` trong Controller, bổ sung `SECTION_HEADER`, `TEXT_BLOCK`, `VIDEO_BLOCK`.
+- **Nâng Cấp FormParserService Bóc Tách Phân Đoạn (SECTION_HEADER)**:
+  - Khắc phục lỗi các phân đoạn như `15. Mục: Tiểu ban Truyền thông` bị ép thành câu hỏi `SHORT_TEXT`.
+  - Hàm `parseSmartText` và `_finalizeQuestion` nhận diện chính xác cú pháp phân đoạn (`Mục X`, `15. Mục: ...`, `Phần 2: ...`), gán đúng `type: 'SECTION_HEADER'`, `is_required: 0` và lưu mô tả vào `rows`.
+  - Gán `id` chuẩn mực cho từng câu hỏi (`q_X`) và ánh xạ các nhánh rẽ `target` bằng `targetQ.id || order:X` để tránh xung đột chỉ số 0-based và 1-based.
+- **Nâng Cấp Runner Stepper & Thanh Tiến Trình Phân Đoạn**:
+  - `resolveTarget` trong `public/app.js` nâng cấp thứ tự ưu tiên: ID chính xác -> `order:X` -> `index:X` -> Section Header ID -> `Smart Name Matching` -> Fallback số.
+  - Khi khảo sát có nhiều phân đoạn (`totalSections > 1`), thanh tiến trình chuyển đổi thông minh thành `Mục X / Y • Câu #Z` với tỷ lệ % theo phân đoạn, không còn hiển thị tổng số câu cồng kềnh (ví dụ `Câu 15 / 78 (19%)`) gây hoang mang cho người làm bài.
+- **Kiểm Chuẩn & Bộ Test Toàn Diện**:
+  - Thêm bộ kiểm thử toàn trình `tests/test_survey_full_flow.js` kiểm tra bóc tách, lưu DB, đọc ra và rẽ nhánh.
+  - Bộ kiểm thử tự hành đa tầng `npm test` đạt 17/17 Suites PASS (100.0%).
   - Đồng bộ Capacitor Android assets hoàn tất.
+
 
 
 ### Phân Hệ Hồ Sơ Tài Khoản Thực Tế, Tải Lên Avatar & Loại Bỏ 100% Mock Data (v4.7.9)
