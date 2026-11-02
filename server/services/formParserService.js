@@ -1203,11 +1203,13 @@ class FormParserService {
     }
     if (!text || typeof text !== 'string') return null;
 
-    // 0. Làm sạch định dạng ngày tháng và timestamp để không bị bắt nhầm dấu '-' thành khoảng số
+    // 0. Làm sạch định dạng ngày tháng ISO, ngày tháng thông thường, timestamp và số điện thoại
     const sanitizedText = text
+      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:T\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?/gi, ' ')
       .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/g, ' ')
       .replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b/g, ' ')
-      .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ');
+      .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ')
+      .replace(/\b0\d{1,3}[-.]\d{3,4}[-.]\d{3,4}\b/g, ' ');
 
     // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [20000000, 20270000]
     const jsonArrMatch = sanitizedText.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
@@ -1254,7 +1256,7 @@ class FormParserService {
     }
 
     // 3b. Mẫu "từ X đến/tới Y"
-    const fromToPattern = /(?:^|[^\w])(?:từ|tu|from)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|~|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
+    const fromToPattern = /(?:^|[^\w])(?:từ|tu|from)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
     const fromToMatch = sanitizedText.match(fromToPattern);
     if (fromToMatch) {
       const n1 = parseFloat(fromToMatch[1].replace(/,/g, ''));
@@ -1264,17 +1266,18 @@ class FormParserService {
       }
     }
 
-    // 4. Dải số có ký tự nối hoặc từ nối rõ ràng: ~, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, hoặc "X đến Y"
+    // 4. Dải số có ký tự nối hoặc từ nối rõ ràng: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, hoặc "X đến Y"
     const normalized = sanitizedText
       .replace(/[\uFF5E\u223C\u02DC]/g, '~')
       .replace(/[\u2013\u2014\u2212]/g, '~')
-      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to)\s*(?=\d)/gi, ' ~ ');
+      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to)\s*(?=\d)/gi, ' ~ ')
+      .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
 
     const matchTilde = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
     if (matchTilde) {
       const n1 = parseFloat(matchTilde[1].replace(/,/g, ''));
       const n2 = parseFloat(matchTilde[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2)) {
+      if (!isNaN(n1) && !isNaN(n2) && n1 !== n2) {
         return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
       }
     }

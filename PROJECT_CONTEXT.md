@@ -2466,3 +2466,34 @@ c:\Users\Lenovo\Downloads\Linh\
   + Khi người dùng vào trang *Hồ Sơ & Xác Thực*, nhập email đại học (`.edu.vn` / `.ac.vn`) và xác minh mã OTP 6 số thành công: Hệ thống tự động nâng cấp tài khoản lên **Sinh Viên** (`account_tier = 'STUDENT'`, `is_student_verified = 1`), ghi nhận thời điểm xác thực `student_verified_at` và hạn hiệu lực 1 năm `student_expires_at`.
   + **Cơ chế Hết hạn Tự động (Auto-Downgrade on Expiry)**: Trong API `/auth/me`, hệ thống tự động kiểm tra thời hạn sinh viên. Nếu đã quá hạn 1 năm hoặc năm hiện tại vượt quá năm tốt nghiệp `graduation_year`, tài khoản sẽ tự động chuyển về phân khúc **Thường** (`account_tier = 'PERSONAL'`, `is_student_verified = 0`).
   + **Tái xác thực (Re-verification)**: Khi hết hạn, sinh viên có thể vào lại trang Hồ Sơ để gửi mã OTP xác thực lại bằng email trường, khi xác thực thành công sẽ tự động được kích hoạt lại Gói Sinh Viên với chu kỳ 1 năm tiếp theo.
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: HOÀN THIỆN NHẬN DIỆN DẢI SỐ (ASCII HYPHEN & DATE ISOLATION) VÀ ĐỒNG BỘ TOÀN DIỆN BACKEND - FRONTEND (THÁNG 11/2026)
+
+### 1. Hiện Tượng & Nguyên Nhân Sâu Xa
+- **Hiện tượng**: Khi người dùng nhập câu hỏi có dải số viết bằng dấu gạch ngang chuẩn trên bàn phím (`-`, ASCII 45, ví dụ: `20000000 - 20270000`, `18 - 60`, `1 - 100`, v.v.), hệ thống không bóc tách được khoảng số, khiến câu hỏi rơi vào `IS_NUMBER` (`Giá trị phải là một số`) và giao diện hiển thị `Giới hạn: [Số] [Là số]` thay vì `[Số] [Trong khoảng] [min] ~ [max]`.
+- **Nguyên nhân kỹ thuật**:
+  + Để chống nhận diện nhầm chuỗi ngày tháng `YYYY-MM-DD`, bản cập nhật trước đã xóa bỏ bước thay thế dấu `-` thành `~` trong `server/services/formParserService.js`.
+  + Tuy nhiên, do bỏ sót dấu `-` (ASCII 45), mọi dải số người dùng gõ thông thường đều bị trả về `null`.
+  + Đồng thời, regex lọc ngày tháng cũ chưa bắt trọn chuẩn ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`), ký tự `T` dính liền khiến `\b` không kích hoạt.
+
+### 2. Giải Pháp Toàn Diện Đã Triển Khai
+- **Bộ Làm Sạch An Toàn (Sanitization)**:
+  + Làm sạch định dạng ISO 8601 đầy đủ (`\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:T\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?`), ngày tháng thông thường (`YYYY-MM-DD`, `DD/MM/YYYY`), timestamp (`HH:MM:SS`) và số điện thoại 3 cụm (`0xxx-xxx-xxx`).
+  + Đảm bảo các chuỗi ngày tháng hay ID hoàn toàn không bị bắt nhầm thành dải số.
+- **Khôi Phục Nhận Diện Dấu Gạch Ngang Nối Số**:
+  + Sau khi đã khử sạch ngày tháng, áp dụng chuẩn hóa: `(?<=\d)\s*[-~]\s*(?=\d)` thành ` ~ `.
+  + Nhận diện trọn vẹn cả có dấu cách (`20000000 - 20270000`), không có dấu cách (`20000000-20270000`), chữ kèm số (`Mã số sinh viên (20000000 - 20270000)`), và dải số ngắn (`18 - 60`, `1 - 100`).
+  + Bổ sung điều kiện kiểm tra `n1 !== n2` để ngăn các trường hợp 1-1 rác.
+- **Đồng Bộ Đồng Thời Cả 3 Vị Trí Frontend (`public/app.js`)**:
+  + Cập nhật trong `RestrictionEngine.extractNumberRange`.
+  + Cập nhật trong `inferValidationFromTitle` và `renderStudioQuestionValidationConfig`.
+  + Cập nhật trong `VibeApp.extractNumberRange` và `parseRawQuestionsText`.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Bộ test chuyên biệt dải số `tests/test_range_variants.js`: **100% PASS** cho toàn bộ 14 trường hợp biên.
+- Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (25.02s).
+- Cập nhật cache-buster lên `public/index.html`.
+- Đồng bộ toàn diện sang Android Capacitor Native (`npm run sync:android`).
+- Tự động commit và push lên GitHub (`origin/main`).

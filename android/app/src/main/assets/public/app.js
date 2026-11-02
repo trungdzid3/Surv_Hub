@@ -148,16 +148,30 @@ const RestrictionEngine = {
 
   extractNumberRange(str) {
     if (!str) return null;
-    if (typeof str !== 'string') {
+    let text = typeof str === 'string' ? str : '';
+    if (!text && typeof str === 'object') {
       try {
-        str = JSON.stringify(str);
+        if (str.title || str.placeholder || str.subtitle || str.description) {
+          text = [str.title, str.subtitle, str.placeholder, str.description].filter(Boolean).join(' ');
+        } else {
+          text = JSON.stringify(str);
+        }
       } catch {
         return null;
       }
     }
+    if (!text || typeof text !== 'string') return null;
+
+    // 0. Làm sạch định dạng ngày tháng ISO, ngày tháng thông thường, timestamp và số điện thoại
+    const sanitizedText = text
+      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:T\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?/gi, ' ')
+      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/g, ' ')
+      .replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b/g, ' ')
+      .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ')
+      .replace(/\b0\d{1,3}[-.]\d{3,4}[-.]\d{3,4}\b/g, ' ');
 
     // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [18, 60]
-    const jsonArrMatch = str.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
+    const jsonArrMatch = sanitizedText.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
     if (jsonArrMatch) {
       const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
@@ -172,7 +186,7 @@ const RestrictionEngine = {
       /(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
     ];
     for (const pat of jsonPropPatterns) {
-      const m = str.match(pat);
+      const m = sanitizedText.match(pat);
       if (m) {
         const n1 = parseFloat(m[1].replace(/,/g, ''));
         const n2 = parseFloat(m[2].replace(/,/g, ''));
@@ -183,7 +197,7 @@ const RestrictionEngine = {
     }
 
     // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ...", "trong khoảng ... đến ...", "từ ... ~ ..."
-    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between|từ)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|và|va|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i);
+    const explicitRangeMatch = sanitizedText.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|và|va|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i);
     if (explicitRangeMatch) {
       const n1 = parseFloat(explicitRangeMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(explicitRangeMatch[2].replace(/,/g, ''));
@@ -192,10 +206,21 @@ const RestrictionEngine = {
       }
     }
 
+    // 3b. Mẫu "từ X đến/tới Y"
+    const fromToPattern = /(?:^|[^\w])(?:từ|tu|from)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
+    const fromToMatch = sanitizedText.match(fromToPattern);
+    if (fromToMatch) {
+      const n1 = parseFloat(fromToMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(fromToMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
     // 4. Dải số có ký tự nối/từ nối: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, đến, den, to, và, va, and
-    const normalized = str
+    const normalized = sanitizedText
       .replace(/[\uFF5E\u223C\u02DC]/g, '~')
-      .replace(/[\u2013\u2014\u2212]/g, '-')
+      .replace(/[\u2013\u2014\u2212]/g, '~')
       .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
       .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
 
@@ -203,7 +228,7 @@ const RestrictionEngine = {
     if (match) {
       const n1 = parseFloat(match[1].replace(/,/g, ''));
       const n2 = parseFloat(match[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2)) {
+      if (!isNaN(n1) && !isNaN(n2) && n1 !== n2) {
         return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
       }
     }
@@ -540,16 +565,30 @@ window.RestrictionEngine = {
 
   extractNumberRange(str) {
     if (!str) return null;
-    if (typeof str !== 'string') {
+    let text = typeof str === 'string' ? str : '';
+    if (!text && typeof str === 'object') {
       try {
-        str = JSON.stringify(str);
+        if (str.title || str.placeholder || str.subtitle || str.description) {
+          text = [str.title, str.subtitle, str.placeholder, str.description].filter(Boolean).join(' ');
+        } else {
+          text = JSON.stringify(str);
+        }
       } catch {
         return null;
       }
     }
+    if (!text || typeof text !== 'string') return null;
+
+    // 0. Làm sạch định dạng ngày tháng ISO, ngày tháng thông thường, timestamp và số điện thoại
+    const sanitizedText = text
+      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:T\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?/gi, ' ')
+      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/g, ' ')
+      .replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b/g, ' ')
+      .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ')
+      .replace(/\b0\d{1,3}[-.]\d{3,4}[-.]\d{3,4}\b/g, ' ');
 
     // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [18, 60]
-    const jsonArrMatch = str.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
+    const jsonArrMatch = sanitizedText.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
     if (jsonArrMatch) {
       const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
@@ -564,7 +603,7 @@ window.RestrictionEngine = {
       /(?:["']?max(?:Value)?["']?|["']?upperBound["']?|["']?restrictionValue2["']?|["']?operand2["']?|["']?value2["']?|["']?val2["']?|["']?secondValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?[\s\S]*?(?:["']?min(?:Value)?["']?|["']?lowerBound["']?|["']?restrictionValue1["']?|["']?operand1["']?|["']?value1["']?|["']?val1["']?|["']?firstValue["']?)\s*[:=]\s*["']?(\d+(?:[.,]\d+)?)["']?/i
     ];
     for (const pat of jsonPropPatterns) {
-      const m = str.match(pat);
+      const m = sanitizedText.match(pat);
       if (m) {
         const n1 = parseFloat(m[1].replace(/,/g, ''));
         const n2 = parseFloat(m[2].replace(/,/g, ''));
@@ -575,7 +614,7 @@ window.RestrictionEngine = {
     }
 
     // 3. Bắt mẫu rõ ràng: "số phải nằm trong khoảng từ ... đến ...", "trong khoảng ... đến ...", "từ ... ~ ..."
-    const explicitRangeMatch = str.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between|từ)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|và|va|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i);
+    const explicitRangeMatch = sanitizedText.match(/(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|và|va|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i);
     if (explicitRangeMatch) {
       const n1 = parseFloat(explicitRangeMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(explicitRangeMatch[2].replace(/,/g, ''));
@@ -584,10 +623,21 @@ window.RestrictionEngine = {
       }
     }
 
+    // 3b. Mẫu "từ X đến/tới Y"
+    const fromToPattern = /(?:^|[^\w])(?:từ|tu|from)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
+    const fromToMatch = sanitizedText.match(fromToPattern);
+    if (fromToMatch) {
+      const n1 = parseFloat(fromToMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(fromToMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
+
     // 4. Dải số có ký tự nối/từ nối: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, đến, den, to, và, va, and
-    const normalized = str
+    const normalized = sanitizedText
       .replace(/[\uFF5E\u223C\u02DC]/g, '~')
-      .replace(/[\u2013\u2014\u2212]/g, '-')
+      .replace(/[\u2013\u2014\u2212]/g, '~')
       .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
       .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
 
@@ -595,7 +645,7 @@ window.RestrictionEngine = {
     if (match) {
       const n1 = parseFloat(match[1].replace(/,/g, ''));
       const n2 = parseFloat(match[2].replace(/,/g, ''));
-      if (!isNaN(n1) && !isNaN(n2)) {
+      if (!isNaN(n1) && !isNaN(n2) && n1 !== n2) {
         return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
       }
     }
@@ -14215,16 +14265,22 @@ if (totalCount === 0) {
       this.extractNumberRange = (str) => {
         if (eng && typeof eng.extractNumberRange === 'function') return eng.extractNumberRange(str);
         if (!str || typeof str !== 'string') return null;
-        const norm = str
+        const sanitizedText = str
+          .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}(?:T\d{1,2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?/gi, ' ')
+          .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/g, ' ')
+          .replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b/g, ' ')
+          .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ')
+          .replace(/\b0\d{1,3}[-.]\d{3,4}[-.]\d{3,4}\b/g, ' ');
+        const norm = sanitizedText
           .replace(/[\uFF5E\u223C\u02DC]/g, '~')
-          .replace(/[\u2013\u2014\u2212]/g, '-')
-          .replace(/(?<=\d)\s*(?:đến|den|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
+          .replace(/[\u2013\u2014\u2212]/g, '~')
+          .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
           .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
         const m = norm.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
         if (m) {
           const a = parseFloat(m[1].replace(/,/g, ''));
           const b = parseFloat(m[2].replace(/,/g, ''));
-          if (!isNaN(a) && !isNaN(b)) return { min: Math.min(a, b), max: Math.max(a, b) };
+          if (!isNaN(a) && !isNaN(b) && a !== b) return { min: Math.min(a, b), max: Math.max(a, b) };
         }
         return null;
       };

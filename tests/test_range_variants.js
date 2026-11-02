@@ -22,6 +22,15 @@ const cases = [
   { input: '{"value1": "20000000", "value2": "202700000"}', expected: { min: 20000000, max: 202700000 } },
   { input: '10 \u2013 20', expected: { min: 10, max: 20 } },
   { input: '10 \uFF5E 20', expected: { min: 10, max: 20 } },
+  { input: '20000000 - 20270000', expected: { min: 20000000, max: 20270000 } },
+  { input: '20000000-20270000', expected: { min: 20000000, max: 20270000 } },
+  { input: 'Mã số sinh viên (20000000 - 20270000)', expected: { min: 20000000, max: 20270000 } },
+  { input: '18 - 60', expected: { min: 18, max: 60 } },
+  { input: '18-60', expected: { min: 18, max: 60 } },
+  { input: '1 - 100', expected: { min: 1, max: 100 } },
+  { input: 'createdAt: 2026-11-02T05:28:42Z', expected: null },
+  { input: '2026-11-02', expected: null },
+  { input: '0912-345-678', expected: null },
   { input: 'Số điện thoại', expected: null },
   { input: 'Lớp - Khóa', expected: null }
 ];
