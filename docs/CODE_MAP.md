@@ -1,6 +1,6 @@
-# CODE MAP - FRONTEND VIBESURVEY (WAVE 2/8 MODULAR)
+# CODE MAP - FRONTEND VIBESURVEY (WAVE 3/8 MODULAR)
 
-Bản đồ điều hướng mã nguồn frontend cho AI và lập trình viên. Map theo SYMBOL (tên hàm/hằng), không map số dòng (số dòng thay đổi liên tục). Cập nhật lần cuối: Wave 2 modular hóa (cache-buster `4.9.7_modular_wave2`).
+Bản đồ điều hướng mã nguồn frontend cho AI và lập trình viên. Map theo SYMBOL (tên hàm/hằng), không map số dòng (số dòng thay đổi liên tục). Cập nhật lần cuối: Wave 3 modular hóa (cache-buster `4.9.8_modular_wave3`).
 
 ---
 
@@ -19,7 +19,8 @@ Thứ tự nạp trong `public/index.html` (trước `</body>`):
 | 7 | `public/js/modules/voucherMarket.js` (mới W1) | Chợ Voucher + Ví Voucher (VIEW 3-4) | `renderVoucherMarketView`, `redeemVoucher`, `renderMyVouchersView` | `window.VoucherMarketModule` + VibeApp |
 | 8 | `public/js/modules/pushNotifications.js` (mới W1) | Push notification + Android Hybrid | `initPushNotifications`, `startNotificationPolling`, `showPushPopup`, `pollNotifications`, `_formatTimeAgo`, ... (19 hàm) | `window.PushNotificationsModule` + VibeApp |
 | 9 | `public/js/modules/wallet-ledger.js` (mới W2) | Ví & Rút Tiền (VIEW 5): số dư Point/Credit, lịch sử giao dịch + sổ cái, payout (thẻ cào/bank/MoMo), swap Point sang Credit, nạp quỹ Creator VietQR + polling đơn nạp | `renderWalletView`, `switchWalletTab`, `filterWalletTransactions`, `renderTransactionRowHtml`, `renderWalletTransactionList`, `toggleWalletTimeDropdown`, `selectWalletTimeRange`, `openPayoutModal`, `updatePayoutUI`, `submitPayoutAction`, `openSwapPointsModal`, `updateSwapPointsPreview`, `submitSwapPoints`, `calculateDepositBonus`, `updateDepositCalc`, `setDepositPreset`, `openDepositModal`, `submitDepositAction`, `showVietQrPaymentModal`, `checkDepositStatus`, `simulatePaymentSuccess`, `toggleWalletLedgerAccordion` (22 hàm) | `window.WalletLedgerModule` + VibeApp |
-| 10 | `public/app.js` (~18.4k dòng) | Object `window.VibeApp` trung tâm (state, api, render, studio, forum, admin, respondent runner) + `RestrictionEngine` (chống gian lận validation) | `VibeApp.init`, `VibeApp.api`, `VibeApp.navigate`, `renderSurveysView`, `renderCreatorSurveysView`, `renderForumView`, `renderCreateSurveyView`, `parseRawQuestionsText`, `escapeHtml` (alias ủy quyền về VibeUtils), `RestrictionEngine.extractNumberRange` | `window.VibeApp`, `window.RestrictionEngine` |
+| 10 | `public/js/modules/adminConsole.js` (mới W3) | Phân hệ Quản trị: Tổng quan kinh tế sàn (VIEW 8), Duyệt Payout (VIEW 9), Gian lận & Unban (VIEW 10), Admin Fast Command Console (terminal `/help`, `/stats`, `/naptien`...), Sub-Nav quản trị | `renderAdminOverviewView`, `renderAdminPayoutsView`, `setAdminPayoutFilter`, `setAdminPayoutPage`, `handleAdminPayout`, `renderAdminFraudView`, `setAdminFraudLogLimit`, `setAdminFraudLogPage`, `searchAdminFraudUser`, `clearAdminFraudSearch`, `unbanAdminUser`, `unbanIpAddress`, `isStudentUser`, `renderAdminConsoleLogs`, `quickAdminLogin`, `fillAdminConsoleCommand`, `clearAdminConsole`, `handleAdminConsoleKeyDown`, `submitAdminConsoleCommand`, `openAdminConsoleModal`, `renderAdminSubNav` + dữ liệu `_adminConsoleHistory`, `_adminConsoleHistoryIdx`, `_adminTerminalLogs` (21 hàm + 3 state) | `window.AdminConsoleModule` + VibeApp |
+| 11 | `public/app.js` (~16.4k dòng) | Object `window.VibeApp` trung tâm (state, api, render, studio, forum, respondent runner) + `RestrictionEngine` (chống gian lận validation); tiện ích dùng chung `getLucideSvg`, `escapeHtml` (alias ủy quyền về VibeUtils) vẫn giữ tại đây | `VibeApp.init`, `VibeApp.api`, `VibeApp.navigate`, `renderSurveysView`, `renderCreatorSurveysView`, `renderForumView`, `renderCreateSurveyView`, `parseRawQuestionsText`, `escapeHtml` (alias ủy quyền về VibeUtils), `getLucideSvg`, `RestrictionEngine.extractNumberRange` | `window.VibeApp`, `window.RestrictionEngine` |
 
 Quy tắc giao tiếp: window globals + `this.*` late-binding. Module mới mở rộng bằng `Object.assign(window.VibeApp, {...})` trong IIFE `'use strict'`, có JSDoc banner `@namespace/@requires/@exports`.
 
@@ -48,17 +49,19 @@ Quy tắc giao tiếp: window globals + `this.*` late-binding. Module mới mở
 
 Thứ tự tách tiếp theo (mỗi file là 1 module `public/js/modules/`, nạp trước app.js, `Object.assign(window.VibeApp, ...)`):
 
-1. **admin-console.js** (~2k dòng): toàn bộ phân hệ quản trị (`renderAdmin*`, fraud, payout duyệt...).
+1. ~~**admin-console.js** (~2k dòng): toàn bộ phân hệ quản trị (`renderAdmin*`, fraud, payout duyệt...)~~ - HOÀN TẤT Wave 3.
 2. **forum.js** (~1.8k dòng): diễn đàn cộng đồng (`renderForumView`, post, comment, leaderboard...).
 3. **modals-terms.js** (~1.7k dòng): auth modal + Google auth + điều khoản + toast/modal hệ thống.
 4. **creator-studio.js** (~4.8k dòng, tách CUỐI): studio tạo khảo sát (builder, preview, settings, catalog voucher).
 5. **respondent.js** (~3.9k dòng, tách CUỐI): runner làm khảo sát + hồ sơ đáp viên (`renderSurveyRunner*`, profile...).
 
-Wave đã hoàn tất: **Wave 2 - wallet-ledger.js** (~1.3k dòng verbatim từ app.js: ví + payout + swap + deposit VietQR; app.js giữ lại comment marker "VIEW 5 ... ĐÃ TÁCH RA").
+Wave đã hoàn tất:
+- **Wave 3 - adminConsole.js** (~1.97k dòng verbatim từ app.js: VIEW 8 Tổng quan + VIEW 9 Payout + VIEW 10 Gian lận + Admin Fast Command Console + `renderAdminSubNav`; app.js giữ lại marker "QUẢN TRỊ ... ĐÃ TÁCH RA" và tiện ích dùng chung `getLucideSvg`, `escapeHtml` alias).
+- **Wave 2 - wallet-ledger.js** (~1.3k dòng verbatim từ app.js: ví + payout + swap + deposit VietQR; app.js giữ lại comment marker "VIEW 5 ... ĐÃ TÁCH RA").
 
 Follow-up đã ghi nhận (không làm trong Wave 1 để giữ diff tối thiểu):
 - Thay dần **84 chỗ** `.toLocaleString('vi-VN')` bằng `VibeUtils.formatVND(...)`.
 - Thay dần **66 chỗ** `window.lucide.createIcons()` bằng `VibeUtils.refreshIcons()`.
-- KPI đích: `public/app.js` còn **~4.000 dòng** (hiện ~18.4k sau Wave 2; 19.7k sau Wave 1, 20.6k ban đầu).
+- KPI đích: `public/app.js` còn **~4.000 dòng** (hiện ~16.4k sau Wave 3; ~18.4k sau Wave 2, 19.7k sau Wave 1, 20.6k ban đầu).
 - Android/Capacitor: QA đồng bộ assets sau khi toàn bộ wave xong (`npm run sync:android`).
 - Backup an toàn: `backups/backup_pre_modular_20261103-025845/` (md5 app.js gốc khớp 100% trước khi tách).
