@@ -2969,4 +2969,12 @@ c:\Users\Lenovo\Downloads\Linh\
 - **Điểm đạt**: bcrypt cost 10; chỉ 3 quyền Android tối thiểu; không tracking/GA/Pixel; xác nhận giao dịch 2 bước hiển thị phí trước khi bấm; Gemini chỉ dùng nội bộ (không trả nội dung AI cho user, không cần gắn nhãn).
 - **Chưa sửa code** — sprint này chỉ audit + lập roadmap ưu tiên 5 bước trong báo cáo (an ninh khẩn → pháp lý dữ liệu → pháp nhân/BCT → điều khoản → vận hành).
 
+## Sprint 03-11-2026 (Buổi 4): Tái tạo trọn bộ Logo VibeSurvey dạng Vector sạch (logo-design skill)
+- **Vấn đề**: `public/logo.svg` cũ bị hỏng nét (trace tự động lỗi tạo path zigzag gãy khúc); `logo-light.svg`/`favicon.svg` cũ chỉ là placeholder 2 cung tròn không khớp thiết kế gốc; `logo-white.png` cũ là logo màu trên nền trắng vô dụng (67.5% pixel trắng).
+- **Quy trình tái tạo** (temp script tại `$TEMP/vslogo`, đã dọn): scanline định lượng ảnh gốc 2938x2463 xác định topology **4 mảnh rời nhau** (band trên + đuôi nhọn chỉ xuống, hook trên dạng lá đầu nhọn-đuôi bo tròn, hook dưới mũi blade bo tròn + sừng band dưới hướng lên, band dưới + terminal trái); mask ngưỡng 200 + morph open 5x5 cắt viền blur/shadow của ảnh gốc; findContours → resample đều → RDP (eps 2.2) → corner detect (ngưỡng 0.55 rad) → Catmull-Rom tangent edge-aligned tại corner (chống overshoot/gai) → đoạn thẳng suy ra từ max dev < 2.6px.
+- **Gradient toàn cục** `userSpaceOnUse` từ #F05857 (đỏ-cam góc dưới-trái) → #FE9921 (cam góc trên-phải), 11 stop lấy mẫu trực tiếp từ ảnh gốc, 4 mảnh dùng chung 1 gradient nên chuyển màu liền mạch.
+- **Bộ file xuất** (`public/` + sync `android/`): `logo.svg` (master), `logo-light.svg`, `logo-dark.svg` (mix trắng 16% + feDropShadow #EA580C 0.35 giữ concept cũ), `favicon.svg` (crop chặt S chiếm ~77% canvas thay vì 60%), `logo-white.svg/png` (silhouette trắng nền trong suốt), `favicon.png` 48, `favicon.ico` 16/32/48, `icon-192.png`, `icon-512.png`, `logo.png`/`logo-512.png` 512, `logo-1024.png`.
+- **Chất lượng**: svg_audit 83/100; render đối chiếu khớp reference; legibility 64/32px đọc rõ (32px = size UI sidebar/footer `w-8 h-8`), favicon 16px nét hơn bản cũ.
+- **Gotchas**: banner `<img>` chỉ tham chiếu `logo-light.svg`/`logo-dark.svg` qua `app.js` (theme toggle) và `favicon.*` trong `index.html`; không file nào ngoài đó dependency vào bộ logo. Script trace/export tạm KHÔNG lưu vào repo (Test Lifecycle Rule) — cần tái tạo thì chạy lại từ ảnh gốc `logo-original-clean.png` hoặc ảnh tham chiếu user.
+
 
