@@ -105,6 +105,9 @@ Tài liệu quy chiếu SSOT:
 ### 8. Lưu trữ Tiến trình & Ngữ cảnh Liên tục (PROJECT_CONTEXT.md)
 - Duy trì `PROJECT_CONTEXT.md` tại thư mục gốc ghi lại: mục đích dự án, kiến trúc hệ thống/file, bảng tiến độ tính năng, lưu ý kỹ thuật (Gotchas), hướng dẫn chuyển giao khi context limit.
 - BẮT BUỘC đọc file khi bắt đầu phiên và CẬP NHẬT LẠI sau khi hoàn thành mỗi yêu cầu.
+- **Chính sách Tinh gọn (Lean Context)**: Chỉ lưu giữ các vấn đề ngắn gọn trong mục "Việc Đang Mở". Ngay khi giải quyết xong (khi người dùng chuyển sang vấn đề khác hoặc bảo xong, oke, ...) thì XÓA ngay khỏi file — không ghi nhật ký sprint, không giữ lịch sử đã hoàn thành (git history là nơi lưu lịch sử).
+- **Bản đồ Code bắt buộc duy trì**: File phải có section "Bản Đồ Code" tóm tắt module/file chính + hàm quan trọng + khoảng dòng để Agent phiên sau tìm đúng chỗ cần sửa mà không phải quét lại toàn repo.
+- **Đồng bộ Sơ đồ & Cấu trúc khi Tạo/Sửa (Structural Sync - Bắt buộc)**: Khi tạo thêm file mới, hàm/module mới, hoặc di chuyển/sửa đổi cấu trúc, Agent BẮT BUỘC cập nhật đồng thời trong cùng task: (1) bản đồ code trong `PROJECT_CONTEXT.md` (module, hàm quan trọng, khoảng dòng); (2) sơ đồ kiến trúc/nghiệp vụ tương ứng qua skill `archify` (lưu `.archify/` hoặc `docs/architecture/`); (3) cây cấu trúc thư mục nếu có file mới. Không để tài liệu định vị lệch với code thực tế.
 
 ### 9. Bảo toàn Cấu hình Workspace (.code-workspace)
 - Tự động lưu/bảo toàn file `*.code-workspace` phản ánh đúng cấu trúc thư mục và thiết lập mở rộng của dự án.
