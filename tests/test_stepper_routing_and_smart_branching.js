@@ -6,7 +6,13 @@ console.log('KIEM THU: SINGLE-QUESTION STEPPER ROUTING & SMART BRANCHING');
 console.log('Chuan Google Forms / Microsoft Forms Branching & Anti-Bleed');
 console.log('===============================================================');
 
-const appJs = fs.readFileSync('public/app.js', 'utf8');
+// Sau đại tu modular (wave 1-7): logic frontend tách thành nhiều module,
+// đọc GỘP nguồn app.js + toàn bộ public/js/modules/*.js để test không phụ thuộc vị trí file.
+const readFrontendSource = () => ['public/app.js']
+  .concat(fs.readdirSync('public/js/modules').filter(f => f.endsWith('.js')).map(f => `public/js/modules/${f}`))
+  .map(f => fs.readFileSync(f, 'utf8'))
+  .join('\n');
+const appJs = readFrontendSource();
 
 // Mock DOM
 global.document = {

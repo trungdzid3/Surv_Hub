@@ -12,7 +12,7 @@
 
 ## 2. Kiến Trúc Hệ Thống & Cấu Trúc Thư Mục
 - **Backend**: Node.js + Express, SQLite WAL (migration tự động khi khởi động), Transaction ACID, Double-Entry Ledger (`point_transactions`), Engine Anti-Fraud.
-- **Frontend SPA**: Vanilla JS monolith (`public/app.js` ~20.6k dòng), Tailwind CSS CDN, Lucide Icons, Montserrat, palette Cam `#EA580C` / Trắng / Đen Obsidian (theo `DESIGN.md`).
+- **Frontend SPA**: Vanilla JS modular (đại tu 03-11-2026): `public/app.js` ~3.7k dòng (core init, theme, router, home, danh sách khảo sát, tiện ích chung) + `public/js/data/catalogs.js` (hằng danh mục, Object.freeze) + `public/js/utils.js` (VibeUtils) + 8 module miền nghiệp vụ tại `public/js/modules/` (voucherMarket, pushNotifications, walletLedger, adminConsole, forum, modalsTerms, creatorStudio, respondent + 4 module cũ customDropdown/lightboxViewer/bugReport/adminAnalytics). Pattern: `Object.assign(window.VibeApp, X)`, script thuần nạp trước app.js, late-binding qua window. Bản đồ chi tiết: `docs/CODE_MAP.md`. Tailwind CSS CDN, Lucide, Montserrat, palette Cam `#EA580C` / Trắng / Đen Obsidian (theo `DESIGN.md`).
 - **Mobile**: Capacitor Android (`android/`), đồng bộ assets bằng `npm run sync:android`.
 - **Bảo mật hiện hành**: bcrypt cost 10; JWT 7 ngày (localStorage); secrets fail-fast từ `.env` (`JWT_SECRET`, `PAYMENT_WEBHOOK_SECRET`, `PAYMENT_ACCOUNT_NUMBER`, `SEED_ACCOUNT_PASSWORDS`); CORS whitelist động (`CORS_ORIGINS`); rate-limit in-memory 300/phút API + 60/phút auth (`server/middlewares/rateLimit.js`, skip NODE_ENV=test); webhook ngân hàng so sánh `crypto.timingSafeEqual`.
 - **Quyền riêng tư dữ liệu (audit 03-11-2026)**: EMAIL TÀI KHOẢN đáp viên là PII DUY NHẤT được chuyển giao creator, và chỉ khi khảo sát bật cờ `surveys.allow_email_collection` (mặc định TẮT). Demographics chỉ dùng nội bộ; helper `_stripPrivateProfileFields()` chặn mọi đường xuất (`surveyController.js`). Hiện đang dùng Gemini chỉ kiểm duyệt diễn đàn nội bộ (không trả nội dung AI cho user).
@@ -63,25 +63,21 @@ c:\Users\Lenovo\Downloads\Linh\
 | `middlewares/auth.js` / `ipBan.js` / `rateLimit.js` | JWT + role + chặn BANNED / IP cấm / fixed-window in-memory (skip `NODE_ENV=test`) | — |
 | `db/database.js` | Schema + migrations | Bảng `migrations` idempotent (~380, try/catch từng câu), `ensureEssentialAccounts` (seed từ `SEED_ACCOUNT_PASSWORDS`) |
 
-### 3.2 Frontend — `public/app.js` (monolith ~20.6k dòng, đối tượng `VibeApp`)
-Khoảng dòng mang tính tham khảo tại v4.9.5 — tìm theo **tên hàm** chính xác hơn:
-| Khu vực | Dòng ~ | Hàm chính |
-|---|---|---|
-| Validation engine + core | 2-500 | `getDeviceFingerprint` (~556), `api()` (~430, token từ localStorage `survhub_token`) |
-| Menu tài khoản | 1311 | `renderUserProfileDropdown` |
-| Auth + điều khoản | 2410-3400 | `openAuthModal` (form đăng ký ~2548, checkbox điều khoản ~2637), `openTermsModal(event, isReadOnly)` 3177 (điều khoản v3.2, mục 5 dữ liệu cá nhân ~3278) |
-| Điều hướng + Home | 3932-4639 | `renderNavigation`, `renderHomeView`, `handleOpenSurveyFromHome` |
-| Danh sách khảo sát | 4639-5900 | `renderSurveysView` (phân trang 8 bài), `renderCompactSurveyCard`, `renderListSurveyRow` |
-| Luồng làm bài | 5921-8300 | `renderTakeSurveyView` (intro + thông báo email ~6040), `renderQuestionOptions` (6332, 12 dạng), rẽ nhánh logic (~7275+), `renderReviewSurveyView` (8150) |
-| Ví & quy đổi | 8329-9500 | `renderVoucherMarketView`, `renderWalletView` (8567), `openSwapPointsModal` (9396) |
-| Nạp Credit | 9555 | `openDepositModal` (VietQR Napas247, bonus theo bậc) |
-| Creator + analytics | 9867-11500 | `renderCreatorSurveysView`, `renderAnalyticsView` (10075), `openEditSurvey` (10156, điền lại toggle email) |
-| Studio soạn khảo sát | 11571-15000 | `renderCreateSurveyView` (11576), editor câu hỏi (12400-14200), settings: webhook + toggle email (~11907), save payload POST/PUT (~14896, kèm `allow_email_collection`) |
-| Hồ sơ 5 tab | 14989-16100 | `renderProfileView`, xác thực sinh viên `.edu.vn` (~14950+) |
-| Admin | 16157-18800 | `renderAdminOverviewView` (16157), `renderAdminPayoutsView` (16645), `renderAdminFraudView` (17065), `openAdminConsoleModal` (18046) |
-| Diễn đàn | 18860-20600 | `renderForumView`, `openCreateForumPostModal` (19734), render ảnh đính kèm |
-- **`public/js/modules/`**: `customDropdown.js` (dropdown SSOT — cấm `<select>` thô), `adminAnalyticsModule.js`, `bugReportModule.js`, `lightboxViewer.js`.
-- **`public/index.html`**: shell + footer liên hệ (244-266, 3 link pháp lý trỏ `openTermsModal`) + **cache-buster app.js dòng 554**.
+### 3.2 Frontend — kiến trúc modular (đại tu Wave 1-7 ngày 03-11-2026)
+Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng frontend — đọc file này trước khi sửa UI).
+| File | Vai trò |
+|---|---|
+| `public/app.js` (~3.7k dòng) | RestrictionEngine, core init/theme/logo/dropdown/state, router `navigate`, home, danh sách khảo sát + bộ lọc, renderNavigation, metrics, tiện ích chung (`_formatFileSize`, `compressImageFile`, `generateValidationPlaceholder`, `getYouTubeEmbedUrl`, `getLucideSvg`, alias `escapeHtml`, `copyText`) |
+| `public/js/data/catalogs.js` | `window.VibeData` (Object.freeze): 7 hằng danh mục (tỉnh thành, trường ĐH, categories, voucher catalog); back-compat `window.VIBE_*` |
+| `public/js/utils.js` | `window.VibeUtils`: `escapeHtml` canonical, `formatVND`, `refreshIcons` |
+| `modules/creatorStudio.js` (~5.6k) | Studio soạn khảo sát: question builder 12 dạng, Smart Paste, escrow, image picker, forms auth |
+| `modules/respondent.js` (~3.8k) | Runner làm bài phân đoạn + rẽ nhánh + review + hồ sơ 5 tab |
+| `modules/adminConsole.js` (~2k) | Admin overview/payouts/fraud + Fast Command Console |
+| `modules/forum.js` (~1.8k) | Diễn đàn + WYSIWYG + đính kèm + share |
+| `modules/modalsTerms.js` (~1.8k) | Auth modal, Google auth, điều khoản, streak, toast/modal/copy tiện ích |
+| `modules/wallet-ledger.js` (~1.3k) | Ví, swap Point→Credit, nạp VietQR, payout |
+| `modules/voucherMarket.js`, `pushNotifications.js`, `bugReportModule.js`, `adminAnalyticsModule.js`, `customDropdown.js`, `lightboxViewer.js` | Các miền nhỏ còn lại |
+- Quy ước module mới: Object.assign(window.VibeApp, X) + JSDoc banner + nạp trước app.js trong index.html + bump cache-buster.
 
 ### 3.3 CSDL — `server/db/vibesurvey.db` (SQLite WAL)
 `users` (PII: `demographics_json`, OTP cột, trust_score) · `surveys` (+ `allow_email_collection`) · `questions` (logic_json, is_attention_check) · `responses` (`answers_payload`, quality_score) · `point_transactions` (sổ cái kép, 7 loại tx) · `deposit_orders` · `payout_requests` · `fraud_logs` / `device_ip_logs` / `banned_ips` · `registration_otps` · `voucher_campaigns` / `voucher_codes` · `forum_posts` / `forum_comments` / `forum_post_likes` · `notifications` / `push_subscriptions` / `daily_streaks` · `admin_audit_logs` / `bug_reports` / `warranty_claims` / `email_notifications_log` / `vat_invoices`.
@@ -96,7 +92,7 @@ Khoảng dòng mang tính tham khảo tại v4.9.5 — tìm theo **tên hàm** c
 4. **Creator Boost 80/20 cố định** trên toàn hệ thống, không phân biệt gói.
 5. **`normalizeFormUrl()`**: loại query rác (`?usp=sf_link`, `?fbclid`) trước khi kiểm tra trùng biểu mẫu.
 6. **Bảo vệ Admin**: mọi logic tự động khóa phải có `AND role != 'ADMIN'`.
-7. **Sau mỗi lần sửa `public/app.js`**: BẮT BUỘC nâng cache-buster tại `public/index.html` (~dòng 554, hiện `4.9.5_email_consent_security`) + chạy `npm run sync:android`.
+7. **Sau mỗi lần sửa `public/app.js` hoặc module**: BẮT BUỘC nâng cache-buster tại `public/index.html` (khối script cuối ~dòng 555-575, hiện `4.9.12_modular_wave7`) + chạy `npm run sync:android`. Sửa file module nào thì bump buster của chính file đó.
 8. **Modal điều khoản 2 chế độ**: `openTermsModal(event, isReadOnly)` — anchor ngoài luồng đăng ký (footer, trang auth) phải truyền `true`.
 9. **Test bypass chỉ khi `NODE_ENV==='test'`**: `debugOtp`, webhook payment, `depositCredit` admin check — không mở rộng bỏ kiểm sang môi trường khác.
 10. **Ràng buộc pháp lý trong code**: không được tái lập bất kỳ đường xuất dữ liệu nào đưa demographics (`__profile_*`) hoặc thông tin ngoài email (khi bật cờ) cho creator — xem mục 2 Quyền riêng tư.
@@ -114,6 +110,10 @@ Khoảng dòng mang tính tham khảo tại v4.9.5 — tìm theo **tên hàm** c
 - Hỗ trợ đáp viên & Hợp tác doanh nghiệp: `linharmykxbnvn@gmail.com`; Email phản ánh: `ngthtrung.son@gmail.com`.
 
 ## 7. Việc Đang Mở (Open Issues — xong việc nào xóa việc đó)
-1. **Điều khoản mục 2 "tịch thu số dư" trong `public/app.js` (~dòng 3241)** — CHỜ USER CHỐT CÂU CHỮ theo bản mẫu Argon (kết hợp A+B+C bỏ D, 3 khoản mẫu + 3 rủi ro production đã lưu trong git history commit 35b32b5): tạm ngưng quyền quy đổi khi trust < 40; hủy thù lao từng giao dịch REJECTED_FRAUD theo sổ cái; bảo lưu + quyền quyết toán phần dư; khiếu nại 07 ngày làm việc.
-2. **Kỹ nợ chấp nhận**: JWT lưu localStorage (đại tu auth riêng khi lên production); DB cũ còn `__profile_*` trong `answers_payload` (đã chặn xuất bằng strip runtime).
-3. **Hạng mục pháp lý dồn sang giai đoạn production** (theo chỉ đạo — đang demo nên chưa làm): thành lập pháp nhân + công bố MST/SĐT footer + thông báo/đăng ký Bộ Công Thương; trang Chính sách bảo mật riêng; API xóa tài khoản/xuất dữ liệu; nhật ký hệ thống ≥ 12 tháng; chi tiết tại `BAO_CAO_AUDIT_PHAP_LY_VN.md`.
+1. **Điều khoản mục 2 "tịch thu số dư"** (sau Wave 5 nằm tại `public/js/modules/modalsTerms.js`, khối openTermsModal) — CHỜ USER CHỐT CÂU CHỮ theo bản mẫu Argon (kết hợp A+B+C bỏ D, mẫu đã lưu trong git history commit 35b32b5): tạm ngưng quyền quy đổi khi trust < 40; hủy thù lao từng giao dịch REJECTED_FRAUD theo sổ cái; bảo lưu + quyền quyết toán phần dư; khiếu nại 07 ngày làm việc.
+2. **BẢO MẬT KHẨN - chờ user quyết (audit 03-11-2026)**: (a) PII `Danh Sách Email Sinh Viên.docx` ĐÃ untrack local nhưng VẪN nằm trong lịch sử git đã push lên GitHub public (trungdzid3/Surv_Hub, commit bece397) → cần `git filter-repo`/BFG + force-push + liên hệ GitHub Support xóa cache, và user nên chuyển repo private tạm; (b) mật khẩu thật từng commit trong lịch sử (`scripts/clean_database.js`, JWT/webhook secret mặc định cũ ở commit fb78956 trở về trước) → ĐỔI mật khẩu Gmail cá nhân + xoay `JWT_SECRET`/`PAYMENT_WEBHOOK_SECRET` trong `.env` nếu chưa; (c) xóa `quickAdminLogin` (creds cứng trong app bundle — hiện ở modules/adminConsole.js).
+3. **Vuln runtime chưa sửa (chờ duyệt)**: rate-limit lấy XFF do client kiểm soát (`server/middlewares/rateLimit.js:9` — nên dùng CF-Connecting-IP); trả OTP trong response khi gửi mail fail (`authController.js:137`); OTP dùng Math.random + không đếm lần thử sai; SSRF webhookService (thiếu DNS lookup như formParserService); upload ảnh nặc danh 10MB không kiểm magic byte; cụm cổng hậu `NODE_ENV=test` (walletController/ledgerService/authController) — cần gate theo allow-list + tách biến `ENABLE_TEST_HOOKS`.
+4. **Review frontend chưa sửa (READ-ONLY 03-11)**: P0-1 màu semantic ngoài palette light mode (~700 class emerald/red/amber/indigo); P0-2 tương phản WCAG (#EA580C trên trắng 3.6:1 → nên #C2410C cho text nhỏ); P1 gradient/glow trên CTA + card; P1-3 customDropdown thiếu điều hướng bàn phím/ARIA; P1-4 nút icon-only thiếu aria-label; P2 transition:all (6 chỗ styles.css + 341 class), leak visibilitychange (ĐÃ FIX trong pushNotifications.js Wave 1), thiếu prefers-reduced-motion. Chi tiết file:line trong báo cáo phiên 03-11.
+5. **Kỹ nợ chấp nhận**: JWT lưu localStorage (đại tu auth riêng khi lên production); DB cũ còn `__profile_*` trong `answers_payload` (đã chặn xuất bằng strip runtime).
+6. **Hạng mục pháp lý dồn sang giai đoạn production** (theo chỉ đạo — đang demo nên chưa làm): thành lập pháp nhân + công bố MST/SĐT footer + thông báo/đăng ký Bộ Công Thương; trang Chính sách bảo mật riêng; API xóa tài khoản/xuất dữ liệu; nhật ký hệ thống ≥ 12 tháng; chi tiết tại `BAO_CAO_AUDIT_PHAP_LY_VN.md`.
+7. **Follow-up modular (không khẩn)**: thay dần 84 chỗ `.toLocaleString('vi-VN')` bằng `VibeUtils.formatVND` và 66 chỗ `lucide.createIcons()` bằng `VibeUtils.refreshIcons` (danh sách trong `docs/CODE_MAP.md`).

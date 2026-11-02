@@ -5,13 +5,13 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 - [x] Wave 0: Dọn dẹp + bảo mật hygiene: untrack PII docx (KHẨN - repo GitHub public), .gitignore chặn PII, vệ sinh mật khẩu clean_database.js, xóa 10 script one-off + .archify + .pdf-build + backup cũ + PDF superseded | [Orchestrator + senior-coder]
 - [x] Wave 0b: Test registry: xóa test chết/one-off/live-service, đăng ký 5 suite PASS (tầng 18-22), cơ chế tự dọn tests/reports/ khi PASS | [Orchestrator]
 - [x] Wave 1: catalogs.js (7 hằng danh mục, Object.freeze) + utils.js (escapeHtml/formatVND/refreshIcons) + hợp nhất 3 cặp hàm trùng + voucherMarket.js + pushNotifications.js (fix rò rỉ visibilitychange) + docs/CODE_MAP.md + cache-buster 4.9.6. app.js 20.612 -> 19.685 dòng. npm test 22/22 PASS (18.96s) | [senior-coder + Orchestrator QA]
-- [ ] Wave 2: tách modules/wallet-ledger.js (~1.3k: ví, swap, nạp VietQR) | [senior-coder] | [Locked: public/app.js, public/js/modules/wallet-ledger.js, public/index.html, docs/CODE_MAP.md]
-- [ ] Wave 3: tách modules/admin-console.js (~2k: overview, payouts, fraud, console) | [senior-coder]
-- [ ] Wave 4: tách modules/forum.js (~1.8k: diễn đàn + WYSIWYG + đính kèm + admin sub-nav) | [senior-coder]
-- [ ] Wave 5: tách modules/modals-terms.js (~1.7k: auth modal, google auth, điều khoản, toast/modal utils) | [senior-coder]
-- [ ] Wave 6: tách modules/creator-studio.js (~4.8k: studio, image picker, forms auth, escrow, builder, smart paste) | [senior-coder]
-- [ ] Wave 7: tách modules/respondent.js (~3.9k: runner + review + hồ sơ 5 tab) | [senior-coder]
-- [ ] Wave 8: QA tổng + CODE_MAP chốt + PROJECT_CONTEXT cập nhật + báo cáo nghiệm thu | [Orchestrator]
+- [x] Wave 2: tách modules/wallet-ledger.js (1.331 dòng, 22 hàm) — app.js 18.387 | commit 5cf54d3
+- [x] Wave 3: tách modules/adminConsole.js (2.005 dòng, 21 hàm + 3 state) — app.js 16.419 | commit 241256c
+- [x] Wave 4: tách modules/forum.js (1.792 dòng, 30 hàm) — app.js 14.674 | commit 0a65b5b
+- [x] Wave 5: tách modules/modalsTerms.js (1.766 dòng, 36 hàm: auth modal + điều khoản + streak + tiện ích modal) — app.js 12.963 | commit ba94d26
+- [x] Wave 6: tách modules/creatorStudio.js (5.612 dòng, 113 hàm) — app.js 7.499 | commit 1374636
+- [x] Wave 7: tách modules/respondent.js (3.824 dòng, 33 hàm: runner + review + hồ sơ) — app.js 3.736 ĐẠT KPI ~4k; fix test tầng 16 đọc nguồn gộp modules
+- [x] Wave 8: QA tổng: npm test 22/22 PASS; QA bot headless Playwright 7/7 kịch bản PASS, 0 console error (auth, studio, làm bài, anti-fraud, ví, diễn đàn, responsive); sync android; PROJECT_CONTEXT + CODE_MAP chốt; push toàn bộ
 
 ## Sprint 03-11-2026 (Buổi 2): Fix layout filter bar + modal điều khoản read-only (phiên khác đã hoàn thành)
 
