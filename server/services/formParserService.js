@@ -95,6 +95,37 @@ class FormParserService {
   }
 
   /**
+   * Chuẩn hóa URL biểu mẫu:
+   * Chuyển đổi link thiết kế / chia sẻ Microsoft Forms (DesignPageV2.aspx, DesignPage.aspx, ShareFormPage)
+   * sang đường dẫn phản hồi công khai chuẩn: ResponsePage.aspx?id=...
+   */
+  normalizeFormUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+    try {
+      const trimmed = rawUrl.trim();
+      const parsed = new URL(trimmed);
+      const lowerHref = parsed.href.toLowerCase();
+      const lowerPath = (parsed.pathname || '').toLowerCase();
+      if (
+        lowerPath.includes('designpagev2.aspx') ||
+        lowerPath.includes('designpage.aspx') ||
+        lowerHref.includes('shareformpage') ||
+        lowerHref.includes('designpage')
+      ) {
+        const formId = parsed.searchParams.get('id');
+        if (formId) {
+          const hostname = parsed.hostname.toLowerCase();
+          const targetHost = (hostname === 'forms.office.com') ? 'forms.office.com' : 'forms.cloud.microsoft';
+          return `https://${targetHost}/Pages/ResponsePage.aspx?id=${formId}`;
+        }
+      }
+      return trimmed;
+    } catch (e) {
+      return rawUrl;
+    }
+  }
+
+  /**
    * 1. Kiểm tra an toàn URL chống SSRF (Đồng bộ)
    * Chặn triệt để IP nội bộ (127.0.0.1, localhost, 10.x, 192.168.x, 169.254.x)
    * Chỉ cho phép Whitelist domain chính chủ: docs.google.com, forms.gle, forms.office.com, forms.cloud.microsoft
@@ -104,9 +135,11 @@ class FormParserService {
       throw new Error('Vui lòng cung cấp đường dẫn URL biểu mẫu hợp lệ');
     }
 
+    const normalizedUrl = this.normalizeFormUrl(rawUrl);
+
     let parsed;
     try {
-      parsed = new URL(rawUrl.trim());
+      parsed = new URL(normalizedUrl.trim());
     } catch (e) {
       throw new Error('Định dạng URL không hợp lệ');
     }
@@ -1581,13 +1614,16 @@ class FormParserService {
 
         const hasOp = target.RestrictionOperator !== undefined || target.restrictionOperator !== undefined ||
           target.Operator !== undefined || target.operator !== undefined ||
-          target.Rule !== undefined || target.rule !== undefined || target.op !== undefined;
+          target.Rule !== undefined || target.rule !== undefined || target.op !== undefined ||
+          target.NumberValidationRule !== undefined || target.numberValidationRule !== undefined;
         const hasType = target.RestrictionType !== undefined || target.restrictionType !== undefined ||
           target.Type !== undefined || target.type !== undefined;
         const hasVal = target.RestrictionValue1 !== undefined || target.Operand1 !== undefined ||
           target.Value1 !== undefined || target.Min !== undefined || target.min !== undefined ||
-          target.Operands !== undefined || target.operands !== undefined;
-        if (hasOp || (hasType && hasVal) || target.Type === 1 || target.type === 1 || target.type === 'NUMBER') {
+          target.Operands !== undefined || target.operands !== undefined ||
+          target.numberMinBoundary !== undefined || target.NumberMinBoundary !== undefined ||
+          target.numberMaxBoundary !== undefined || target.NumberMaxBoundary !== undefined;
+        if (hasOp || (hasType && hasVal) || target.Type === 1 || target.type === 1 || target.type === 'NUMBER' || target.IsNumber === true || target.isNumber === true) {
           restrictionsList.push(target);
         }
       }
@@ -1607,10 +1643,12 @@ class FormParserService {
       let v1 = undefined;
       let v2 = undefined;
 
-      const getVal1 = (obj) => obj.RestrictionValue1 ?? obj.restrictionValue1 ?? obj.RestrictionOperand1 ?? obj.restrictionOperand1 ??
+      const getVal1 = (obj) => obj.numberMinBoundary ?? obj.NumberMinBoundary ??
+        obj.RestrictionValue1 ?? obj.restrictionValue1 ?? obj.RestrictionOperand1 ?? obj.restrictionOperand1 ??
         obj.Min ?? obj.min ?? obj.MinValue ?? obj.minValue ?? obj.lowerBound ?? obj.LowerBound ??
         obj.Operand1 ?? obj.operand1 ?? obj.Value1 ?? obj.value1 ?? obj.Value ?? obj.value ?? obj.FirstValue ?? obj.firstValue;
-      const getVal2 = (obj) => obj.RestrictionValue2 ?? obj.restrictionValue2 ?? obj.RestrictionOperand2 ?? obj.restrictionOperand2 ??
+      const getVal2 = (obj) => obj.numberMaxBoundary ?? obj.NumberMaxBoundary ??
+        obj.RestrictionValue2 ?? obj.restrictionValue2 ?? obj.RestrictionOperand2 ?? obj.restrictionOperand2 ??
         obj.Max ?? obj.max ?? obj.MaxValue ?? obj.maxValue ?? obj.upperBound ?? obj.UpperBound ??
         obj.Operand2 ?? obj.operand2 ?? obj.Value2 ?? obj.value2 ?? obj.SecValue ?? obj.secValue ??
         obj.SecondaryValue ?? obj.secondaryValue ?? obj.SecondValue ?? obj.secondValue;
@@ -1687,7 +1725,11 @@ class FormParserService {
             r.restrictionOperator !== undefined ? r.restrictionOperator : (
               r.Rule !== undefined ? r.Rule : (
                 r.rule !== undefined ? r.rule : (
-                  r.op !== undefined ? r.op : ''
+                  r.NumberValidationRule !== undefined ? r.NumberValidationRule : (
+                    r.numberValidationRule !== undefined ? r.numberValidationRule : (
+                      r.op !== undefined ? r.op : ''
+                    )
+                  )
                 )
               )
             )
@@ -2229,7 +2271,7 @@ class FormParserService {
       options = choicesList;
     }
     // 6. Section / Mục (Phân đoạn)
-    else if (lowerType.includes('section') || lowerType.includes('page') || lowerType.includes('group')) {
+    else if (lowerType.includes('section') || lowerType.includes('page') || lowerType.includes('group') || lowerType.includes('columngroup')) {
       questionType = 'SECTION_HEADER';
       options = null;
     }
@@ -2328,7 +2370,9 @@ class FormParserService {
         const optLabel = getChoiceLabel(c);
         if (!optLabel) return;
 
-        let target = c.nextQuestionId ?? c.NextQuestionId ?? c.branchTo ?? c.BranchTo ?? c.targetQuestionId ?? c.TargetQuestionId ?? c.target ?? c.Target ?? null;
+        let target = c.BranchInfo?.TargetQuestionId ?? c.branchInfo?.targetQuestionId ??
+          c.nextQuestionId ?? c.NextQuestionId ?? c.branchTo ?? c.BranchTo ??
+          c.targetQuestionId ?? c.TargetQuestionId ?? c.target ?? c.Target ?? null;
 
         if (target === null || target === undefined || target === '') {
           const choiceId = c.id ?? c.Id;
@@ -2375,9 +2419,15 @@ class FormParserService {
 
     // Trích xuất điều hướng mặc định cho SECTION_HEADER trong Microsoft Forms
     if (questionType === 'SECTION_HEADER') {
-      const nextQId = q.nextQuestionId ?? q.NextQuestionId ?? questionInfoObj?.NextQuestionId ?? questionInfoObj?.nextQuestionId ?? null;
-      if (nextQId !== null && nextQId !== undefined && nextQId !== '') {
-        const tgtStr = String(nextQId).trim();
+      res.is_required = 0;
+      res.rows = [subtitle || ''];
+
+      const branchTarget = questionInfoObj?.BranchInfo?.TargetQuestionId ??
+                           questionInfoObj?.branchInfo?.targetQuestionId ??
+                           q.nextQuestionId ?? q.NextQuestionId ??
+                           questionInfoObj?.NextQuestionId ?? questionInfoObj?.nextQuestionId ?? null;
+      if (branchTarget !== null && branchTarget !== undefined && branchTarget !== '') {
+        const tgtStr = String(branchTarget).trim();
         if (tgtStr === '-1' || tgtStr.toLowerCase() === 'submit' || tgtStr.toLowerCase() === 'endofform') {
           res.logic = res.logic || {};
           res.logic.default_action = 'SUBMIT_FORM';
@@ -2486,7 +2536,10 @@ class FormParserService {
             if (apiData.title) title = apiData.title;
             if (apiData.description) description = apiData.description;
 
-            const rawQuestions = [...(apiData.questions || [])].sort((a, b) => (a.order || 0) - (b.order || 0));
+            const rawQuestions = [
+              ...(Array.isArray(apiData.descriptiveQuestions) ? apiData.descriptiveQuestions : []),
+              ...(Array.isArray(apiData.questions) ? apiData.questions : [])
+            ].sort((a, b) => (a.order || 0) - (b.order || 0));
             const getChoiceLabel = (c) => {
               if (!c) return '';
               if (typeof c === 'string') return c.trim();
@@ -2634,7 +2687,10 @@ class FormParserService {
       if (formData.title) title = formData.title;
       if (formData.description) description = formData.description;
 
-      const rawQuestions = formData.questions || formData.items || [];
+      const rawQuestions = [
+        ...(Array.isArray(formData.descriptiveQuestions) ? formData.descriptiveQuestions : []),
+        ...(Array.isArray(formData.questions) ? formData.questions : (formData.items || []))
+      ].sort((a, b) => (a.order || 0) - (b.order || 0));
       const groupedMatrix = new Map();
       let qIndex = 1;
 
@@ -2709,7 +2765,7 @@ class FormParserService {
    * Chống SSRF toàn diện: Giám sát từng bước chuyển hướng (Redirect Validation), chặn IP nội bộ & giới hạn dung lượng
    */
   async parseFromUrl(rawUrl, customCookie = null, userAccessToken = null) {
-    let currentUrl = (rawUrl || '').trim();
+    let currentUrl = this.normalizeFormUrl(rawUrl || '').trim();
 
     const formIdInfo = this.extractGoogleFormId(currentUrl);
 
@@ -2822,7 +2878,7 @@ class FormParserService {
           }
 
           // Chuyển hướng sang URL mới, vòng lặp tiếp theo sẽ kiểm tra validateFormUrlAsync(nextUrl)
-          currentUrl = nextUrl;
+          currentUrl = this.normalizeFormUrl(nextUrl);
           continue;
         }
 

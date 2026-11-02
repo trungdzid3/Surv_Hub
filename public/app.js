@@ -10985,15 +10985,55 @@ if (totalCount === 0) {
     if (menu) menu.classList.add('hidden');
   },
 
+  normalizeMsFormsUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
+    const trimmed = rawUrl.trim();
+    if (/(?:DesignPageV2\.aspx|DesignPage\.aspx)/i.test(trimmed)) {
+      let formId = null;
+      try {
+        const u = new URL(trimmed);
+        formId = u.searchParams.get('id');
+        if (!formId && u.hash) {
+          const hashParams = new URLSearchParams(u.hash.replace(/^#/, ''));
+          formId = hashParams.get('id');
+        }
+      } catch (e) {
+        // Fallback regex
+      }
+      if (!formId) {
+        const match = trimmed.match(/[?&#]id=([^&#]+)/i);
+        if (match) formId = decodeURIComponent(match[1]);
+      }
+      if (formId) {
+        return `https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=${formId}`;
+      }
+    }
+    return trimmed;
+  },
+
+  async handleImportSubmit(customUrl) {
+    const urlInput = document.getElementById('fast-form-url');
+    let raw = (typeof customUrl === 'string' && customUrl.trim()) ? customUrl.trim() : (urlInput?.value?.trim() || this.state.externalFormUrl || '');
+    if (raw) {
+      const normalized = this.normalizeMsFormsUrl(raw);
+      this.state.externalFormUrl = normalized;
+      if (urlInput) urlInput.value = normalized;
+    }
+    return this.syncExternalForm();
+  },
 
   async syncExternalForm() {
     const urlInput = document.getElementById('fast-form-url');
-    const url = urlInput?.value?.trim() || this.state.externalFormUrl;
+    let url = urlInput?.value?.trim() || this.state.externalFormUrl;
     if (!url) {
       this.showToast('Vui lòng dán đường link Google Forms hoặc Microsoft Forms vào ô!', 'warning');
       urlInput?.focus();
       return;
     }
+
+    url = this.normalizeMsFormsUrl(url);
+    if (urlInput) urlInput.value = url;
+    this.state.externalFormUrl = url;
 
     const btn = document.getElementById('sync-external-form-btn');
     const oldBtnHtml = btn ? btn.innerHTML : '';
@@ -11025,24 +11065,47 @@ if (totalCount === 0) {
       this.state.externalFormUrl = url;
 
       if (Array.isArray(data.questions) && data.questions.length > 0) {
-        this.state.builderQuestions = data.questions.map((q, idx) => ({
-          id: q.id || `q_${idx + 1}`,
-          type: q.type || 'SINGLE_CHOICE',
-          content: q.content || '',
-          options: Array.isArray(q.options) ? q.options : [],
-          rows: Array.isArray(q.rows) ? q.rows : [],
-          columns: Array.isArray(q.columns) ? q.columns : [],
-          min_label: (q.min_label !== undefined && q.min_label !== null) ? q.min_label : (q.type === 'LINEAR_SCALE' ? 'Rất không hài lòng' : null),
-          max_label: (q.max_label !== undefined && q.max_label !== null) ? q.max_label : (q.type === 'LINEAR_SCALE' ? 'Rất hài lòng' : null),
-          is_required: q.is_required !== 0 && q.is_required !== false,
-          is_screener: false,
-          qualifying_answer: null,
-          image_url: q.image_url || null,
-          placeholder: q.placeholder || null,
-          description: q.description || null,
-          validation: q.validation || (q.logic && q.logic.validation ? q.logic.validation : null),
-          logic: q.logic || (q.validation ? { validation: q.validation } : null)
-        }));
+        this.state.builderQuestions = data.questions.map((q, idx) => {
+          let validation = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+          if (validation) {
+            validation = { ...validation };
+            const vRule = String(validation.rule || '').toUpperCase();
+            if (vRule === 'BETWEEN' || (validation.min !== undefined && validation.max !== undefined && validation.min !== null && validation.max !== null && String(validation.min).trim() !== '' && String(validation.max).trim() !== '')) {
+              validation.type = 'NUMBER';
+              validation.rule = 'BETWEEN';
+            }
+          }
+
+          let logic = q.logic ? { ...q.logic } : {};
+          if (validation) {
+            logic.validation = { ...validation };
+          }
+
+          let rows = Array.isArray(q.rows) ? [...q.rows] : [];
+          if (q.type === 'SECTION_HEADER' && rows.length === 0) {
+            if (q.description) rows = [q.description];
+            else if (q.subtitle) rows = [q.subtitle];
+          }
+
+          return {
+            id: q.id || `q_${idx + 1}`,
+            type: q.type || 'SINGLE_CHOICE',
+            content: q.content || '',
+            options: Array.isArray(q.options) ? q.options : [],
+            rows,
+            columns: Array.isArray(q.columns) ? q.columns : [],
+            min_label: (q.min_label !== undefined && q.min_label !== null) ? q.min_label : (q.type === 'LINEAR_SCALE' ? 'Rất không hài lòng' : null),
+            max_label: (q.max_label !== undefined && q.max_label !== null) ? q.max_label : (q.type === 'LINEAR_SCALE' ? 'Rất hài lòng' : null),
+            is_required: q.type === 'SECTION_HEADER' ? false : (q.is_required !== 0 && q.is_required !== false),
+            is_screener: false,
+            qualifying_answer: null,
+            image_url: q.image_url || null,
+            placeholder: q.placeholder || null,
+            description: q.description || (q.type === 'SECTION_HEADER' && rows.length > 0 ? rows[0] : null),
+            validation: validation || null,
+            logic: Object.keys(logic).length > 0 ? logic : null
+          };
+        });
 
         this.haptic('success');
         this.showToast(`Đã đồng bộ thành công ${this.state.builderQuestions?.length || 0} câu hỏi từ ${serviceName}!`, 'success');
@@ -11784,6 +11847,8 @@ if (totalCount === 0) {
                              placeholder="Dán liên kết: https://docs.google.com/forms/d/... hoặc forms.gle/..." 
                              value="${this.state.externalFormUrl || ''}"
                              oninput="VibeApp.state.externalFormUrl = this.value"
+                             onchange="this.value = VibeApp.normalizeMsFormsUrl ? VibeApp.normalizeMsFormsUrl(this.value) : this.value; VibeApp.state.externalFormUrl = this.value"
+                             onpaste="setTimeout(() => { if (VibeApp.normalizeMsFormsUrl) { this.value = VibeApp.normalizeMsFormsUrl(this.value); VibeApp.state.externalFormUrl = this.value; } }, 10)"
                              autocomplete="off" spellcheck="false"
                              class="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all">
                     </div>
@@ -12818,7 +12883,8 @@ if (totalCount === 0) {
             id: entry.item.id,
             num: secNum,
             title: secTitle,
-            idx: entry.idx
+            idx: entry.idx,
+            item: entry.item
           };
         });
 
@@ -12829,7 +12895,14 @@ if (totalCount === 0) {
       if (curAction === 'SUBMIT_FORM' || curAction === 'SUBMIT') {
         curSecLabel = 'Gửi biểu mẫu';
       } else if (curAction === 'GO_TO_PAGE' && curTarget) {
-        const found = otherSections.find(s => String(s.id) === String(curTarget) || String(s.idx) === String(curTarget));
+        const found = otherSections.find(s => 
+          String(s.id) === String(curTarget) || 
+          String(s.idx) === String(curTarget) || 
+          (s.item && String(s.item.order_index) === String(curTarget)) || 
+          (s.item && String(s.item.origin_id) === String(curTarget)) || 
+          String(curTarget).endsWith(`:${s.idx}`) || 
+          String(curTarget).endsWith(`:${s.item?.order_index}`)
+        );
         if (found) {
           curSecLabel = `Chuyển đến Mục ${found.num}: ${found.title}`;
         }
@@ -12850,7 +12923,7 @@ if (totalCount === 0) {
                       oninput="VibeApp.updateStudioSectionDesc(${qIdx}, this.value)" 
                       autocomplete="off" spellcheck="false"
                       placeholder="Nhập phần giải thích, hướng dẫn hoặc lưu ý cho đáp viên khi bắt đầu phần này..." 
-                      class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs text-stone-800 dark:text-stone-200 focus:border-orange-600 focus:outline-none h-16 resize-none">${(q.rows && q.rows[0]) ? q.rows[0].replace(/"/g, '&quot;') : ''}</textarea>
+                      class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs text-stone-800 dark:text-stone-200 focus:border-orange-600 focus:outline-none h-16 resize-none">${(q.rows && q.rows[0]) ? q.rows[0].replace(/"/g, '&quot;') : (q.description ? q.description.replace(/"/g, '&quot;') : '')}</textarea>
           </div>
 
           <!-- Thanh Cấu Hình Điều Hướng Chân Phân Đoạn Chuẩn Microsoft / Google Forms -->
@@ -12880,7 +12953,14 @@ if (totalCount === 0) {
 
                 <!-- 2. Danh sách các Mục khác -->
                 ${otherSections.map(sec => {
-                  const isCur = curAction === 'GO_TO_PAGE' && (String(curTarget) === String(sec.id) || String(curTarget) === String(sec.idx));
+                  const isCur = curAction === 'GO_TO_PAGE' && (
+                    String(curTarget) === String(sec.id) || 
+                    String(curTarget) === String(sec.idx) || 
+                    (sec.item && String(sec.item.order_index) === String(curTarget)) || 
+                    (sec.item && String(sec.item.origin_id) === String(curTarget)) || 
+                    String(curTarget).endsWith(`:${sec.idx}`) || 
+                    String(curTarget).endsWith(`:${sec.item?.order_index}`)
+                  );
                   const optText = `Chuyển đến Mục ${sec.num}: ${sec.title}`;
                   return `
                     <button type="button" 
@@ -13509,10 +13589,11 @@ if (totalCount === 0) {
       q.content = val;
 
       if (['SHORT_TEXT', 'PARAGRAPH'].includes(q.type)) {
-        const curType = q.validation?.type;
-        const curRule = q.validation?.rule;
+        const curVal = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
+        const curType = curVal?.type;
+        const curRule = curVal?.rule ? String(curVal.rule).toUpperCase() : '';
         // Bảo toàn dải số BETWEEN đã có, không bao giờ bị ghi đè thành IS_NUMBER
-        if (curType === 'NUMBER' && curRule === 'BETWEEN') {
+        if (curType === 'NUMBER' && (curRule === 'BETWEEN' || (curVal.min !== undefined && curVal.max !== undefined && String(curVal.min).trim() !== '' && String(curVal.max).trim() !== ''))) {
           return;
         }
         const engine = (typeof window !== 'undefined' && window.RestrictionEngine) ? window.RestrictionEngine : (typeof RestrictionEngine !== 'undefined' ? RestrictionEngine : null);
@@ -13727,14 +13808,30 @@ if (totalCount === 0) {
     if (valType === 'NUMBER') {
       if (detectedRange) {
         valRule = 'BETWEEN';
+      } else if (valRule === 'BETWEEN' || (hasMin && hasMax)) {
+        valRule = 'BETWEEN';
       } else if (!valRule) {
-        valRule = (hasMin && hasMax) ? 'BETWEEN' : 'IS_NUMBER';
+        valRule = 'IS_NUMBER';
       }
     } else if (valType === 'LENGTH') {
       if (!valRule) valRule = 'MAX_LENGTH';
     }
     const valMin = hasMin ? val.min : (detectedRange ? detectedRange.min : '');
     const valMax = hasMax ? val.max : (detectedRange ? detectedRange.max : '');
+
+    // Đồng bộ ngược lại object câu hỏi để tránh mất min/max/rule khi render
+    if (valType === 'NUMBER' && valRule === 'BETWEEN') {
+      val.type = 'NUMBER';
+      val.rule = 'BETWEEN';
+      if (valMin !== '') val.min = valMin;
+      if (valMax !== '') val.max = valMax;
+      if (!val.placeholder || val.placeholder === 'Giá trị phải là một số') {
+        val.placeholder = this.generateValidationPlaceholder(val);
+      }
+      q.validation = { ...val };
+      if (!q.logic) q.logic = {};
+      q.logic.validation = { ...val };
+    }
 
     const valTypeMap = {
       NONE: 'Không giới hạn',
@@ -14028,6 +14125,7 @@ if (totalCount === 0) {
   updateStudioSectionDesc(qIdx, text) {
     if (this.state.builderQuestions && this.state.builderQuestions[qIdx]) {
       this.state.builderQuestions[qIdx].rows = [text || ''];
+      this.state.builderQuestions[qIdx].description = text || '';
     }
   },
 
@@ -14618,7 +14716,13 @@ if (totalCount === 0) {
     const title = document.getElementById('fast-title')?.value?.trim() || this.state.draftTitle || '';
     const desc = document.getElementById('fast-desc')?.value?.trim() || this.state.draftDesc || '';
     const category = document.getElementById('fast-category')?.value || this.state.draftCategory || 'Thị trường';
-    const formUrl = document.getElementById('fast-form-url')?.value?.trim();
+    let formUrl = document.getElementById('fast-form-url')?.value?.trim();
+    if (formUrl) {
+      formUrl = this.normalizeMsFormsUrl(formUrl);
+      const urlInput = document.getElementById('fast-form-url');
+      if (urlInput) urlInput.value = formUrl;
+      this.state.externalFormUrl = formUrl;
+    }
     const webhookUrl = document.getElementById('fast-google-sheets-url')?.value?.trim();
     const currentTab = this.state.createSurveyTab || 'BUILDER';
     const calc = this.calculateStudioEscrow();
@@ -14674,6 +14778,11 @@ if (totalCount === 0) {
         if (['CHOICE_GRID', 'CHECKBOX_GRID'].includes(q.type)) {
           validRows = (q.rows || []).map(r => (r || '').trim()).filter(Boolean);
           validCols = (q.columns || []).map(c => (c || '').trim()).filter(Boolean);
+        } else if (['SECTION_HEADER', 'TEXT_BLOCK'].includes(q.type)) {
+          validRows = (q.rows || []).map(r => (r || '').trim()).filter(Boolean);
+          if (validRows.length === 0 && q.description) {
+            validRows = [String(q.description).trim()];
+          }
         }
 
         const validationPayload = q.validation || (q.logic && q.logic.validation ? q.logic.validation : null);
@@ -14689,7 +14798,7 @@ if (totalCount === 0) {
           options: validOptions,
           rows: validRows,
           columns: validCols,
-          is_required: q.is_required !== 0 && q.is_required !== false,
+          is_required: q.type === 'SECTION_HEADER' ? false : (q.is_required !== 0 && q.is_required !== false),
           is_screener: q.is_screener === true,
           qualifying_answer: q.qualifying_answer || null,
           min_label: q.min_label || null,

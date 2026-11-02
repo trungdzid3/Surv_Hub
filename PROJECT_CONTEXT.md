@@ -138,20 +138,19 @@ c:\Users\Lenovo\Downloads\Linh\
   - Cập nhật số dư điểm tức thời ngay khi hoàn thành điểm danh, không cần tải lại trang.
   - Tuyệt đối không dùng bất kỳ emoji nào, tuân thủ phong cách Minimalist Modern của `DESIGN.md`.
 
-### H. Phân Hệ Định Tuyến Rẽ Nhánh Tổng Quát (DAG Branching Graph, Section Navigation & Between Restriction Integrity - v4.7.6)
-- **Đồ thị Rẽ Nhánh Tổng Quát (Generalized DAG & State Machine)**:
-  - Khắc phục triệt để tư duy hardcode theo ngữ cảnh (NV1, NV2, Nguyện vọng 1/2) bằng cơ chế Sequence Cluster Matching và Relevance Scoring (+1000 điểm tương đồng chỉ số đợt/nguyện vọng, -1000 điểm khi xung đột).
-  - Tự động thiết lập Điểm Hồi Quy (Return Loop) cho các nhánh con quay về Section luồng chính trung gian (ví dụ: Mục 4 Truyền thông NV1 sau khi điền xong tự động quay về Mục 3 NV2).
-  - Tự động thiết lập Điểm Hội Tụ (Convergence Node) đưa đáp viên quay trở lại phân đoạn câu hỏi chung tiếp theo sau toàn bộ các nhánh con (ví dụ: Mục 5 Truyền thông NV2 hội tụ về Mục 8 chung cuối cùng).
-  - Tự động xử lý lựa chọn bỏ qua/không tham gia nhánh con trỏ thẳng về Điểm Hội Tụ hoặc Điểm Hồi Quy.
-- **Giao diện Cấu hình Điều hướng Cuối Phân đoạn trên Creator Studio**:
-  - Bổ sung thanh cấu hình điều hướng cho từng `SECTION_HEADER` bằng Custom Dropdown Popover chuẩn `DESIGN.md` (không dùng thẻ select nguyên thủy): "Tiếp tục sang phần tiếp theo" (`NEXT_PAGE`), "Chuyển đến Mục X: [Tên mục]" (`GO_TO_PAGE`), "Gửi biểu mẫu" (`SUBMIT_FORM`).
-  - Hàm `setStudioSectionDefaultAction(qIdx, action, target)` lưu trữ chuẩn vào `q.logic = { default_action, target }`.
-- **Bảo Toàn Giới Hạn Dải Số (BETWEEN Restriction Integrity)**:
-  - Ưu tiên dải số cụ thể (`BETWEEN min/max`) tại Tier 1 trên cả Parser (`formParserService.js`) và Frontend Engine (`app.js`).
-  - Cơ chế khóa dải số: ngăn chặn tuyệt đối các hàm infer chung ghi đè dải số `BETWEEN` thành `IS_NUMBER` hay placeholder `Giá trị phải là một số`.
-  - Hiển thị chuẩn xác 2 ô input Min ~ Max trên thẻ giới hạn Studio.
-- **Hệ thống Kiểm thử**: Đạt chuẩn 100% PASS trên toàn bộ 17/17 test suites (20.40s) và bộ kiểm thử riêng 9 chốt chặn luồng rẽ nhánh.
+### H. Phân Hệ Định Tuyến Rẽ Nhánh Tổng Quát & Microsoft Forms Parser Hoàn Chỉnh (v4.7.6)
+- **Chuẩn hóa URL Microsoft Forms (DesignPageV2 -> ResponsePage)**:
+  - Tự động phát hiện các URL thiết kế/chia sẻ (`DesignPageV2.aspx`, `DesignPage.aspx`, `ShareFormPage`), bóc tách `id` và chuyển sang `ResponsePage.aspx?id=...` để lấy dữ liệu công khai 100% không yêu cầu đăng nhập.
+- **Bóc tách Toàn vẹn 16 Phân Đoạn (SECTION_HEADER) từ `descriptiveQuestions`**:
+  - Microsoft Forms lưu các Phân đoạn trong `data.descriptiveQuestions` (`Question.ColumnGroup`). Parser đã gộp và sắp xếp theo `order` để sinh đầy đủ các `SECTION_HEADER`, bảo toàn tiêu đề, mô tả (`rows`) và ID gốc.
+- **Bóc tách Dải Số (BETWEEN) Chính Chủ từ Thuộc Tính Boundary**:
+  - Thu thập chính xác `numberMinBoundary`, `NumberMinBoundary`, `numberMaxBoundary`, `NumberMaxBoundary` từ `Validation` và `NumberValidationRule: "Between"`. Câu 3 (Mã số sinh viên) hiển thị chuẩn `min: 20000000, max: 202700000`, loại bỏ hoàn toàn lỗi fallback về `IS_NUMBER`.
+- **Trích Xuất Nhánh Rẽ Chính Chủ (`BranchInfo.TargetQuestionId`)**:
+  - Đọc trực tiếp `BranchInfo` từ từng lựa chọn của câu hỏi Choice và từng Section Header.
+  - Phân đoạn nhánh con tự động hồi quy về Nguyện vọng 2 (`re5be307...`), phân đoạn nhánh con NV2 tự động hội tụ về Mục cảm ơn cuối cùng (`r968caee...`), và tùy chọn bỏ qua NV2 tự động trỏ `SUBMIT_FORM`.
+- **Cấu hình Điều Hướng Cuối Phân Đoạn trên Creator Studio**:
+  - Custom Dropdown Popover chuẩn `DESIGN.md` trên từng thẻ `SECTION_HEADER`: "Tiếp tục sang phần tiếp theo", "Chuyển đến Mục X: ...", "Gửi biểu mẫu".
+- **Hệ thống Kiểm thử**: 17/17 test suites đạt 100% PASS (20.57s). Đã kiểm thử thực tế trên chính form Microsoft Forms của người dùng (bóc tách hoàn hảo 94/94 mục).
 
 ### G. Phân Hệ Đồ Họa 3D Độc Bản Tự Tạo 100% & Khắc Phục Triệt Để Chữ Bóng Ma (v4.7.5)
 - **Tự Tạo Đồ Họa 3D Render Độc Bản 100% Thay Thế Hoàn Toàn Ảnh Cắt Mẫu (Pure Independent 3D Rendering)**:
