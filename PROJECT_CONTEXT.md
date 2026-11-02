@@ -1601,7 +1601,7 @@ c:\Users\Lenovo\Downloads\Linh\
    - **Màn hình 1: Trang Chủ Mở Đầu (`case 'home':` - `renderHomeView`)**:
      + Chuyển đổi mã từ `stitch_screens/a8f703e9f38c4f6db80c09f21abf1012_trang_chu_mo_dau.html`.
      + Hero Banner: Tiêu đề "VibeSurvey - Nền tảng Khảo Sát & Phân Tích Dữ Liệu Học Thuật & Thị Trường", thanh tìm kiếm khảo sát (`searchFromHome`), các pills danh mục tương tác nhanh (Công nghệ, Kinh doanh, Xã hội, Y tế, Tài chính, UX/UI).
-     + Showcase Card: Mẫu câu hỏi tương tác trắc nghiệm, thanh tiến độ 90%, cam kết khử gian lận AI (Speed trap, Attention check, Cronbach Alpha).
+     + Showcase Card: Đã gỡ bỏ thẻ mẫu khảo sát tương tác mô phỏng khỏi Trang Chủ theo yêu cầu, tinh gọn luồng trực tiếp tới Bento Cards và danh sách khảo sát thật.
      + Bento Feature Cards: 3 thẻ tính năng nổi bật (Dữ liệu xác thực 99.4% & khử bot AI; Đổi thưởng uy tín thẻ cào / MoMo / ngân hàng 1:1 VNĐ; Bảo trợ học thuật & Xuất file SPSS/Excel).
      + Khảo sát tiêu biểu đang mở (Trending Surveys): Nạp tự động từ danh sách khảo sát đang hoạt động (`this.state.surveys`).
      + Mạng lưới nghiên cứu đối tác (ĐHBK HN, NEU, FTU, ĐHQG TP.HCM, RMIT, ĐH Y Hà Nội) và Testimonials phản hồi sinh viên / giảng viên.
