@@ -3174,7 +3174,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     }
   },
 
-  openTermsModal(event) {
+  openTermsModal(event, isReadOnly = false) {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -3294,6 +3294,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
         </div>
 
+        ${isReadOnly ? '' : `
         <!-- Footer Actions -->
         <div class="pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
           <p class="text-[11px] text-stone-500 dark:text-stone-400 text-center sm:text-left">
@@ -3309,6 +3310,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             </button>
           </div>
         </div>
+        `}
 
       </div>
     `;
@@ -5086,6 +5088,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
               </div>
             </div>
 
+            </div>
             <!-- Cụm bên phải: Toggle Hiện bài đã làm + Vạch phân cách + Grid/List Switcher -->
             <div class="flex items-center gap-3">
               <!-- Toggle Switch Hiện bài đã làm -->

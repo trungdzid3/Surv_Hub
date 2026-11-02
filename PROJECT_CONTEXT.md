@@ -2959,4 +2959,9 @@ c:\Users\Lenovo\Downloads\Linh\
 - **Đã loại bỏ khỏi Footer** (cả bản Web `public/index.html` và bản Android `android/app/src/main/assets/public/index.html`): khối Công ty Cổ phần + MSDN 0110824688, Trụ sở Cầu Giấy, Văn phòng đại diện TP.HCM, giờ làm việc, tổng đài 1900 6868, hotline 0988.123.456, dòng Hóa đơn điện tử VAT, badge "Xuất hóa đơn VAT đầy đủ", 3 kênh Fanpage/Zalo/Telegram, đuôi "Ecosystem JSC" ở dòng bản quyền.
 - **Lưu ý**: Phần "Cấp Độ 2: Pháp Nhân & Hóa Đơn VAT" trong `public/app.js` (xác thực doanh nghiệp) là tính năng phân cấp tài khoản, KHÔNG thuộc phạm vi thông tin liên hệ — giữ nguyên.
 
+## Sprint 03-11-2026 (Buổi 2): Cân Bằng Filter Bar & Modal Điều Khoản Read-Only
+- **Fix lỗi dồn trái thanh lọc khảo sát** (`public/app.js` ~5014-5114): div "Cụm bên trái" (Lĩnh vực + Sắp xếp) thiếu thẻ đóng khiến cụm phải (Toggle "Hiện bài đã làm" + vạch phân cách + Grid/List switcher) bị lồng vào trong, `justify-between` vô hiệu. Đã chèn 1 thẻ `</div>` trước comment "Cụm bên phải" — cụm phải giờ dính sát biên phải, đối xứng cụm trái. Kiểm đếm div NET 0.
+- **Modal Điều khoản 2 chế độ** (`openTermsModal(event, isReadOnly = false)`): 5 anchor xem điều khoản (footer 264-266 + trang auth 458-459 trong `public/index.html`) truyền `true` → modal thuần nội dung, ẩn dòng "Bằng việc bấm xác nhận..." và 2 nút [Đóng]/[Tôi Đồng Ý Điều Khoản]; link trong checkbox đăng ký (`app.js` ~2640) giữ mặc định consent để nút đồng ý tick checkbox vẫn hoạt động.
+- **Đồng bộ**: `npm run sync:android` thành công; `node -c` PASS cả `public/app.js` lẫn bản Android.
+
 
