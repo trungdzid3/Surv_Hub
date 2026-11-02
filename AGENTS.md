@@ -125,6 +125,7 @@ Tài liệu quy chiếu SSOT:
   - *Hạ tầng Đám mây & Triển khai*: Oracle Always Free + Cloudflare Tunnel + `cloud-build-basics`.
 
 ### 11. Phối hợp Kỹ năng Đa tầng (Skill Orchestration Chains)
+- *Kho Kỹ năng Tập trung Duy nhất (Single Source of Truth - Antigravity Standard)*: Toàn bộ skills dùng chung được lưu trữ và cài đặt duy nhất tại `C:\Users\Lenovo\.agents\skills\`. Cả Google Antigravity và ZCode đều tự động nhận diện và nạp trực tiếp từ đây ("cài 1 được 2"). Tuyệt đối không sao chép nhân đôi thư mục sang `.zcode/skills/`.
 - *SaaS/Fintech Dashboard*: `minimalist-ui` -> `shadcn-ui` -> `digits-fintech-swiss-template` -> `emil-design-eng`.
 - *Báo cáo & Xuất bản*: `data-report` -> `minimax-docx` -> `minimax-pdf`.
 - *Kiểm thử Bảo mật & Chất lượng*: `security-audit` -> `chrome-devtools` -> `memory-leak-debugging`.
