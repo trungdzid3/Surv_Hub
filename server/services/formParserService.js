@@ -1192,15 +1192,25 @@ class FormParserService {
     let text = typeof str === 'string' ? str : '';
     if (!text && typeof str === 'object') {
       try {
-        text = JSON.stringify(str);
+        if (str.title || str.placeholder || str.subtitle || str.description) {
+          text = `${str.title || ''} ${str.subtitle || ''} ${str.placeholder || ''} ${str.description || ''}`.trim();
+        } else {
+          text = JSON.stringify(str);
+        }
       } catch (e) {
         return null;
       }
     }
     if (!text || typeof text !== 'string') return null;
 
+    // 0. Làm sạch định dạng ngày tháng và timestamp để không bị bắt nhầm dấu '-' thành khoảng số
+    const sanitizedText = text
+      .replace(/\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/g, ' ')
+      .replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{4}\b/g, ' ')
+      .replace(/\b\d{1,2}:\d{2}(?::\d{2})?\b/g, ' ');
+
     // 1. Cặp số trong mảng JSON: ["20000000", "20270000"] hoặc [20000000, 20270000]
-    const jsonArrMatch = text.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
+    const jsonArrMatch = sanitizedText.match(/\[\s*["']?(\d+(?:[.,]\d+)?)["']?\s*,\s*["']?(\d+(?:[.,]\d+)?)["']?\s*\]/);
     if (jsonArrMatch) {
       const n1 = parseFloat(jsonArrMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(jsonArrMatch[2].replace(/,/g, ''));
@@ -1221,8 +1231,8 @@ class FormParserService {
       }
     ];
     for (const pair of propPairs) {
-      const mMin = text.match(pair.min);
-      const mMax = text.match(pair.max);
+      const mMin = sanitizedText.match(pair.min);
+      const mMax = sanitizedText.match(pair.max);
       if (mMin && mMax) {
         const n1 = parseFloat(mMin[1].replace(/,/g, ''));
         const n2 = parseFloat(mMax[1].replace(/,/g, ''));
@@ -1233,8 +1243,8 @@ class FormParserService {
     }
 
     // 3. Bắt trọn mẫu tiếng Việt & tự nhiên: "số phải nằm trong khoảng từ ... đến ...", "trong khoảng ... đến ...", "từ ... ~ ..."
-    const vnPattern = /(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between|từ)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|và|va|to|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
-    const vnMatch = text.match(vnPattern);
+    const vnPattern = /(?:số\s*phải\s*nằm\s*trong\s*khoảng\s*(?:từ)?|nằm\s*trong\s*khoảng\s*(?:từ)?|trong\s*khoảng\s*(?:từ)?|khoảng\s*(?:từ)?|khoang\s*(?:tu)?|giới\s*hạn\s*(?:từ)?|between)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|và|va|to|and|~|-|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
+    const vnMatch = sanitizedText.match(vnPattern);
     if (vnMatch) {
       const n1 = parseFloat(vnMatch[1].replace(/,/g, ''));
       const n2 = parseFloat(vnMatch[2].replace(/,/g, ''));
@@ -1243,17 +1253,27 @@ class FormParserService {
       }
     }
 
-    // 4. Dải số có ký tự nối hoặc từ nối: ~, -, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, đến, den, to, và, va, and
-    const normalized = text
-      .replace(/[\uFF5E\u223C\u02DC]/g, '~')
-      .replace(/[\u2013\u2014\u2212]/g, '-')
-      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to|và|va|and)\s*(?=\d)/gi, ' ~ ')
-      .replace(/(?<=\d)\s*[-~]\s*(?=\d)/g, ' ~ ');
+    // 3b. Mẫu "từ X đến/tới Y"
+    const fromToPattern = /(?:^|[^\w])(?:từ|tu|from)\s*["']?(\d+(?:[.,]\d+)?)["']?\s*(?:đến|den|tới|toi|to|~|–|—)\s*["']?(\d+(?:[.,]\d+)?)["']?/i;
+    const fromToMatch = sanitizedText.match(fromToPattern);
+    if (fromToMatch) {
+      const n1 = parseFloat(fromToMatch[1].replace(/,/g, ''));
+      const n2 = parseFloat(fromToMatch[2].replace(/,/g, ''));
+      if (!isNaN(n1) && !isNaN(n2)) {
+        return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
+      }
+    }
 
-    const match = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
-    if (match) {
-      const n1 = parseFloat(match[1].replace(/,/g, ''));
-      const n2 = parseFloat(match[2].replace(/,/g, ''));
+    // 4. Dải số có ký tự nối hoặc từ nối rõ ràng: ~, \u2013, \u2014, \u2212, \uFF5E, \u223C, \u02DC, hoặc "X đến Y"
+    const normalized = sanitizedText
+      .replace(/[\uFF5E\u223C\u02DC]/g, '~')
+      .replace(/[\u2013\u2014\u2212]/g, '~')
+      .replace(/(?<=\d)\s*(?:đến|den|tới|toi|to)\s*(?=\d)/gi, ' ~ ');
+
+    const matchTilde = normalized.match(/(\d+(?:[.,]\d+)?)\s*~\s*(\d+(?:[.,]\d+)?)/);
+    if (matchTilde) {
+      const n1 = parseFloat(matchTilde[1].replace(/,/g, ''));
+      const n2 = parseFloat(matchTilde[2].replace(/,/g, ''));
       if (!isNaN(n1) && !isNaN(n2)) {
         return { min: Math.min(n1, n2), max: Math.max(n1, n2) };
       }
@@ -1262,13 +1282,9 @@ class FormParserService {
     return null;
   }
 
-  /**
-   * Helper trích xuất các quy tắc giới hạn (Validation / Restrictions)
-   * Áp dụng cho cả Microsoft Forms (q.questionInfo, Subtitle, Placeholder, Restrictions) và Google Forms
-   */
   _extractValidationRule({ title = '', subtitle = '', placeholder = '', description = '', questionInfoObj = null, rawRestrictions = null, rawValidationArray = null, rawQuestion = null }) {
-    const allContextText = `${title || ''} ${subtitle || ''} ${placeholder || ''} ${description || ''} ${questionInfoObj ? JSON.stringify(questionInfoObj) : ''} ${rawRestrictions ? JSON.stringify(rawRestrictions) : ''} ${rawQuestion ? JSON.stringify(rawQuestion) : ''}`;
-    const earlyRange = this.extractNumberRange(allContextText);
+    // Chỉ phân tích chuỗi người dùng nhìn thấy được, tuyệt đối không stringify rawQuestion chứa metadata ngày tháng / ID
+    const userFacingText = `${title || ''} ${subtitle || ''} ${placeholder || ''} ${description || ''}`.trim();
 
     // 1. Nếu có rawValidationArray từ Google Forms (FB_PUBLIC_LOAD_DATA_ qData[4])
     if (Array.isArray(rawValidationArray) && rawValidationArray.length > 0) {
@@ -1281,19 +1297,13 @@ class FormParserService {
 
         // 1.1 Number
         if (vType === 1) {
-          if (earlyRange) {
-            return {
-              type: 'NUMBER',
-              rule: 'BETWEEN',
-              min: earlyRange.min,
-              max: earlyRange.max,
-              placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
-              error_message: customMsg || `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
-            };
-          }
           if (opType === 7) { // Between
-            const n1 = parseFloat(operands[0]);
-            const n2 = parseFloat(operands[1]);
+            let n1 = parseFloat(operands[0]);
+            let n2 = parseFloat(operands[1]);
+            if (isNaN(n1) || isNaN(n2)) {
+              const r = this.extractNumberRange(userFacingText);
+              if (r) { n1 = r.min; n2 = r.max; }
+            }
             if (!isNaN(n1) && !isNaN(n2)) {
               const minVal = Math.min(n1, n2);
               const maxVal = Math.max(n1, n2);
@@ -1308,8 +1318,12 @@ class FormParserService {
             }
           }
           if (opType === 8) { // Not between
-            const n1 = parseFloat(operands[0]);
-            const n2 = parseFloat(operands[1]);
+            let n1 = parseFloat(operands[0]);
+            let n2 = parseFloat(operands[1]);
+            if (isNaN(n1) || isNaN(n2)) {
+              const r = this.extractNumberRange(userFacingText);
+              if (r) { n1 = r.min; n2 = r.max; }
+            }
             if (!isNaN(n1) && !isNaN(n2)) {
               const minVal = Math.min(n1, n2);
               const maxVal = Math.max(n1, n2);
@@ -1322,14 +1336,6 @@ class FormParserService {
                 error_message: customMsg || `Không nằm trong khoảng từ ${minVal} đến ${maxVal}`
               };
             }
-          }
-          if (opType === 9) { // Is number
-            return {
-              type: 'NUMBER',
-              rule: 'IS_NUMBER',
-              placeholder: 'Giá trị phải là một số',
-              error_message: customMsg || 'Giá trị phải là một số'
-            };
           }
           if (opType === 1) { // Greater than
             const min = parseFloat(operands[0]) || 0;
@@ -1391,6 +1397,26 @@ class FormParserService {
               error_message: customMsg || `Giá trị không được bằng ${val}`
             };
           }
+          if (opType === 9) { // Is number
+            // Chỉ khi tiêu đề hoặc placeholder có bẫy dải số tường minh rõ ràng
+            const explicitRange = this.extractNumberRange(userFacingText);
+            if (explicitRange) {
+              return {
+                type: 'NUMBER',
+                rule: 'BETWEEN',
+                min: explicitRange.min,
+                max: explicitRange.max,
+                placeholder: `Số phải nằm trong khoảng từ ${explicitRange.min} ~ ${explicitRange.max}`,
+                error_message: customMsg || `Số phải nằm trong khoảng từ ${explicitRange.min} đến ${explicitRange.max}`
+              };
+            }
+            return {
+              type: 'NUMBER',
+              rule: 'IS_NUMBER',
+              placeholder: 'Giá trị phải là một số',
+              error_message: customMsg || 'Giá trị phải là một số'
+            };
+          }
           if (opType === 10) { // Whole number
             return {
               type: 'NUMBER',
@@ -1447,7 +1473,7 @@ class FormParserService {
       }
     }
 
-    // 2. Thu thập và bóc tách cấu trúc Restrictions từ Microsoft Forms & Google Forms
+    // 2. Thu thập và bóc tách cấu trúc Restrictions từ Microsoft Forms
     const restrictionsList = [];
     const collectRestrictions = (target, depth = 0) => {
       if (!target || depth > 4) return;
@@ -1623,34 +1649,17 @@ class FormParserService {
         };
       }
 
-      // Nếu có earlyRange, luôn ưu tiên trả về BETWEEN
-      if (earlyRange) {
-        return {
-          type: 'NUMBER',
-          rule: 'BETWEEN',
-          min: earlyRange.min,
-          max: earlyRange.max,
-          placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
-          error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
-        };
-      }
-
-      // 2.3 BETWEEN (Toán tử 7 hoặc chuỗi chứa 'between' hoặc khi có earlyRange)
-      const isBetween = rawOp === 7 || rawOp === '7' || opStr === 'between' || opStr.includes('between');
-      if (isBetween || earlyRange) {
+      // 2.3 BETWEEN (Toán tử 7 hoặc chuỗi chứa 'between' và không phải 'notbetween')
+      const isBetween = rawOp === 7 || rawOp === '7' || (opStr.includes('between') && !opStr.includes('not'));
+      if (isBetween) {
         let n1 = parseFloat(val1);
         let n2 = parseFloat(val2);
 
         if (isNaN(n1) || isNaN(n2)) {
-          if (earlyRange) {
-            n1 = earlyRange.min;
-            n2 = earlyRange.max;
-          } else {
-            const rangeFromScan = this.extractNumberRange(`${placeholder} ${subtitle} ${description}`);
-            if (rangeFromScan) {
-              n1 = rangeFromScan.min;
-              n2 = rangeFromScan.max;
-            }
+          const rangeFromScan = this.extractNumberRange(userFacingText);
+          if (rangeFromScan) {
+            n1 = rangeFromScan.min;
+            n2 = rangeFromScan.max;
           }
         }
 
@@ -1668,29 +1677,18 @@ class FormParserService {
         }
       }
 
-      // 2.4 Nếu có cả 2 toán hạng val1 và val2 hợp lệ
-      if (val1 !== undefined && val1 !== null && val2 !== undefined && val2 !== null) {
-        const n1 = parseFloat(val1);
-        const n2 = parseFloat(val2);
-        if (!isNaN(n1) && !isNaN(n2)) {
-          const actualMin = Math.min(n1, n2);
-          const actualMax = Math.max(n1, n2);
-          return {
-            type: 'NUMBER',
-            rule: 'BETWEEN',
-            min: actualMin,
-            max: actualMax,
-            placeholder: `Số phải nằm trong khoảng từ ${actualMin} ~ ${actualMax}`,
-            error_message: `Số phải nằm trong khoảng từ ${actualMin} đến ${actualMax}`
-          };
-        }
-      }
-
-      // 2.5 NOT BETWEEN (Toán tử 8)
+      // 2.4 NOT BETWEEN (Toán tử 8 hoặc chuỗi chứa 'notbetween')
       const isNotBetween = rawOp === 8 || rawOp === '8' || opStr.includes('notbetween');
       if (isNotBetween) {
-        const n1 = parseFloat(val1);
-        const n2 = parseFloat(val2);
+        let n1 = parseFloat(val1);
+        let n2 = parseFloat(val2);
+        if (isNaN(n1) || isNaN(n2)) {
+          const rangeFromScan = this.extractNumberRange(userFacingText);
+          if (rangeFromScan) {
+            n1 = rangeFromScan.min;
+            n2 = rangeFromScan.max;
+          }
+        }
         if (!isNaN(n1) && !isNaN(n2)) {
           const actualMin = Math.min(n1, n2);
           const actualMax = Math.max(n1, n2);
@@ -1705,7 +1703,7 @@ class FormParserService {
         }
       }
 
-      // 2.6 GREATER THAN OR EQUAL (Toán tử 2)
+      // 2.5 GREATER THAN OR EQUAL (Toán tử 2)
       const isGte = rawOp === 2 || rawOp === '2' || opStr.includes('greaterthanorequal') || opStr.includes('>=') || opStr.includes('atleast');
       if (isGte) {
         const minVal = parseFloat(val1 !== undefined && val1 !== null ? val1 : val2) || 0;
@@ -1718,7 +1716,7 @@ class FormParserService {
         };
       }
 
-      // 2.7 GREATER THAN (Toán tử 1)
+      // 2.6 GREATER THAN (Toán tử 1)
       const isGt = rawOp === 1 || rawOp === '1' || (opStr.includes('greaterthan') && !opStr.includes('equal')) || (opStr.includes('>') && !opStr.includes('='));
       if (isGt) {
         const minVal = parseFloat(val1 !== undefined && val1 !== null ? val1 : val2) || 0;
@@ -1731,7 +1729,7 @@ class FormParserService {
         };
       }
 
-      // 2.8 LESS THAN OR EQUAL (Toán tử 4)
+      // 2.7 LESS THAN OR EQUAL (Toán tử 4)
       const isLte = rawOp === 4 || rawOp === '4' || opStr.includes('lessthanorequal') || opStr.includes('<=') || opStr.includes('atmost');
       if (isLte) {
         const maxVal = parseFloat(val1 !== undefined && val1 !== null ? val1 : val2) || 0;
@@ -1744,7 +1742,7 @@ class FormParserService {
         };
       }
 
-      // 2.9 LESS THAN (Toán tử 3)
+      // 2.8 LESS THAN (Toán tử 3)
       const isLt = rawOp === 3 || rawOp === '3' || (opStr.includes('lessthan') && !opStr.includes('equal')) || (opStr.includes('<') && !opStr.includes('='));
       if (isLt) {
         const maxVal = parseFloat(val1 !== undefined && val1 !== null ? val1 : val2) || 0;
@@ -1757,7 +1755,7 @@ class FormParserService {
         };
       }
 
-      // 2.10 EQUAL (Toán tử 5)
+      // 2.9 EQUAL (Toán tử 5)
       const isEq = rawOp === 5 || rawOp === '5' || (opStr.includes('equal') && !opStr.includes('not') && !opStr.includes('than'));
       if (isEq) {
         const val = parseFloat(val1) || 0;
@@ -1770,7 +1768,7 @@ class FormParserService {
         };
       }
 
-      // 2.11 NOT EQUAL (Toán tử 6)
+      // 2.10 NOT EQUAL (Toán tử 6)
       const isNeq = rawOp === 6 || rawOp === '6' || opStr.includes('notequal');
       if (isNeq) {
         const val = parseFloat(val1) || 0;
@@ -1783,23 +1781,25 @@ class FormParserService {
         };
       }
 
-      // 2.12 IS_NUMBER
+      // 2.11 IS_NUMBER (Toán tử 9)
       const isNum = rawOp === 9 || rawOp === '9' || opStr.includes('isnumber') || opStr === 'number' || ((typeStr.includes('number') || typeStr === '1' || typeStr === 1) && !opStr);
       if (isNum) {
-        if (earlyRange) {
+        // Chỉ khi trong placeholder hoặc userFacingText có dải số tường minh rõ ràng
+        const rangeInContext = this.extractNumberRange(placeholder || subtitle || description);
+        if (rangeInContext) {
           return {
             type: 'NUMBER',
             rule: 'BETWEEN',
-            min: earlyRange.min,
-            max: earlyRange.max,
-            placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
-            error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
+            min: rangeInContext.min,
+            max: rangeInContext.max,
+            placeholder: `Số phải nằm trong khoảng từ ${rangeInContext.min} ~ ${rangeInContext.max}`,
+            error_message: `Số phải nằm trong khoảng từ ${rangeInContext.min} đến ${rangeInContext.max}`
           };
         }
         fallbackIsNumber = true;
       }
 
-      // 2.13 MAX_LENGTH / LENGTH
+      // 2.12 MAX_LENGTH / LENGTH
       if (opStr.includes('maxlength') || opStr.includes('length')) {
         const maxLen = parseInt(val1 !== undefined && val1 !== null ? val1 : val2, 10) || 500;
         return {
@@ -1892,29 +1892,7 @@ class FormParserService {
       }
     }
 
-    if (earlyRange) {
-      return {
-        type: 'NUMBER',
-        rule: 'BETWEEN',
-        min: earlyRange.min,
-        max: earlyRange.max,
-        placeholder: `Số phải nằm trong khoảng từ ${earlyRange.min} ~ ${earlyRange.max}`,
-        error_message: `Số phải nằm trong khoảng từ ${earlyRange.min} đến ${earlyRange.max}`
-      };
-    }
-
-    const lateRange = this.extractNumberRange(allContextText);
-    if (lateRange) {
-      return {
-        type: 'NUMBER',
-        rule: 'BETWEEN',
-        min: lateRange.min,
-        max: lateRange.max,
-        placeholder: `Số phải nằm trong khoảng từ ${lateRange.min} ~ ${lateRange.max}`,
-        error_message: `Số phải nằm trong khoảng từ ${lateRange.min} đến ${lateRange.max}`
-      };
-    }
-
+    // 4. Nếu có fallbackIsNumber từ structured metadata mà không có range cụ thể
     if (fallbackIsNumber) {
       return {
         type: 'NUMBER',
@@ -1924,6 +1902,20 @@ class FormParserService {
       };
     }
 
+    // 5. Heuristic Fallback cuối cùng: Phân tích văn bản hiển thị thuần túy (userFacingText)
+    if (userFacingText) {
+      const textRange = this.extractNumberRange(userFacingText);
+      if (textRange) {
+        return {
+          type: 'NUMBER',
+          rule: 'BETWEEN',
+          min: textRange.min,
+          max: textRange.max,
+          placeholder: `Số phải nằm trong khoảng từ ${textRange.min} ~ ${textRange.max}`,
+          error_message: `Số phải nằm trong khoảng từ ${textRange.min} đến ${textRange.max}`
+        };
+      }
+    }
     // 4. Phân tích ngữ cảnh văn bản (Text / Subtitle / Placeholder / Title / Description)
     const combinedText = `${title} ${subtitle} ${placeholder} ${description}`.trim();
     if (!combinedText) return null;

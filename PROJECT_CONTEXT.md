@@ -2427,3 +2427,25 @@ c:\Users\Lenovo\Downloads\Linh\
 - Đồng bộ Android Capacitor: `npm run sync:android` PASS 100%.
 - Tự động commit và push lên GitHub (`origin/main`).
 
+
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: TÁI CẤU TRÚC FORM PARSER THEO CHIẾN LƯỢC ARGON (LAZY EVALUATION & SOURCE OF TRUTH HIERARCHY) (THÁNG 11/2026)
+
+### 1. Khắc Phục Triệt Để Lỗi Nhận Diện Sai Loại Giới Hạn & Nhận Diện Sai Khoảng
+- **Vấn đề đã xử lý**:
+  + Biến `earlyRange` từng bị đặt ở vị trí cưỡng chế đè lên đầu tất cả các nhánh kiểm tra của Google Forms và Microsoft Forms, ép toàn bộ câu hỏi thành `BETWEEN` dù người dùng chọn `GREATER_THAN`, `LESS_THAN`, `EQUAL`, hay `INTEGER`.
+  + Chuỗi `allContextText` trước đây stringify cả `rawQuestion`, khiến các trường ngày tháng như `"createdAt": "2026-11-02"` bị regex đổi dấu gạch ngang thành dải số `2 ~ 11` rác.
+- **Giải pháp triển khai trong `server/services/formParserService.js` theo định hướng chiến lược Argon**:
+  + **Source of Truth Hierarchy**: Tôn trọng tuyệt đối dữ liệu cấu trúc gốc từ `rawValidationArray` (Google Forms) và `restrictionsList` (Microsoft Forms). Không bao giờ cho phép nhận diện văn bản ghi đè lên loại giới hạn người dùng đã chọn.
+  + **Lazy Evaluation**: Xóa bỏ hoàn toàn `earlyRange` ở đầu hàm `_extractValidationRule`. Chỉ gọi `extractNumberRange` khi toán tử thực sự là `BETWEEN`/`NOT_BETWEEN` mà bị thiếu toán hạng, hoặc khi câu hỏi hoàn toàn không có metadata giới hạn và người dùng viết tường minh dải số trong văn bản.
+  + **Context Isolation & Date Sanitization**: Cách ly hoàn toàn `rawQuestion`, chỉ quét các trường hiển thị `title`, `subtitle`, `description`, `placeholder`. Bổ sung bước làm sạch định dạng ngày tháng (`YYYY-MM-DD`, `DD/MM/YYYY`) và timestamp trước khi phân tích số.
+
+### 2. Kiểm Chuẩn Chất Lượng & Đồng Bộ
+- Bổ sung 3 nhóm kiểm thử mở rộng trong `tests/test_range_variants.js`:
+  + Google Forms structured operators (`GREATER_THAN`, `LESS_THAN`, `EQUAL`, `INTEGER`) không bị override thành `BETWEEN`.
+  + Microsoft Forms structured operators (`GREATER_THAN`, `LESS_THAN`, `GREATER_THAN_OR_EQUAL`) không bị override.
+  + Chuỗi ngày tháng và timestamp không bị nhận diện nhầm thành khoảng số.
+- Chạy toàn diện 17/17 Test Suites (`npm test`): **100% PASS** (20.73 giây).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android`.
