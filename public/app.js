@@ -5076,17 +5076,6 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                 : 'bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200/60 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700/80'}">
                 Voucher
               </button>
-
-              ${user && user.is_student_verified === 1 ? `
-              <button onclick="VibeApp.setCategoryFilter('STUDENT_EXCHANGE')" class="rounded-full px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap cursor-pointer active:scale-95 ${this.state.categoryFilter === 'STUDENT_EXCHANGE'
-                ? 'bg-orange-600 text-white shadow-xs font-bold'
-                : 'bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200/60 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-700/80'}">
-                <span class="inline-flex items-center gap-1.5">
-                  <i data-lucide="graduation-cap" class="w-3.5 h-3.5 stroke-[2.2]"></i>
-                  <span>Trao Đổi Edu</span>
-                </span>
-              </button>
-              ` : ''}
             </div>
 
           </div>
@@ -8603,7 +8592,6 @@ if (totalCount === 0) {
     const payoutPercentRaw = (curPoints / payoutGoal) * 100;
     const payoutPercent = Math.min(100, Math.max(0.5, payoutPercentRaw)).toFixed(1).replace('.', ',');
     const progressWidth = Math.min(100, Math.max(2, payoutPercentRaw));
-    const isStudent = this.isStudentUser(this.state.currentUser);
 
     root.innerHTML = `
       <div class="space-y-6 max-w-5xl mx-auto">
@@ -8709,9 +8697,6 @@ if (totalCount === 0) {
               </button>
             </div>
           </div>
-
-          
-
         </div>
 
         <!-- KHỐI LỊCH SỬ GIAO DỊCH: TABS + TIME SELECTOR + FLAT CARDS (CHUẨN BẢN VẼ) -->
@@ -11973,9 +11958,6 @@ if (totalCount === 0) {
     }
 
     const targetN = parseInt(this.state.targetResponses, 10) || 100;
-
-
-
     const tier = this.state.creatorTier || 'PERSONAL';
 
     const floorMap = {
@@ -12180,10 +12162,6 @@ if (totalCount === 0) {
     if (!this.refreshStudioSidebarView()) {
       this.renderCreateSurveyView(document.getElementById('app-root'));
     }
-  },
-
-  toggleStudentExchange(enabled) {
-    // Karma exchange da duoc go bo
   },
 
   setStudioSlaTier(slaKey) {
@@ -18850,12 +18828,13 @@ if (totalCount === 0) {
     // Các danh mục lĩnh vực nghiên cứu đa dạng
     const categories = [
       { id: 'ALL', label: 'Tất cả lĩnh vực' },
-      { id: 'TECH', label: 'Khoa học máy tính & AI', match: ['công nghệ', 'máy tính', 'ai', 'bach khoa', 'it'] },
-      { id: 'BUSINESS', label: 'Kinh tế & Quản trị', match: ['kinh tế', 'kinh doanh', 'neu', 'ftu', 'fmcg', 'marketing'] },
-      { id: 'SOCIAL', label: 'Khoa học Xã hội & Tâm lý', match: ['xã hội', 'tâm lý', 'hành vi', 'nhân văn'] },
-      { id: 'HEALTH', label: 'Y tế & Sức khỏe cộng đồng', match: ['y tế', 'sức khỏe', 'dược', 'y học'] },
-      { id: 'DESIGN', label: 'Thiết kế & Trải nghiệm UX', match: ['thiết kế', 'ux', 'giao diện', 'đồ họa'] },
-      { id: 'EDU', label: 'Giáo dục & Đào tạo', match: ['giáo dục', 'sinh viên', 'đào tạo', 'học thuật'] }
+      { id: 'TECH', label: 'Khoa học máy tính & AI', match: ['công nghệ', 'máy tính', 'ai', 'bach khoa', 'it', 'phần mềm', 'tech'] },
+      { id: 'BUSINESS', label: 'Kinh tế & Quản trị', match: ['kinh tế', 'kinh doanh', 'neu', 'ftu', 'fmcg', 'marketing', 'tài chính', 'business', 'quản trị'] },
+      { id: 'SOCIAL', label: 'Khoa học Xã hội & Tâm lý', match: ['xã hội', 'tâm lý', 'hành vi', 'nhân văn', 'social'] },
+      { id: 'HEALTH', label: 'Y tế & Sức khỏe cộng đồng', match: ['y tế', 'sức khỏe', 'dược', 'y học', 'health'] },
+      { id: 'DESIGN', label: 'Thiết kế & Trải nghiệm UX', match: ['thiết kế', 'ux', 'giao diện', 'đồ họa', 'design', 'ui'] },
+      { id: 'EDU', label: 'Giáo dục & Đào tạo', match: ['giáo dục', 'sinh viên', 'đào tạo', 'học thuật', 'edu'] },
+      { id: 'OTHER', label: 'Đa ngành & Lĩnh vực khác', match: ['khác', 'tổng hợp', 'đa ngành', 'other'] }
     ];
 
     root.innerHTML = `
@@ -18873,7 +18852,7 @@ if (totalCount === 0) {
                   <h1 class="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-white">Diễn Đàn</h1>
                   <span id="forum-current-hub-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${filter.hub === 'STUDENT' ? 'bg-orange-600 text-white shadow-xs' : 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60'} uppercase">${filter.hub === 'STUDENT' ? 'Diễn Đàn Sinh Viên' : 'Góc Thảo Luận & Đề Tài'}</span>
                 </div>
-                <p id="forum-hub-description" class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 leading-relaxed max-w-2xl">${filter.hub === 'STUDENT' ? 'Không gian thảo luận học thuật, chia sẻ khảo sát học thuật và hỗ trợ hoàn thành khóa luận tốt nghiệp.' : 'Không gian chia sẻ bối cảnh đề tài, trao đổi đáp viên tương hỗ và phản biện học thuật đa trường viện.'}</p>
+                <p id="forum-hub-description" class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 leading-relaxed max-w-2xl">${filter.hub === 'STUDENT' ? 'Không gian thảo luận học thuật, chia sẻ khảo sát nghiên cứu và hỗ trợ hoàn thành khóa luận tốt nghiệp.' : 'Không gian chia sẻ bối cảnh đề tài, trao đổi đáp viên tương hỗ và phản biện học thuật đa trường viện.'}</p>
               </div>
             </div>
 
@@ -19169,12 +19148,13 @@ if (totalCount === 0) {
 
     // Danh mục match map
     const catMap = {
-      TECH: ['công nghệ', 'máy tính', 'ai', 'bach khoa', 'it', 'phần mềm'],
-      BUSINESS: ['kinh tế', 'kinh doanh', 'neu', 'ftu', 'fmcg', 'marketing', 'tài chính'],
-      SOCIAL: ['xã hội', 'tâm lý', 'hành vi', 'nhân văn'],
-      HEALTH: ['y tế', 'sức khỏe', 'dược', 'y học'],
-      DESIGN: ['thiết kế', 'ux', 'giao diện', 'đồ họa'],
-      EDU: ['giáo dục', 'sinh viên', 'đào tạo', 'học thuật']
+      TECH: ['công nghệ', 'máy tính', 'ai', 'bach khoa', 'it', 'phần mềm', 'tech', 'khoa học máy tính'],
+      BUSINESS: ['kinh tế', 'kinh doanh', 'neu', 'ftu', 'fmcg', 'marketing', 'tài chính', 'business', 'quản trị'],
+      SOCIAL: ['xã hội', 'tâm lý', 'hành vi', 'nhân văn', 'social'],
+      HEALTH: ['y tế', 'sức khỏe', 'dược', 'y học', 'health'],
+      DESIGN: ['thiết kế', 'ux', 'giao diện', 'đồ họa', 'design', 'ui'],
+      EDU: ['giáo dục', 'sinh viên', 'đào tạo', 'học thuật', 'edu'],
+      OTHER: ['khác', 'tổng hợp', 'đa ngành', 'other']
     };
 
     const searchKeyword = (filter.search || '').toLowerCase().trim();
@@ -19191,9 +19171,9 @@ if (totalCount === 0) {
 
     // 1.5. Lọc theo Phân Khu (Hub)
     if (filter.hub === 'COMMUNITY') {
-      filtered = filtered.filter(p => p.post_type !== 'STUDENT' && (!p.survey || (!p.survey.is_student_exchange && p.survey.is_student_exchange !== 1)));
+      filtered = filtered.filter(p => p.post_type !== 'STUDENT');
     } else if (filter.hub === 'STUDENT') {
-      filtered = filtered.filter(p => p.post_type === 'STUDENT' || (p.survey && (p.survey.is_student_exchange === 1 || p.survey.is_student_exchange === true)));
+      filtered = filtered.filter(p => p.post_type === 'STUDENT');
     }
 
     // 2. Lọc theo phạm vi (Scope)
@@ -19202,16 +19182,34 @@ if (totalCount === 0) {
     } else if (filter.scope === 'DISCUSSION_ONLY') {
       filtered = filtered.filter(p => !p.survey || !p.survey.id);
     } else if (filter.scope === 'EXCHANGE') {
-      filtered = filtered.filter(p => p.post_type === 'STUDENT' || (p.survey && (p.survey.is_student_exchange === 1 || p.survey.is_student_exchange === true)));
+      filtered = filtered.filter(p => p.post_type === 'STUDENT');
     } else if (filter.scope === 'MY_POSTS' && user) {
       filtered = filtered.filter(p => p.author && p.author.id === user.id);
     }
 
-    // 3. Lọc theo lĩnh vực (Category)
-    if (filter.category !== 'ALL' && catMap[filter.category]) {
-      const keywords = catMap[filter.category];
+    // 3. Lọc theo lĩnh vực (Category Tag)
+    if (filter.category && filter.category !== 'ALL') {
+      const selectedCatId = filter.category;
+      const categoriesList = [
+        { id: 'TECH', label: 'Khoa học máy tính & AI' },
+        { id: 'BUSINESS', label: 'Kinh tế & Quản trị' },
+        { id: 'SOCIAL', label: 'Khoa học Xã hội & Tâm lý' },
+        { id: 'HEALTH', label: 'Y tế & Sức khỏe cộng đồng' },
+        { id: 'DESIGN', label: 'Thiết kế & Trải nghiệm UX' },
+        { id: 'EDU', label: 'Giáo dục & Đào tạo' },
+        { id: 'OTHER', label: 'Đa ngành & Lĩnh vực khác' }
+      ];
+      const selectedCat = categoriesList.find(c => c.id === selectedCatId);
+      const keywords = catMap[selectedCatId] || [];
       filtered = filtered.filter(p => {
-        const text = ((p.title || '') + ' ' + (p.content || '') + ' ' + (p.survey && p.survey.category || '')).toLowerCase();
+        // 1. Khớp trực tiếp mã category của bài viết
+        if (p.category === selectedCatId) return true;
+        // 2. Khớp nhãn category của bài viết
+        if (selectedCat && p.category === selectedCat.label) return true;
+        // 3. Khớp category của khảo sát đính kèm
+        if (p.survey && (p.survey.category === selectedCatId || (selectedCat && p.survey.category === selectedCat.label))) return true;
+        // 4. Khớp từ khóa phân tích trong tiêu đề, nội dung, category
+        const text = ((p.title || '') + ' ' + (p.content || '') + ' ' + (p.category || '') + ' ' + (p.survey && p.survey.category || '')).toLowerCase();
         return keywords.some(kw => text.includes(kw));
       });
     }
@@ -19313,7 +19311,7 @@ if (totalCount === 0) {
     const hubDesc = document.getElementById('forum-hub-description');
     if (hubDesc) {
       if (hubId === 'STUDENT') {
-        hubDesc.textContent = 'Không gian thảo luận học thuật, chia sẻ khảo sát học thuật và hỗ trợ hoàn thành khóa luận tốt nghiệp.';
+        hubDesc.textContent = 'Không gian thảo luận học thuật, chia sẻ khảo sát nghiên cứu và hỗ trợ hoàn thành khóa luận tốt nghiệp.';
       } else {
         hubDesc.textContent = 'Không gian chia sẻ bối cảnh đề tài, trao đổi đáp viên tương hỗ và phản biện học thuật đa trường viện.';
       }
@@ -19332,22 +19330,90 @@ if (totalCount === 0) {
     }, 150);
   },
 
+  getForumCategoryMeta(catId) {
+    const map = {
+      TECH: { id: 'TECH', label: 'Khoa học máy tính & AI', icon: 'cpu' },
+      BUSINESS: { id: 'BUSINESS', label: 'Kinh tế & Quản trị', icon: 'trending-up' },
+      SOCIAL: { id: 'SOCIAL', label: 'Khoa học Xã hội & Tâm lý', icon: 'users' },
+      HEALTH: { id: 'HEALTH', label: 'Y tế & Sức khỏe cộng đồng', icon: 'heart-pulse' },
+      DESIGN: { id: 'DESIGN', label: 'Thiết kế & Trải nghiệm UX', icon: 'palette' },
+      EDU: { id: 'EDU', label: 'Giáo dục & Đào tạo', icon: 'book-open' },
+      OTHER: { id: 'OTHER', label: 'Đa ngành & Lĩnh vực khác', icon: 'tag' }
+    };
+    if (map[catId]) return map[catId];
+    for (const key of Object.keys(map)) {
+      if (map[key].label.toLowerCase() === (catId || '').toLowerCase()) return map[key];
+    }
+    return { id: catId || 'OTHER', label: (catId && catId !== 'ALL') ? catId : 'Đa ngành & Khác', icon: 'tag' };
+  },
+
+  selectForumPostCategoryTag(catId) {
+    const input = document.getElementById('forum-post-category-select');
+    if (input) input.value = catId;
+    const pills = document.querySelectorAll('.forum-tag-pill');
+    pills.forEach(pill => {
+      const isSel = pill.getAttribute('data-cat-id') === catId;
+      if (isSel) {
+        pill.className = 'forum-tag-pill px-2.5 py-2 rounded-xl border text-left transition-all flex items-center gap-1.5 cursor-pointer text-xs bg-orange-600 text-white font-bold border-orange-600 shadow-2xs';
+        const icon = pill.querySelector('i');
+        if (icon) {
+          icon.classList.remove('text-stone-400');
+          icon.classList.add('text-white');
+        }
+      } else {
+        pill.className = 'forum-tag-pill px-2.5 py-2 rounded-xl border text-left transition-all flex items-center gap-1.5 cursor-pointer text-xs bg-stone-50/70 dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-orange-500 font-medium';
+        const icon = pill.querySelector('i');
+        if (icon) {
+          icon.classList.remove('text-white');
+          icon.classList.add('text-stone-400');
+        }
+      }
+    });
+    if (window.lucide) window.lucide.createIcons();
+  },
+
+  onForumAttachedSurveySelected(surveyId) {
+    if (!surveyId) return;
+    const allSurveys = this.state.surveys || [];
+    const found = allSurveys.find(s => s.id === surveyId);
+    if (!found || !found.category) return;
+    const catLower = (found.category || '').toLowerCase();
+    let matchedTagId = 'OTHER';
+    if (catLower.includes('công nghệ') || catLower.includes('phần mềm') || catLower.includes('ai') || catLower.includes('tech') || catLower.includes('máy tính')) matchedTagId = 'TECH';
+    else if (catLower.includes('kinh tế') || catLower.includes('thị trường') || catLower.includes('thương mại') || catLower.includes('tài chính') || catLower.includes('fmcg') || catLower.includes('kinh doanh')) matchedTagId = 'BUSINESS';
+    else if (catLower.includes('xã hội') || catLower.includes('tâm lý') || catLower.includes('hành vi')) matchedTagId = 'SOCIAL';
+    else if (catLower.includes('sức khỏe') || catLower.includes('y tế') || catLower.includes('đời sống') || catLower.includes('dược')) matchedTagId = 'HEALTH';
+    else if (catLower.includes('thiết kế') || catLower.includes('ux') || catLower.includes('ui') || catLower.includes('đồ họa')) matchedTagId = 'DESIGN';
+    else if (catLower.includes('học thuật') || catLower.includes('giáo dục') || catLower.includes('sinh viên') || catLower.includes('luận văn')) matchedTagId = 'EDU';
+    this.selectForumPostCategoryTag(matchedTagId);
+  },
+
   setForumCategoryFilter(catId) {
     this.haptic('light');
     this.state.forumFilter = this.state.forumFilter || { category: 'ALL', scope: 'ALL', status: 'ALL', sort: 'NEWEST', search: '' };
     this.state.forumFilter.category = catId;
     
-    // Cập nhật giao diện select không cần re-render layout
+    // Cập nhật nhãn và style trên custom dropdown trigger
+    const catMeta = this.getForumCategoryMeta(catId);
+    const catLabel = document.getElementById('forum-cat-label');
+    const catBtn = document.getElementById('forum-cat-btn');
+    if (catLabel) {
+      catLabel.textContent = catId === 'ALL' ? 'Tất cả lĩnh vực' : catMeta.label;
+    }
+    if (catBtn) {
+      if (catId !== 'ALL') {
+        catBtn.classList.add('border-orange-500/80', 'bg-orange-50/50', 'dark:bg-orange-950/40', 'text-orange-600', 'dark:text-orange-400', 'font-bold');
+      } else {
+        catBtn.classList.remove('border-orange-500/80', 'bg-orange-50/50', 'dark:bg-orange-950/40', 'text-orange-600', 'dark:text-orange-400', 'font-bold');
+      }
+    }
+
     const catSelect = document.getElementById('forum-category-select');
     if (catSelect) {
       catSelect.value = catId;
-      if (catId !== 'ALL') {
-        catSelect.classList.add('border-orange-500/80', 'bg-orange-50/50', 'dark:bg-orange-950/40', 'text-orange-600', 'dark:text-orange-400', 'font-bold');
-      } else {
-        catSelect.classList.remove('border-orange-500/80', 'bg-orange-50/50', 'dark:bg-orange-950/40', 'text-orange-600', 'dark:text-orange-400', 'font-bold');
-      }
     }
     this._updateForumFeedInPlace();
+    if (window.lucide) window.lucide.createIcons();
   },
 
   setForumScopeFilter(scopeId) {
@@ -19383,6 +19449,14 @@ if (totalCount === 0) {
     this.state.forumFilter = { category: 'ALL', scope: 'ALL', status: 'ALL', sort: 'NEWEST', search: '', hub: 'COMMUNITY' };
     const searchInput = document.getElementById('forum-search-input');
     if (searchInput) searchInput.value = '';
+    const catLabel = document.getElementById('forum-cat-label');
+    if (catLabel) catLabel.textContent = 'Tất cả lĩnh vực';
+    const catBtn = document.getElementById('forum-cat-btn');
+    if (catBtn) {
+      catBtn.classList.remove('border-orange-500/80', 'bg-orange-50/50', 'dark:bg-orange-950/40', 'text-orange-600', 'dark:text-orange-400', 'font-bold');
+    }
+    const sortLabel = document.getElementById('forum-sort-label');
+    if (sortLabel) sortLabel.textContent = 'Mới nhất';
     const catSelect = document.getElementById('forum-category-select');
     if (catSelect) {
       catSelect.value = 'ALL';
@@ -19407,6 +19481,7 @@ if (totalCount === 0) {
       stuBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap text-stone-600 dark:text-stone-400 hover:text-stone-900 font-medium';
     }
     this._updateForumFeedInPlace();
+    if (window.lucide) window.lucide.createIcons();
   },
 
   renderForumPostCardHtml(post, isOpenComments = false) {
@@ -19433,7 +19508,7 @@ if (totalCount === 0) {
     const collected = s.collected_responses || 0;
     const target = s.target_responses || 100;
     const progress = Math.min(100, Math.round((collected / target) * 100));
-    const isEduExchange = s.is_student_exchange === true || s.is_student_exchange === 1;
+    const catMeta = this.getForumCategoryMeta(post.category);
 
     return `
       <div id="forum-post-${post.id}" class="bg-white dark:bg-[#18181B] rounded-3xl p-5 sm:p-6 border border-stone-200/80 dark:border-stone-800 shadow-xs space-y-4 transition-all">
@@ -19479,6 +19554,15 @@ if (totalCount === 0) {
 
         <!-- TIÊU ĐỀ & NỘI DUNG CHIA SẺ -->
         <div class="space-y-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" 
+                    onclick="event.stopPropagation(); VibeApp.setForumCategoryFilter('${post.category || 'OTHER'}')"
+                    title="Nhấn để lọc theo lĩnh vực ${this.escapeHtml(catMeta.label)}"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-all cursor-pointer shadow-2xs">
+              <i data-lucide="${catMeta.icon || 'tag'}" class="w-3 h-3 text-orange-600 dark:text-orange-400"></i>
+              <span>${this.escapeHtml(catMeta.label)}</span>
+            </button>
+          </div>
           <h2 class="text-base sm:text-lg font-bold text-stone-900 dark:text-white leading-snug">
             ${this.escapeHtml(post.title)}
           </h2>
@@ -19494,12 +19578,6 @@ if (totalCount === 0) {
                 <span class="px-2 py-0.5 rounded-md bg-stone-200/70 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-semibold text-[11px]">
                   ${this.escapeHtml(s.category || 'Khảo sát')}
                 </span>
-                ${isEduExchange ? `
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 font-bold text-[11px] border border-orange-200/60 dark:border-orange-800/60">
-                    <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
-                    <span>Trao Đổi Edu</span>
-                  </span>
-                ` : ''}
               </div>
 
               <div class="font-mono text-xs font-bold text-orange-600 dark:text-orange-400">
@@ -19662,7 +19740,7 @@ if (totalCount === 0) {
                     <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-orange-600"></i>
                     <span>Góc Sinh Viên</span>
                   </div>
-                  <div class="text-[10px] text-stone-400">${isEduUser ? 'Học thuật / Luận văn' : 'Cần email trường .edu'}</div>
+                  <div class="text-[10px] text-stone-400">${isEduUser ? 'NCKH & Luận văn' : 'Cần email trường .edu'}</div>
                 </div>
               </label>
             </div>
@@ -19674,6 +19752,36 @@ if (totalCount === 0) {
             <input type="text" id="forum-post-title-input" required 
                    placeholder="Ví dụ: Trao đổi về phương pháp nghiên cứu thị trường hoặc tìm đáp viên..." 
                    class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs text-stone-900 dark:text-white focus:outline-none focus:border-orange-500">
+          </div>
+
+          <!-- Lĩnh vực & Tag đề tài bài viết (*) -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-stone-800 dark:text-stone-200">Lĩnh vực & Thẻ đề tài (*):</label>
+              <span class="text-[10.5px] text-stone-400">Chọn 1 lĩnh vực để người khác dễ dàng lọc & tìm kiếm</span>
+            </div>
+
+            <input type="hidden" id="forum-post-category-select" value="TECH">
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5" id="forum-post-tag-pills">
+              ${[
+                { id: 'TECH', label: 'Khoa học máy tính & AI', icon: 'cpu' },
+                { id: 'BUSINESS', label: 'Kinh tế & Quản trị', icon: 'trending-up' },
+                { id: 'SOCIAL', label: 'Khoa học Xã hội & Tâm lý', icon: 'users' },
+                { id: 'HEALTH', label: 'Y tế & Sức khỏe', icon: 'heart-pulse' },
+                { id: 'DESIGN', label: 'Thiết kế & Trải nghiệm UX', icon: 'palette' },
+                { id: 'EDU', label: 'Giáo dục & Đào tạo', icon: 'book-open' },
+                { id: 'OTHER', label: 'Đa ngành & Lĩnh vực khác', icon: 'tag' }
+              ].map(c => `
+                <button type="button" 
+                        onclick="VibeApp.selectForumPostCategoryTag('${c.id}')"
+                        data-cat-id="${c.id}"
+                        class="forum-tag-pill px-2.5 py-2 rounded-xl border text-left transition-all flex items-center gap-1.5 cursor-pointer text-xs ${c.id === 'TECH' ? 'bg-orange-600 text-white font-bold border-orange-600 shadow-2xs' : 'bg-stone-50/70 dark:bg-stone-900 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:border-orange-500 font-medium'}">
+                  <i data-lucide="${c.icon}" class="w-3.5 h-3.5 shrink-0 ${c.id === 'TECH' ? 'text-white' : 'text-stone-400'}"></i>
+                  <span class="truncate">${this.escapeHtml(c.label)}</span>
+                </button>
+              `).join('')}
+            </div>
           </div>
 
           <!-- Chọn Khảo sát đính kèm (Hoàn toàn Tùy chọn) -->
@@ -19700,13 +19808,11 @@ if (totalCount === 0) {
                   <i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0 ml-1.5"></i>
                 </button>
                 ${activeSurveys.map(s => {
-                  const isEdu = s.is_student_exchange === 1;
-                  const tag = isEdu ? '[Trao Đổi Edu] ' : '';
-                  const fullTitle = `${tag}${s.title} (${s.collected_responses || 0}/${s.target_responses} mẫu)`;
+                  const fullTitle = `${s.title} (${s.collected_responses || 0}/${s.target_responses} mẫu)`;
                   const safeFullTitle = (fullTitle).replace(/'/g, "\\'").replace(/"/g, '&quot;');
                   return `
                     <button type="button" 
-                            onclick="document.getElementById('forum-post-survey-select').value = '${s.id}'; document.getElementById('forum-post-survey-label').textContent = '${safeFullTitle}'; VibeApp.closeAllCustomDropdowns();"
+                            onclick="document.getElementById('forum-post-survey-select').value = '${s.id}'; document.getElementById('forum-post-survey-label').textContent = '${safeFullTitle}'; VibeApp.onForumAttachedSurveySelected('${s.id}'); VibeApp.closeAllCustomDropdowns();"
                             class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors hover:bg-stone-100 dark:hover:bg-[#24242A] text-left text-stone-800 dark:text-stone-200">
                       <span class="truncate">${this.escapeHtml(fullTitle)}</span>
                     </button>
@@ -19818,6 +19924,7 @@ if (totalCount === 0) {
     this.haptic('medium');
 
     const title = (document.getElementById('forum-post-title-input')?.value || '').trim();
+    const category = (document.getElementById('forum-post-category-select')?.value || 'TECH').trim();
     const survey_id = (document.getElementById('forum-post-survey-select')?.value || '').trim() || null;
     const editor = document.getElementById('forum-post-editor');
     const content = editor ? editor.innerHTML.trim() : '';
@@ -19862,7 +19969,7 @@ if (totalCount === 0) {
 
       const res = await this.api('/forum/posts', {
         method: 'POST',
-        body: JSON.stringify({ title, survey_id, content, images: uploadedImageUrls, post_type })
+        body: JSON.stringify({ title, category, survey_id, content, images: uploadedImageUrls, post_type })
       });
 
       if (res && res.success) {

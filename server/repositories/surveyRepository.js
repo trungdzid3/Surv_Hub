@@ -764,7 +764,7 @@ class SurveyRepository {
         (SELECT COUNT(*) FROM questions q WHERE q.survey_id = s.id) AS question_count
       FROM surveys s
       LEFT JOIN voucher_campaigns vc ON s.sponsor_campaign_id = vc.id
-      WHERE s.status = 'ACTIVE' AND (s.is_student_exchange IS NULL OR s.is_student_exchange = 0)
+      WHERE s.status = 'ACTIVE'
       ORDER BY s.created_at DESC
     `;
     return db.prepare(sql).all();
@@ -813,7 +813,6 @@ class SurveyRepository {
    */
   listRespondentSurveys(respondentId, isStudentVerified = 0) {
     if (!respondentId) return [];
-    const studentFilter = isStudentVerified === 1 ? '' : 'AND (s.is_student_exchange IS NULL OR s.is_student_exchange = 0)';
     const sql = `
       SELECT s.id, s.title, s.description, s.category, s.cover_image_url, s.target_responses, 
              s.collected_responses, s.reward_points_per_response, s.min_completion_time_sec,
@@ -825,7 +824,7 @@ class SurveyRepository {
       FROM surveys s
       LEFT JOIN responses r ON r.survey_id = s.id AND r.respondent_id = ?
       LEFT JOIN voucher_campaigns vc ON s.sponsor_campaign_id = vc.id
-      WHERE s.status = 'ACTIVE' ${studentFilter}
+      WHERE s.status = 'ACTIVE'
       ORDER BY s.created_at DESC
     `;
     return db.prepare(sql).all(respondentId);
@@ -907,7 +906,7 @@ class SurveyRepository {
                s.survey_source, s.reward_mode, s.academic_tags_json, s.is_pinned, s.is_featured, s.is_student_exchange,
                (SELECT COUNT(*) FROM questions q WHERE q.survey_id = s.id) AS question_count
         FROM surveys s
-        WHERE s.status = 'ACTIVE' AND (s.is_student_exchange IS NULL OR s.is_student_exchange = 0)
+        WHERE s.status = 'ACTIVE'
         ORDER BY s.is_pinned DESC, s.is_featured DESC, s.created_at DESC
         LIMIT ? OFFSET ?
       `;
@@ -915,8 +914,6 @@ class SurveyRepository {
     }
 
     // 4. Che do Respondent: Lay danh sach cac khao sat dang ACTIVE de phoi ghep
-    const isStudentVerified = options.is_student_verified === 1 ? 1 : 0;
-    const studentFilter = isStudentVerified === 1 ? '' : 'AND (s.is_student_exchange IS NULL OR s.is_student_exchange = 0)';
     const sql = `
       SELECT s.id, s.title, s.description, s.category, s.cover_image_url, s.reward_points_per_response, 
              s.min_completion_time_sec, s.target_responses, s.collected_responses, s.created_at, s.status,
@@ -924,7 +921,7 @@ class SurveyRepository {
              s.is_pinned, s.is_featured, s.is_student_exchange,
              (SELECT COUNT(*) FROM questions q WHERE q.survey_id = s.id) AS question_count
       FROM surveys s
-      WHERE s.status = 'ACTIVE' ${studentFilter}
+      WHERE s.status = 'ACTIVE'
       ORDER BY s.is_pinned DESC, s.is_featured DESC, s.created_at DESC
       LIMIT ? OFFSET ?
     `;

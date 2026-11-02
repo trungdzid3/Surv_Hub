@@ -2791,3 +2791,42 @@ c:\Users\Lenovo\Downloads\Linh\
   + Lưu bản backup vào thư mục `backups/` hoặc định danh timestamp rõ ràng.
   + Chủ động dọn dẹp các bản backup cũ trùng lặp hoặc không còn cần thiết.
   + Đảm bảo phương án Rollback toàn vẹn để khôi phục nguyên trạng ngay lập tức khi phát sinh sự cố.
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: BỔ SUNG GẮN KÈM TAG LĨNH VỰC BÀI VIẾT DIỄN ĐÀN & ĐỒNG BỘ BỘ LỌC TÌM KIẾM (THÁNG 11/2026)
+
+### 1. Vấn Đề Gốc Rễ & Hiện Trạng
+- **Hiện tượng**: Modal "Đăng Bài Viết Lên Diễn Đàn SurvHub" trước đó chỉ có ô Phân khu, Tiêu đề, Khảo sát đính kèm, Nội dung và Ảnh minh họa, chưa có mục chọn tag/lĩnh vực đề tài.
+- Khi người dùng đăng bài thảo luận tự do hoặc chia sẻ đề tài nghiên cứu, bài viết bị gán mặc định category `ALL`, khiến thanh bộ lọc "Lĩnh vực" (`forum-cat-btn`) không thể lọc chính xác bài viết theo đúng lĩnh vực học thuật / chuyên môn.
+- Thẻ bài viết (`renderForumPostCardHtml`) chỉ hiển thị tag category khi có khảo sát đính kèm, các bài thảo luận tự do hoàn toàn không hiển thị badge tag lĩnh vực.
+
+### 2. Giải Pháp Triển Khai Toàn Diện
+1. **Modal Đăng Bài Mới (`openCreateForumPostModal` - `public/app.js`)**:
+   - Bổ sung khối "Lĩnh vực & Thẻ đề tài (*)" dạng Grid Pills 1 chạm trực quan, hiện đại chuẩn `DESIGN.md` (Cam/Đen/Trắng, icon Lucide, không emoji).
+   - Hỗ trợ 7 lĩnh vực chuẩn hóa:
+     + `TECH`: Khoa học máy tính & AI (`cpu`)
+     + `BUSINESS`: Kinh tế & Quản trị (`trending-up`)
+     + `SOCIAL`: Khoa học Xã hội & Tâm lý (`users`)
+     + `HEALTH`: Y tế & Sức khỏe (`heart-pulse`)
+     + `DESIGN`: Thiết kế & Trải nghiệm UX (`palette`)
+     + `EDU`: Giáo dục & Đào tạo (`book-open`)
+     + `OTHER`: Đa ngành & Lĩnh vực khác (`tag`)
+   - Thêm cơ chế thông minh `onForumAttachedSurveySelected`: Tự động nhận diện category của khảo sát đính kèm để tự động gợi ý/chọn tag tương ứng.
+2. **Gửi & Lưu Trữ Dữ Liệu (`submitCreateForumPost` & `server/controllers/forumController.js`)**:
+   - `submitCreateForumPost`: Lấy giá trị tag đã chọn từ `#forum-post-category-select` và gửi lên API `/api/forum/posts` trong trường `category`.
+   - `forumController.js: createPost`: Chuẩn hóa và lưu `effectiveCategory` vào cơ sở dữ liệu `forum_posts`.
+   - `forumController.js: listPosts`: Lọc theo `p.category = ? OR s.category = ? OR p.category LIKE ?`.
+3. **Thẻ Bài Viết Diễn Đàn (`renderForumPostCardHtml` - `public/app.js`)**:
+   - Hiển thị badge Tag Lĩnh Vực bo tròn nổi bật, có icon Lucide tương ứng cho từng bài viết.
+   - Hỗ trợ tương tác 1 chạm: Nhấp vào badge lĩnh vực trên thẻ bài viết sẽ tự động kích hoạt bộ lọc diễn đàn theo lĩnh vực đó.
+4. **Bộ Lọc Lĩnh Vực In-Place (`_updateForumFeedInPlace`, `setForumCategoryFilter`, `resetForumFilters`)**:
+   - Đồng bộ danh mục `categories` và `catMap` hỗ trợ toàn diện cả 7 lĩnh vực (thêm `OTHER`).
+   - Khớp đa tầng: Khớp trực tiếp mã category, nhãn category, category khảo sát và từ khóa liên quan.
+   - Tự động cập nhật nhãn trên Custom Dropdown Button `forum-cat-btn` và hiển thị nút Reset bộ lọc.
+
+### 3. Nghiệm Thu & Kiểm Thử
+- Kiểm tra cú pháp JavaScript: `node -c public/app.js` và `node -c server/controllers/forumController.js` PASS 100%.
+- Toàn bộ 17/17 Test Suites hệ thống (`npm test`): **100% PASS** (17.32s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` hoàn tất.
+- Tự động commit và push lên GitHub (`origin/main`).

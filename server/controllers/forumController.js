@@ -76,9 +76,8 @@ class ForumController {
       const hubUpper = (hub || 'ALL').toUpperCase();
       if (hubUpper === 'COMMUNITY') {
         conditions.push('(p.post_type IS NULL OR p.post_type = \'COMMUNITY\')');
-        conditions.push('(s.is_student_exchange IS NULL OR s.is_student_exchange = 0)');
       } else if (hubUpper === 'STUDENT') {
-        conditions.push('(p.post_type = \'STUDENT\' OR s.is_student_exchange = 1)');
+        conditions.push('p.post_type = \'STUDENT\'');
       }
 
       // 2. Loc rieng theo survey neu co yeu cau
@@ -93,16 +92,16 @@ class ForumController {
         params.push(user.id);
       } else if (scope === 'WITH_SURVEY') {
         conditions.push('p.survey_id IS NOT NULL');
-      } else if (scope === 'EXCHANGE') {
-        conditions.push('(s.is_student_exchange = 1 OR p.post_type = \'STUDENT\')');
+      } else if (scope === 'EXCHANGE' || scope === 'STUDENT') {
+        conditions.push('p.post_type = \'STUDENT\'');
       } else if (scope === 'DISCUSSION_ONLY') {
         conditions.push('p.survey_id IS NULL');
       }
 
       // 4. Loc theo danh muc (category)
       if (category && category !== 'ALL') {
-        conditions.push('(p.category = ? OR s.category = ?)');
-        params.push(category, category);
+        conditions.push('(p.category = ? OR s.category = ? OR p.category LIKE ?)');
+        params.push(category, category, `%${category}%`);
       }
 
       // 5. Tim kiem tu khoa trong tieu de va noi dung
@@ -122,19 +121,17 @@ class ForumController {
         params.push(user.id);
       }
 
-      // 7. RÀNG BUỘC CỐT LÕI: Cach ly bai viet Sinh Vien (Edu Karma Exchange / Student Hub)
-      // "Chi cho edu, edu moi hien thi, con lai khong hien thi"
+      // 7. RÀNG BUỘC CỐT LÕI: Phân khu Góc Sinh Viên (Student Hub) dành riêng cho sinh viên thảo luận học thuật NCKH
       if (!user) {
         // Khach vang lai: chi xem bai viet cong dong khong phai sinh vien
         conditions.push('(p.post_type IS NULL OR p.post_type != \'STUDENT\')');
-        conditions.push('(s.is_student_exchange IS NULL OR s.is_student_exchange = 0)');
       } else if (user.role === 'ADMIN') {
         // Admin xem duoc tat ca
       } else if (isEduUser(user)) {
-        // Sinh vien da xac thuc xem duoc tat ca (ca bai thuong va bai exchange/student)
+        // Sinh vien da xac thuc xem duoc tat ca (ca bai cong dong va bai goc sinh vien)
       } else {
         // Nguoi dung thuong chua xac thuc edu: chi xem bai cong dong HOAC bai do chinh minh dang
-        conditions.push('(((p.post_type IS NULL OR p.post_type != \'STUDENT\') AND (s.is_student_exchange IS NULL OR s.is_student_exchange = 0)) OR p.user_id = ?)');
+        conditions.push('((p.post_type IS NULL OR p.post_type != \'STUDENT\') OR p.user_id = ?)');
         params.push(user.id);
       }
 
@@ -271,15 +268,15 @@ class ForumController {
         });
       }
 
-      // RÀNG BUỘC CỐT LÕI: Kiem tra quyen truy cap khao sat Trao Doi Sinh Vien / Post Type Student
-      const isEduRestricted = postRow.post_type === 'STUDENT' || postRow.is_student_exchange === 1;
+      // RÀNG BUỘC CỐT LÕI: Kiem tra quyen truy cap khu vuc Goc Sinh Vien
+      const isEduRestricted = postRow.post_type === 'STUDENT';
       if (isEduRestricted) {
         const isVerifiedStudent = isEduUser(user);
 
         if (!isOwner && !isAdmin && !isVerifiedStudent) {
           return res.status(403).json({
             success: false,
-            message: 'Bài viết này thuộc khu vực Trao Đổi Sinh Viên. Chỉ dành riêng cho sinh viên đã xác thực email trường (.edu).'
+            message: 'Bài viết này thuộc khu vực Góc Sinh Viên. Chỉ dành riêng cho sinh viên đã xác thực email trường (.edu).'
           });
         }
       }
@@ -465,14 +462,8 @@ class ForumController {
           });
         }
 
-        // Neu khao sat la exchange ma user chua xac thuc sinh vien -> chan
-        if (survey.is_student_exchange === 1) {
-        if (!isEduUser(user)) {
-            return res.status(403).json({
-              success: false,
-              message: 'Chỉ tài khoản sinh viên đã xác thực email trường (.edu) mới được chia sẻ khảo sát trao đổi sinh viên.'
-            });
-          }
+        // Ho tro tuong thich: neu khao sat co co sinh vien va user la sinh vien ma chua truyen post_type, mac dinh gan vao STUDENT
+        if (survey.is_student_exchange === 1 && isEduUser(user) && (!post_type || post_type === 'COMMUNITY')) {
           effectivePostType = 'STUDENT';
         }
 
@@ -487,11 +478,24 @@ class ForumController {
         });
       }
 
+      // Chuẩn hóa và bảo vệ tag lĩnh vực (category)
+      const allowedCategories = ['TECH', 'BUSINESS', 'SOCIAL', 'HEALTH', 'DESIGN', 'EDU', 'OTHER'];
+      let effectiveCategory = 'OTHER';
+      if (category && typeof category === 'string') {
+        const catTrimmed = category.trim();
+        const catUpper = catTrimmed.toUpperCase();
+        if (allowedCategories.includes(catUpper)) {
+          effectiveCategory = catUpper;
+        } else if (catTrimmed.length > 0 && catTrimmed !== 'ALL') {
+          effectiveCategory = catTrimmed;
+        }
+      }
+
       const postId = crypto.randomUUID();
       db.prepare(`
         INSERT INTO forum_posts (id, user_id, survey_id, title, content, images, post_type, category)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(postId, user.id, validSurveyId, title.trim(), content.trim(), JSON.stringify(validImages), effectivePostType, category || 'ALL');
+      `).run(postId, user.id, validSurveyId, title.trim(), content.trim(), JSON.stringify(validImages), effectivePostType, effectiveCategory);
 
       return res.status(201).json({
         success: true,
@@ -533,9 +537,8 @@ class ForumController {
       }
 
       const post = db.prepare(`
-        SELECT p.id, p.user_id, p.post_type, s.is_student_exchange 
+        SELECT p.id, p.user_id, p.post_type 
         FROM forum_posts p
-        LEFT JOIN surveys s ON p.survey_id = s.id
         WHERE p.id = ?
       `).get(id);
 
@@ -544,16 +547,16 @@ class ForumController {
       }
 
       // Kiem tra quyen truy cap Edu
-      const isEdu = post.post_type === 'STUDENT' || post.is_student_exchange === 1;
+      const isEdu = post.post_type === 'STUDENT';
       if (isEdu) {
         const isOwner = user.id === post.user_id;
         const isAdmin = user.role === 'ADMIN';
-        const isVerifiedStudent = user.is_student_verified === 1;
+        const isVerifiedStudent = isEduUser(user);
 
         if (!isOwner && !isAdmin && !isVerifiedStudent) {
           return res.status(403).json({
             success: false,
-            message: 'Bài viết này thuộc khu vực Trao Đổi Sinh Viên. Chỉ dành riêng cho sinh viên đã xác thực email trường (.edu).'
+            message: 'Bài viết này thuộc khu vực Góc Sinh Viên. Chỉ dành riêng cho sinh viên đã xác thực email trường (.edu).'
           });
         }
       }
@@ -607,9 +610,8 @@ class ForumController {
       const { id } = req.params;
 
       const post = db.prepare(`
-        SELECT p.id, p.user_id, p.post_type, s.is_student_exchange 
+        SELECT p.id, p.user_id, p.post_type 
         FROM forum_posts p
-        LEFT JOIN surveys s ON p.survey_id = s.id
         WHERE p.id = ?
       `).get(id);
 
@@ -618,16 +620,16 @@ class ForumController {
       }
 
       // Kiem tra quyen Edu
-      const isEdu = post.post_type === 'STUDENT' || post.is_student_exchange === 1;
+      const isEdu = post.post_type === 'STUDENT';
       if (isEdu) {
         const isOwner = user.id === post.user_id;
         const isAdmin = user.role === 'ADMIN';
-        const isVerifiedStudent = user.is_student_verified === 1;
+        const isVerifiedStudent = isEduUser(user);
 
         if (!isOwner && !isAdmin && !isVerifiedStudent) {
           return res.status(403).json({
             success: false,
-            message: 'Bài viết này thuộc khu vực Trao Đổi Sinh Viên. Chỉ dành riêng cho sinh viên đã xác thực email trường (.edu).'
+            message: 'Bài viết này thuộc khu vực Góc Sinh Viên. Chỉ dành riêng cho sinh viên đã xác thực email trường (.edu).'
           });
         }
       }
