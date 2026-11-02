@@ -317,6 +317,16 @@ c:\Users\Lenovo\Downloads\Linh\
     + `Xếp thứ tự.` -> `SINGLE_CHOICE` (Giữ nguyên danh sách các tùy chọn thứ tự).
     + `Likert.` -> `CHOICE_GRID` (Lưới ma trận trắc nghiệm), tự động phân tách các cột thang đo (`Tùy chọn 1..5`) và các hàng nhận định (`Câu trình bày 1..2`).
   - Hỗ trợ toàn bộ các dòng tùy chọn không có bullet hay ký tự gạch đầu dòng (ví dụ `Tùy chọn 1`, `Tùy chọn 2`, `Nam`, `Nữ`...), không còn bị hiểu nhầm là nội dung câu hỏi nối dài.
+
+### K. Sửa Lỗi Khởi Tạo Hồ Sơ & Bảo Toàn Ảnh Đại Diện Avatar (v4.9.6)
+- **Khắc phục lỗi ReferenceError: Cannot access 'myCreatedSurveys' before initialization**:
+  - Dịch chuyển biểu thức gán `this.state.surveySubTab = (myCreatedSurveys.length === 0 && myParticipatedSurveys.length > 0) ? 'filled' : 'created'` xuống sau khối khai báo và truy vấn dữ liệu từ API `/surveys/creator` và `/surveys/history`.
+  - Giải quyết triệt để lỗi vùng chết tạm thời (Temporal Dead Zone) khiến trang Hồ sơ tài khoản bị gián đoạn khi người dùng nhấn vào tab Hồ sơ.
+- **Bảo toàn và duy trì ảnh đại diện Avatar trên toàn hệ thống**:
+  - Lưu trữ đồng bộ `avatar_url` vào `localStorage` với cả hai khóa `survhub_cached_user` và `vibesurvey_cached_user` khi tải ảnh lên, đăng nhập hoặc xác thực tài khoản.
+  - Bổ sung `overflow-hidden` và cơ chế xử lý lỗi `onerror` dự phòng chữ cái đầu cho các vị trí hiển thị avatar (Profile Header, Navbar, Dropdown tài khoản, Diễn đàn bài viết và Bình luận).
+  - Bổ sung `avatar_url` trong câu lệnh SQL và đối tượng trả về tại các điểm kết nối: `googleAuth`, `linkGoogle`, `verifyEmailOtp`, `register`, `getPosts`, `getPost`, `addComment`.
+  - Khôi phục hàm `saveDemographicsAction` trong `public/app.js` cho phép lưu dữ liệu nhân khẩu học đầy đủ mà không làm mất ảnh đại diện đã có.
   - Đồng bộ hoàn hảo giữa mã nguồn Web SPA (`public/app.js`) và Android Capacitor Native (`android/app/src/main/assets/public/app.js`).
 
 ### F. Giao Diện Di Động & Hệ Thống Nhận Diện Thương Hiệu (Mobile Nav & Brand Identity)
