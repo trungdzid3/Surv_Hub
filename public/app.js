@@ -1241,10 +1241,12 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     const shortName = user.name ? (user.name.split(' ').pop() || user.name) : 'User';
     if (nameEl) nameEl.textContent = shortName;
     if (avatarEl) {
+      avatarEl.classList.add('overflow-hidden');
+      const initialChar = (user.name || 'U').charAt(0).toUpperCase();
       if (user.avatar_url) {
-        avatarEl.innerHTML = `<img src="${user.avatar_url}" alt="Avatar" class="w-full h-full object-cover rounded-md">`;
+        avatarEl.innerHTML = `<img src="${user.avatar_url}" alt="Avatar" class="w-full h-full object-cover rounded-md" onerror="this.onerror=null;this.parentElement.textContent='${initialChar}';">`;
       } else {
-        avatarEl.textContent = (user.name || 'U').charAt(0).toUpperCase();
+        avatarEl.textContent = initialChar;
       }
     }
 
@@ -1302,7 +1304,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       <div class="p-3 border-b border-stone-100 dark:border-stone-800">
         <div class="flex items-center gap-2.5">
           ${user.avatar_url ? `
-            <img src="${user.avatar_url}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover shadow-xs shrink-0 border border-stone-200 dark:border-stone-700">
+            <img src="${user.avatar_url}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover shadow-xs shrink-0 border border-stone-200 dark:border-stone-700" onerror="this.onerror=null;this.outerHTML='<div class=\\'w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0\\'>${firstLetter}</div>';">
           ` : `
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
               ${firstLetter}
@@ -2730,6 +2732,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         this.state.token = res.token;
         this.state.currentUser = res.user;
         localStorage.setItem('survhub_token', res.token);
+        localStorage.setItem('survhub_cached_user', JSON.stringify(res.user));
+        localStorage.setItem('vibesurvey_cached_user', JSON.stringify(res.user));
         this.closeModal();
         this.showToast(`Chào mừng ${res.user.name}! Đăng nhập thành công.`, 'success');
         this.applyUserInterface();
@@ -3143,6 +3147,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           this.state.token = res.token;
           this.state.currentUser = res.user;
           localStorage.setItem('survhub_token', res.token);
+          localStorage.setItem('survhub_cached_user', JSON.stringify(res.user));
+          localStorage.setItem('vibesurvey_cached_user', JSON.stringify(res.user));
           this.closeGoogleAuthModal();
           this.showToast(`Chào mừng ${res.user.name}! Đăng nhập Google thành công.`, 'success');
           this.applyUserInterface();
@@ -15084,11 +15090,6 @@ if (totalCount === 0) {
       this.state.profileTab = 'overview';
     }
 
-    if (!this.state.surveySubTab) {
-      this.state.surveySubTab = (myCreatedSurveys.length === 0 && myParticipatedSurveys.length > 0) ? 'filled' : 'created';
-    }
-    const surveySubTab = this.state.surveySubTab;
-
     let demographics = {};
     if (user.demographics_json) {
       try { demographics = JSON.parse(user.demographics_json); } catch (e) { }
@@ -15143,6 +15144,11 @@ if (totalCount === 0) {
       console.warn('Lỗi đồng bộ Real Data cho Hồ sơ:', dataErr);
     }
 
+    if (!this.state.surveySubTab) {
+      this.state.surveySubTab = (myCreatedSurveys.length === 0 && myParticipatedSurveys.length > 0) ? 'filled' : 'created';
+    }
+    const surveySubTab = this.state.surveySubTab;
+
     const activeTab = this.state.profileTab;
     const trustScore = Number(user.trust_score || 85.0);
     const balanceNum = isEnterprise ? Number(user.credit_balance || 0) : Number(user.point_balance || 0);
@@ -15162,7 +15168,7 @@ if (totalCount === 0) {
               <div class="relative shrink-0">
                 <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-600 to-orange-500 p-0.5 shadow-md shadow-orange-600/20">
                   <div id="profile-header-avatar-display" class="w-full h-full rounded-2xl bg-white dark:bg-stone-900 flex items-center justify-center font-black text-2xl text-orange-600 dark:text-orange-400 overflow-hidden">
-                    ${user.avatar_url ? `<img src="${user.avatar_url}" alt="${user.name || 'Avatar'}" class="w-full h-full object-cover rounded-2xl">` : (user.name || 'U').charAt(0).toUpperCase()}
+                    ${user.avatar_url ? `<img src="${user.avatar_url}" alt="${user.name || 'Avatar'}" class="w-full h-full object-cover rounded-2xl" onerror="this.onerror=null;this.parentElement.textContent='${(user.name || 'U').charAt(0).toUpperCase()}';">` : (user.name || 'U').charAt(0).toUpperCase()}
                   </div>
                 </div>
                 <!-- Nút máy ảnh thay đổi avatar thật -->
@@ -16007,6 +16013,62 @@ if (totalCount === 0) {
     this.renderProfileView(root);
   },
 
+  // ==================== LƯU THÔNG TIN NHÂN KHẨU HỌC THẬT VÀ BẢO TOÀN DỮ LIỆU ====================
+  async saveDemographicsAction() {
+    this.haptic('medium');
+    const gender = document.getElementById('demo-gender')?.value || 'MALE';
+    const birth_date = document.getElementById('demo-birthdate')?.value || '';
+    const province = document.getElementById('demo-province')?.value || 'Hà Nội';
+    const occupation = document.getElementById('demo-occupation')?.value || 'Học sinh / Sinh viên đại học';
+    const university = document.getElementById('demo-university')?.value?.trim() || '';
+    const major = document.getElementById('demo-major')?.value?.trim() || '';
+    const graduation_year = parseInt(document.getElementById('demo-gradyear')?.value, 10) || 2026;
+    const monthly_income = document.getElementById('demo-income')?.value || 'Dưới 5 triệu VNĐ';
+
+    if (!birth_date) {
+      this.showToast('Vui lòng chọn ngày sinh của bạn!', 'warning');
+      return;
+    }
+
+    try {
+      this.showToast('Đang cập nhật hồ sơ...', 'info');
+      const res = await this.api('/auth/profile/demographics', {
+        method: 'POST',
+        body: JSON.stringify({
+          gender,
+          birth_date,
+          province,
+          occupation,
+          university,
+          major,
+          graduation_year,
+          monthly_income
+        })
+      });
+
+      if (res && res.success) {
+        this.haptic('success');
+        this.showToast(res.message || 'Cập nhật hồ sơ nhân khẩu học thành công!', 'success');
+        if (res.user) {
+          // Bảo toàn avatar_url nếu server trả về đối tượng user
+          if (!res.user.avatar_url && this.state.currentUser?.avatar_url) {
+            res.user.avatar_url = this.state.currentUser.avatar_url;
+          }
+          this.state.currentUser = res.user;
+          localStorage.setItem('survhub_cached_user', JSON.stringify(this.state.currentUser));
+          localStorage.setItem('vibesurvey_cached_user', JSON.stringify(this.state.currentUser));
+        }
+        const root = document.getElementById('app-root');
+        await this.renderProfileView(root);
+      } else {
+        this.showToast((res && res.message) || 'Lỗi cập nhật hồ sơ', 'error');
+      }
+    } catch (err) {
+      console.error('Lỗi lưu hồ sơ nhân khẩu học:', err);
+      this.showToast('Lỗi cập nhật: ' + err.message, 'error');
+    }
+  },
+
   // ==================== TẢI LÊN ẢNH ĐẠI DIỆN SIÊU NHANH & NÉN ẢNH CANVAS AN TOÀN ====================
   async handleProfileAvatarUpload(event) {
     const file = event.target.files && event.target.files[0];
@@ -16069,26 +16131,27 @@ if (totalCount === 0) {
         if (this.state.currentUser) {
           this.state.currentUser.avatar_url = newAvatarUrl;
           try {
-            const savedUser = JSON.parse(localStorage.getItem('survhub_cached_user') || localStorage.getItem('vibesurvey_user') || '{}');
-            savedUser.avatar_url = newAvatarUrl;
-            localStorage.setItem('survhub_cached_user', JSON.stringify(savedUser));
-            localStorage.setItem('vibesurvey_user', JSON.stringify(savedUser));
+            localStorage.setItem('survhub_cached_user', JSON.stringify(this.state.currentUser));
+            localStorage.setItem('vibesurvey_cached_user', JSON.stringify(this.state.currentUser));
           } catch (storageErr) {}
         }
 
         this.haptic('success');
         this.showToast('Cập nhật ảnh đại diện thành công!', 'success');
 
+        const initialChar = (this.state.currentUser?.name || 'U').charAt(0).toUpperCase();
+
         // Cập nhật ngay avatar hiển thị trên Profile Header
         const avatarDisplay = document.getElementById('profile-header-avatar-display');
         if (avatarDisplay) {
-          avatarDisplay.innerHTML = `<img src="${newAvatarUrl}" alt="Avatar" class="w-full h-full object-cover rounded-2xl">`;
+          avatarDisplay.innerHTML = `<img src="${newAvatarUrl}" alt="Avatar" class="w-full h-full object-cover rounded-2xl" onerror="this.onerror=null;this.parentElement.textContent='${initialChar}';">`;
         }
 
         // Cập nhật avatar trên thanh Navbar và Dropdown
         const avatarCircle = document.getElementById('user-avatar-circle');
         if (avatarCircle) {
-          avatarCircle.innerHTML = `<img src="${newAvatarUrl}" alt="Avatar" class="w-full h-full object-cover rounded-md">`;
+          avatarCircle.classList.add('overflow-hidden');
+          avatarCircle.innerHTML = `<img src="${newAvatarUrl}" alt="Avatar" class="w-full h-full object-cover rounded-md" onerror="this.onerror=null;this.parentElement.textContent='${initialChar}';">`;
         }
         this.renderUserProfileDropdown();
       } else {
@@ -18990,7 +19053,7 @@ if (totalCount === 0) {
               ` : ''}
             </div>
 
-            <!-- Segmented Scope Tabs: Tất cả | Khảo sát | Trao đổi | Của tôi -->
+            <!-- Segmented Scope Tabs: Tất cả | Thảo luận | Khảo sát | Của tôi -->
             <div id="forum-scope-buttons-wrapper" class="flex items-center bg-stone-100 dark:bg-stone-900 p-1 rounded-xl border border-stone-200/80 dark:border-stone-800 text-xs overflow-x-auto no-scrollbar">
               <button data-scope="ALL" onclick="VibeApp.setForumScopeFilter('ALL')" 
                       class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${filter.scope === 'ALL' ? 'bg-white dark:bg-stone-800 text-orange-600 font-bold shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 font-medium'}">
@@ -19003,10 +19066,6 @@ if (totalCount === 0) {
               <button data-scope="WITH_SURVEY" onclick="VibeApp.setForumScopeFilter('WITH_SURVEY')" 
                       class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${filter.scope === 'WITH_SURVEY' ? 'bg-white dark:bg-stone-800 text-orange-600 font-bold shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 font-medium'}">
                 Khảo sát
-              </button>
-              <button data-scope="EXCHANGE" onclick="VibeApp.setForumScopeFilter('EXCHANGE')" 
-                      class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${filter.scope === 'EXCHANGE' ? 'bg-white dark:bg-stone-800 text-orange-600 font-bold shadow-2xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 font-medium'}">
-                Trao đổi
               </button>
               ${user ? `
                 <button data-scope="MY_POSTS" onclick="VibeApp.setForumScopeFilter('MY_POSTS')" 
@@ -19495,8 +19554,8 @@ if (totalCount === 0) {
         <!-- HEADER BÀI VIẾT: TÁC GIẢ + ROLE + THỜI GIAN + NÚT XÓA -->
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-stone-900 text-white dark:bg-stone-700 flex items-center justify-center font-bold text-xs shrink-0">
-              ${firstLetter}
+            <div class="w-9 h-9 rounded-xl overflow-hidden bg-stone-900 text-white dark:bg-stone-700 flex items-center justify-center font-bold text-xs shrink-0">
+              ${post.author && post.author.avatar_url ? `<img src="${post.author.avatar_url}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${firstLetter}';">` : firstLetter}
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">

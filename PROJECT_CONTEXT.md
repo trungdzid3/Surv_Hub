@@ -258,6 +258,9 @@ c:\Users\Lenovo\Downloads\Linh\
   - **Hiển thị thư viện ảnh (Photo Gallery) & Lightbox**:
     + Bố cục lưới thông minh theo số lượng ảnh: 1 ảnh (full-width), 2 ảnh (2 cột), 3 ảnh (3 cột), 4-10 ảnh (lưới 2-4 cột linh hoạt).
     + Tích hợp trực tiếp với bộ xem ảnh phóng to toàn màn hình `VibeApp.previewFullImage(url, title)` chuẩn `DESIGN.md` Mục 5.4.
+  - **Tinh Gọn Thanh Lọc Diễn Đàn (Scope Tabs v4.9.6)**:
+    + Loại bỏ mục "Trao đổi" khỏi thanh lọc Scope.
+    + Thanh lọc cố định chuẩn 4 mục: "Tất cả", "Thảo luận", "Khảo sát" và "Của tôi".
   - Đồng bộ Capacitor Android assets hoàn tất.
 
 ### Phân Hệ Hồ Sơ Tài Khoản Thực Tế, Tải Lên Avatar & Loại Bỏ 100% Mock Data (v4.7.9)

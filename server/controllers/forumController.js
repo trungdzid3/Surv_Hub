@@ -155,7 +155,7 @@ class ForumController {
       const listSql = `
         SELECT 
           p.id, p.title, p.content, p.images, p.post_type, p.category, p.is_hidden, p.audit_flag, p.views_count, p.likes_count, p.created_at, p.updated_at,
-          u.id AS author_id, u.name AS author_name, u.role AS author_role, u.is_student_verified AS author_is_student_verified,
+          u.id AS author_id, u.name AS author_name, u.role AS author_role, u.is_student_verified AS author_is_student_verified, u.avatar_url AS author_avatar_url,
           s.id AS survey_id, s.title AS survey_title, s.description AS survey_description, s.category AS survey_category,
           s.target_responses, s.collected_responses, s.reward_points_per_response, s.cost_per_response,
           s.status AS survey_status, s.is_student_exchange, s.cover_image_url AS survey_cover_image_url,
@@ -200,7 +200,8 @@ class ForumController {
             id: row.author_id,
             name: row.author_name,
             role: row.author_role,
-            is_student_verified: row.author_is_student_verified === 1
+            is_student_verified: row.author_is_student_verified === 1,
+            avatar_url: row.author_avatar_url || null
           },
           survey: row.survey_id ? {
             id: row.survey_id,
@@ -245,7 +246,7 @@ class ForumController {
       const postRow = db.prepare(`
         SELECT 
           p.id, p.title, p.content, p.images, p.post_type, p.category, p.is_hidden, p.audit_flag, p.views_count, p.likes_count, p.created_at, p.updated_at,
-          u.id AS author_id, u.name AS author_name, u.role AS author_role, u.is_student_verified AS author_is_student_verified,
+          u.id AS author_id, u.name AS author_name, u.role AS author_role, u.is_student_verified AS author_is_student_verified, u.avatar_url AS author_avatar_url,
           s.id AS survey_id, s.title AS survey_title, s.description AS survey_description, s.category AS survey_category,
           s.target_responses, s.collected_responses, s.reward_points_per_response, s.cost_per_response,
           s.status AS survey_status, s.is_student_exchange, s.cover_image_url AS survey_cover_image_url
@@ -299,7 +300,7 @@ class ForumController {
       const comments = db.prepare(`
         SELECT 
           c.id, c.content, c.created_at, c.is_hidden,
-          u.id AS user_id, u.name AS user_name, u.role AS user_role, u.is_student_verified AS user_is_student_verified
+          u.id AS user_id, u.name AS user_name, u.role AS user_role, u.is_student_verified AS user_is_student_verified, u.avatar_url AS user_avatar_url
         FROM forum_comments c
         JOIN users u ON c.user_id = u.id
         WHERE c.post_id = ? AND (c.is_hidden IS NULL OR c.is_hidden = 0 OR c.user_id = ? OR ? = 1)
@@ -315,7 +316,8 @@ class ForumController {
           id: c.user_id,
           name: c.user_name,
           role: c.user_role,
-          is_student_verified: c.user_is_student_verified === 1
+          is_student_verified: c.user_is_student_verified === 1,
+          avatar_url: c.user_avatar_url || null
         }
       }));
 
@@ -348,7 +350,8 @@ class ForumController {
             id: postRow.author_id,
             name: postRow.author_name,
             role: postRow.author_role,
-            is_student_verified: postRow.author_is_student_verified === 1
+            is_student_verified: postRow.author_is_student_verified === 1,
+            avatar_url: postRow.author_avatar_url || null
           },
           survey: postRow.survey_id ? {
             id: postRow.survey_id,
@@ -562,7 +565,7 @@ class ForumController {
       `).run(commentId, id, user.id, content.trim());
 
       const newComment = db.prepare(`
-        SELECT c.id, c.content, c.created_at, u.id AS user_id, u.name AS user_name, u.role AS user_role, u.is_student_verified AS user_is_student_verified
+        SELECT c.id, c.content, c.created_at, u.id AS user_id, u.name AS user_name, u.role AS user_role, u.is_student_verified AS user_is_student_verified, u.avatar_url AS user_avatar_url
         FROM forum_comments c
         JOIN users u ON c.user_id = u.id
         WHERE c.id = ?
@@ -579,7 +582,8 @@ class ForumController {
             id: newComment.user_id,
             name: newComment.user_name,
             role: newComment.user_role,
-            is_student_verified: newComment.user_is_student_verified === 1
+            is_student_verified: newComment.user_is_student_verified === 1,
+            avatar_url: newComment.user_avatar_url || null
           }
         }
       });

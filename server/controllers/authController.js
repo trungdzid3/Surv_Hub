@@ -280,6 +280,7 @@ class AuthController {
           email: email.toLowerCase().trim(),
           name: name.trim(),
           role,
+          avatar_url: null,
           credit_balance: 0.0,
           point_balance: 0,
           student_karma: 0,
@@ -484,7 +485,7 @@ class AuthController {
 
       db.prepare('UPDATE users SET is_google_linked = 1, google_id = ? WHERE id = ?').run(cleanGoogleId, user.id);
 
-      const updatedUser = db.prepare('SELECT id, email, name, role, credit_balance, point_balance, trust_score, status, free_trial_surveys_available, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
+      const updatedUser = db.prepare('SELECT id, email, name, role, avatar_url, credit_balance, point_balance, trust_score, status, free_trial_surveys_available, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
 
       return res.json({
         success: true,
@@ -629,7 +630,7 @@ class AuthController {
       // Khớp OTP -> Cập nhật trạng thái
       db.prepare('UPDATE users SET is_email_verified = 1, email_otp = NULL, email_otp_expires_at = NULL WHERE id = ?').run(user.id);
 
-      const updatedUser = db.prepare('SELECT id, email, name, role, credit_balance, point_balance, trust_score, status, free_trial_surveys_available, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
+      const updatedUser = db.prepare('SELECT id, email, name, role, avatar_url, credit_balance, point_balance, trust_score, status, free_trial_surveys_available, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
 
       return res.json({
         success: true,
@@ -784,6 +785,7 @@ class AuthController {
           email: user.email,
           name: user.name,
           role: user.role,
+          avatar_url: user.avatar_url || null,
           credit_balance: user.credit_balance,
           point_balance: user.point_balance,
           trust_score: user.trust_score,
@@ -1565,6 +1567,16 @@ class AuthController {
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
+
+      // Dọn dẹp avatar cũ của người dùng để tránh tích tụ file thừa
+      try {
+        const existingFiles = fs.readdirSync(uploadDir);
+        for (const file of existingFiles) {
+          if (file.startsWith(`avatar_${user.id}_`)) {
+            try { fs.unlinkSync(path.join(uploadDir, file)); } catch (_) {}
+          }
+        }
+      } catch (_) {}
 
       const fileName = `avatar_${user.id}_${Date.now()}.${ext}`;
       const filePath = path.join(uploadDir, fileName);
