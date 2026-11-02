@@ -39,12 +39,55 @@ c:\Users\Lenovo\Downloads\Linh\
 └── survey-platform.code-workspace
 ```
 
-## 3. Hiện Trạng Các Phân Hệ (bản liệt kê gọn)
-- **Creator Studio**: tạo khảo sát 12 dạng câu hỏi + Smart Text Paste Parser + rẽ nhánh/stepper logic; bộ lọc đối tượng 34 tỉnh mới + trường ĐH; ký quỹ Escrow + bonus nạp theo bậc; Google Sheets Webhook đồng bộ; toggle "Thu thập email người trả lời" (v4.9.5).
-- **Respondent**: làm bài + ví Point + lịch sử giao dịch; quy đổi thẻ cào/VietQR/MoMo/E-Voucher; hồ sơ 5 tab + xác thực sinh viên `.edu.vn` OTP; điểm danh chuỗi ngày; diễn đàn rich text + 10 ảnh (qua Sentinel Gemini kiểm duyệt ngầm).
-- **Admin Console**: overview + tra cứu user + duyệt rút tiền + `/cleantest` thanh lọc dữ liệu test 8 hạng mục + audit log.
-- **Ledger & Wallet**: sổ cái kép ACID 7 loại giao dịch; escrow hoàn tiền an toàn (trần số dư ký quỹ); nạp VietQR Napas247 + webhook đối soát ngân hàng timing-safe.
-- **QA tự hành**: bộ test 17 tầng qua `npm test` (100% PASS là điều kiện bàn giao).
+## 3. Bản Đồ Code (Định Vị Nhanh Khi Cần Sửa)
+
+### 3.1 Backend — `server/`
+| File | Vai trò | Hàm / điểm chính |
+|---|---|---|
+| `app.js` | Bootstrap Express | helmet CSP, CORS whitelist (~67), rate-limit mount (~91), SPA fallback, error handler, start Sentinel 1h/lần |
+| `config/index.js` | Secrets + toàn bộ kinh tế | `JWT_SECRET`, `PAYMENT_GATEWAY` (fail-fast từ env), `ECONOMICS` (giá sàn 3 phân khúc, SLA tiers, deposit tiers, take rate), `ANTI_FRAUD` (ngưỡng trust, speed trap) |
+| `routes/api.js` | Định tuyến v1 | `/auth/*`, `/surveys/*`, `/wallet/*`, `/vouchers/*`, `/users/*`, `/forum/*`, `/push/*`, `/admin/*` (admin bọc `authenticateToken` + `requireRole(['ADMIN'])` + `checkIpBannedMiddleware`) |
+| `controllers/authController.js` | Đăng ký/đăng nhập/OTP | `sendRegistrationOtp` (~80), `login` (~300), `sendVerificationOtp` (~540), OTP sinh viên (~1040), Google OAuth, profile/avatar/enterprise-profile |
+| `controllers/surveyController.js` | Lõi khảo sát (file lớn nhất ~2.4k dòng) | `createSurvey` (~683), `updateSurvey` (~938), `getSurvey` (~600, có cờ `allow_email_collection`), `startSession` (~1400), `submitSurvey` (~1500+: validate + anti-fraud + thưởng), `_stripPrivateProfileFields` (~1505), webhook Sheets 2 luồng (~1823 edit, ~1910 nộp mới), `exportSurveyData` (~2100, CSV/JSON theo cờ email), analytics, close/delete |
+| `controllers/walletController.js` | Ví & thanh toán | `depositCredit` (admin, test-bypass), `createDepositOrder`, `handlePaymentWebhook` (~317, timing-safe), payouts, swap Point→Credit (+5%), VAT invoices |
+| `controllers/adminController.js` | Quản trị | overview, `searchUsers`, `/execute-command` (gồm `/cleantest`), duyệt payouts, fraud logs, audit logs |
+| `controllers/voucherController.js` / `forumController.js` / `userController.js` / `bugReportController.js` | E-Voucher, diễn đàn, streak/checkin, báo lỗi | — |
+| `services/ledgerService.js` | Sổ cái kép ACID (1.267 dòng) | `depositCredit`, `createDepositOrder` (~897, VietQR), `completeDepositOrder`, `refundRemainingEscrow` (~408), refund payout từ chối (~724), `handlePaymentWebhook` (~1129, ghép nội dung `/VIBE\d{6}/`) |
+| `services/antiFraudService.js` | 5 chốt chặn (841 dòng) | `evaluateSubmission` (~339: speed/attention/straight-lining/open-text), trust deltas (~283: +2/+0,2/−5/−12, <40 ban), auto-ban device ≥3 & IP ≥5 (~704-784), `trackAndVerifyDeviceIp` |
+| `services/surveyPricingService.js` | Định giá (684 dòng) | Báo giá 3 phân khúc x độ dài, SLA multiplier, thù lao động, phụ phí lọc |
+| `services/formParserService.js` | Parser (4.380 dòng) | Bóc tách Google Forms / MS Forms / Smart Text Paste → 12 dạng câu hỏi |
+| `services/webhookService.js` | Đồng bộ Sheets | `dispatchGoogleSheetsSync`, `formatPayload`, guard SSRF (`isValidUrl`/`isSafeUrl`) |
+| `services/notificationService.js` | Email đa kênh | `sendSmartEmail` (Resend → Brevo → SMTP), `buildOtpEmailTemplate`, log `email_notifications_log` |
+| `services/forumSentinelService.js` + `geminiSentinelService.js` | Kiểm duyệt AI nội bộ | Quét diễn đàn định kỳ, `auditContent` (Gemini flash-lite, chỉ verdict JSON), ẩn bài + trừ trust ngầm |
+| `services/matchingService.js` / `voucherService.js` / `pushNotificationService.js` / `auditLogService.js` / `logoCrawlerService.js` | Lọc đối tượng (504 dòng) / voucher (892) / web push / `logAction` admin / crawler logo | — |
+| `middlewares/auth.js` / `ipBan.js` / `rateLimit.js` | JWT + role + chặn BANNED / IP cấm / fixed-window in-memory (skip `NODE_ENV=test`) | — |
+| `db/database.js` | Schema + migrations | Bảng `migrations` idempotent (~380, try/catch từng câu), `ensureEssentialAccounts` (seed từ `SEED_ACCOUNT_PASSWORDS`) |
+
+### 3.2 Frontend — `public/app.js` (monolith ~20.6k dòng, đối tượng `VibeApp`)
+Khoảng dòng mang tính tham khảo tại v4.9.5 — tìm theo **tên hàm** chính xác hơn:
+| Khu vực | Dòng ~ | Hàm chính |
+|---|---|---|
+| Validation engine + core | 2-500 | `getDeviceFingerprint` (~556), `api()` (~430, token từ localStorage `survhub_token`) |
+| Menu tài khoản | 1311 | `renderUserProfileDropdown` |
+| Auth + điều khoản | 2410-3400 | `openAuthModal` (form đăng ký ~2548, checkbox điều khoản ~2637), `openTermsModal(event, isReadOnly)` 3177 (điều khoản v3.2, mục 5 dữ liệu cá nhân ~3278) |
+| Điều hướng + Home | 3932-4639 | `renderNavigation`, `renderHomeView`, `handleOpenSurveyFromHome` |
+| Danh sách khảo sát | 4639-5900 | `renderSurveysView` (phân trang 8 bài), `renderCompactSurveyCard`, `renderListSurveyRow` |
+| Luồng làm bài | 5921-8300 | `renderTakeSurveyView` (intro + thông báo email ~6040), `renderQuestionOptions` (6332, 12 dạng), rẽ nhánh logic (~7275+), `renderReviewSurveyView` (8150) |
+| Ví & quy đổi | 8329-9500 | `renderVoucherMarketView`, `renderWalletView` (8567), `openSwapPointsModal` (9396) |
+| Nạp Credit | 9555 | `openDepositModal` (VietQR Napas247, bonus theo bậc) |
+| Creator + analytics | 9867-11500 | `renderCreatorSurveysView`, `renderAnalyticsView` (10075), `openEditSurvey` (10156, điền lại toggle email) |
+| Studio soạn khảo sát | 11571-15000 | `renderCreateSurveyView` (11576), editor câu hỏi (12400-14200), settings: webhook + toggle email (~11907), save payload POST/PUT (~14896, kèm `allow_email_collection`) |
+| Hồ sơ 5 tab | 14989-16100 | `renderProfileView`, xác thực sinh viên `.edu.vn` (~14950+) |
+| Admin | 16157-18800 | `renderAdminOverviewView` (16157), `renderAdminPayoutsView` (16645), `renderAdminFraudView` (17065), `openAdminConsoleModal` (18046) |
+| Diễn đàn | 18860-20600 | `renderForumView`, `openCreateForumPostModal` (19734), render ảnh đính kèm |
+- **`public/js/modules/`**: `customDropdown.js` (dropdown SSOT — cấm `<select>` thô), `adminAnalyticsModule.js`, `bugReportModule.js`, `lightboxViewer.js`.
+- **`public/index.html`**: shell + footer liên hệ (244-266, 3 link pháp lý trỏ `openTermsModal`) + **cache-buster app.js dòng 554**.
+
+### 3.3 CSDL — `server/db/vibesurvey.db` (SQLite WAL)
+`users` (PII: `demographics_json`, OTP cột, trust_score) · `surveys` (+ `allow_email_collection`) · `questions` (logic_json, is_attention_check) · `responses` (`answers_payload`, quality_score) · `point_transactions` (sổ cái kép, 7 loại tx) · `deposit_orders` · `payout_requests` · `fraud_logs` / `device_ip_logs` / `banned_ips` · `registration_otps` · `voucher_campaigns` / `voucher_codes` · `forum_posts` / `forum_comments` / `forum_post_likes` · `notifications` / `push_subscriptions` / `daily_streaks` · `admin_audit_logs` / `bug_reports` / `warranty_claims` / `email_notifications_log` / `vat_invoices`.
+
+### 3.4 Kiểm thử
+`npm test` = `tests/run_all_tests.js` fork 17 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
 
 ## 4. Các Lưu Ý Kỹ Thuật Bắt Buộc (Technical Gotchas)
 1. **Bảo mật câu hỏi bẫy**: API trả câu hỏi cho người điền phải bóc tách 100% `is_attention_check` và `expected_answer`.
