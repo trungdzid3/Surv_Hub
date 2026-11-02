@@ -691,7 +691,7 @@ class SurveyController {
       const {
         title,
         description,
-        category = 'Thị trường',
+        category,
         target_responses = 100,
         questions,
         survey_source = 'INTERNAL_BUILDER',
@@ -820,6 +820,14 @@ class SurveyController {
       const academicTagsJson = academic_tags ? JSON.stringify(academic_tags) : null;
       const targetDemoJson = target_demographics ? JSON.stringify(target_demographics) : null;
 
+      // Chuẩn hóa và nhận diện danh mục lĩnh vực sạch sẽ sang 8 danh mục chuẩn
+      const cleanCategory = formParserService.normalizeCategory(
+        category,
+        title,
+        description,
+        questions
+      );
+
       const surveyId = crypto.randomUUID();
 
       db.exec('BEGIN IMMEDIATE TRANSACTION');
@@ -837,7 +845,7 @@ class SurveyController {
           user.id,
           title.trim(),
           (description || '').trim(),
-          category,
+          cleanCategory,
           target_responses,
           costPerResp,
           rewardPointsPerResp,
@@ -902,6 +910,7 @@ class SurveyController {
           success: true,
           message: 'Tạo bản nháp khảo sát thành công',
           surveyId,
+          category: cleanCategory,
           economics: {
             ...economics,
             costPerResponseVnd: costPerResp,
@@ -997,8 +1006,9 @@ class SurveyController {
       }
 
       if (category !== undefined && typeof category === 'string') {
+        const cleanCat = formParserService.normalizeCategory(category, title || survey.title, description || survey.description);
         updates.push('category = ?');
-        params.push(category.trim());
+        params.push(cleanCat);
       }
 
       if (academic_tags !== undefined) {

@@ -308,6 +308,7 @@ async function runAllTests() {
 
     assert.strictEqual(result.source, 'GOOGLE_FORM');
     assert.strictEqual(result.title, 'Khao Sat Nghiên Cứu Tổng Hợp 12 Định Dạng');
+    assert.ok(result.category, 'Phai co truong category duoc boc tach');
     assert.strictEqual(result.questionCount, 12);
 
     // 0 -> SHORT_TEXT (required = 1)
@@ -434,6 +435,7 @@ async function runAllTests() {
 
     assert.strictEqual(result.source, 'MICROSOFT_FORM');
     assert.strictEqual(result.title, 'Khảo sát ý kiến sinh viên NEU');
+    assert.strictEqual(result.category, 'Giáo dục & Học thuật');
     assert.strictEqual(result.questionCount, 7);
 
     // Question 1: Choice single
@@ -511,6 +513,7 @@ Hàng: Quán A, Quán B | Cột: Giao hàng tận nơi, Chỗ đậu xe, Wi-Fi m
     assert.strictEqual(parsed.source, 'SMART_PASTE');
     assert.strictEqual(parsed.title, 'Khảo Sát Hành Vi Trà Sữa Giới Trẻ 2026');
     assert.strictEqual(parsed.description, 'Nghiên cứu thói quen tiêu dùng thức uống tại khu vực TP. Hồ Chí Minh');
+    assert.strictEqual(parsed.category, 'Kinh doanh & Thị trường');
     assert.strictEqual(parsed.questionCount, 6);
 
     // Câu 1: SINGLE_CHOICE co dau * -> is_required = 1
@@ -783,6 +786,7 @@ Hàng: Quán A, Quán B | Cột: Giao hàng tận nơi, Chỗ đậu xe, Wi-Fi m
     const parsed = formParserService.parseGoogleFormsApiResponse(mockApiResponse, editUrl);
     assert.strictEqual(parsed.source, 'GOOGLE_FORMS_API');
     assert.strictEqual(parsed.title, 'Khảo sát Thị hiếu Tiêu dùng 2026');
+    assert.strictEqual(parsed.category, 'Kinh doanh & Thị trường');
     assert.strictEqual(parsed.questionCount, 12);
 
     // Kiem tra 12 loai cau hoi
@@ -1118,6 +1122,152 @@ Câu 4. Kỹ năng giải quyết xung đột nhóm của bạn?
 
     assert.strictEqual(q1.logic.options['Ban Nhân sự'].action, 'GO_TO_PAGE');
     assert.ok(q1.logic.options['Ban Nhân sự'].target === 'order:6' || q1.logic.options['Ban Nhân sự'].target === 6, 'Target phai tro ve Section 6');
+  });
+
+  // ==========================================
+  // KHOI 7: CHUAN HOA DANH MUC LINH VUC FORM PARSER & SURVEY CONTROLLER
+  // ==========================================
+  console.log('\n--- KHOI 7: CHUAN HOA DANH MUC LINH VUC THONG MINH ---');
+
+  await runTest('16. Form Parser: Chuan hoa va tu dong gan danh muc sang 8 danh muc chuan', async () => {
+    // 1. Kiem tra nhan dien tu dong qua detectCategory
+    assert.strictEqual(
+      formParserService.detectCategory('Khao sat muc do ung dung Tri tue nhan tao (ChatGPT, Gemini) trong lap trinh', 'Nghien cuu ve AI Developer'),
+      'Công nghệ & AI'
+    );
+
+    assert.strictEqual(
+      formParserService.detectCategory('Khao sat hanh vi tieu dung san pham FMCG va mua sam Shopee', 'Thi truong ban le 2026'),
+      'Kinh doanh & Thị trường'
+    );
+
+    assert.strictEqual(
+      formParserService.detectCategory('Khao sat thoi quen thanh toan qua vi dien tu MoMo va ngan hang so', 'Dich vu tai chinh ca nhan'),
+      'Tài chính & Ngân hàng'
+    );
+
+    assert.strictEqual(
+      formParserService.detectCategory('Nghien cuu muc do stress va tram cam cua gioi tre tren mang xa hoi TikTok', 'Khoa hoc hanh vi va tam ly'),
+      'Khoa học Xã hội & Tâm lý'
+    );
+
+    assert.strictEqual(
+      formParserService.detectCategory('Khao sat thoi quen tap gym, dinh duong va cham soc suc khoe phong kham', 'Y te the chat'),
+      'Y tế & Sức khỏe'
+    );
+
+    assert.strictEqual(
+      formParserService.detectCategory('Khao sat sinh vien dai hoc ve phuong phap on thi va luan van tot nghiep', 'De tai nghien cuu khoa hoc sinh vien'),
+      'Giáo dục & Học thuật'
+    );
+
+    assert.strictEqual(
+      formParserService.detectCategory('Khao sat trai nghiem nguoi dung giao dien UI UX ung dung di dong', 'Kiem thu tinh kha dung tren Figma'),
+      'Thiết kế & Trải nghiệm UX'
+    );
+
+    // 2. Kiem tra mac dinh: tieu de chua sinh vien -> 'Giáo dục & Học thuật'
+    assert.strictEqual(
+      formParserService.detectCategory('Khao sat y kien sinh vien', ''),
+      'Giáo dục & Học thuật'
+    );
+
+    // 3. Kiem tra normalizeCategory voi ma code
+    assert.strictEqual(formParserService.normalizeCategory('TECH'), 'Công nghệ & AI');
+    assert.strictEqual(formParserService.normalizeCategory('BUSINESS'), 'Kinh doanh & Thị trường');
+    assert.strictEqual(formParserService.normalizeCategory('FINANCE'), 'Tài chính & Ngân hàng');
+    assert.strictEqual(formParserService.normalizeCategory('SOCIAL'), 'Khoa học Xã hội & Tâm lý');
+    assert.strictEqual(formParserService.normalizeCategory('HEALTH'), 'Y tế & Sức khỏe');
+    assert.strictEqual(formParserService.normalizeCategory('EDU'), 'Giáo dục & Học thuật');
+    assert.strictEqual(formParserService.normalizeCategory('DESIGN'), 'Thiết kế & Trải nghiệm UX');
+    assert.strictEqual(formParserService.normalizeCategory('OTHER'), 'Đa ngành & Lĩnh vực khác');
+
+    // 4. Kiem tra normalizeCategory khi nhan gia tri cu 'Thị trường' kem tieu de chuyen biet
+    assert.strictEqual(
+      formParserService.normalizeCategory('Thị trường', 'Khao sat ung dung Chatbot AI'),
+      'Công nghệ & AI'
+    );
+
+    assert.strictEqual(
+      formParserService.normalizeCategory('Thị trường', 'Luan van nghien cuu hoc thuat sinh vien NEU'),
+      'Giáo dục & Học thuật'
+    );
+
+    // 5. Kiem tra truong category co mat trong ket qua parseSmartText
+    const smartParsed = formParserService.parseSmartText(`
+Khảo sát xu hướng sử dụng ChatGPT và lập trình viên
+Mô tả đề tài nghiên cứu công nghệ số
+
+Câu 1: Bạn dùng AI nào?
+A. ChatGPT
+B. Claude
+    `.trim());
+
+    assert.strictEqual(smartParsed.category, 'Công nghệ & AI');
+
+    // 6. Kiem tra SurveyController.createSurvey chuan hoa va luu dung danh muc vao CSDL
+    const surveyController = require('../server/controllers/surveyController');
+    const mockReq = {
+      user: { id: testCreatorId, role: 'CREATOR', status: 'ACTIVE' },
+      body: {
+        title: 'Khảo sát Ứng dụng Trí tuệ Nhân tạo trong Doanh nghiệp',
+        description: 'Đánh giá tác động của AI Agent',
+        category: 'TECH',
+        target_responses: 50,
+        questions: [
+          { order_index: 1, type: 'SHORT_TEXT', content: 'Bạn dùng AI nào?' }
+        ]
+      }
+    };
+
+    const mockRes = {
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(data) {
+        this.body = data;
+        return this;
+      }
+    };
+
+    surveyController.createSurvey(mockReq, mockRes);
+    assert.strictEqual(mockRes.statusCode, 201);
+    assert.strictEqual(mockRes.body.category, 'Công nghệ & AI');
+
+    const dbSurvey = db.prepare('SELECT category FROM surveys WHERE id = ?').get(mockRes.body.surveyId);
+    assert.strictEqual(dbSurvey.category, 'Công nghệ & AI');
+
+    // 7. Kiem tra khi khong truyen category kem tieu de sinh vien hoc thuat
+    const mockReq2 = {
+      user: { id: testCreatorId, role: 'CREATOR', status: 'ACTIVE' },
+      body: {
+        title: 'Khảo sát sinh viên đại học về phương pháp nghiên cứu khoa học',
+        description: 'Đề tài khóa luận tốt nghiệp',
+        target_responses: 50,
+        questions: [
+          { order_index: 1, type: 'SHORT_TEXT', content: 'Khoa bạn đang theo học?' }
+        ]
+      }
+    };
+
+    const mockRes2 = {
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(data) {
+        this.body = data;
+        return this;
+      }
+    };
+
+    surveyController.createSurvey(mockReq2, mockRes2);
+    assert.strictEqual(mockRes2.statusCode, 201);
+    assert.strictEqual(mockRes2.body.category, 'Giáo dục & Học thuật');
+
+    const dbSurvey2 = db.prepare('SELECT category FROM surveys WHERE id = ?').get(mockRes2.body.surveyId);
+    assert.strictEqual(dbSurvey2.category, 'Giáo dục & Học thuật');
   });
 
   console.log('\n===============================================================');

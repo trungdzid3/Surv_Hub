@@ -26,6 +26,254 @@ class FormParserService {
   }
 
   /**
+   * Helper loại bỏ dấu tiếng Việt chuẩn
+   */
+  _stripAccents(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase();
+  }
+
+  /**
+   * Tự động nhận diện và phân loại khảo sát sang 8 danh mục chuẩn dựa trên tiêu đề, mô tả và nội dung câu hỏi:
+   * 1. 'Công nghệ & AI' (TECH)
+   * 2. 'Kinh doanh & Thị trường' (BUSINESS)
+   * 3. 'Tài chính & Ngân hàng' (FINANCE)
+   * 4. 'Khoa học Xã hội & Tâm lý' (SOCIAL)
+   * 5. 'Y tế & Sức khỏe' (HEALTH)
+   * 6. 'Giáo dục & Học thuật' (EDU)
+   * 7. 'Thiết kế & Trải nghiệm UX' (DESIGN)
+   * 8. 'Đa ngành & Lĩnh vực khác' (OTHER)
+   * @param {string} title Tiêu đề khảo sát
+   * @param {string} [description=''] Mô tả khảo sát
+   * @param {Array} [questions=[]] Danh sách câu hỏi
+   * @returns {string} Tên danh mục chuẩn
+   */
+  detectCategory(title = '', description = '', questions = []) {
+    const titleStr = typeof title === 'string' ? title.trim() : '';
+    const descStr = typeof description === 'string' ? description.trim() : '';
+    let questionsText = '';
+    if (Array.isArray(questions) && questions.length > 0) {
+      questionsText = questions
+        .slice(0, 15)
+        .map(q => {
+          if (!q) return '';
+          const c = q.content || q.title || '';
+          const opts = Array.isArray(q.options) ? q.options.join(' ') : '';
+          return `${c} ${opts}`;
+        })
+        .join(' ');
+    }
+
+    const tLower = titleStr.toLowerCase();
+    const dLower = descStr.toLowerCase();
+    const qLower = questionsText.toLowerCase();
+
+    const tNoAccent = this._stripAccents(titleStr);
+    const dNoAccent = this._stripAccents(descStr);
+    const qNoAccent = this._stripAccents(questionsText);
+
+    // Định nghĩa tập regex và từ khóa chuyên biệt cho 7 nhóm lĩnh vực (hỗ trợ cả tiếng Việt có dấu và không dấu)
+    const rules = [
+      {
+        category: 'Công nghệ & AI',
+        patterns: [
+          /\b(?:ai|trí tuệ nhân tạo|tri tue nhan tao|chatgpt|gpt|gemini|copilot|claude|deepseek|llm|genai|prompt)\b/i,
+          /\b(?:công nghệ|cong nghe|phần mềm|phan mem|lập trình|lap trinh|developer|coder|source code|mã nguồn|it|cntt|khoa học máy tính|khoa hoc may tinh|computer science)\b/i,
+          /\b(?:thuật toán|thuat toan|algorithm|machine learning|học máy|hoc may|deep learning|data science|khoa học dữ liệu|khoa hoc du lieu|big data|dữ liệu lớn|du lieu lon|cloud computing|điện toán đám mây|cybersecurity|an ninh mạng|an ninh mang|an toàn thông tin|blockchain|web3|iot|internet vạn vật)\b/i,
+          /\b(?:ứng dụng số|ung dung so|chuyển đổi số|chuyen doi so|app di động|app di dong|mobile app|hệ điều hành|operating system|database|cơ sở dữ liệu)\b/i
+        ]
+      },
+      {
+        category: 'Tài chính & Ngân hàng',
+        patterns: [
+          /\b(?:tài chính|tai chinh|ngân hàng|ngan hang|banking|bank|fintech|ví điện tử|vi dien tu|momo|zalopay|vnpay|shopeepay|vietqr)\b/i,
+          /\b(?:thanh toán số|thanh toan so|chuyển tiền|chuyen tien|tín dụng|tin dung|thẻ tín dụng|the tin dung|credit card|cho vay|khoản vay|khoan vay|vay vốn|vay von|lãi suất|lai suat|tiết kiệm|tiet kiem|gửi tiết kiệm)\b/i,
+          /\b(?:đầu tư|dau tu|chứng khoán|chung khoan|cổ phiếu|co phieu|trái phiếu|trai phieu|crypto|tiền mã hóa|tien ma hoa|tiền số|tien so|bitcoin|ethereum|bảo hiểm|bao hiem|bảo hiểm nhân thọ)\b/i,
+          /\b(?:quản lý chi tiêu|quan ly chi tieu|thu nhập cá nhân|thu nhap ca nhan|tài chính cá nhân|tai chinh ca nhan|tài chính doanh nghiệp)\b/i
+        ]
+      },
+      {
+        category: 'Y tế & Sức khỏe',
+        patterns: [
+          /\b(?:y tế|y te|sức khỏe|suc khoe|chăm sóc sức khỏe|cham soc suc khoe|healthcare|medical|bệnh viện|benh vien|phòng khám|phong kham|bác sĩ|bac si|y tá|y ta|điều dưỡng|dieu duong)\b/i,
+          /\b(?:khám chữa bệnh|kham chua benh|điều trị|dieu tri|bệnh nhân|benh nhan|dược phẩm|duoc pham|nhà thuốc|nha thuoc|thuốc tây|thuoc tay|vắc xin|vac xin|tiêm chủng|tiem chung|dịch bệnh|dich benh|covid)\b/i,
+          /\b(?:dinh dưỡng|dinh duong|thực phẩm chức năng|thuc pham chuc nang|chế độ ăn|che do an|ăn kiêng|an kieng|thể dục|the duc|thể thao|the thao|gym|fitness|yoga|giấc ngủ|giac ngu|thị lực|thi luc|nha khoa|răng miệng|rang mieng|tâm thần|tam than|thể chất|the chat)\b/i
+        ]
+      },
+      {
+        category: 'Thiết kế & Trải nghiệm UX',
+        patterns: [
+          /\b(?:thiết kế|thiet ke|design|ui|ux|ui\/ux|giao diện|giao dien|trải nghiệm người dùng|trai nghiem nguoi dung|user experience|user interface)\b/i,
+          /\b(?:đồ họa|do hoa|graphic design|figma|adobe|photoshop|illustrator|prototype|mockup|wireframe|tính khả dụng|tinh kha dung|usability|thẩm mỹ|tham my|phối màu|phoi mau|typography)\b/i
+        ]
+      },
+      {
+        category: 'Khoa học Xã hội & Tâm lý',
+        patterns: [
+          /\b(?:khoa học xã hội|khoa hoc xa hoi|xã hội học|xa hoi hoc|tâm lý|tam ly|tâm lý học|tam ly hoc|psychology|stress|căng thẳng|cang thang|trầm cảm|tram cam|lo âu|lo au|cảm xúc|cam xuc|sức khỏe tinh thần|suc khoe tinh than|mental health)\b/i,
+          /\b(?:hành vi xã hội|hanh vi xa hoi|mối quan hệ|moi quan he|gia đình|gia dinh|bạn bè|ban be|tình cảm|tinh cam|hôn nhân|hon nhan|cộng đồng|cong dong|bình đẳng giới|binh dang gioi|nhận thức xã hội|nhan thuc xa hoi|văn hóa xã hội|van hoa xa hoi|mạng xã hội|mang xa hoi)\b/i
+        ]
+      },
+      {
+        category: 'Giáo dục & Học thuật',
+        patterns: [
+          /\b(?:giáo dục|giao duc|học thuật|hoc thuat|trường học|truong hoc|đại học|dai hoc|cao đẳng|cao dang|sinh viên|sinh vien|học sinh|hoc sinh|giảng viên|giang vien|giáo viên|giao vien|thầy cô|thay co|nghiên cứu khoa học|nghien cuu khoa hoc|nckh)\b/i,
+          /\b(?:luận văn|luan van|khóa luận|khoa luan|đồ án|do an|tiểu luận|tieu luan|học tập|hoc tap|học kỳ|hoc ky|ôn thi|on thi|thi cử|thi cu|điểm số|diem so|học bổng|hoc bong|phương pháp học|phuong phap hoc|elearning|e-learning|đào tạo|dao tao|edtech|học trực tuyến|tốt nghiệp|tot nghiep)\b/i
+        ]
+      },
+      {
+        category: 'Kinh doanh & Thị trường',
+        patterns: [
+          /\b(?:kinh doanh|thị trường|thi truong|thương mại|thuong mai|fmcg|bán lẻ|ban le|retail|tiêu dùng|tieu dung|người tiêu dùng|nguoi tieu dung|khách hàng|khach hang|hành vi mua sắm|hanh vi mua sam|hành vi tiêu dùng|hanh vi tieu dung|thói quen tiêu dùng|thoi quen tieu dung)\b/i,
+          /\b(?:thương hiệu|thuong hieu|brand|marketing|quảng cáo|quang cao|tiếp thị|tiep thi|bán hàng|ban hang|sales|doanh nghiệp|doanh nghiep|công ty|cong ty|startup|khởi nghiệp|khoi nghiep|chuỗi cung ứng|chuoi cung ung|supply chain|xuất nhập khẩu|xuat nhap khau|thương mại điện tử|thuong mai dien tu|e-commerce|shopee|lazada|tiki|tiktok shop|ẩm thực|thức uống|trà sữa|tra sua|cà phê|ca phe|dịch vụ|dich vu|sản phẩm|san pham)\b/i
+        ]
+      }
+    ];
+
+    // Chấm điểm cho từng danh mục: Tiêu đề x5 điểm, Mô tả x2 điểm, Câu hỏi x1 điểm
+    let bestCategory = null;
+    let highestScore = 0;
+
+    for (const rule of rules) {
+      let score = 0;
+      for (const p of rule.patterns) {
+        if (p.test(tLower) || p.test(tNoAccent)) score += 5;
+        if (p.test(dLower) || p.test(dNoAccent)) score += 2;
+        if ((qLower && p.test(qLower)) || (qNoAccent && p.test(qNoAccent))) score += 1;
+      }
+      if (score > highestScore) {
+        highestScore = score;
+        bestCategory = rule.category;
+      }
+    }
+
+    if (highestScore > 0 && bestCategory) {
+      return bestCategory;
+    }
+
+    // Mặc định thông minh khi không có điểm vượt trội
+    const fullCombined = `${tLower} ${dLower} ${tNoAccent} ${dNoAccent}`;
+    if (/(?:sinh viên|sinh vien|học sinh|hoc sinh|học thuật|hoc thuat|luận văn|luan van|đồ án|do an|đại học|dai hoc|nghiên cứu|nghien cuu)/i.test(fullCombined)) {
+      return 'Giáo dục & Học thuật';
+    }
+    if (/(?:kinh doanh|thị trường|thi truong|tiêu dùng|tieu dung|sản phẩm|san pham|khách hàng|khach hang|thương hiệu|thuong hieu)/i.test(fullCombined)) {
+      return 'Kinh doanh & Thị trường';
+    }
+
+    // Nếu tiêu đề rỗng hoặc hoàn toàn chung chung
+    if (!titleStr) {
+      return 'Đa ngành & Lĩnh vực khác';
+    }
+
+    return 'Kinh doanh & Thị trường';
+  }
+
+  /**
+   * Chuẩn hóa danh mục đầu vào sang 8 danh mục chuẩn của hệ thống VibeSurvey
+   * @param {string} [category] Danh mục đầu vào hoặc mã phân loại
+   * @param {string} [title=''] Tiêu đề khảo sát (dùng để suy luận tự động)
+   * @param {string} [description=''] Mô tả khảo sát
+   * @param {Array} [questions=[]] Danh sách câu hỏi
+   * @returns {string} Tên danh mục chuẩn
+   */
+  normalizeCategory(category, title = '', description = '', questions = []) {
+    const raw = (category && typeof category === 'string') ? category.trim() : '';
+
+    const STANDARD_LIST = [
+      'Công nghệ & AI',
+      'Kinh doanh & Thị trường',
+      'Tài chính & Ngân hàng',
+      'Khoa học Xã hội & Tâm lý',
+      'Y tế & Sức khỏe',
+      'Giáo dục & Học thuật',
+      'Thiết kế & Trải nghiệm UX',
+      'Đa ngành & Lĩnh vực khác'
+    ];
+
+    // 1. Nếu đã thuộc danh mục chuẩn
+    if (STANDARD_LIST.includes(raw)) {
+      return raw;
+    }
+
+    const upper = raw.toUpperCase();
+
+    // 2. Ánh xạ từ mã code chuẩn
+    const codeMap = {
+      'TECH': 'Công nghệ & AI',
+      'IT': 'Công nghệ & AI',
+      'AI': 'Công nghệ & AI',
+      'BUSINESS': 'Kinh doanh & Thị trường',
+      'MARKET': 'Kinh doanh & Thị trường',
+      'FMCG': 'Kinh doanh & Thị trường',
+      'FINANCE': 'Tài chính & Ngân hàng',
+      'BANKING': 'Tài chính & Ngân hàng',
+      'SOCIAL': 'Khoa học Xã hội & Tâm lý',
+      'PSYCHOLOGY': 'Khoa học Xã hội & Tâm lý',
+      'HEALTH': 'Y tế & Sức khỏe',
+      'MEDICAL': 'Y tế & Sức khỏe',
+      'EDU': 'Giáo dục & Học thuật',
+      'ACADEMIC': 'Giáo dục & Học thuật',
+      'EDUCATION': 'Giáo dục & Học thuật',
+      'DESIGN': 'Thiết kế & Trải nghiệm UX',
+      'UIUX': 'Thiết kế & Trải nghiệm UX',
+      'UI_UX': 'Thiết kế & Trải nghiệm UX',
+      'OTHER': 'Đa ngành & Lĩnh vực khác',
+      'GENERAL': 'Đa ngành & Lĩnh vực khác',
+      'ALL': 'Đa ngành & Lĩnh vực khác'
+    };
+
+    if (codeMap[upper]) {
+      return codeMap[upper];
+    }
+
+    const lower = raw.toLowerCase();
+
+    // 3. Nếu là giá trị cũ 'Thị trường' hoặc không truyền danh mục:
+    // Thử phân tích ngữ nghĩa thông minh từ tiêu đề/mô tả trước
+    if (!raw || lower === 'thị trường' || lower === 'thi truong') {
+      const detected = this.detectCategory(title, description, questions);
+      if (detected) {
+        return detected;
+      }
+      return 'Kinh doanh & Thị trường';
+    }
+
+    // 4. Ánh xạ các biến thể tiếng Việt cũ
+    if (lower.includes('công nghệ') || lower.includes('phần mềm') || lower.includes('trí tuệ nhân tạo') || lower.includes('khoa học máy tính')) {
+      return 'Công nghệ & AI';
+    }
+    if (lower.includes('tài chính') || lower.includes('ngân hàng')) {
+      return 'Tài chính & Ngân hàng';
+    }
+    if (lower.includes('xã hội') || lower.includes('tâm lý')) {
+      return 'Khoa học Xã hội & Tâm lý';
+    }
+    if (lower.includes('sức khỏe') || lower.includes('y tế') || lower.includes('đời sống')) {
+      return 'Y tế & Sức khỏe';
+    }
+    if (lower.includes('thiết kế') || lower.includes('trải nghiệm ux') || lower.includes('sản phẩm ux') || lower.includes('ui')) {
+      return 'Thiết kế & Trải nghiệm UX';
+    }
+    if (lower.includes('học thuật') || lower.includes('giáo dục') || lower.includes('sinh viên') || lower.includes('luận văn') || lower.includes('đào tạo')) {
+      return 'Giáo dục & Học thuật';
+    }
+    if (lower.includes('kinh doanh') || lower.includes('thương mại') || lower.includes('thị trường') || lower.includes('fmcg') || lower.includes('kinh tế') || lower.includes('quản trị') || lower.includes('bán lẻ')) {
+      return 'Kinh doanh & Thị trường';
+    }
+    if (lower.includes('khác') || lower.includes('đa ngành')) {
+      return 'Đa ngành & Lĩnh vực khác';
+    }
+
+    // 5. Fallback cuối cùng dựa trên nội dung biểu mẫu
+    return this.detectCategory(title || raw, description, questions);
+  }
+
+  /**
    * Helper kiểm tra xem một IP có thuộc dải mạng nội bộ / link-local / loopback / cloud metadata không
    */
   isPrivateOrInternalIp(ip) {
@@ -625,10 +873,13 @@ class FormParserService {
       embedUrl += (embedUrl.includes('?') ? '&' : '?') + 'embedded=true';
     }
 
+    const category = this.detectCategory(title, description, questions);
+
     return {
       source: 'GOOGLE_FORM',
       title,
       description,
+      category,
       originalUrl,
       embedUrl,
       questions,
@@ -1041,10 +1292,13 @@ class FormParserService {
       embedUrl += (embedUrl.includes('?') ? '&' : '?') + 'embedded=true';
     }
 
+    const category = this.detectCategory(title, description, questions);
+
     return {
       source: 'GOOGLE_FORMS_API',
       title,
       description,
+      category,
       originalUrl,
       embedUrl,
       questions,
@@ -2631,10 +2885,12 @@ class FormParserService {
 
             if (questions.length > 0) {
               this._resolveAndMapBranchingTargets(questions);
+              const category = this.detectCategory(title, description, questions);
               return {
                 source: 'MICROSOFT_FORM',
                 title,
                 description,
+                category,
                 originalUrl,
                 embedUrl,
                 questions,
@@ -2746,10 +3002,13 @@ class FormParserService {
       embedUrl += (embedUrl.includes('?') ? '&' : '?') + 'embed=true';
     }
 
+    const category = this.detectCategory(title, description, questions);
+
     return {
       source: 'MICROSOFT_FORM',
       title,
       description,
+      category,
       originalUrl,
       embedUrl,
       questions,
@@ -3284,10 +3543,13 @@ class FormParserService {
       this._resolveAndMapBranchingTargets(questions, true);
     }
 
+    const category = this.detectCategory(title || 'Khảo sát mới', description || '', questions);
+
     return {
       source: 'SMART_PASTE',
       title: title || 'Khảo sát mới',
       description: description || '',
+      category,
       questions,
       questionCount: questions.length
     };

@@ -2909,3 +2909,41 @@ c:\Users\Lenovo\Downloads\Linh\
 - Toàn bộ 17/17 Test Suites hệ thống (`npm test`): **100% PASS**.
 - Đồng bộ ứng dụng Android: Hoàn tất đồng bộ mã nguồn sang Capacitor assets.
 
+---
+
+## CẬP NHẬT TIẾN ĐỘ: ĐỒNG BỘ TOÀN DIỆN 8 LĨNH VỰC CHUẨN HÓA (CATEGORIES SSOT) & TINH GỌN CREATOR STUDIO (02/11/2026)
+
+### 1. Đồng Bộ Nguồn Chân Lý Duy Nhất 8 Lĩnh Vực (Categories SSOT)
+- **Chuẩn hóa danh mục 8 lĩnh vực thống nhất toàn diện hệ thống**:
+  1. `TECH`: Công Nghệ & AI (`cpu`)
+  2. `BUSINESS`: Kinh Doanh & Thị Trường (`trending-up`)
+  3. `SOCIAL`: Xã Hội & Đời Sống (`users`)
+  4. `HEALTH`: Sức Khỏe & Y Tế (`heart-pulse`)
+  5. `EDU`: Giáo Dục & Đào Tạo (`book-open`)
+  6. `FINANCE`: Tài Chính & Đầu Tư (`wallet` / `coins`)
+  7. `DESIGN`: Thiết Kế & UX/UI (`palette`)
+  8. `OTHER`: Đa Ngành & Lĩnh Vực Khác (`tag` / `sparkles`)
+- **Phạm vi đồng bộ trên 4 phân hệ**:
+  - **Trang Chủ (Home)**: Các Category Pills tương tác nhanh đồng bộ chuẩn 8 lĩnh vực, dẫn trực tiếp vào bộ lọc tìm kiếm tương ứng.
+  - **Bộ Lọc Khảo Sát (Surveys View)**: Dải danh mục và dropdown lọc khảo sát đồng bộ chính xác theo 8 mã danh mục chuẩn hóa.
+  - **Creator Studio**: Dropdown chọn thể loại/lĩnh vực đề tài trong Tab Cài Đặt (Card 1) và Tab Dán Văn Bản Thông Minh cập nhật đầy đủ 8 danh mục.
+  - **Diễn Đàn (Forum)**: Bộ lọc chuyên ngành, modal đăng bài viết mới và gắn tag lĩnh vực tự động đồng bộ theo 8 lĩnh vực chuẩn hóa.
+
+### 2. Tinh Gọn & Tối Giản Creator Studio Theo Chuẩn DESIGN.md
+- **Đồng bộ 2 chiều Slider & 3 nấc SLA gom mẫu**:
+  - Khi click chọn nấc SLA (Sàn tiết kiệm, Đề xuất +25%, Hỏa tốc +60%), Slider tự động trượt chính xác về vị trí giá tương ứng.
+  - Khi kéo Slider tự do, hệ thống tự động nhận diện nấc SLA gần nhất và cập nhật highlight visual.
+- **Thu gọn giải thích tốc độ gom mẫu**:
+  - Thu gọn các dòng giải thích dài dòng vào nút popover `?` cạnh nhãn Creator Boost, giữ giao diện phẳng và thoáng mắt.
+  - Xóa bỏ triệt để nhãn `(Doanh Nghiệp Boost)` gây rối rắm.
+- **Đơn giản hóa tiêu đề các thẻ Card trong Studio**:
+  - Card 4 chuẩn hóa ngắn gọn thành "Thanh Toán" (loại bỏ từ ngữ rườm rà).
+  - Tối ưu typography và padding theo chuẩn Minimalist Modern của `DESIGN.md`.
+
+### 3. Nghiệm Thu & Kiểm Chuẩn Chất Lượng
+- Kiểm tra cú pháp: `node -c public/app.js`, `node -c server/services/formParserService.js`, `node -c server/controllers/surveyController.js`, `node -c server/controllers/forumController.js` đạt PASS 100%.
+- Toàn bộ 17/17 tầng kiểm thử tự hành (`npm test`): **100% PASS** (18.68s).
+- Đồng bộ ứng dụng Android Capacitor: `npm run sync:android` thành công 100%.
+- Kiểm tra `git status`: Workspace sạch sẽ, không có tệp rác hay tệp tạm tồn đọng.
+
+
