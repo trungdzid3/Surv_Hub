@@ -15,6 +15,11 @@ Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeS
    - Di động: Capacitor Android Native (Assets đồng bộ sẵn sàng build APK).
    - Hạ tầng: Oracle Cloud Always Free (2 OCPU / 6GB ARM64) + Cloudflare Tunnel + Tên miền miễn phí DigitalPlat.
 
+## Quy Chuẩn Sao Lưu Dự Phòng Khi Đại Tu (Major Overhaul Backup Protocol)
+- **Bắt buộc sao lưu khi Đại tu**: Các đợt thay đổi lớn về giao diện/layout, màu sắc/design system, tái cấu trúc logic chính (pricing, ledger, anti-fraud, auth, routing), nâng cấp CSDL hoặc schema/API contracts trọng yếu. Bắt buộc tạo bản sao lưu file/module/DB vào `backups/` hoặc file có timestamp trước khi sửa.
+- **Không áp dụng khi Sửa nhỏ lẻ**: Hotfix dưới 30 dòng hoặc tinh chỉnh nhẹ không tạo backup để tránh rác workspace.
+- **Kỷ luật Dọn dẹp & Rollback**: Chủ động kiểm tra và xóa/dọn dẹp các bản backup cũ trùng lặp; luôn đảm bảo phương án Rollback nguyên trạng ngay lập tức nếu gặp sự cố.
+
 ## Bảng Phân Bổ Đội Hình Tác Tử (Antigravity Specialist Roster)
 - `pricing-economist`: Phụ trách `server/config/index.js`, `server/services/pricingService.js`.
 - `fintech-ledger-engineer`: Phụ trách `server/services/ledgerService.js`, `server/controllers/walletController.js`.

@@ -294,6 +294,13 @@ c:\Users\Lenovo\Downloads\Linh\
   - Cấu trúc đối xứng hoàn hảo 2 - 1 - 2 với 5 tabs chia đều 20% mỗi tab: `[Quản Trị] [Khảo Sát] --- [ + Tạo Khảo Sát (FAB) ] --- [Khảo Sát Của Tôi] [Ví & Quỹ Sàn]`.
   - Nút Tạo Khảo Sát FAB tròn cam nằm chính giữa tuyệt đối (Tâm 50%, độ lệch trục đối xứng đo đạc bằng Chrome CDP đạt 0.0000px trên iPhone SE và 0.0156px trên Pixel 7).
 
+### I. Quy Chuẩn Đồng Bộ Sắc Cam Toàn Diện (All-Orange Interface Palette - v4.9.4)
+- **Chuẩn hóa sắc thái màu cam đồng nhất**:
+  - Toàn bộ các trạng thái chức năng (Thành công, Cảnh báo, Nguy hiểm, Báo lỗi, Khóa/Mở, Hoàn tiền) và các thành phần tương tác (Badges, Chips, Checkbox, Highlight, Icons, SVG trends chart) được đồng bộ 100% về dải màu Cam (`#EA580C`, `#F97316`, `#C2410C`, `#FB923C`, `#FFF7ED`).
+  - Loại bỏ hoàn toàn các mã màu xanh lá (emerald/green), xanh dương (blue/indigo/sky/cyan), đỏ (red/rose) và vàng (amber/yellow) trên toàn bộ giao diện người dùng.
+  - Bảo toàn 100% màu nền hệ thống: Nền sáng (`#FFF8F5`, `#FAFAFA`, `#FFFFFF`) và Nền tối Obsidian Charcoal (`#121214`, `#1C1C20`, `#222228`) được giữ nguyên để bảo đảm tính tương phản cao và chống mỏi mắt.
+  - Đồng bộ nguồn chân lý SSOT tại `DESIGN.md`, `public/styles.css`, `public/index.html` và `public/js/modules/adminAnalyticsModule.js`.
+
 ### G. Dọn Dẹp Lưu Trữ, Tệp Rác & Kiểm Toán Hệ Thống
 - **Dọn dẹp tệp rác & giải phóng dung lượng**: Đã xóa sạch 95 tệp cùng 4 thư mục rác (`backup_ui_pre_hallmark/`, `archive/`, `scratch/`, `.hallmark/`, 10 ảnh upload demo cũ trong `uploads/`, các tệp `.bak`, `.db-wal`, `.db-shm`), giải phóng tổng cộng **129.43 MB** đĩa trống.
 - **Bảo toàn dữ liệu người dùng**: Tệp `"Danh Sách Email Sinh Viên.docx"` được bảo vệ nguyên vẹn 100%.
@@ -307,6 +314,11 @@ c:\Users\Lenovo\Downloads\Linh\
 4. **Không phân biệt đối xử Creator Boost**: Tỷ lệ phân chia tiền thưởng tăng thêm giữa đáp viên và sàn luôn là cố định **80% điền / 20% sàn** trên toàn hệ thống.
 5. **Chuẩn hóa URL biểu mẫu ngoài**: Luôn loại bỏ query parameters rác (`?usp=sf_link`, `?fbclid=...`) qua hàm `normalizeFormUrl()` trước khi kiểm tra trùng lặp biểu mẫu.
 6. **Bảo toàn quyền Admin**: Trong mọi logic tự động khóa tài khoản vi phạm, luôn có điều kiện bảo vệ `AND role != 'ADMIN'`.
+7. **Quy Chuẩn Sao Lưu Dự Phòng Khi Đại Tu Hệ Thống (Major Overhaul Backup Protocol)**:
+   - *Bắt buộc áp dụng khi Đại tu (Major Overhaul)*: Bắt buộc tạo bản sao lưu (backup) cẩn thận cho các file, module hoặc CSDL SQLite bị tác động trước khi đại tu giao diện, bố cục layout, bảng màu sắc/design system, tái cấu trúc logic chính/cốt lõi (pricing, ledger, anti-fraud, auth, routing) hoặc thay đổi schema CSDL.
+   - *Kỷ luật lưu trữ & dọn dẹp*: Lưu bản sao lưu vào thư mục `backups/` hoặc file có định danh/timestamp rõ ràng. Chủ động kiểm tra và xóa/dọn dẹp các bản backup cũ nếu đã có và cần thiết để tránh trùng lặp dữ liệu và lãng phí dung lượng lưu trữ.
+   - *Rollback toàn vẹn*: Luôn đảm bảo sẵn sàng phương án phục hồi (rollback) nguyên trạng ngay lập tức nếu quá trình đại tu gặp sự cố.
+   - *Không áp dụng khi sửa nhỏ lẻ*: Các hotfix nhỏ dưới 30 dòng code hoặc tinh chỉnh nhẹ không cần tạo backup để tránh gây rác workspace.
 
 ## 5. Hướng Dẫn Bàn Giao Cho Phiên Tiếp Theo
 - Trước khi bắt đầu: Đọc kỹ tệp này và tệp `DESIGN.md`.
@@ -2650,3 +2662,25 @@ c:\Users\Lenovo\Downloads\Linh\
 - Kịch bản kiểm thử E2E Diễn đàn SurvHub (`E2E_FORUM_SURVHUB_EXPLORE`): **PASS 100%**.
 - Toàn bộ 17/17 test suites hệ thống (`npm test`): **100% PASS** (20.70s).
 - Đồng bộ ứng dụng Android Capacitor hoàn tất.
+
+---
+
+## CẬP NHẬT TIẾN ĐỘ: BAN HÀNH QUY CHUẨN SAO LƯU DỰ PHÒNG KHI ĐẠI TU HỆ THỐNG (MAJOR OVERHAUL BACKUP PROTOCOL) (THÁNG 11/2026)
+
+### 1. Mục Đích & Bối Cảnh
+- Thiết lập quy chế kỷ luật kỹ thuật bắt buộc nhằm bảo toàn mã nguồn, giao diện và cơ sở dữ liệu SQLite trong suốt quá trình phát triển và tái cấu trúc hệ thống.
+- Ngăn ngừa rủi ro mất mát dữ liệu, xung đột cấu trúc hoặc phá vỡ các luồng nghiệp vụ cốt lõi khi thực hiện các đợt thay đổi lớn.
+
+### 2. Nội Dung Quy Chuẩn Đã Đồng Bộ
+- **Đồng bộ toàn bộ tài liệu SSOT**:
+  + `.agent/rules.md`: Bổ sung Mục 4 "Quy Chuẩn Sao Lưu Dự Phòng Khi Đại Tu Hệ Thống (Major Overhaul Backup Protocol)".
+  + `.agent/GEMINI.md`: Bổ sung quy định bắt buộc sao lưu khi đại tu, phân định phạm vi đại tu vs sửa nhỏ lẻ, kỷ luật dọn dẹp và rollback.
+  + `AGENTS.md`: Bổ sung Mục 4 "Quy Chuẩn Sao Lưu Dự Phòng Khi Đại Tu Hệ Thống (Major Overhaul Backup Protocol)".
+  + `PROJECT_CONTEXT.md`: Bổ sung vào danh mục Gotchas kỹ thuật bắt buộc và nhật ký tiến trình hệ thống.
+- **Phân định phạm vi rõ ràng**:
+  + *Bắt buộc sao lưu*: Đại tu giao diện/layout, bảng màu/design system, tái cấu trúc logic chính (pricing, ledger, anti-fraud, auth, routing), nâng cấp CSDL hoặc thay đổi schema/API contracts trọng yếu.
+  + *Miễn trừ*: Các hotfix nhỏ dưới 30 dòng hoặc tinh chỉnh nhẹ không tạo backup để tránh gây rác workspace.
+- **Kỷ luật lưu trữ, dọn dẹp và Rollback**:
+  + Lưu bản backup vào thư mục `backups/` hoặc định danh timestamp rõ ràng.
+  + Chủ động dọn dẹp các bản backup cũ trùng lặp hoặc không còn cần thiết.
+  + Đảm bảo phương án Rollback toàn vẹn để khôi phục nguyên trạng ngay lập tức khi phát sinh sự cố.

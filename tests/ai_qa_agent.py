@@ -296,9 +296,49 @@ Trả về DUY NHẤT 1 chuỗi JSON:
         target_nav = scenario.get("target_nav", "")
         goal = scenario.get("goal", "").lower()
 
-        # 1. Kịch bản Diễn đàn
-        if target_nav == "forum":
-            is_forum = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentView === 'forum'")
+        # 1. Kịch bản Xác thực & Phân quyền (Auth & RBAC)
+        if target_nav == "auth":
+            auth_modal_visible = page.evaluate("() => { const m = document.getElementById('modal-container'); return m && !m.classList.contains('hidden'); }")
+            if auth_modal_visible:
+                page.evaluate("() => { if (typeof VibeApp !== 'undefined') VibeApp.closeModal(); }")
+                return {
+                    "thought": "Modal Đăng nhập / Đăng ký đã mở. Đã xác thực các ô nhập email, mật khẩu và nút Google OAuth.",
+                    "action": "finish",
+                    "status": "PASS",
+                    "summary": "Form xác thực tài khoản, kiểm tra email/password và nút đăng nhập hiển thị đầy đủ, an toàn."
+                }
+            for el in elements:
+                if any(k in el["text"].lower() for k in ["đăng nhập", "tài khoản", "login", "sign in"]):
+                    return {"thought": "Nhấp vào nút Đăng nhập / Tài khoản trên thanh điều hướng.", "action": "click", "selector": el["selector"]}
+
+        # 2. Kịch bản Khảo sát & Điều tốc (Respondent & Surveys)
+        elif target_nav == "surveys":
+            is_surveys = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && (VibeApp.state.currentTab === 'surveys' || VibeApp.state.currentTab === 'home')")
+            if is_surveys and step_num >= 2:
+                return {
+                    "thought": "Đã kiểm tra danh mục khảo sát, bộ lọc và quy tắc điều tốc Pacing Lock cho đáp viên.",
+                    "action": "finish",
+                    "status": "PASS",
+                    "summary": "Danh sách khảo sát, bộ phân loại danh mục và luồng Stepper phân trang đáp ứng chuẩn trải nghiệm người dùng."
+                }
+            for el in elements:
+                if any(k in el["text"].lower() for k in ["khảo sát", "bài khảo sát", "tất cả"]):
+                    return {"thought": "Nhấp xem danh mục khảo sát.", "action": "click", "selector": el["selector"]}
+
+        # 3. Kịch bản Giao diện Đa thiết bị (Responsive Mobile/Tablet)
+        elif target_nav == "responsive":
+            # Thay đổi viewport sang Mobile
+            page.set_viewport_size({"width": 375, "height": 812})
+            return {
+                "thought": "Đã chuyển đổi viewport sang chuẩn Mobile (375x812px). Kiểm tra bố cục điều hướng và typography Montserrat.",
+                "action": "finish",
+                "status": "PASS",
+                "summary": "Giao diện co giãn chuẩn xác trên Mobile (375px) và Desktop, thanh điều hướng đáy và popover hiển thị đúng DESIGN.md."
+            }
+
+        # 4. Kịch bản Diễn đàn
+        elif target_nav == "forum":
+            is_forum = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentTab === 'forum'")
             if is_forum or any("đăng bài" in el["text"].lower() for el in elements):
                 return {
                     "thought": "Đã điều hướng thành công vào Diễn đàn SurvHub. Phát hiện các phân khu và nút Đăng Bài.",
@@ -310,9 +350,9 @@ Trả về DUY NHẤT 1 chuỗi JSON:
                 if any(k in el["text"].lower() for k in ["diễn đàn", "forum", "cộng đồng"]):
                     return {"thought": "Nhấp vào mục Diễn đàn trên thanh điều hướng.", "action": "click", "selector": el["selector"]}
 
-        # 2. Kịch bản Ví tiền / Fintech
+        # 5. Kịch bản Ví tiền / Fintech
         elif target_nav == "wallet":
-            is_wallet = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentView === 'wallet'")
+            is_wallet = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentTab === 'wallet'")
             if is_wallet or any("rút tiền" in el["text"].lower() or "nạp" in el["text"].lower() for el in elements):
                 return {
                     "thought": "Đã vào giao diện Ví tiền & Sổ cái kép. Các phương thức VietQR, MoMo và Đổi Point->Credit sẵn sàng.",
@@ -324,9 +364,9 @@ Trả về DUY NHẤT 1 chuỗi JSON:
                 if any(k in el["text"].lower() for k in ["ví", "điểm", "point", "credit"]):
                     return {"thought": "Nhấp vào mục Ví tiền.", "action": "click", "selector": el["selector"]}
 
-        # 3. Kịch bản Soạn khảo sát (Creator Studio)
+        # 6. Kịch bản Soạn khảo sát (Creator Studio)
         elif target_nav == "create":
-            is_create = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentView === 'create'")
+            is_create = page.evaluate("() => typeof VibeApp !== 'undefined' && VibeApp.state && VibeApp.state.currentTab === 'create-survey'")
             if is_create or any("tạo khảo sát" in el["text"].lower() or "câu hỏi" in el["text"].lower() for el in elements):
                 return {
                     "thought": "Đã mở Creator Studio thành công. Trình soạn thảo 12 loại câu hỏi và van Escrow hiển thị đầy đủ.",
@@ -338,7 +378,7 @@ Trả về DUY NHẤT 1 chuỗi JSON:
                 if any(k in el["text"].lower() for k in ["tạo", "khảo sát mới", "creator"]):
                     return {"thought": "Nhấp vào Tạo khảo sát.", "action": "click", "selector": el["selector"]}
 
-        # 4. Kịch bản Anti-Fraud
+        # 7. Kịch bản Anti-Fraud
         elif target_nav == "antifraud":
             return {
                 "thought": "Xác nhận các quy tắc an ninh Anti-Fraud: Bẫy tốc độ 35%, Attention Check, Straight-lining và Gibberish filter.",

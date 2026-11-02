@@ -47,7 +47,16 @@ Tài liệu quy chiếu SSOT:
 - **Tách biệt dữ liệu**: Tách riêng biệt logic backend, giao diện frontend (HTML/CSS) và tài nguyên (ảnh, icon), tránh viết gộp vào một file.
 - **Tên biến & Hàm**: Rõ ràng, tự giải thích (CamelCase cho JS, snake_case cho Python/DB).
 
-### 4. Chấp hành luật toàn cục GEMINI.md
+### 4. Quy Chuẩn Sao Lưu Dự Phòng Khi Đại Tu Hệ Thống (Major Overhaul Backup Protocol)
+- **Phân định phạm vi rõ ràng**:
+  - *Bắt buộc áp dụng khi Đại tu (Major Overhaul)*: Các đợt thay đổi lớn về giao diện, bố cục layout, bảng màu sắc/design system, tái cấu trúc logic chính/cốt lõi (pricing, ledger, anti-fraud, auth, routing), nâng cấp CSDL hoặc thay đổi schema/API contracts trọng yếu.
+  - *Không áp dụng khi Sửa chữa nhỏ lẻ (Minor Fix/Patch)*: Các hotfix nhỏ dưới 30 dòng, sửa lỗi cục bộ vài dòng code, tinh chỉnh nhẹ text/padding/margin không cần tạo backup để tránh gây rác workspace.
+- **Kỷ luật Sao lưu & Dọn dẹp**:
+  - BẮT BUỘC chủ động tạo bản backup cẩn thận cho các file, module hoặc CSDL SQLite bị tác động (lưu vào thư mục `backups/` hoặc file sao lưu có định danh/timestamp rõ ràng) trước khi bắt đầu đại tu.
+  - Chủ động kiểm tra và xóa/dọn dẹp các bản backup cũ nếu đã có và cần thiết để tránh trùng lặp, xung đột dữ liệu hoặc lãng phí dung lượng lưu trữ.
+  - Đảm bảo phương án Rollback toàn vẹn để có thể khôi phục nguyên trạng ngay lập tức nếu quá trình đại tu gặp sự cố.
+
+### 5. Chấp hành luật toàn cục GEMINI.md
 - **Chấp hành tuyệt đối**: Không làm trái, tuyệt đối tuân thủ.
 
 ---

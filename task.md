@@ -1,7 +1,8 @@
-# TASK: TRIỂN KHAI HIỆU ỨNG GẠT MƯỢT MÀ CHO TOÀN BỘ NÚT GẠT (SMOOTH TOGGLE SWITCH ANIMATION)
+# TASK: BỔ SUNG QUY TẮC BẮT BUỘC SAO LƯU DỰ PHÒNG KHI ĐẠI TU HỆ THỐNG
 
 ## BẢNG MA TRẬN PHÂN QUYỀN VÀ KHÓA FILE (AGENT FILE LOCK & SKILL MATRIX)
 
-- [x] Task 1: Thiết lập CSS Component `.vibe-switch` và `.vibe-switch-knob` chuẩn phần cứng 60fps với cubic-bezier transition, dark mode, hover, active squash effect trong styles.css | [Agent: Subagent-FE-CSS] | [Skill: minimalist-ui] | [Locked Files: public/styles.css]
-- [x] Task 2: Cập nhật các switch và hàm xử lý toggle (req-btn, hide-completed, student-exchange, studio-voucher, studio-targeting, studio-pinned) trong app.js sang vibe-switch và kích hoạt animation mượt trước khi cập nhật DOM | [Agent: Subagent-FE-JS] | [Skill: minimalist-ui] | [Locked Files: public/app.js]
-- [x] Task 3: Kiểm tra cú pháp node -c, chạy test suites npm test, đồng bộ Android và Git commit & push | [Agent: Subagent-QA] | [Skill: chrome-devtools] | [Locked Files: PROJECT_CONTEXT.md]
+- [x] Task 1: Cập nhật quy chuẩn sao lưu dự phòng khi đại tu vào .agent/rules.md và .agent/GEMINI.md | [Agent: Subagent-Rule-1] | [Skill: agy-customizations] | [Locked Files: .agent/rules.md, .agent/GEMINI.md]
+- [x] Task 2: Cập nhật quy chuẩn sao lưu dự phòng khi đại tu vào AGENTS.md | [Agent: Subagent-Rule-2] | [Skill: agy-customizations] | [Locked Files: AGENTS.md]
+- [x] Task 3: Cập nhật PROJECT_CONTEXT.md ghi nhận quy chế mới, kiểm tra tính toàn vẹn và đồng bộ Git | [Agent: Subagent-Sync] | [Skill: agy-customizations] | [Locked Files: PROJECT_CONTEXT.md]
+- [x] Task 4: Chuyển toàn bộ màu sắc trạng thái/giao diện về dải màu cam thuần túy, loại bỏ các màu khác, giữ nguyên màu nền | [Agent: Subagent-FE-CSS] | [Skill: minimalist-ui] | [Locked Files: DESIGN.md, public/styles.css, public/index.html, public/js/modules/adminAnalyticsModule.js]

@@ -40,10 +40,12 @@
 - **Inputs & Controls**: Nền than đậm `#161619`, viền `#33333D`, text `#FFFFFF`, focus viền `#EA580C`.
 - **Text Sáng**: `#FFFFFF` tinh khôi 100% cho tiêu đề; `#E4E4E7` cho body text; `#A1A1AA` cho phụ đề (chống mờ xỉn).
 
-### 2.4. Màu Báo Trạng Thái Chức Năng (Semantic Status Colors)
-- **Thành công (Success / Validated)**: `#16A34A` (`green-600`) - Chỉ dùng cho badge đã duyệt / hoàn thành.
-- **Cảnh báo / Tạm dừng (Warning / Paused)**: `#D97706` (`amber-600`) - Dùng hạn chế cho cảnh báo bảo mật.
-- **Nguy hiểm / Hủy (Danger / Banned)**: `#DC2626` (`red-600`) - Dùng cho nút hủy, lỗi form, thông báo vi phạm.
+### 2.4. Màu Báo Trạng Thái Chức Năng (Semantic Status Colors - Quy Chuẩn Sắc Cam Toàn Diện)
+- **Quy tắc tuyệt đối**: Toàn bộ trạng thái chức năng (Thành công, Cảnh báo, Nguy hiểm, Thông tin) đồng bộ 100% về dải sắc thái màu Cam, loại bỏ hoàn toàn các màu xanh lá, xanh dương, đỏ, vàng trong giao diện. Riêng màu nền trang và thẻ (Trắng / Đen Obsidian) được giữ nguyên.
+- **Thành công (Success / Validated)**: `#EA580C` (`orange-600`) / `#FB923C` (`orange-400`) - Sử dụng cho badge đã duyệt / hoàn thành.
+- **Cảnh báo / Tạm dừng (Warning / Paused)**: `#F97316` (`orange-500`) / `#FDBA74` (`orange-300`) - Dùng cho cảnh báo, chờ duyệt.
+- **Nguy hiểm / Báo lỗi / Hủy (Danger / Banned)**: `#C2410C` (`orange-700`) / `#EA580C` (`orange-600`) - Dùng cho nút hủy, lỗi form, thông báo vi phạm.
+- **Nền Chip / Badge Trạng thái**: `#FFF7ED` (`orange-50`) trên Light Mode và `rgba(234, 88, 12, 0.12)` trên Dark Mode, viền `rgba(234, 88, 12, 0.28)`.
 - **Trung tính (Neutral / Closed)**: `#71717A` (`zinc-500`) - Dùng cho khảo sát đã đóng, nút disabled.
 
 ---
@@ -118,7 +120,7 @@
 - **CẤM** để link ảnh tải về thay vì hiển thị xem trực tiếp qua Lightbox Viewer.
 - **CẤM** dàn trải quá nhiều tab trên Header Admin gây quá tải thanh điều hướng.
 - **CẤM** dùng icon chiếc phao `life-buoy` cho tính năng Báo Lỗi (Bắt buộc dùng `bug`).
-- **CẤM** sử dụng màu lạ không nằm trong bảng màu chuẩn (không tím, không xanh ngọc, không hổ phách).
+- **CẤM** sử dụng màu không thuộc dải màu cam cho các thành phần giao diện (nút bấm, badge, icon, highlight, border, status). Chỉ cho phép màu cam và giữ nguyên màu nền trung tính (Trắng / Đen Obsidian).
 - **CẤM** chèn emoji hoặc icon sticker màu sắc vào giao diện và tài liệu.
 - **CẤM** để Creator làm bài khảo sát hoặc nhận thưởng khảo sát.
 - **CẤM** sử dụng hiệu ứng bóng đổ neon chói mắt (glow) kiểu web cờ bạc/tiền ảo rác.
