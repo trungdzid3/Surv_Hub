@@ -1,6 +1,7 @@
 # TASK: ĐẠI TU MODULAR HÓA app.js THEO MIỀN NGHIỆP VỤ (8 WAVE) - TIẾN ĐỘ ĐÊM 03-11-2026
 
 ## LOGIN 2FA HARDENING 03-11-2026
+- [x] Task L5: Bổ sung tab cài đặt Bảo mật trong Profile, thiết lập secret TOTP thủ công, bật/tắt bằng mã xác thực và cập nhật trạng thái từ `/auth/me` | [Agent: frontend-security-settings] | [Skill: impeccable, hallmark, design-taste-frontend] | [Locked Files: public/js/modules/respondent.js]
 - [x] Task L1: Triển khai email OTP sau mật khẩu và TOTP RFC6238 tùy chọn, token chỉ phát hành sau khi hoàn tất xác thực hai bước | [Agent: auth-2fa-backend-specialist] | [Skill: security-audit] | [Locked Files: server/controllers/authController.js, server/db/database.js, server/routes/api.js]
 - [x] Task L2: Cập nhật giao diện đăng nhập để xử lý bước OTP, trạng thái 2FA và không lưu token trước khi xác minh | [Agent: auth-2fa-frontend-specialist] | [Skill: design-taste-frontend] | [Locked Files: public/js/modules/modalsTerms.js]
 - [x] Task L3: Bổ sung kiểm thử hồi quy cho login OTP/TOTP, chạy syntax và kiểm tra browser flow | [Agent: auth-2fa-qa-specialist] | [Skill: security-audit] | [Locked Files: tests/test_auth_2fa.js]

@@ -2706,12 +2706,12 @@
     const isEnterpriseLevel1 = enterpriseLevel >= 1;
     const isStudentVerified = (user.is_student_verified === 1 || user.account_tier === 'STUDENT') && !isEnterprise;
 
-    // Chuẩn hóa profileTab sang 3 phân hệ chính (Không tràn màn hình, 0% trượt ngang)
+    // Chuẩn hóa profileTab sang các phân hệ chính (Không tràn màn hình, 0% trượt ngang)
     if (!this.state.profileTab || ['demographics', 'reputation'].includes(this.state.profileTab)) {
       this.state.profileTab = 'overview';
     } else if (['created-forms', 'filled-forms'].includes(this.state.profileTab)) {
       this.state.profileTab = 'surveys';
-    } else if (!['overview', 'surveys', 'forum-posts', 'STUDENT', 'ENTERPRISE'].includes(this.state.profileTab)) {
+    } else if (!['overview', 'surveys', 'forum-posts', 'security', 'STUDENT', 'ENTERPRISE'].includes(this.state.profileTab)) {
       this.state.profileTab = 'overview';
     }
 
@@ -2886,8 +2886,8 @@
           </div>
         </div>
 
-        <!-- THANH ĐIỀU HƯỚNG 3 PHÂN HỆ GỘP TINH GỌN (100% VỪA VẶN MỌI THIẾT BỊ, TUYỆT ĐỐI 0% TRƯỢT NGANG) -->
-        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 w-full p-1.5 rounded-2xl bg-stone-100/90 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800 shadow-2xs">
+        <!-- THANH ĐIỀU HƯỚNG 4 PHÂN HỆ GỘP TINH GỌN (100% VỪA VẶN MỌI THIẾT BỊ, TUYỆT ĐỐI 0% TRƯỢT NGANG) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 w-full p-1.5 rounded-2xl bg-stone-100/90 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800 shadow-2xs">
           <!-- 1. Hồ Sơ & Đánh Giá Uy Tín -->
           <button type="button" onclick="VibeApp.switchProfileTab('overview')" 
                   class="py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold cursor-pointer ${activeTab === 'overview' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
@@ -2910,6 +2910,52 @@
             <span class="truncate">Bài Viết Diễn Đàn</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${activeTab === 'forum-posts' ? 'bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400' : 'bg-stone-200/80 dark:bg-stone-800 text-stone-600 dark:text-stone-400'}">${myPosts.length}</span>
           </button>
+
+          <!-- 4. Bảo Mật Tài Khoản -->
+          <button type="button" onclick="VibeApp.switchProfileTab('security')"
+              class="py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold cursor-pointer ${activeTab === 'security' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-black shadow-xs ring-1 ring-stone-900/5 dark:ring-stone-700/60' : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-white/60 dark:hover:bg-stone-800/50'}">
+            <i data-lucide="shield-check" class="w-4 h-4 shrink-0"></i>
+            <span class="truncate">Bảo mật</span>
+          </button>
+        </div>
+
+        <!-- PHÂN HỆ BẢO MẬT TÀI KHOẢN -->
+        <div id="profile-tab-security" class="${activeTab === 'security' ? '' : 'hidden'} space-y-5">
+          <section class="bg-white dark:bg-[#18181B] rounded-2xl border border-stone-200 dark:border-stone-800 p-5 sm:p-7">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Bảo mật tài khoản</h2>
+                <p class="mt-2 text-sm leading-6 text-stone-600 dark:text-stone-300 max-w-2xl">Email OTP khi đăng nhập vẫn luôn bắt buộc. TOTP là lớp xác thực bổ sung, giúp bảo vệ tài khoản khi mật khẩu bị lộ.</p>
+              </div>
+              <span class="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${user.totp_enabled ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800' : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700'}">
+                <span class="w-2 h-2 rounded-full ${user.totp_enabled ? 'bg-orange-600' : 'bg-stone-400'}"></span>
+                ${user.totp_enabled ? 'TOTP đang bật' : 'TOTP đang tắt'}
+              </span>
+            </div>
+
+            ${user.totp_enabled ? `
+              <div class="mt-7 border-t border-stone-200 dark:border-stone-800 pt-6">
+                <h3 class="text-base font-extrabold text-stone-900 dark:text-white">Tắt xác thực TOTP</h3>
+                <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">Nhập mã 6 số đang hiển thị trong ứng dụng xác thực để tắt lớp bảo vệ này.</p>
+                <form class="mt-4 flex flex-col sm:flex-row sm:items-end gap-3" onsubmit="event.preventDefault(); VibeApp.disableTotpAction();">
+                  <div class="w-full sm:max-w-xs">
+                    <label for="security-disable-token" class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">Mã xác thực 6 số</label>
+                    <input id="security-disable-token" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required aria-describedby="security-disable-help" class="w-full px-3.5 py-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-white font-mono tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-orange-600" aria-label="Mã TOTP để tắt xác thực">
+                    <span id="security-disable-help" class="block mt-1.5 text-xs text-stone-500">Mã thay đổi sau mỗi 30 giây.</span>
+                  </div>
+                  <button id="security-disable-button" type="submit" class="min-h-12 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 dark:focus:ring-offset-stone-900">Tắt TOTP</button>
+                </form>
+              </div>
+            ` : `
+              <div class="mt-7 border-t border-stone-200 dark:border-stone-800 pt-6">
+                <h3 class="text-base font-extrabold text-stone-900 dark:text-white">Thiết lập ứng dụng xác thực</h3>
+                <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">Tạo một secret riêng cho tài khoản, sau đó nhập mã 6 số để xác nhận. Secret chỉ hiển thị trong phiên này và không được lưu vào localStorage.</p>
+                <button type="button" onclick="VibeApp.startTotpSetup()" class="mt-5 min-h-12 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 dark:focus:ring-offset-stone-900">Bắt đầu thiết lập</button>
+                <div id="security-setup-result" class="mt-5"></div>
+              </div>
+            `}
+            <div id="security-feedback" class="mt-5 min-h-5 text-sm" role="status" aria-live="polite"></div>
+          </section>
         </div>
 
         <!-- PHÂN HỆ 1: HỒ SƠ & UY TÍN (GỘP BENTO ĐÁNH GIÁ VÀ FORM NHÂN KHẨU HỌC LIỀN MẠCH) -->
@@ -3629,6 +3675,146 @@
     }
     const root = document.getElementById('app-root');
     this.renderProfileView(root);
+  },
+
+  async startTotpSetup() {
+    const feedback = document.getElementById('security-feedback');
+    const setupResult = document.getElementById('security-setup-result');
+    if (feedback) {
+      feedback.className = 'mt-5 min-h-5 text-sm text-stone-600 dark:text-stone-300';
+      feedback.textContent = 'Đang tạo thông tin thiết lập bảo mật...';
+    }
+    try {
+      const res = await this.api('/auth/totp/setup', { method: 'POST' });
+      if (!res || !res.success || !res.secret || !res.otpauthUri) {
+        throw new Error((res && res.message) || 'Không thể tạo thông tin TOTP');
+      }
+      this.state.totpSetup = { secret: res.secret, otpauthUri: res.otpauthUri };
+      if (setupResult) {
+        const safeSecret = this.escapeHtml(res.secret);
+        const safeUri = this.escapeHtml(res.otpauthUri);
+        setupResult.innerHTML = `
+          <div class="space-y-4">
+            <div>
+              <label for="security-totp-secret" class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">Secret</label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <code id="security-totp-secret" class="flex-1 min-w-0 px-3.5 py-3 rounded-xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-sm font-mono break-all text-stone-900 dark:text-white">${safeSecret}</code>
+                <button type="button" onclick="VibeApp.copyTotpValue('secret')" class="min-h-11 px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 text-sm font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-600">Sao chép secret</button>
+              </div>
+            </div>
+            <div>
+              <label for="security-totp-uri" class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">URI otpauth</label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <code id="security-totp-uri" class="flex-1 min-w-0 px-3.5 py-3 rounded-xl bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs leading-5 break-all text-stone-900 dark:text-white">${safeUri}</code>
+                <button type="button" onclick="VibeApp.copyTotpValue('otpauthUri')" class="min-h-11 px-4 py-2 rounded-xl border border-stone-300 dark:border-stone-700 text-sm font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-600">Sao chép URI</button>
+              </div>
+            </div>
+            <form class="pt-2" onsubmit="event.preventDefault(); VibeApp.enableTotpAction();">
+              <label for="security-enable-token" class="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">Mã 6 số để bật TOTP</label>
+              <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+                <div class="w-full sm:max-w-xs">
+                  <input id="security-enable-token" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required aria-describedby="security-enable-help" class="w-full px-3.5 py-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-white font-mono tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-orange-600" aria-label="Mã TOTP để bật xác thực">
+                  <span id="security-enable-help" class="block mt-1.5 text-xs text-stone-500">Mở ứng dụng xác thực, rồi nhập mã hiện tại.</span>
+                </div>
+                <button id="security-enable-button" type="submit" class="min-h-12 px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 dark:focus:ring-offset-stone-900">Bật TOTP</button>
+              </div>
+            </form>
+          </div>
+        `;
+        setupResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      if (feedback) {
+        feedback.className = 'mt-5 min-h-5 text-sm text-orange-700 dark:text-orange-300';
+        feedback.textContent = 'Đã tạo secret. Hãy lưu secret ở nơi an toàn và xác nhận bằng mã 6 số.';
+      }
+    } catch (err) {
+      if (feedback) {
+        feedback.className = 'mt-5 min-h-5 text-sm text-orange-700 dark:text-orange-300';
+        feedback.textContent = err.message || 'Không thể bắt đầu thiết lập TOTP.';
+      }
+    }
+  },
+
+  async enableTotpAction() {
+    const tokenInput = document.getElementById('security-enable-token');
+    const button = document.getElementById('security-enable-button');
+    const feedback = document.getElementById('security-feedback');
+    const token = tokenInput?.value?.trim() || '';
+    if (!/^\d{6}$/.test(token)) {
+      if (feedback) {
+        feedback.className = 'mt-5 min-h-5 text-sm text-orange-700 dark:text-orange-300';
+        feedback.textContent = 'Mã TOTP phải gồm đúng 6 chữ số.';
+      }
+      tokenInput?.focus();
+      return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'Đang bật...'; }
+    if (feedback) {
+      feedback.className = 'mt-5 min-h-5 text-sm text-stone-600 dark:text-stone-300';
+      feedback.textContent = 'Đang xác nhận mã TOTP...';
+    }
+    try {
+      const res = await this.api('/auth/totp/enable', { method: 'POST', body: JSON.stringify({ token }) });
+      if (!res || !res.success) throw new Error((res && res.message) || 'Không thể bật TOTP');
+      const meRes = await this.api('/auth/me');
+      if (meRes && meRes.user) this.state.currentUser = meRes.user;
+      delete this.state.totpSetup;
+      this.showToast(res.message || 'Đã bật xác thực TOTP', 'success');
+      await this.renderProfileView(document.getElementById('app-root'));
+    } catch (err) {
+      if (button) { button.disabled = false; button.textContent = 'Bật TOTP'; }
+      if (feedback) {
+        feedback.className = 'mt-5 min-h-5 text-sm text-orange-700 dark:text-orange-300';
+        feedback.textContent = err.message || 'Không thể bật TOTP.';
+      }
+    }
+  },
+
+  async disableTotpAction() {
+    const tokenInput = document.getElementById('security-disable-token');
+    const button = document.getElementById('security-disable-button');
+    const feedback = document.getElementById('security-feedback');
+    const token = tokenInput?.value?.trim() || '';
+    if (!/^\d{6}$/.test(token)) {
+      if (feedback) {
+        feedback.className = 'mt-5 min-h-5 text-sm text-orange-700 dark:text-orange-300';
+        feedback.textContent = 'Mã TOTP phải gồm đúng 6 chữ số.';
+      }
+      tokenInput?.focus();
+      return;
+    }
+    if (button) { button.disabled = true; button.textContent = 'Đang tắt...'; }
+    if (feedback) {
+      feedback.className = 'mt-5 min-h-5 text-sm text-stone-600 dark:text-stone-300';
+      feedback.textContent = 'Đang kiểm tra và tắt TOTP...';
+    }
+    try {
+      const verifyRes = await this.api('/auth/totp/verify', { method: 'POST', body: JSON.stringify({ token }) });
+      if (!verifyRes || !verifyRes.success || !verifyRes.valid) throw new Error((verifyRes && verifyRes.message) || 'Mã TOTP không hợp lệ');
+      const res = await this.api('/auth/totp/disable', { method: 'POST', body: JSON.stringify({ token }) });
+      if (!res || !res.success) throw new Error((res && res.message) || 'Không thể tắt TOTP');
+      const meRes = await this.api('/auth/me');
+      if (meRes && meRes.user) this.state.currentUser = meRes.user;
+      this.showToast(res.message || 'Đã tắt xác thực TOTP', 'success');
+      await this.renderProfileView(document.getElementById('app-root'));
+    } catch (err) {
+      if (button) { button.disabled = false; button.textContent = 'Tắt TOTP'; }
+      if (feedback) {
+        feedback.className = 'mt-5 min-h-5 text-sm text-orange-700 dark:text-orange-300';
+        feedback.textContent = err.message || 'Không thể tắt TOTP.';
+      }
+    }
+  },
+
+  async copyTotpValue(valueKey) {
+    const value = this.state.totpSetup?.[valueKey];
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      this.showToast('Đã sao chép thông tin TOTP', 'success');
+    } catch (err) {
+      this.showToast('Không thể sao chép tự động. Hãy chọn và sao chép thủ công.', 'error');
+    }
   },
 
   switchSurveySubTab(subTab) {

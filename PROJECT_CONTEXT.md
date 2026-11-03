@@ -74,7 +74,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 | `public/js/data/catalogs.js` | `window.VibeData` (Object.freeze): 7 hằng danh mục (tỉnh thành, trường ĐH, categories, voucher catalog); back-compat `window.VIBE_*` |
 | `public/js/utils.js` | `window.VibeUtils`: `escapeHtml` canonical, `formatVND`, `refreshIcons` |
 | `modules/creatorStudio.js` (~5.6k) | Studio soạn khảo sát: question builder 12 dạng, Smart Paste, escrow, image picker, forms auth |
-| `modules/respondent.js` (~3.8k) | Runner làm bài phân đoạn + rẽ nhánh + review + hồ sơ 5 tab; hồ sơ có luồng xác thực email sinh viên qua OTP (`sendStudentEmailOtpAction` ~3804, `startStudentOtpCooldown` + `_resetStudentOtpButton` ~3860, `verifyStudentEmailOtpAction` ~3892) |
+| `modules/respondent.js` (~3.9k) | Runner làm bài phân đoạn + rẽ nhánh + review + hồ sơ 6 tab; hồ sơ có tab Bảo mật với thiết lập/bật/tắt TOTP thủ công (`startTotpSetup` ~3680, `enableTotpAction` ~3750, `disableTotpAction` ~3785, `copyTotpValue` ~3810) và xác thực email sinh viên qua OTP |
 | `modules/adminConsole.js` (~2k) | Admin overview/payouts/fraud + Fast Command Console |
 | `modules/forum.js` (~1.8k) | Diễn đàn + WYSIWYG + đính kèm + share |
 | `modules/modalsTerms.js` (~1.8k) | Auth modal, Google auth, điều khoản, streak, toast/modal/copy tiện ích |
