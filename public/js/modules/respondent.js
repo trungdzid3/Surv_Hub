@@ -3788,6 +3788,143 @@
     }
   },
 
+  // ==================== XÁC THỰC EMAIL SINH VIÊN (OTP) ====================
+  /**
+   * Đặt lại trạng thái nút gửi OTP về mặc định.
+   */
+  _resetStudentOtpButton() {
+    const btn = document.getElementById('student-send-otp-btn');
+    if (!btn) return;
+    btn.disabled = false;
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    btn.innerText = 'Gửi Mã OTP';
+  },
+
+  /**
+   * Gửi mã OTP xác thực email trường tới hộp thư sinh viên.
+   * Chặn gửi lại trong 60 giây và giới hạn 5 lần / 10 phút.
+   */
+  async sendStudentEmailOtpAction() {
+    this.haptic('medium');
+    const email = document.getElementById('student-email-input')?.value?.trim();
+    if (!email || !email.includes('@')) {
+      this.showToast('Vui lòng nhập địa chỉ email sinh viên hợp lệ (.edu.vn / .ac.vn)!', 'warning');
+      return;
+    }
+
+    if (this.state.studentOtpCooldown > 0) {
+      this.showToast(`Vui lòng đợi ${this.state.studentOtpCooldown} giây trước khi gửi lại mã!`, 'warning');
+      return;
+    }
+
+    const now = Date.now();
+    if (!this.state.otpSendHistory) this.state.otpSendHistory = [];
+    this.state.otpSendHistory = this.state.otpSendHistory.filter(t => now - t < 10 * 60 * 1000);
+    if (this.state.otpSendHistory.length >= 5) {
+      this.showToast('Bạn đã gửi mã quá 5 lần trong 10 phút. Vui lòng thử lại sau ít phút để bảo vệ hệ thống!', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('student-send-otp-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      btn.innerText = 'Đang gửi...';
+    }
+
+    try {
+      const res = await this.api('/auth/student/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ student_email: email })
+      });
+
+      if (res && res.success) {
+        this.haptic('success');
+        this.showToast(res.message || 'Mã OTP đã được gửi đến email trường của bạn!', 'success');
+        const otpSec = document.getElementById('student-otp-section');
+        if (otpSec) otpSec.classList.remove('hidden');
+        if (res.debugOtp) {
+          console.log('[DEBUG OTP Sinh Viên]:', res.debugOtp);
+        }
+
+        this.state.otpSendHistory.push(now);
+        this.startStudentOtpCooldown(60);
+      } else {
+        this._resetStudentOtpButton();
+      }
+    } catch (err) {
+      this.showToast(err.message, 'error');
+      this._resetStudentOtpButton();
+    }
+  },
+
+  /**
+   * Đếm ngược thời gian được phép gửi lại OTP và cập nhật nhãn nút.
+   * @param {number} seconds Số giây cooldown
+   */
+  startStudentOtpCooldown(seconds) {
+    this.state.studentOtpCooldown = seconds;
+    if (this._studentOtpCooldownTimer) clearInterval(this._studentOtpCooldownTimer);
+
+    const updateButton = () => {
+      const btn = document.getElementById('student-send-otp-btn');
+      if (!btn) return;
+      if (this.state.studentOtpCooldown > 0) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.innerText = `Gửi lại sau (${this.state.studentOtpCooldown}s)`;
+      } else {
+        this._resetStudentOtpButton();
+        clearInterval(this._studentOtpCooldownTimer);
+      }
+    };
+
+    updateButton();
+    this._studentOtpCooldownTimer = setInterval(() => {
+      this.state.studentOtpCooldown--;
+      updateButton();
+      if (this.state.studentOtpCooldown <= 0) {
+        clearInterval(this._studentOtpCooldownTimer);
+      }
+    }, 1000);
+  },
+
+  /**
+   * Xác nhận mã OTP email trường và nâng cấp tài khoản lên Gói Sinh Viên.
+   */
+  async verifyStudentEmailOtpAction() {
+    this.haptic('medium');
+    const otp = document.getElementById('student-otp-input')?.value?.trim();
+    if (!otp || otp.length < 4) {
+      this.showToast('Vui lòng nhập mã OTP xác thực!', 'warning');
+      return;
+    }
+
+    try {
+      const res = await this.api('/auth/student/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ otp })
+      });
+
+      if (res && res.success) {
+        this.haptic('success');
+        this.showToast('Xác thực Sinh viên thành công! Tài khoản đã nâng cấp Gói Sinh Viên.', 'success');
+        if (res.user) {
+          if (!res.user.avatar_url && this.state.currentUser?.avatar_url) {
+            res.user.avatar_url = this.state.currentUser.avatar_url;
+          }
+          this.state.currentUser = res.user;
+        }
+        this.state.studentOtpCooldown = 0;
+        await this.renderProfileView(document.getElementById('app-root'));
+        this.renderNavigation();
+        this.renderUserProfileDropdown();
+      }
+    } catch (err) {
+      this.showToast(err.message, 'error');
+    }
+  },
+
   // ==================== XÓA KHẢO SÁT THẬT HOẠT ĐỘNG HOÀN TOÀN ====================
   async deleteSurveyAction(surveyId) {
     if (!surveyId) return;

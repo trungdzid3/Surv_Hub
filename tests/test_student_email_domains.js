@@ -136,6 +136,20 @@ function run() {
     assert.strictEqual(matchingService.detectUniversityFromEmail('khong-hop-le'), null);
   });
 
+  check('UI ho so co du ham xu ly OTP sinh vien (chong hoi quy)', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '../public/js/modules/respondent.js'), 'utf8');
+    const handlers = ['sendStudentEmailOtpAction', 'startStudentOtpCooldown', 'verifyStudentEmailOtpAction'];
+    for (const name of handlers) {
+      const defined = new RegExp('(?:async\\s+)?' + name + '\\s*\\(').test(source);
+      assert.ok(defined, 'Thieu dinh nghia ham ' + name + ' trong respondent.js');
+    }
+    for (const name of ['sendStudentEmailOtpAction', 'verifyStudentEmailOtpAction']) {
+      assert.ok(source.includes('VibeApp.' + name + '()'), 'Nut bam khong goi ' + name);
+    }
+  });
+
   if (failed > 0) {
     console.error('\nKET QUA: ' + failed + ' bai test THAT BAI');
     process.exit(1);

@@ -73,7 +73,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 | `public/js/data/catalogs.js` | `window.VibeData` (Object.freeze): 7 hằng danh mục (tỉnh thành, trường ĐH, categories, voucher catalog); back-compat `window.VIBE_*` |
 | `public/js/utils.js` | `window.VibeUtils`: `escapeHtml` canonical, `formatVND`, `refreshIcons` |
 | `modules/creatorStudio.js` (~5.6k) | Studio soạn khảo sát: question builder 12 dạng, Smart Paste, escrow, image picker, forms auth |
-| `modules/respondent.js` (~3.8k) | Runner làm bài phân đoạn + rẽ nhánh + review + hồ sơ 5 tab |
+| `modules/respondent.js` (~3.8k) | Runner làm bài phân đoạn + rẽ nhánh + review + hồ sơ 5 tab; hồ sơ có luồng xác thực email sinh viên qua OTP (`sendStudentEmailOtpAction` ~3804, `startStudentOtpCooldown` + `_resetStudentOtpButton` ~3860, `verifyStudentEmailOtpAction` ~3892) |
 | `modules/adminConsole.js` (~2k) | Admin overview/payouts/fraud + Fast Command Console |
 | `modules/forum.js` (~1.8k) | Diễn đàn + WYSIWYG + đính kèm + share |
 | `modules/modalsTerms.js` (~1.8k) | Auth modal, Google auth, điều khoản, streak, toast/modal/copy tiện ích |
@@ -85,7 +85,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 `users` (PII: `demographics_json`, OTP cột, trust_score) · `surveys` (+ `allow_email_collection`) · `questions` (logic_json, is_attention_check) · `responses` (`answers_payload`, quality_score) · `point_transactions` (sổ cái kép, 7 loại tx) · `deposit_orders` · `payout_requests` · `fraud_logs` / `device_ip_logs` / `banned_ips` · `registration_otps` · `voucher_campaigns` / `voucher_codes` · `forum_posts` / `forum_comments` / `forum_post_likes` · `notifications` / `push_subscriptions` / `daily_streaks` · `admin_audit_logs` / `bug_reports` / `warranty_claims` / `email_notifications_log` / `vat_invoices`.
 
 ### 3.4 Kiểm thử
-`npm test` = `tests/run_all_tests.js` fork 23 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; tầng 23 = `tests/test_student_email_domains.js` (catalog tên miền email sinh viên, 18 bài); `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
+`npm test` = `tests/run_all_tests.js` fork 23 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; tầng 23 = `tests/test_student_email_domains.js` (catalog tên miền email sinh viên + check chống hồi quy UI handler OTP, 19 bài); `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
 - Sơ đồ luồng xác thực email sinh viên: `docs/architecture/student-email-domain-validation.html` (nguồn `.archify/architecture-student-email-domains-*/candidate.json`).
 - Bản đồ code frontend chi tiết: `docs/CODE_MAP.md`.
 
@@ -96,7 +96,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 4. **Creator Boost 80/20 cố định** trên toàn hệ thống, không phân biệt gói.
 5. **`normalizeFormUrl()`**: loại query rác (`?usp=sf_link`, `?fbclid`) trước khi kiểm tra trùng biểu mẫu.
 6. **Bảo vệ Admin**: mọi logic tự động khóa phải có `AND role != 'ADMIN'`.
-7. **Sau mỗi lần sửa `public/app.js` hoặc module**: BẮT BUỘC nâng cache-buster tại `public/index.html` (khối script cuối ~dòng 555-575, hiện `4.9.12_modular_wave7`) + chạy `npm run sync:android`. Sửa file module nào thì bump buster của chính file đó.
+7. **Sau mỗi lần sửa `public/app.js` hoặc module**: BẮT BUỘC nâng cache-buster tại `public/index.html` (khối script cuối ~dòng 555-575, hiện `4.9.13_student_otp_fix`) + chạy `npm run sync:android`. Sửa file module nào thì bump buster của chính file đó.
 8. **Modal điều khoản 2 chế độ**: `openTermsModal(event, isReadOnly)` — anchor ngoài luồng đăng ký (footer, trang auth) phải truyền `true`.
 9. **Test bypass chỉ khi `NODE_ENV==='test'`**: `debugOtp`, webhook payment, `depositCredit` admin check — không mở rộng bỏ kiểm sang môi trường khác.
 10. **Ràng buộc pháp lý trong code**: không được tái lập bất kỳ đường xuất dữ liệu nào đưa demographics (`__profile_*`) hoặc thông tin ngoài email (khi bật cờ) cho creator — xem mục 2 Quyền riêng tư.
@@ -121,4 +121,4 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 5. **Kỹ nợ chấp nhận**: JWT lưu localStorage (đại tu auth riêng khi lên production); DB cũ còn `__profile_*` trong `answers_payload` (đã chặn xuất bằng strip runtime).
 6. **Hạng mục pháp lý dồn sang giai đoạn production** (theo chỉ đạo — đang demo nên chưa làm): thành lập pháp nhân + công bố MST/SĐT footer + thông báo/đăng ký Bộ Công Thương; trang Chính sách bảo mật riêng; API xóa tài khoản/xuất dữ liệu; nhật ký hệ thống ≥ 12 tháng; chi tiết tại `BAO_CAO_AUDIT_PHAP_LY_VN.md`.
 7. **Follow-up modular (không khẩn)**: thay dần 84 chỗ `.toLocaleString('vi-VN')` bằng `VibeUtils.formatVND` và 66 chỗ `lucide.createIcons()` bằng `VibeUtils.refreshIcons` (danh sách trong `docs/CODE_MAP.md`).
-8. **Hồi quy frontend student OTP (phát hiện 03-11)**: `modules/respondent.js` có nút gọi `VibeApp.sendStudentEmailOtpAction()` / `verifyStudentEmailOtpAction()` nhưng 2 hàm đã bị xóa từ commit `efcea1a` (trước đại tu modular) — nút bấm không phản hồi. API backend (`/auth/student/send-otp`, `/verify-otp`) và test tầng 10 vẫn hoạt động; cần khôi phục 2 hàm + `startStudentOtpCooldown` vào module respondent (bản gốc trong commit `bece397`).
+8. **Deploy Render đang crash (chờ user cấu hình Dashboard)**: runtime fail-fast tại `server/config/index.js` khi thiếu `JWT_SECRET` (dòng 11), `PAYMENT_ACCOUNT_NUMBER` (19), `PAYMENT_WEBHOOK_SECRET` (23). Cần khai báo đủ trong Environment của Render, kèm `SEED_ACCOUNT_PASSWORDS`, `APP_URL`, `CORS_ORIGINS`, `PAYMENT_ACCOUNT_NAME`, `PAYMENT_BANK_ID`, `PAYMENT_BANK_NAME`; đồng thời gắn Persistent Disk và đặt `DB_PATH=/var/data/vibesurvey.db` vì SQLite mặc định nằm trong repo (mất dữ liệu mỗi lần deploy).
