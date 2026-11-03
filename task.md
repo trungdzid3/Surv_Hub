@@ -2,7 +2,7 @@
 
 Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data/catalogs.js + utils.js + 7 module miền nghiệp vụ (creator-studio, respondent, wallet-ledger, admin-console, forum, modals-terms, notifications). Mỗi wave: node -c + npm test + sync:android + commit.
 
-- [x] Wave 0: Dọn dẹp + bảo mật hygiene: untrack PII docx (KHẨN - repo GitHub public), .gitignore chặn PII, vệ sinh mật khẩu clean_database.js, xóa 10 script one-off + .archify + .pdf-build + backup cũ + PDF superseded | [Orchestrator + senior-coder]
+- [x] Wave 0: Dọn dẹp + bảo mật hygiene: untrack tài liệu tham chiếu cấu trúc email sinh viên (không phải PII - đã xác minh 03-11-2026), .gitignore chặn file dữ liệu, vệ sinh mật khẩu clean_database.js, xóa 10 script one-off + .archify + .pdf-build + backup cũ + PDF superseded | [Orchestrator + senior-coder]
 - [x] Wave 0b: Test registry: xóa test chết/one-off/live-service, đăng ký 5 suite PASS (tầng 18-22), cơ chế tự dọn tests/reports/ khi PASS | [Orchestrator]
 - [x] Wave 1: catalogs.js (7 hằng danh mục, Object.freeze) + utils.js (escapeHtml/formatVND/refreshIcons) + hợp nhất 3 cặp hàm trùng + voucherMarket.js + pushNotifications.js (fix rò rỉ visibilitychange) + docs/CODE_MAP.md + cache-buster 4.9.6. app.js 20.612 -> 19.685 dòng. npm test 22/22 PASS (18.96s) | [senior-coder + Orchestrator QA]
 - [x] Wave 2: tách modules/wallet-ledger.js (1.331 dòng, 22 hàm) — app.js 18.387 | commit 5cf54d3
