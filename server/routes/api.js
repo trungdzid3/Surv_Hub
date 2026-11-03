@@ -88,7 +88,7 @@ router.get('/wallet', authenticateToken, (req, res) => walletController.getWalle
 
 // Cổng nạp tiền thật VietQR & Webhook đối soát ngân hàng tự động
 router.post('/wallet/create-deposit-order', authenticateToken, (req, res) => walletController.createDepositOrder(req, res));
-router.get('/wallet/deposit-orders/:orderCode', optionalAuthenticateToken, (req, res) => walletController.getDepositOrderByCode(req, res));
+router.get('/wallet/deposit-orders/:orderCode', authenticateToken, (req, res) => walletController.getDepositOrderByCode(req, res));
 router.post('/wallet/payment-webhook', (req, res) => walletController.handlePaymentWebhook(req, res));
 router.post('/wallet/simulate-payment-success', authenticateToken, (req, res) => walletController.simulatePaymentSuccess(req, res));
 router.post('/wallet/deposit', authenticateToken, requireRole(['RESPONDENT', 'CREATOR', 'ADMIN']), (req, res) => walletController.depositCredit(req, res));

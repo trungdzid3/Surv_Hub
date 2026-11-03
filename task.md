@@ -1,5 +1,10 @@
 # TASK: ĐẠI TU MODULAR HÓA app.js THEO MIỀN NGHIỆP VỤ (8 WAVE) - TIẾN ĐỘ ĐÊM 03-11-2026
 
+## SECURITY PATCH 03-11-2026
+- [x] Task S1: Fail-closed payment webhook và xác minh số tiền giao dịch | [Agent: payment-webhook-specialist] | [Skill: security-audit] | [Locked Files: server/config/index.js, server/controllers/walletController.js]
+- [x] Task S2: Bắt buộc ownership cho deposit-order lookup | [Agent: deposit-order-specialist] | [Skill: security-audit] | [Locked Files: server/routes/api.js, server/services/ledgerService.js]
+- [x] Task S3: Tích hợp kiểm thử, cập nhật ngữ cảnh và xác minh diff | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, tests/]
+
 Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data/catalogs.js + utils.js + 7 module miền nghiệp vụ (creator-studio, respondent, wallet-ledger, admin-console, forum, modals-terms, notifications). Mỗi wave: node -c + npm test + sync:android + commit.
 
 - [x] Wave 0: Dọn dẹp + bảo mật hygiene: untrack tài liệu tham chiếu cấu trúc email sinh viên (không phải PII - đã xác minh 03-11-2026), .gitignore chặn file dữ liệu, vệ sinh mật khẩu clean_database.js, xóa 10 script one-off + .archify + .pdf-build + backup cũ + PDF superseded | [Orchestrator + senior-coder]
@@ -24,4 +29,3 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 ## SPRINT 03-11-2026 (BUOI 3): KẾ HOẠCH HẠ TẦNG LƯU TRỮ BỀN VỮNG (PERSISTENT DATA & AVATAR STORAGE)
 
 - [x] Task 1: Bổ sung chi tiết Kế hoạch Lưu trữ Dữ liệu Bền vững (Persistent Storage cho SQLite DB & Avatar/Uploads) vào KE_HOACH_TONG_THE.md và đối chiếu TUONG_LAI_HE_THONG.md | [Agent: Subagent-Planner] | [Skill: writing-guidelines] | [Locked Files: KE_HOACH_TONG_THE.md, TUONG_LAI_HE_THONG.md]
-

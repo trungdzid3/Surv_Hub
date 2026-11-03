@@ -979,6 +979,9 @@ class LedgerService {
    */
   getDepositOrderByCode(orderCode, userId = null) {
     if (!orderCode) throw new Error('Vui long cung cap ma don nap');
+    if (!userId) {
+      throw new Error('Yeu cau dang nhap de xem don nap tien');
+    }
 
     const cleanCode = String(orderCode).trim().toUpperCase();
     const order = db.prepare('SELECT * FROM deposit_orders WHERE order_code = ?').get(cleanCode);
@@ -986,7 +989,7 @@ class LedgerService {
       throw new Error('Khong tim thay don nap tien: ' + cleanCode);
     }
 
-    if (userId && order.user_id !== userId) {
+    if (String(order.user_id) !== String(userId)) {
       const user = db.prepare('SELECT role FROM users WHERE id = ?').get(userId);
       if (!user || user.role !== 'ADMIN') {
         throw new Error('Ban khong co quyen xem thong tin don nap nay');
@@ -1023,7 +1026,6 @@ class LedgerService {
       success: true,
       orderId: order.id,
       orderCode: order.order_code,
-      userId: order.user_id,
       amountVnd: order.amount_vnd,
       creditAmount: order.credit_amount,
       bonusCreditVnd: order.bonus_credit_vnd,

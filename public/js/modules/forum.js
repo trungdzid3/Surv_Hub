@@ -194,7 +194,7 @@
               <span><strong class="text-stone-800 dark:text-stone-200 font-bold">${surveys.length}</strong> đề tài khảo sát</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+              <i data-lucide="shield-check" class="w-4 h-4 text-orange-600"></i>
               <span>Liêm chính học thuật & Chuẩn IRB</span>
             </div>
           </div>
@@ -353,7 +353,7 @@
                   } else if (rank === 2) {
                     rankBadgeClass += 'bg-stone-300 dark:bg-stone-700 text-stone-900 dark:text-white font-bold';
                   } else if (rank === 3) {
-                    rankBadgeClass += 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold';
+                    rankBadgeClass += 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 font-bold';
                   } else {
                     rankBadgeClass += 'bg-stone-100 dark:bg-stone-800 text-stone-500';
                   }
@@ -757,7 +757,7 @@
     } else if (post.author.is_student_verified) {
       roleBadge = '<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60">Sinh Viên Edu</span>';
     } else if (post.author.role === 'CREATOR') {
-      roleBadge = '<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400">Doanh Nghiệp</span>';
+      roleBadge = '<span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400">Doanh Nghiệp</span>';
     }
 
     const firstLetter = (post.author.name || 'U').charAt(0).toUpperCase();
@@ -799,14 +799,14 @@
           </div>
 
           ${canDelete ? `
-            <button onclick="VibeApp.deleteForumPost('${post.id}')" class="w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-stone-400 hover:text-red-600 transition-colors flex items-center justify-center shrink-0 cursor-pointer" title="Xóa bài viết này">
+            <button onclick="VibeApp.deleteForumPost('${post.id}')" class="w-8 h-8 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/40 text-stone-400 hover:text-orange-600 transition-colors flex items-center justify-center shrink-0 cursor-pointer" title="Xóa bài viết này">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
           ` : ''}
         </div>
 
         ${post.is_hidden ? `
-          <div class="px-3.5 py-2.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+          <div class="px-3.5 py-2.5 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-orange-700 dark:text-orange-400 text-xs flex items-center gap-2">
             <i data-lucide="shield-alert" class="w-4 h-4 shrink-0"></i>
             <span><strong>Tạm ẩn:</strong> Bài viết này đang bị ẩn khỏi cộng đồng do hệ thống Sentinel phát hiện dấu hiệu chia sẻ liên kết ngoài trá hình.</span>
           </div>
@@ -875,7 +875,7 @@
         ` : `
           <div class="p-3 sm:p-3.5 rounded-2xl bg-stone-50/70 dark:bg-[#151518] border border-dashed border-stone-200/80 dark:border-stone-800 flex items-center justify-between gap-3 text-xs">
             <div class="flex items-center gap-2 text-stone-500 dark:text-stone-400">
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span class="w-2 h-2 rounded-full bg-orange-500"></span>
               <span class="text-[11px] font-medium">Chủ đề thảo luận cộng đồng mở • Phản hồi trực tiếp bên dưới</span>
             </div>
             <button onclick="VibeApp.toggleForumComments('${post.id}')" class="text-orange-600 hover:text-orange-700 dark:text-orange-400 font-bold text-[11px] flex items-center gap-1 cursor-pointer">
@@ -1146,7 +1146,7 @@
             </div>
           </div>
 
-          <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/80 dark:border-amber-900/60 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed space-y-1">
+          <div class="p-3 bg-orange-50 dark:bg-orange-950/30 rounded-xl border border-orange-200/80 dark:border-orange-900/60 text-[11px] text-orange-800 dark:text-orange-300 leading-relaxed space-y-1">
             <div class="font-bold flex items-center gap-1">
               <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
               <span>Quy tắc cộng đồng & Bảo mật</span>
@@ -1541,7 +1541,7 @@
       <div class="relative w-20 h-20 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 group shrink-0">
         <img src="${img.dataUrl}" alt="Ảnh minh họa ${idx + 1}" class="w-full h-full object-cover">
         <button type="button" onclick="VibeApp.removeForumAttachedImage(${idx})" 
-                class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer" 
+                class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-orange-600 text-white flex items-center justify-center transition-colors shadow-xs cursor-pointer"
                 title="Gỡ ảnh này">
           <i data-lucide="x" class="w-3 h-3 stroke-[2.5]"></i>
         </button>
@@ -1743,7 +1743,7 @@
         }
       }
     } catch (err) {
-      listEl.innerHTML = `<div class="py-2 text-center text-xs text-red-500">${this.escapeHtml(err.message)}</div>`;
+      listEl.innerHTML = `<div class="py-2 text-center text-xs text-orange-500">${this.escapeHtml(err.message)}</div>`;
     }
     if (window.lucide) window.lucide.createIcons();
   },

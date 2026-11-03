@@ -95,22 +95,22 @@
           <div class="space-y-2">
             <div class="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
               <span class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse inline-block"></span>
                 <span>Người Dùng Trực Tuyến & Tăng Trưởng Giữ Chân</span>
               </span>
               <span class="font-mono text-[10px] text-stone-400 font-normal">Cập nhật thời gian thực</span>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
               <!-- Metric 1: Số người đang dùng ngay lúc này -->
-              <div class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-xl p-3.5 sm:p-4 shadow-xs transition-all hover:border-emerald-500/40 relative overflow-hidden">
+              <div class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-xl p-3.5 sm:p-4 shadow-xs transition-all hover:border-orange-500/40 relative overflow-hidden">
                 <div class="flex items-center justify-between">
                   <span class="text-[10.5px] font-black uppercase tracking-wider text-stone-500 dark:text-stone-400">Đang Dùng Lúc Này</span>
-                  <span class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 text-[9.5px] font-bold font-mono">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span class="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-400 text-[9.5px] font-bold font-mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping"></span>
                     <span>ONLINE</span>
                   </span>
                 </div>
-                <div class="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1.5 flex items-baseline gap-1">
+                <div class="text-xl sm:text-2xl font-black font-mono text-orange-600 dark:text-orange-400 mt-1.5 flex items-baseline gap-1">
                   <span>${analytics.activeUsersNow != null ? analytics.activeUsersNow : 0}</span>
                   <span class="text-xs font-normal text-stone-500 dark:text-stone-400 font-sans">người</span>
                 </div>
@@ -138,7 +138,7 @@
                 </div>
                 <div class="text-xl sm:text-2xl font-black font-mono text-stone-900 dark:text-white mt-1.5 flex items-baseline gap-1">
                   <span>${analytics.firstTimeRetentionRate != null ? analytics.firstTimeRetentionRate : 0}%</span>
-                  <span class="text-xs font-normal text-emerald-600 dark:text-emerald-400 font-mono font-bold">Day 1</span>
+                  <span class="text-xs font-normal text-orange-600 dark:text-orange-400 font-mono font-bold">Day 1</span>
                 </div>
                 <div class="text-[10.5px] text-stone-400 dark:text-stone-500 mt-0.5 truncate">Tương tác lại sau lần đầu</div>
               </div>
@@ -160,7 +160,7 @@
             <!-- Dải chip thống kê chất lượng phụ trợ (abc, v.v) -->
             <div class="flex items-center gap-2 flex-wrap pt-0.5 text-xs text-stone-600 dark:text-stone-400">
               <span class="px-2.5 py-1 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg flex items-center gap-1.5 font-medium">
-                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-orange-600"></i>
                 <span>Tỉ lệ hoàn thành form: <strong class="font-mono text-stone-900 dark:text-white font-bold">${analytics.completionRatePct != null ? analytics.completionRatePct : 0}%</strong></span>
               </span>
               <span class="px-2.5 py-1 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg flex items-center gap-1.5 font-medium">
@@ -380,7 +380,7 @@
                       ` : ledger.map(t => {
         const isPositive = t.amount > 0;
         const amountText = `${isPositive ? '+' : ''}${t.amount.toLocaleString('vi-VN')} ${t.currency}`;
-        const colorClass = isPositive ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-stone-700 dark:text-stone-300 font-bold';
+        const colorClass = isPositive ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-stone-700 dark:text-stone-300 font-bold';
 
         let typeBadge = '';
         switch (t.tx_type) {
@@ -394,7 +394,7 @@
             typeBadge = '<span class="px-1.5 py-0.5 bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold rounded text-[9.5px]">HOÀN ESCROW</span>';
             break;
           case 'SURVEY_REWARD':
-            typeBadge = '<span class="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold rounded text-[9.5px]">TRẢ THƯỞNG</span>';
+            typeBadge = '<span class="px-1.5 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 font-bold rounded text-[9.5px]">TRẢ THƯỞNG</span>';
             break;
           case 'POINT_TO_CREDIT_SWAP':
             typeBadge = '<span class="px-1.5 py-0.5 bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-bold rounded text-[9.5px]">ĐỔI CREDIT</span>';
@@ -439,9 +439,9 @@
                 <div class="flex items-center justify-between pb-2.5 border-b border-stone-800/80 shrink-0">
                   <div class="flex items-center gap-2">
                     <div class="flex items-center gap-1.5">
-                      <span class="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block"></span>
-                      <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80 inline-block"></span>
-                      <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
+                      <span class="w-2.5 h-2.5 rounded-full bg-orange-500/80 inline-block"></span>
+                      <span class="w-2.5 h-2.5 rounded-full bg-orange-500/80 inline-block"></span>
+                      <span class="w-2.5 h-2.5 rounded-full bg-orange-500/80 inline-block"></span>
                     </div>
                     <div class="h-3.5 w-px bg-stone-800 mx-0.5"></div>
                     <div class="text-xs font-black uppercase tracking-wider text-white font-mono flex items-center gap-1.5">
@@ -466,8 +466,8 @@
                   <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/congdiem acc1 500')" class="px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-orange-400 border border-stone-800 transition-colors font-bold">+500pts</button>
                   <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/settier me STUDENT')" class="px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-stone-300 border border-stone-800 transition-colors">SV</button>
                   <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/settier me PERSONAL')" class="px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-stone-300 border border-stone-800 transition-colors">Cá nhân</button>
-                  <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/resetpoint all')" class="px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-red-400 border border-stone-800 transition-colors">Reset</button>
-                  <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/cleantest')" class="px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-amber-400 border border-stone-800 transition-colors font-bold">Xóa Test</button>
+                  <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/resetpoint all')" class="px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-orange-400 border border-stone-800 transition-colors">Reset</button>
+                  <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/cleantest')" class="px-2 py-0.5 rounded bg-stone-900 hover:bg-stone-800 text-orange-400 border border-stone-800 transition-colors font-bold">Xóa Test</button>
                 </div>
 
                 <!-- Màn hình Terminal Output Tự Động Co Giãn Ngang Bằng Cột Trái -->
@@ -575,7 +575,7 @@
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Kiểm toán điểm uy tín (Trust Score), đối soát tài khoản nhận và giải ngân thanh toán.</p>
             </div>
             <div class="flex items-center gap-2">
-              <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-mono font-bold rounded-lg">
+              <span class="px-3 py-1 bg-zinc-50 dark:bg-zinc-950/80 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 text-xs font-mono font-bold rounded-lg">
                 Tổng: ${pagination.totalItems} yêu cầu
               </span>
             </div>
@@ -595,21 +595,21 @@
                   <i data-lucide="chevron-down" class="dropdown-trigger-icon w-3.5 h-3.5 stroke-[2] transition-transform duration-200 pointer-events-none text-slate-400"></i>
                 </button>
                 <div id="admin-payout-type-menu" class="custom-dropdown-menu hidden absolute left-0 z-50 mt-1.5 min-w-[220px] p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', '')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === '' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', '')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === '' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Tất cả phương thức</span>
-                    ${type === '' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${type === '' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', 'BANK_TRANSFER')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === 'BANK_TRANSFER' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', 'BANK_TRANSFER')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === 'BANK_TRANSFER' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Chuyển khoản Ngân hàng</span>
-                    ${type === 'BANK_TRANSFER' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${type === 'BANK_TRANSFER' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', 'MOMO')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === 'MOMO' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', 'MOMO')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === 'MOMO' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Ví điện tử MoMo</span>
-                    ${type === 'MOMO' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${type === 'MOMO' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', 'PHONE_CARD')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === 'PHONE_CARD' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('type', 'PHONE_CARD')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${type === 'PHONE_CARD' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Thẻ cào (Viettel/Vina/Mobi)</span>
-                    ${type === 'PHONE_CARD' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${type === 'PHONE_CARD' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
                 </div>
               </div>
@@ -625,21 +625,21 @@
                   <i data-lucide="chevron-down" class="dropdown-trigger-icon w-3.5 h-3.5 stroke-[2] transition-transform duration-200 pointer-events-none text-slate-400"></i>
                 </button>
                 <div id="admin-payout-status-menu" class="custom-dropdown-menu hidden absolute left-0 z-50 mt-1.5 min-w-[200px] p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', '')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === '' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', '')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === '' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Tất cả trạng thái</span>
-                    ${status === '' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${status === '' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', 'PENDING')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === 'PENDING' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', 'PENDING')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === 'PENDING' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Chờ duyệt (PENDING)</span>
-                    ${status === 'PENDING' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${status === 'PENDING' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', 'COMPLETED')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === 'COMPLETED' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', 'COMPLETED')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === 'COMPLETED' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Đã duyệt (COMPLETED)</span>
-                    ${status === 'COMPLETED' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${status === 'COMPLETED' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', 'REJECTED')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === 'REJECTED' ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('status', 'REJECTED')" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${status === 'REJECTED' ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>Đã từ chối (REJECTED)</span>
-                    ${status === 'REJECTED' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${status === 'REJECTED' ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
                 </div>
               </div>
@@ -655,17 +655,17 @@
                   <i data-lucide="chevron-down" class="dropdown-trigger-icon w-3.5 h-3.5 stroke-[2] transition-transform duration-200 pointer-events-none text-slate-400"></i>
                 </button>
                 <div id="admin-payout-limit-menu" class="custom-dropdown-menu hidden absolute left-0 z-50 mt-1.5 min-w-[140px] p-1.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-0.5">
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('limit', 10)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${limit == 10 ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('limit', 10)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${limit == 10 ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>10 dòng</span>
-                    ${limit == 10 ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${limit == 10 ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('limit', 20)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${limit == 20 ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('limit', 20)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${limit == 20 ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>20 dòng</span>
-                    ${limit == 20 ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${limit == 20 ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
-                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('limit', 50)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${limit == 50 ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
+                  <div onclick="event.stopPropagation(); VibeApp.setAdminPayoutFilter('limit', 50)" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors hover:bg-stone-100 dark:hover:bg-stone-800 ${limit == 50 ? 'text-zinc-600 dark:text-zinc-400 font-bold bg-zinc-50 dark:bg-stone-800' : 'text-slate-700 dark:text-slate-200'}">
                     <span>50 dòng</span>
-                    ${limit == 50 ? '<i data-lucide="check" class="w-3.5 h-3.5 text-indigo-600"></i>' : ''}
+                    ${limit == 50 ? '<i data-lucide="check" class="w-3.5 h-3.5 text-zinc-600"></i>' : ''}
                   </div>
                 </div>
               </div>
@@ -712,27 +712,27 @@
         let trustBadge = '';
         if (trust < 60) {
           trustBadge = `
-                        <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 font-bold rounded text-[11px]">
-                          <i data-lucide="alert-octagon" class="w-3 h-3 text-red-600"></i>
+                        <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800 font-bold rounded text-[11px]">
+                          <i data-lucide="alert-octagon" class="w-3 h-3 text-orange-600"></i>
                           <span>RỦI RO CAO (${trust}đ)</span>
                         </div>
-                        <div class="text-[10px] text-red-600 dark:text-red-400 mt-0.5 font-bold">Không khuyến nghị duyệt tự động</div>
+                        <div class="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5 font-bold">Không khuyến nghị duyệt tự động</div>
                       `;
         } else if (trust < 80) {
           trustBadge = `
-                        <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 font-bold rounded text-[11px]">
-                          <i data-lucide="alert-triangle" class="w-3 h-3 text-amber-600"></i>
+                        <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800 font-bold rounded text-[11px]">
+                          <i data-lucide="alert-triangle" class="w-3 h-3 text-orange-600"></i>
                           <span>CẦN LƯU Ý (${trust}đ)</span>
                         </div>
-                        <div class="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">Kiểm tra kỹ lịch sử khảo sát</div>
+                        <div class="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Kiểm tra kỹ lịch sử khảo sát</div>
                       `;
         } else {
           trustBadge = `
-                        <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold rounded text-[11px]">
-                          <i data-lucide="shield-check" class="w-3 h-3 text-emerald-600"></i>
+                        <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800 font-bold rounded text-[11px]">
+                          <i data-lucide="shield-check" class="w-3 h-3 text-orange-600"></i>
                           <span>UY TÍN CAO (${trust}đ)</span>
                         </div>
-                        <div class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Hồ sơ khảo sát trung thực</div>
+                        <div class="text-[10px] text-orange-600 dark:text-orange-400 mt-0.5">Hồ sơ khảo sát trung thực</div>
                       `;
         }
 
@@ -748,21 +748,21 @@
         switch (p.payout_method) {
           case 'BANK_TRANSFER':
             methodDisplay = `
-                          <div class="font-bold text-indigo-600 dark:text-indigo-400">Ngân hàng: ${recipientInfo.bank_name || recipientInfo.bank || 'NH'}</div>
+                          <div class="font-bold text-zinc-600 dark:text-zinc-400">Ngân hàng: ${recipientInfo.bank_name || recipientInfo.bank || 'NH'}</div>
                           <div class="font-mono text-slate-800 dark:text-slate-200">STK: ${recipientInfo.account_number || recipientInfo.accountNumber || 'N/A'}</div>
                           <div class="text-slate-500 uppercase text-[10px]">Chủ TK: ${recipientInfo.account_holder || recipientInfo.accountHolder || ''}</div>
                         `;
             break;
           case 'MOMO':
             methodDisplay = `
-                          <div class="font-bold text-pink-600 dark:text-pink-400">Ví MoMo</div>
+                          <div class="font-bold text-orange-600 dark:text-orange-400">Ví MoMo</div>
                           <div class="font-mono text-slate-800 dark:text-slate-200">SĐT: ${recipientInfo.phone || recipientInfo.phone_number || 'N/A'}</div>
                           <div class="text-slate-500 text-[10px]">${recipientInfo.name || ''}</div>
                         `;
             break;
           case 'PHONE_CARD':
             methodDisplay = `
-                          <div class="font-bold text-amber-600 dark:text-amber-400">Thẻ Cào: ${recipientInfo.carrier || 'Nhà mạng'}</div>
+                          <div class="font-bold text-orange-600 dark:text-orange-400">Thẻ Cào: ${recipientInfo.carrier || 'Nhà mạng'}</div>
                           <div class="font-mono text-slate-800 dark:text-slate-200">Mệnh giá: ${(p.fiat_amount_vnd || p.net_amount_vnd).toLocaleString()}đ</div>
                         `;
             break;
@@ -776,10 +776,10 @@
             statusBadge = '<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 font-bold rounded text-[10px]">CHỜ DUYỆT</span>';
             break;
           case 'COMPLETED':
-            statusBadge = '<span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold rounded text-[10px]">ĐÃ THANH TOÁN</span>';
+            statusBadge = '<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 font-bold rounded text-[10px]">ĐÃ THANH TOÁN</span>';
             break;
           case 'REJECTED':
-            statusBadge = '<span class="px-2 py-0.5 bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 font-bold rounded text-[10px]">BỊ TỪ CHỐI</span>';
+            statusBadge = '<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 font-bold rounded text-[10px]">BỊ TỪ CHỐI</span>';
             break;
           default:
             statusBadge = `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 font-bold rounded text-[10px]">${p.status}</span>`;
@@ -983,8 +983,8 @@
               <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Giám sát 5 loại bẫy kỹ thuật, điều tra tài khoản người dùng và quản trị an ninh hệ thống.</p>
             </div>
             <div class="flex items-center gap-2">
-              <span class="px-3 py-1.5 ${bannedIps.length > 0 ? 'bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/60' : 'bg-stone-100 dark:bg-stone-800/80 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700'} text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs">
-                <i data-lucide="shield-alert" class="w-3.5 h-3.5 ${bannedIps.length > 0 ? 'text-red-600' : 'text-stone-400'}"></i>
+              <span class="px-3 py-1.5 ${bannedIps.length > 0 ? 'bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60' : 'bg-stone-100 dark:bg-stone-800/80 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700'} text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 ${bannedIps.length > 0 ? 'text-orange-600' : 'text-stone-400'}"></i>
                 <span>${bannedIps.length} IP Đang Bị Cấm</span>
               </span>
               <span class="px-3 py-1.5 bg-stone-100 dark:bg-stone-800/80 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 text-xs font-mono font-bold rounded-xl shadow-xs flex items-center gap-1.5">
@@ -1121,20 +1121,20 @@
 
         let trustBadge = '';
         if (trust >= 80) {
-          trustBadge = `<span class="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-bold rounded text-[11px]">Uy Tín Cao (${trust}đ)</span>`;
+          trustBadge = `<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 font-bold rounded text-[11px]">Uy Tín Cao (${trust}đ)</span>`;
         } else if (trust >= 60) {
-          trustBadge = `<span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 font-bold rounded text-[11px]">Cần Lưu Ý (${trust}đ)</span>`;
+          trustBadge = `<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 font-bold rounded text-[11px]">Cần Lưu Ý (${trust}đ)</span>`;
         } else {
-          trustBadge = `<span class="px-2 py-0.5 bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 font-bold rounded text-[11px]">Rủi Ro Cao (${trust}đ)</span>`;
+          trustBadge = `<span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 font-bold rounded text-[11px]">Rủi Ro Cao (${trust}đ)</span>`;
         }
 
         let statusBadge = '';
         if (isBanned) {
-          statusBadge = '<span class="px-2 py-0.5 bg-red-600 text-white font-bold rounded text-[11px]">BANNED (BỊ KHÓA)</span>';
+          statusBadge = '<span class="px-2 py-0.5 bg-orange-600 text-white font-bold rounded text-[11px]">BANNED (BỊ KHÓA)</span>';
         } else if (isSuspended) {
           statusBadge = '<span class="px-2 py-0.5 bg-orange-500 text-white font-bold rounded text-[11px]">SUSPENDED</span>';
         } else {
-          statusBadge = '<span class="px-2 py-0.5 bg-emerald-600 text-white font-bold rounded text-[11px]">ACTIVE (HOẠT ĐỘNG)</span>';
+          statusBadge = '<span class="px-2 py-0.5 bg-orange-600 text-white font-bold rounded text-[11px]">ACTIVE (HOẠT ĐỘNG)</span>';
         }
 
         const responses = u.responses || [];
@@ -1148,7 +1148,7 @@
                             ${statusBadge}
                             ${trustBadge}
                             <span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded text-[10px]">${u.role}</span>
-                            ${u.account_tier ? `<span class="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold rounded text-[10px]">${u.account_tier}</span>` : ''}
+                            ${u.account_tier ? `<span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 font-bold rounded text-[10px]">${u.account_tier}</span>` : ''}
                           </div>
                           <div class="text-xs font-mono text-slate-500 flex flex-wrap gap-x-4">
                             <span>Email: <strong class="text-slate-700 dark:text-slate-300">${u.email}</strong></span>
@@ -1156,7 +1156,7 @@
                             <span>Số dư điểm: <strong class="text-slate-700 dark:text-slate-300">${(u.point_balance || 0).toLocaleString()} pts</strong></span>
                           </div>
                           ${(isBanned || isSuspended) ? `
-                            <div class="text-xs text-red-600 dark:text-red-400 font-bold pt-1">
+                            <div class="text-xs text-orange-600 dark:text-orange-400 font-bold pt-1">
                               Lý do khóa: ${u.ban_reason || 'Vi phạm chính sách an ninh / Điểm uy tín quá thấp'}
                               ${u.banned_at ? ` | Thời điểm: ${new Date(u.banned_at).toLocaleString('vi-VN')}` : ''}
                             </div>
@@ -1173,7 +1173,7 @@
                               <span>Mở Khóa Tài Khoản (Unban)</span>
                             </button>
                           ` : `
-                            <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                            <span class="text-xs text-orange-600 dark:text-orange-400 font-bold flex items-center gap-1">
                               <i data-lucide="check" class="w-3.5 h-3.5"></i>
                               <span>Tài khoản bình thường</span>
                             </span>
@@ -1206,19 +1206,19 @@
 
           switch (r.response_status) {
             case 'VALIDATED':
-              statusColor = 'text-emerald-600 dark:text-emerald-400 font-bold';
+              statusColor = 'text-orange-600 dark:text-orange-400 font-bold';
               statusLabel = 'HỢP LỆ (VALIDATED)';
-              trustImpact = '<span class="text-[10px] text-emerald-600 font-mono ml-1">(+2.0 uy tín)</span>';
+              trustImpact = '<span class="text-[10px] text-orange-600 font-mono ml-1">(+2.0 uy tín)</span>';
               break;
             case 'REJECTED_FRAUD':
-              statusColor = 'text-red-600 dark:text-red-400 font-bold';
+              statusColor = 'text-orange-600 dark:text-orange-400 font-bold';
               statusLabel = 'TỪ CHỐI GIAN LẬN';
-              trustImpact = '<span class="text-[10px] text-red-600 font-mono ml-1">(-12.0 uy tín)</span>';
+              trustImpact = '<span class="text-[10px] text-orange-600 font-mono ml-1">(-12.0 uy tín)</span>';
               break;
             case 'FLAGGED_MANUAL':
-              statusColor = 'text-amber-600 dark:text-amber-400 font-bold';
+              statusColor = 'text-orange-600 dark:text-orange-400 font-bold';
               statusLabel = 'NGHI VẤN (FLAGGED)';
-              trustImpact = '<span class="text-[10px] text-amber-600 font-mono ml-1">(-5.0 uy tín)</span>';
+              trustImpact = '<span class="text-[10px] text-orange-600 font-mono ml-1">(-5.0 uy tín)</span>';
               break;
             case 'SCREENED_OUT':
               statusColor = 'text-slate-500 font-bold';
@@ -1244,7 +1244,7 @@
                                       <td class="p-2.5 text-center font-mono font-bold text-slate-700 dark:text-slate-300">
                                         ${(r.quality_score !== null && r.quality_score !== undefined) ? r.quality_score : 'N/A'}
                                       </td>
-                                      <td class="p-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                      <td class="p-2.5 text-right font-mono font-bold text-orange-600 dark:text-orange-400">
                                         +${(r.points_rewarded || 0).toLocaleString()} pts
                                       </td>
                                     </tr>
@@ -1409,13 +1409,13 @@
         const isMultiAccAlert = l.reason === 'CANH_BAO_KHA_NGHI_MULTI_ACCOUNT';
         const isAutoBan = l.reason === 'AUTO_BAN_IP_MULTI_ACCOUNT_BREACH' || l.reason === 'AUTO_BAN_DEVICE_MULTI_ACCOUNT_BREACH';
         return `
-                      <tr class="${isAutoBan ? 'bg-red-50/50 dark:bg-red-950/20' : (isMultiAccAlert ? 'bg-orange-50/40 dark:bg-orange-950/20' : '')}">
+                      <tr class="${isAutoBan ? 'bg-orange-50/50 dark:bg-orange-950/20' : (isMultiAccAlert ? 'bg-orange-50/40 dark:bg-orange-950/20' : '')}">
                         <td class="p-3 font-mono text-stone-400">${new Date(l.created_at).toLocaleString('vi-VN')}</td>
                         <td class="p-3 font-bold text-stone-800 dark:text-stone-200">${l.user_name || 'Khách/Ẩn danh'}</td>
                         <td class="p-3">
                           ${isAutoBan ? `
-                            <span class="px-2 py-0.5 bg-red-600 text-white font-bold rounded text-[10px]">AUTO-BAN</span>
-                            <span class="text-red-700 dark:text-red-400 font-bold ml-1">${l.reason}</span>
+                            <span class="px-2 py-0.5 bg-orange-600 text-white font-bold rounded text-[10px]">AUTO-BAN</span>
+                            <span class="text-orange-700 dark:text-orange-400 font-bold ml-1">${l.reason}</span>
                           ` : (isMultiAccAlert ? `
                             <span class="px-2 py-0.5 bg-orange-600 text-white font-bold rounded text-[10px]">CẢNH BÁO</span>
                             <span class="text-orange-600 dark:text-orange-400 font-bold ml-1">Phát hiện &gt;= 3 tài khoản trên 1 thiết bị</span>
@@ -1611,7 +1611,7 @@
             line.appendChild(dot);
             line.appendChild(loadText);
           } else if (item.type === 'error') {
-            line.className = 'pl-4 pb-2 text-red-400 whitespace-pre-wrap font-mono text-xs sm:text-[13px] font-medium leading-relaxed';
+            line.className = 'pl-4 pb-2 text-orange-400 whitespace-pre-wrap font-mono text-xs sm:text-[13px] font-medium leading-relaxed';
             line.textContent = item.text || '';
           } else if (item.type === 'help') {
             line.className = 'pl-4 pb-2 text-stone-300 whitespace-pre-wrap font-mono text-xs sm:text-[13px] leading-relaxed';
@@ -1621,7 +1621,7 @@
             line.innerHTML = item.text || '';
           } else {
             // success
-            line.className = 'pl-4 pb-2 whitespace-pre-wrap font-mono text-xs sm:text-[13px] leading-relaxed text-emerald-400 font-medium';
+            line.className = 'pl-4 pb-2 whitespace-pre-wrap font-mono text-xs sm:text-[13px] leading-relaxed text-orange-400 font-medium';
             line.textContent = item.text || '';
           }
           output.appendChild(line);
@@ -1891,9 +1891,9 @@
       <div class="flex items-center justify-between pb-3.5 border-b border-stone-800/80 mb-3 flex-shrink-0">
         <div class="flex items-center gap-2.5">
           <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
-            <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-orange-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-orange-500/80 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-orange-500/80 inline-block"></span>
           </div>
           <div class="h-4 w-px bg-stone-800 mx-1"></div>
           <div class="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
@@ -1916,8 +1916,8 @@
         <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/congdiem acc1 500')" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-orange-400 border border-stone-800 font-bold transition-colors">/congdiem acc1 500</button>
         <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/settier me STUDENT')" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-orange-400 border border-stone-800 transition-colors">/settier me STUDENT</button>
         <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/settier me PERSONAL')" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-300 border border-stone-800 transition-colors">/settier me PERSONAL</button>
-        <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/resetpoint all')" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-red-400 border border-stone-800 transition-colors">/resetpoint all</button>
-        <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/cleantest')" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-amber-400 border border-stone-800 font-bold transition-colors">/cleantest</button>
+        <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/resetpoint all')" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-orange-400 border border-stone-800 transition-colors">/resetpoint all</button>
+        <button type="button" onclick="VibeApp.submitAdminConsoleCommand('/cleantest')" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-orange-400 border border-stone-800 font-bold transition-colors">/cleantest</button>
         <button type="button" onclick="VibeApp.clearAdminConsole()" class="px-2.5 py-1 rounded-lg bg-stone-900 hover:bg-stone-800 text-stone-400 border border-stone-800 transition-colors">Clear</button>
       </div>
 
@@ -1991,7 +1991,7 @@
     }).join('')}
         </div>
         <div class="hidden sm:flex items-center gap-2 text-xs text-stone-400 font-medium">
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="inline-block w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
           <span>Phân hệ Quản trị SurvHub</span>
         </div>
       </div>

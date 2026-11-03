@@ -79,7 +79,7 @@
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="/styles.css?v=4.9.3_smooth_toggle_switch">
 </head>
-<body class="bg-[#FFF8F5] dark:bg-[#121214] text-slate-800 dark:text-stone-100 min-h-screen flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased safe-bottom">
+<body class="bg-[#FFF8F5] dark:bg-[#121214] text-slate-800 dark:text-stone-100 min-h-[100svh] overflow-x-clip flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased safe-bottom">
   <!-- ==================== STITCH AMBIENT ATMOSPHERIC GLOWS ==================== -->
   <div class="pointer-events-none fixed -top-40 left-1/2 -translate-x-1/2 w-[850px] h-[550px] bg-gradient-to-tr from-[#EA580C]/10 via-[#F97316]/10 to-transparent rounded-full blur-3xl opacity-70 -z-10 dark:opacity-0 transition-opacity"></div>
   <div class="pointer-events-none fixed top-1/3 -right-32 w-[480px] h-[480px] bg-orange-400/10 rounded-full blur-3xl opacity-60 -z-10 dark:opacity-0 transition-opacity"></div>
@@ -135,7 +135,7 @@
           
 
           <!-- Theme Toggle Button (Light/Dark Mode) -->
-          <button id="theme-toggle-btn" onclick="VibeApp.toggleTheme(event)" class="relative w-9 h-9 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center transition-colors active:scale-90 flex-shrink-0 cursor-pointer overflow-hidden" title="Chuyển chế độ Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối">
+          <button id="theme-toggle-btn" onclick="VibeApp.toggleTheme(event)" class="relative w-11 h-11 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center transition-colors active:scale-90 flex-shrink-0 cursor-pointer overflow-hidden" title="Chuyển chế độ Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối">
             <span class="theme-icon-sun absolute inset-0 flex items-center justify-center text-orange-500">
               <i data-lucide="sun" class="w-4 h-4 stroke-[2.2]"></i>
             </span>
@@ -146,7 +146,7 @@
 
 
           <!-- Daily Streak Widget on Header (Phong cách TikTok Streak siêu gọn: Ngọn lửa + Số, chuyển cạnh chuông thông báo) -->
-          <button id="header-streak-btn" onclick="VibeApp.openStreakModal()" class="hidden h-8 items-center gap-1 px-2 rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100/80 dark:bg-stone-800/60 text-stone-400 dark:text-stone-500 hover:border-orange-300 dark:hover:border-orange-800 transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs" title="Chuỗi điểm danh hàng ngày">
+          <button id="header-streak-btn" onclick="VibeApp.openStreakModal()" class="hidden min-h-11 items-center gap-1 px-2 rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100/80 dark:bg-stone-800/60 text-stone-400 dark:text-stone-500 hover:border-orange-300 dark:hover:border-orange-800 transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs" title="Chuỗi điểm danh hàng ngày" aria-label="Mở chuỗi điểm danh hàng ngày">
             <span id="header-streak-flame" class="relative flex items-center justify-center">
               <i data-lucide="flame" class="w-3.5 h-3.5 stroke-[2.2]"></i>
               <span id="header-streak-dot" class="hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-stone-900 animate-pulse"></span>
@@ -156,7 +156,7 @@
 
           <!-- Notification Bell & Dropdown (Push & Realtime Center) -->
           <div id="header-notif-container" class="relative flex-shrink-0">
-            <button id="header-notif-btn" onclick="VibeApp.toggleNotificationsDropdown()" class="relative w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors active:scale-95 flex-shrink-0" title="Thông báo hệ thống">
+            <button id="header-notif-btn" onclick="VibeApp.toggleNotificationsDropdown()" class="relative w-11 h-11 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors active:scale-95 flex-shrink-0" title="Thông báo hệ thống" aria-label="Mở thông báo hệ thống">
               <i id="header-bell-icon" data-lucide="bell" class="w-4 h-4 stroke-[2]"></i>
               <span id="header-notif-badge" class="hidden absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 bg-orange-600 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-sm">0</span>
             </button>
@@ -187,7 +187,7 @@
 
           <!-- User Profile Menu (When logged in) -->
           <div id="user-profile-menu" class="hidden relative flex-shrink-0">
-            <button id="user-profile-btn" onclick="VibeApp.toggleProfileDropdown()" class="h-9 flex items-center gap-2 px-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors whitespace-nowrap flex-shrink-0">
+            <button id="user-profile-btn" onclick="VibeApp.toggleProfileDropdown()" class="h-9 flex items-center gap-2 px-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors whitespace-nowrap flex-shrink-0" aria-label="Mở menu tài khoản">
               <div id="user-avatar-circle" class="w-6 h-6 rounded-md bg-slate-900 dark:bg-slate-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
                 U
               </div>
@@ -485,7 +485,7 @@
             <p class="text-[11px] text-stone-500 dark:text-stone-400">Đăng tải thông tin hoặc ảnh chụp màn hình để kỹ thuật viên xử lý</p>
           </div>
         </div>
-        <button onclick="VibeApp.closeBugReportModal()" class="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 flex items-center justify-center transition-colors">
+        <button type="button" onclick="VibeApp.closeBugReportModal()" class="w-11 h-11 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 flex items-center justify-center transition-colors" aria-label="Đóng cửa sổ báo cáo sự cố">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
@@ -528,11 +528,11 @@
           <span id="image-lightbox-title" class="text-xs sm:text-sm font-bold truncate">Ảnh minh chứng sự cố</span>
         </div>
         <div class="flex items-center gap-2">
-          <a id="image-lightbox-link" href="#" target="_blank" rel="noopener" class="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-colors" title="Mở ảnh gốc trong tab mới">
+          <a id="image-lightbox-link" href="#" target="_blank" rel="noopener" class="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold flex items-center gap-1.5 transition-colors" title="Mở ảnh gốc trong tab mới" aria-label="Mở ảnh gốc trong tab mới">
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
             <span class="hidden sm:inline">Mở ảnh gốc</span>
           </a>
-          <button type="button" onclick="VibeApp.closeImageLightbox()" class="w-8 h-8 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-colors">
+          <button type="button" onclick="VibeApp.closeImageLightbox()" class="w-11 h-11 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-colors" aria-label="Đóng ảnh phóng to">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>

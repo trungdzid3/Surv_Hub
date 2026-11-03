@@ -398,7 +398,7 @@
               <!-- Lưu ý làm bài trung thực & Tiêu chuẩn chất lượng -->
               <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/40 border border-stone-200/80 dark:border-stone-800/80 text-[11px] text-stone-500 dark:text-stone-400 space-y-1.5 leading-relaxed">
                 <div class="font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-                  <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  <i data-lucide="shield-check" class="w-3.5 h-3.5 text-orange-600"></i>
                   <span>Quy tắc bảo đảm chất lượng dữ liệu:</span>
                 </div>
                 <p>• Trả lời cẩn thận và trung thực dựa trên trải nghiệm thực tế của bạn.</p>
@@ -541,7 +541,7 @@
         
         <!-- Header Controls: Thoát Khảo Sát, Bộ Đếm Thời Gian, Tiến Trình Từng Câu (Chống Bot & Làm Bừa) -->
         <div class="flex items-center justify-between text-xs text-stone-500 pb-3 border-b border-stone-200 dark:border-stone-800">
-          <button type="button" onclick="VibeApp.confirmExitSurvey()" class="hover:text-red-600 flex items-center gap-1 font-bold transition-colors cursor-pointer">
+          <button type="button" onclick="VibeApp.confirmExitSurvey()" class="hover:text-orange-600 flex items-center gap-1 font-bold transition-colors cursor-pointer">
             <i data-lucide="x" class="w-4 h-4 stroke-[2.2]"></i>
             <span>Thoát Khảo Sát</span>
           </button>
@@ -554,12 +554,12 @@
         </div>
 
         ${session.isEditing ? `
-          <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-2">
+          <div class="p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-xl text-xs text-orange-800 dark:text-orange-300 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <i data-lucide="edit-3" class="w-4 h-4 text-amber-600 shrink-0"></i>
+              <i data-lucide="edit-3" class="w-4 h-4 text-orange-600 shrink-0"></i>
               <span><strong>Chế độ chỉnh sửa:</strong> Bạn đang cập nhật câu trả lời đã nộp.</span>
             </div>
-            <button onclick="VibeApp.navigate('review-survey', { surveyId: '${surveyId}' })" class="text-[11px] underline font-bold hover:text-amber-900 cursor-pointer">
+            <button onclick="VibeApp.navigate('review-survey', { surveyId: '${surveyId}' })" class="text-[11px] underline font-bold hover:text-orange-900 cursor-pointer">
               Hủy sửa & Xem bài cũ
             </button>
           </div>
@@ -617,7 +617,7 @@
                   </span>
                   ${restrictionBadgeHtml}
                   ${isReq ? `
-                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-900/40">
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-900/40">
                       * Bắt buộc
                     </span>
                   ` : `
@@ -629,7 +629,7 @@
 
               <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white leading-snug">
                 <span>${this.escapeHtml(q.content)}</span>
-                ${isReq ? '<span class="text-red-500 ml-1 font-bold">*</span>' : ''}
+                ${isReq ? '<span class="text-orange-500 ml-1 font-bold">*</span>' : ''}
               </h2>
 
               ${q.image_url ? `
@@ -649,7 +649,7 @@
             </div>
 
             <!-- Thẻ báo lỗi nội dòng nếu có -->
-            <div id="val-err-${q.id}" class="text-[11px] font-semibold text-red-600 dark:text-red-400 mt-2 hidden flex items-center gap-1"></div>
+            <div id="val-err-${q.id}" class="text-[11px] font-semibold text-orange-600 dark:text-orange-400 mt-2 hidden flex items-center gap-1"></div>
           </div>
         `))}
 
@@ -790,7 +790,7 @@
                  onchange="VibeApp.updateOpenText('${q.id}', this.value)"
                  placeholder="${placeholder.replace(/"/g, '&quot;')}"
                  class="w-full p-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors">
-          <div id="val-err-${q.id}" class="hidden text-xs text-red-500 flex items-center gap-1.5 mt-1.5 font-medium"></div>
+          <div id="val-err-${q.id}" class="hidden text-xs text-orange-500 flex items-center gap-1.5 mt-1.5 font-medium"></div>
         </div>
       `;
     }
@@ -822,7 +822,7 @@
                     rows="4"
                     placeholder="${placeholder.replace(/"/g, '&quot;')}"
                     class="w-full p-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 font-medium leading-relaxed transition-colors">${textVal}</textarea>
-          <div id="val-err-${q.id}" class="hidden text-xs text-red-500 flex items-center gap-1.5 mt-1.5 font-medium"></div>
+          <div id="val-err-${q.id}" class="hidden text-xs text-orange-500 flex items-center gap-1.5 mt-1.5 font-medium"></div>
         </div>
       `;
     }
@@ -1009,7 +1009,7 @@
             </button>
           </div>
           ${fileName ? `
-            <div class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1.5 pt-1">
+            <div class="text-xs font-mono font-bold text-orange-600 dark:text-orange-400 flex items-center justify-center gap-1.5 pt-1">
               <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
               <span>Đã chọn tệp: ${fileName}</span>
             </div>
@@ -1053,15 +1053,15 @@
               const isFilled = star <= curRating;
               return `
                 <button type="button" onclick="VibeApp.selectSingleOption('${q.id}', '${star}')" 
-                        class="p-2 sm:p-3 rounded-2xl transition-all transform active:scale-90 ${isFilled ? 'text-amber-400 scale-110' : 'text-stone-300 dark:text-stone-600 hover:text-amber-300'}">
-                  <i data-lucide="star" class="w-8 h-8 sm:w-10 sm:h-10 ${isFilled ? 'fill-amber-400 stroke-amber-400' : 'stroke-[1.8]'}"></i>
+                        class="p-2 sm:p-3 rounded-2xl transition-all transform active:scale-90 ${isFilled ? 'text-orange-400 scale-110' : 'text-stone-300 dark:text-stone-600 hover:text-orange-300'}">
+                  <i data-lucide="star" class="w-8 h-8 sm:w-10 sm:h-10 ${isFilled ? 'fill-orange-400 stroke-orange-400' : 'stroke-[1.8]'}"></i>
                   <div class="text-[11px] font-bold font-mono mt-1 text-stone-600 dark:text-stone-400">${star} Sao</div>
                 </button>
               `;
             }).join('')}
           </div>
           ${curRating > 0 ? `
-            <div class="text-xs font-bold text-amber-500">Bạn đã đánh giá: ${curRating} / 5 Sao</div>
+            <div class="text-xs font-bold text-orange-500">Bạn đã đánh giá: ${curRating} / 5 Sao</div>
           ` : `
             <div class="text-xs text-stone-400">Nhấp chọn sao để đánh giá</div>
           `}
@@ -1088,7 +1088,7 @@
     }
     const cardEl = document.getElementById(`question-card-${qId}`);
     if (cardEl) {
-      cardEl.classList.remove('ring-1', 'ring-red-500');
+      cardEl.classList.remove('ring-1', 'ring-orange-500');
     }
 
     const prevScrollY = window.scrollY;
@@ -1120,7 +1120,7 @@
     }
     const cardEl = document.getElementById(`question-card-${qId}`);
     if (cardEl && arr.length > 0) {
-      cardEl.classList.remove('ring-1', 'ring-red-500');
+      cardEl.classList.remove('ring-1', 'ring-orange-500');
     }
 
     const prevScrollY = window.scrollY;
@@ -1145,7 +1145,7 @@
     }
     const cardEl = document.getElementById(`question-card-${qId}`);
     if (cardEl) {
-      cardEl.classList.remove('ring-1', 'ring-red-500');
+      cardEl.classList.remove('ring-1', 'ring-orange-500');
     }
 
     const prevScrollY = window.scrollY;
@@ -1174,7 +1174,7 @@
     }
     const cardEl = document.getElementById(`question-card-${qId}`);
     if (cardEl) {
-      cardEl.classList.remove('ring-1', 'ring-red-500');
+      cardEl.classList.remove('ring-1', 'ring-orange-500');
     }
 
     const prevScrollY = window.scrollY;
@@ -1238,15 +1238,15 @@
     const errEl = document.getElementById(`val-err-${qId}`) || document.getElementById(`survey-error-${qId}`);
 
     if (!res.valid && val && String(val).trim() !== '') {
-      inputEl.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/20');
+      inputEl.classList.add('border-orange-500', 'focus:border-orange-500', 'focus:ring-orange-500/20');
       inputEl.classList.remove('border-stone-200', 'dark:border-stone-700', 'focus:border-orange-500');
       if (errEl) {
-        errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${res.error || 'Giá trị không đúng định dạng'}</span>`;
+        errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${res.error || 'Giá trị không đúng định dạng'}</span>`;
         errEl.classList.remove('hidden');
         if (window.lucide) window.lucide.createIcons({ root: errEl });
       }
     } else {
-      inputEl.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500/20');
+      inputEl.classList.remove('border-orange-500', 'focus:border-orange-500', 'focus:ring-orange-500/20');
       inputEl.classList.add('border-stone-200', 'dark:border-stone-700', 'focus:border-orange-500');
       if (errEl) {
         errEl.textContent = '';
@@ -1330,13 +1330,13 @@
         const inputEl = document.getElementById(`survey-answer-input-${q.id}`);
 
         if (errorMsg) {
-          if (cardEl) cardEl.classList.add('ring-1', 'ring-red-500');
+          if (cardEl) cardEl.classList.add('ring-1', 'ring-orange-500');
           if (inputEl) {
-            inputEl.classList.add('border-red-500', 'bg-red-50/20', 'text-red-900', 'dark:text-red-200');
+            inputEl.classList.add('border-orange-500', 'bg-orange-50/20', 'text-orange-900', 'dark:text-orange-200');
             inputEl.classList.remove('border-stone-200', 'dark:border-stone-700');
           }
           if (errEl) {
-            errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${this.escapeHtml ? this.escapeHtml(errorMsg) : errorMsg}</span>`;
+            errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${this.escapeHtml ? this.escapeHtml(errorMsg) : errorMsg}</span>`;
             errEl.classList.remove('hidden');
             if (window.lucide) window.lucide.createIcons({ root: errEl });
           }
@@ -1349,9 +1349,9 @@
             };
           }
         } else {
-          if (cardEl) cardEl.classList.remove('ring-1', 'ring-red-500');
+          if (cardEl) cardEl.classList.remove('ring-1', 'ring-orange-500');
           if (inputEl) {
-            inputEl.classList.remove('border-red-500', 'bg-red-50/20', 'text-red-900', 'dark:text-red-200');
+            inputEl.classList.remove('border-orange-500', 'bg-orange-50/20', 'text-orange-900', 'dark:text-orange-200');
             inputEl.classList.add('border-stone-200', 'dark:border-stone-700');
           }
           if (errEl) {
@@ -1848,10 +1848,10 @@
             this.showToast(msg, 'warning');
             if (inputEl) {
               inputEl.focus();
-              inputEl.classList.add('border-red-500');
+              inputEl.classList.add('border-orange-500');
             }
             if (errEl) {
-              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
               if (window.lucide) window.lucide.createIcons({ root: errEl });
             }
@@ -1864,10 +1864,10 @@
             this.showToast(msg, 'warning');
             if (inputEl) {
               inputEl.focus();
-              inputEl.classList.add('border-red-500');
+              inputEl.classList.add('border-orange-500');
             }
             if (errEl) {
-              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
               if (window.lucide) window.lucide.createIcons({ root: errEl });
             }
@@ -1882,10 +1882,10 @@
               this.showToast(msg, 'warning');
               if (inputEl) {
                 inputEl.focus();
-                inputEl.classList.add('border-red-500');
+                inputEl.classList.add('border-orange-500');
               }
               if (errEl) {
-                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
                 if (window.lucide) window.lucide.createIcons({ root: errEl });
               }
@@ -1897,10 +1897,10 @@
               this.showToast(msg, 'warning');
               if (inputEl) {
                 inputEl.focus();
-                inputEl.classList.add('border-red-500');
+                inputEl.classList.add('border-orange-500');
               }
               if (errEl) {
-                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
                 if (window.lucide) window.lucide.createIcons({ root: errEl });
               }
@@ -1912,10 +1912,10 @@
               this.showToast(msg, 'warning');
               if (inputEl) {
                 inputEl.focus();
-                inputEl.classList.add('border-red-500');
+                inputEl.classList.add('border-orange-500');
               }
               if (errEl) {
-                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
                 if (window.lucide) window.lucide.createIcons({ root: errEl });
               }
@@ -1927,10 +1927,10 @@
               this.showToast(msg, 'warning');
               if (inputEl) {
                 inputEl.focus();
-                inputEl.classList.add('border-red-500');
+                inputEl.classList.add('border-orange-500');
               }
               if (errEl) {
-                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
                 if (window.lucide) window.lucide.createIcons({ root: errEl });
               }
@@ -1942,10 +1942,10 @@
               this.showToast(msg, 'warning');
               if (inputEl) {
                 inputEl.focus();
-                inputEl.classList.add('border-red-500');
+                inputEl.classList.add('border-orange-500');
               }
               if (errEl) {
-                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+                errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
                 if (window.lucide) window.lucide.createIcons({ root: errEl });
               }
@@ -1958,10 +1958,10 @@
             this.showToast(msg, 'warning');
             if (inputEl) {
               inputEl.focus();
-              inputEl.classList.add('border-red-500');
+              inputEl.classList.add('border-orange-500');
             }
             if (errEl) {
-              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
               if (window.lucide) window.lucide.createIcons({ root: errEl });
             }
@@ -1975,10 +1975,10 @@
             this.showToast(msg, 'warning');
             if (inputEl) {
               inputEl.focus();
-              inputEl.classList.add('border-red-500');
+              inputEl.classList.add('border-orange-500');
             }
             if (errEl) {
-              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
               if (window.lucide) window.lucide.createIcons({ root: errEl });
             }
@@ -1989,10 +1989,10 @@
             this.showToast(msg, 'warning');
             if (inputEl) {
               inputEl.focus();
-              inputEl.classList.add('border-red-500');
+              inputEl.classList.add('border-orange-500');
             }
             if (errEl) {
-              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-500 shrink-0"></i><span>${msg}</span>`;
+              errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
               if (window.lucide) window.lucide.createIcons({ root: errEl });
             }
@@ -2324,7 +2324,7 @@
       if (root) {
         root.innerHTML = `
           <div class="stepper-focus-box py-8 text-center space-y-6">
-            <div class="w-16 h-16 rounded-3xl bg-stone-100 dark:bg-stone-800 text-amber-500 mx-auto flex items-center justify-center border border-amber-200/80 dark:border-amber-800/80">
+            <div class="w-16 h-16 rounded-3xl bg-stone-100 dark:bg-stone-800 text-orange-500 mx-auto flex items-center justify-center border border-orange-200/80 dark:border-orange-800/80">
               <i data-lucide="smile" class="w-8 h-8"></i>
             </div>
             
@@ -2557,7 +2557,7 @@
           <div class="bento-card p-6 border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-stone-100 dark:border-stone-800">
               <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                   <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
                   <span>${userResponse.edited_at ? 'Đã chỉnh sửa phản hồi' : 'Đã nộp bài thành công'}</span>
                 </span>
@@ -2617,7 +2617,7 @@
                   <div class="flex items-start justify-between gap-3">
                     <h4 class="text-xs sm:text-sm font-bold text-stone-900 dark:text-white leading-snug">
                       <span class="text-orange-600 mr-1">Câu ${idx + 1}:</span> ${q.content}
-                      ${q.is_required ? '<span class="text-red-500 ml-1">*</span>' : ''}
+                      ${q.is_required ? '<span class="text-orange-500 ml-1">*</span>' : ''}
                     </h4>
                   </div>
 
@@ -2784,14 +2784,14 @@
         <!-- HEADER HỒ SƠ TÀI KHOẢN: TIÊU ĐỀ & THÔNG TIN CHÍNH CHUẨN STITCH -->
         <div class="bg-white dark:bg-[#18181B] rounded-3xl p-6 sm:p-7 border border-stone-200/90 dark:border-stone-800 shadow-xs space-y-5 relative overflow-hidden">
           <!-- Hiệu ứng gradient mờ phong cách Stitch -->
-          <div class="absolute -right-20 -top-24 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/10 to-amber-500/10 blur-3xl pointer-events-none"></div>
+          <div class="absolute -right-20 -top-24 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/10 to-orange-500/10 blur-3xl pointer-events-none"></div>
           <div class="absolute right-1/3 -bottom-28 w-80 h-80 rounded-full bg-orange-400/5 blur-3xl pointer-events-none"></div>
 
           <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             <!-- Avatar & Nhận diện tài khoản: GIỮ NGUYÊN AVATAR CHỮ MẶC ĐỊNH ĐẸP MẮT KHI CHƯA CÓ ẢNH -->
             <div class="flex items-start sm:items-center gap-4">
               <div class="relative shrink-0">
-                <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-tr from-orange-600 via-amber-600 to-orange-500 p-0.5 shadow-md shadow-orange-600/20">
+                <div class="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-tr from-orange-600 via-orange-600 to-orange-500 p-0.5 shadow-md shadow-orange-600/20">
                   <div id="profile-header-avatar-display" class="w-full h-full rounded-2xl bg-white dark:bg-stone-900 flex items-center justify-center font-black text-2xl text-orange-600 dark:text-orange-400 overflow-hidden">
                     ${user.avatar_url ? `<img src="${user.avatar_url}" alt="${user.name || 'Avatar'}" class="w-full h-full object-cover rounded-2xl" onerror="this.onerror=null;this.parentElement.textContent='${(user.name || 'U').charAt(0).toUpperCase()}';">` : (user.name || 'U').charAt(0).toUpperCase()}
                   </div>
@@ -2833,7 +2833,7 @@
                 </button>
               ` : `
                 <!-- NGƯỜI ĐIỀN: CHỈ HIỂN THỊ NÚT XÁC THỰC SINH VIÊN (KHÔNG HIỆN DOANH NGHIỆP) -->
-                <button onclick="VibeApp.switchProfileTab('STUDENT')" class="px-3.5 py-2 rounded-xl text-xs font-bold ${isStudentVerified ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 dark:border-emerald-800' : 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 border border-orange-200 dark:border-orange-800 hover:bg-orange-100'} transition-all flex items-center gap-1.5 cursor-pointer">
+                <button onclick="VibeApp.switchProfileTab('STUDENT')" class="px-3.5 py-2 rounded-xl text-xs font-bold ${isStudentVerified ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 border border-orange-200 dark:border-orange-800' : 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 border border-orange-200 dark:border-orange-800 hover:bg-orange-100'} transition-all flex items-center gap-1.5 cursor-pointer">
                   <i data-lucide="graduation-cap" class="w-4 h-4"></i>
                   <span>${isStudentVerified ? 'Gói SV Đã Xác Thực' : 'Xác Thực SV (.edu.vn)'}</span>
                 </button>
@@ -2854,7 +2854,7 @@
                 <span class="text-xs font-bold text-stone-400">/ 100</span>
               </div>
               <div class="w-full bg-stone-200 dark:bg-stone-700 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-gradient-to-r from-orange-600 to-amber-500 h-full rounded-full" style="width: ${Math.min(100, Math.max(0, trustScore))}%;"></div>
+                <div class="bg-gradient-to-r from-orange-600 to-orange-500 h-full rounded-full" style="width: ${Math.min(100, Math.max(0, trustScore))}%;"></div>
               </div>
             </div>
 
@@ -2862,20 +2862,20 @@
             <div class="p-4 rounded-2xl bg-stone-50/80 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 flex flex-col justify-between gap-2 shadow-xs">
               <div class="flex items-center justify-between text-stone-500 font-bold text-[11px] uppercase tracking-wider">
                 <span>Mẫu Miễn Phí</span>
-                <i data-lucide="layers" class="w-4 h-4 text-amber-600"></i>
+                <i data-lucide="layers" class="w-4 h-4 text-orange-600"></i>
               </div>
               <div class="flex items-baseline gap-1">
                 <span class="text-2xl font-black font-mono text-stone-900 dark:text-white">${user.free_quota_remaining !== undefined ? user.free_quota_remaining : (user.free_trial_surveys_available || 0)}</span>
                 <span class="text-xs font-bold text-stone-400">lượt</span>
               </div>
-              <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400">Khóa lưu trong 90 ngày</span>
+              <span class="text-[10px] font-bold text-orange-600 dark:text-orange-400">Khóa lưu trong 90 ngày</span>
             </div>
 
             <!-- Ví xu tích lũy / Số dư tài khoản thực tế -->
             <div class="p-4 rounded-2xl bg-stone-50/80 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 flex flex-col justify-between gap-2 shadow-xs">
               <div class="flex items-center justify-between text-stone-500 font-bold text-[11px] uppercase tracking-wider">
                 <span>${isEnterprise ? 'Số Dư Khóa Quỹ' : 'Ví Xu Tích Lũy'}</span>
-                <i data-lucide="coins" class="w-4 h-4 text-amber-500"></i>
+                <i data-lucide="coins" class="w-4 h-4 text-orange-500"></i>
               </div>
               <div class="flex items-baseline gap-1.5">
                 <span class="text-2xl font-black font-mono text-stone-900 dark:text-white">${balanceNum.toLocaleString('vi-VN')}</span>
@@ -2951,7 +2951,7 @@
                     </div>
 
                     <div class="space-y-1">
-                      <div class="flex items-center gap-1 text-amber-500">
+                      <div class="flex items-center gap-1 text-orange-500">
                         <i data-lucide="star" class="w-4 h-4 fill-current"></i>
                         <i data-lucide="star" class="w-4 h-4 fill-current"></i>
                         <i data-lucide="star" class="w-4 h-4 fill-current"></i>
@@ -2980,10 +2980,10 @@
                     <div>
                       <div class="flex justify-between text-xs font-semibold mb-1">
                         <span class="text-stone-600 dark:text-stone-400">Thời gian làm bài khảo sát chuẩn định mức (Không speed-run)</span>
-                        <span class="font-bold text-amber-600 font-mono">100%</span>
+                        <span class="font-bold text-orange-600 font-mono">100%</span>
                       </div>
                       <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
-                        <div class="bg-amber-500 h-full w-full rounded-full"></div>
+                        <div class="bg-orange-500 h-full w-full rounded-full"></div>
                       </div>
                     </div>
                   </div>
@@ -3000,7 +3000,7 @@
                   </div>
 
                   <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
-                    <div class="flex items-center gap-1.5 text-emerald-600">
+                    <div class="flex items-center gap-1.5 text-orange-600">
                       <i data-lucide="check-circle" class="w-4 h-4"></i>
                       <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Định Danh Edu</h4>
                     </div>
@@ -3008,7 +3008,7 @@
                   </div>
 
                   <div class="p-3.5 rounded-2xl bg-white dark:bg-[#18181B] border border-stone-200/90 dark:border-stone-800 space-y-1.5 shadow-xs">
-                    <div class="flex items-center gap-1.5 text-blue-600">
+                    <div class="flex items-center gap-1.5 text-zinc-600">
                       <i data-lucide="activity" class="w-4 h-4"></i>
                       <h4 class="text-xs font-extrabold text-stone-900 dark:text-white">Chuẩn Cronbach</h4>
                     </div>
@@ -3037,7 +3037,7 @@
                             <span class="text-[11px] text-stone-500 block">${item.survey_title || 'Đề tài khảo sát'}</span>
                           </div>
                         </div>
-                        <div class="flex items-center text-amber-500 text-xs font-bold gap-0.5">
+                        <div class="flex items-center text-orange-500 text-xs font-bold gap-0.5">
                           <i data-lucide="star" class="w-3.5 h-3.5 fill-current"></i>
                           <span class="font-mono">5.0</span>
                         </div>
@@ -3075,8 +3075,8 @@
             </div>
 
             ${isLocked ? `
-              <div class="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex items-center gap-3 shadow-xs">
-                <i data-lucide="lock" class="w-5 h-5 text-amber-600 shrink-0"></i>
+              <div class="p-4 bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 rounded-2xl text-xs text-orange-900 dark:text-orange-200 flex items-center gap-3 shadow-xs">
+                <i data-lucide="lock" class="w-5 h-5 text-orange-600 shrink-0"></i>
                 <span>Hồ sơ nhân khẩu học đang được khóa an toàn đến ngày <strong>${lockDateStr}</strong> (Khóa 90 ngày sau khi lưu để đảm bảo tính khách quan của dữ liệu nghiên cứu thị trường).</span>
               </div>
             ` : ''}
@@ -3232,7 +3232,7 @@
                   <span>Thông tin hồ sơ được bảo mật và mã hóa phục vụ đối soát mẫu khảo sát.</span>
                 </p>
                 ${!isLocked ? `
-                  <button type="button" onclick="VibeApp.saveDemographicsAction()" class="h-12 px-8 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white text-xs font-black shadow-md shadow-orange-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto">
+                  <button type="button" onclick="VibeApp.saveDemographicsAction()" class="h-12 px-8 rounded-xl bg-gradient-to-r from-orange-600 to-orange-600 hover:from-orange-700 hover:to-orange-700 text-white text-xs font-black shadow-md shadow-orange-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto">
                     <i data-lucide="save" class="w-4 h-4"></i>
                     <span>Lưu & Cập Nhật Hồ Sơ Nhân Khẩu Học</span>
                   </button>
@@ -3286,7 +3286,7 @@
                     <div class="space-y-3">
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
-                          <span class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold ${isCompleted ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400'}">
+                          <span class="text-[10px] px-2 py-0.5 rounded-full uppercase font-bold ${isCompleted ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400'}">
                             ${isCompleted ? 'Đã hoàn thành 100%' : 'Đang thu thập'}
                           </span>
                           <span class="bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300 text-[10px] px-2 py-0.5 rounded-full font-semibold">
@@ -3304,10 +3304,10 @@
                       <div class="space-y-1">
                         <div class="flex justify-between text-xs font-semibold">
                           <span class="text-stone-500">Tiến độ phản hồi: <strong class="text-stone-900 dark:text-white font-mono">${curr} / ${target} mẫu</strong></span>
-                          <span class="${isCompleted ? 'text-emerald-600' : 'text-orange-600'} font-bold font-mono">${pct}% ${isCompleted ? 'Đạt' : ''}</span>
+                          <span class="${isCompleted ? 'text-orange-600' : 'text-orange-600'} font-bold font-mono">${pct}% ${isCompleted ? 'Đạt' : ''}</span>
                         </div>
                         <div class="w-full bg-stone-100 dark:bg-stone-800 h-2 rounded-full overflow-hidden">
-                          <div class="${isCompleted ? 'bg-emerald-500' : 'bg-gradient-to-r from-orange-600 to-amber-500'} h-full rounded-full" style="width: ${pct}%;"></div>
+                          <div class="${isCompleted ? 'bg-orange-500' : 'bg-gradient-to-r from-orange-600 to-orange-500'} h-full rounded-full" style="width: ${pct}%;"></div>
                         </div>
                       </div>
                     </div>
@@ -3324,7 +3324,7 @@
                         </button>
                       </div>
                       <!-- Nút XÓA KHẢO SÁT THẬT HOẠT ĐỘNG HOÀN TOÀN -->
-                      <button onclick="VibeApp.deleteSurveyAction('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer" title="Xóa vĩnh viễn bài khảo sát này">
+                      <button onclick="VibeApp.deleteSurveyAction('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-400 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer" title="Xóa vĩnh viễn bài khảo sát này">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         <span>Xóa</span>
                       </button>
@@ -3370,7 +3370,7 @@
                           <td class="py-3.5 px-4 text-stone-500">${item.submitted_at ? new Date(item.submitted_at).toLocaleDateString('vi-VN') : 'Mới đây'}</td>
                           <td class="py-3.5 px-4 font-black font-mono text-orange-600 dark:text-orange-400">+${item.points_rewarded || 0} Xu</td>
                           <td class="py-3.5 px-4">
-                            <span class="inline-flex items-center gap-1 ${item.response_status === 'REJECTED' ? 'text-red-600 bg-red-50 dark:bg-red-950/60' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'} font-bold text-[11px] px-2.5 py-0.5 rounded-full">
+                            <span class="inline-flex items-center gap-1 ${item.response_status === 'REJECTED' ? 'text-orange-600 bg-orange-50 dark:bg-orange-950/60' : 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/60'} font-bold text-[11px] px-2.5 py-0.5 rounded-full">
                               <i data-lucide="${item.response_status === 'REJECTED' ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
                               ${item.response_status === 'REJECTED' ? 'Bị từ chối' : 'Đã nghiệm thu'}
                             </span>
@@ -3429,7 +3429,7 @@
                   </div>
                   <div class="flex items-center gap-1">
                     <!-- Nút XÓA BÀI VIẾT THẬT HOẠT ĐỘNG HOÀN TOÀN -->
-                    <button onclick="VibeApp.deleteForumPostAction('${p.id}')" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer" title="Xóa bài viết này">
+                    <button onclick="VibeApp.deleteForumPostAction('${p.id}')" class="p-1.5 rounded-lg text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-colors cursor-pointer" title="Xóa bài viết này">
                       <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                   </div>
@@ -3463,7 +3463,7 @@
               </div>
 
               ${isStudentVerified ? `
-                <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 flex items-center gap-1.5">
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-200 flex items-center gap-1.5">
                   <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
                   Đã Xác Thực
                 </span>
@@ -3475,14 +3475,14 @@
             </div>
 
             ${isStudentVerified ? `
-              <div class="p-4 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl space-y-2 text-xs">
-                <div class="font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
+              <div class="p-4 bg-orange-50/60 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-2xl space-y-2 text-xs">
+                <div class="font-bold text-orange-800 dark:text-orange-200 flex items-center gap-2">
                   <i data-lucide="award" class="w-4 h-4"></i>
                   <span>Tài khoản của bạn đã nâng cấp thành công lên GÓI SINH VIÊN!</span>
                 </div>
-                <p class="text-emerald-700 dark:text-emerald-300">
+                <p class="text-orange-700 dark:text-orange-300">
                   Email sinh viên đã xác minh: <strong class="font-mono">${user.student_email || user.email}</strong>
-                  ${user.student_expires_at ? ` · <span class="text-stone-500 font-normal">Hiệu lực đến: <strong class="font-mono text-emerald-800 dark:text-emerald-200">${new Date(user.student_expires_at).toLocaleDateString('vi-VN')}</strong></span>` : ''}
+                  ${user.student_expires_at ? ` · <span class="text-stone-500 font-normal">Hiệu lực đến: <strong class="font-mono text-orange-800 dark:text-orange-200">${new Date(user.student_expires_at).toLocaleDateString('vi-VN')}</strong></span>` : ''}
                 </p>
                 <div class="text-[11px] text-stone-500 pt-1">
                   Đặc quyền: 30 lượt miễn phí / tháng (làm mới ngày 01 hằng tháng), hưởng trọn mức giá sàn ưu đãi cho khóa luận/NCKH, thù lao người điền chia 85/15.
@@ -3510,7 +3510,7 @@
                   <div class="flex gap-2">
                     <input type="text" id="student-otp-input" placeholder="VD: 123456" maxlength="6"
                            class="w-36 p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-center font-mono font-black text-sm tracking-widest text-orange-600">
-                    <button type="button" onclick="VibeApp.verifyStudentEmailOtpAction()" class="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer">
+                    <button type="button" onclick="VibeApp.verifyStudentEmailOtpAction()" class="py-2.5 px-5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-xs cursor-pointer">
                       Xác Nhận Kích Hoạt Gói SV
                     </button>
                   </div>
@@ -3529,7 +3529,7 @@
                   <span class="w-6 h-6 rounded-md bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 text-xs font-black flex items-center justify-center font-mono">1</span>
                   <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Cấp Độ 1: Thương Hiệu Cơ Bản</h3>
                 </div>
-                ${isEnterpriseLevel1 || isEnterpriseLevel2 ? '<span class="text-[10px] font-bold text-emerald-600">Đã kích hoạt</span>' : ''}
+                ${isEnterpriseLevel1 || isEnterpriseLevel2 ? '<span class="text-[10px] font-bold text-orange-600">Đã kích hoạt</span>' : ''}
               </div>
 
               <p class="text-xs text-stone-500 leading-relaxed">
@@ -3571,7 +3571,7 @@
                   <span class="w-6 h-6 rounded-md bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 text-xs font-black flex items-center justify-center font-mono">2</span>
                   <h3 class="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Cấp Độ 2: Pháp Nhân & Hóa Đơn VAT</h3>
                 </div>
-                ${isEnterpriseLevel2 ? '<span class="text-[10px] font-bold text-emerald-600">Đã xác minh</span>' : ''}
+                ${isEnterpriseLevel2 ? '<span class="text-[10px] font-bold text-orange-600">Đã xác minh</span>' : ''}
               </div>
 
               <p class="text-xs text-stone-500 leading-relaxed">

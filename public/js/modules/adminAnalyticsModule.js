@@ -62,7 +62,7 @@
         console.error('Lỗi loadAndRenderAdminTrendsChart:', err);
         container.innerHTML = `
           <div class="h-48 flex flex-col items-center justify-center text-stone-400 text-xs">
-            <span class="text-red-500 font-semibold mb-2">${err.message || 'Lỗi nạp dữ liệu biểu đồ'}</span>
+            <span class="text-orange-500 font-semibold mb-2">${err.message || 'Lỗi nạp dữ liệu biểu đồ'}</span>
             <button onclick="VibeApp.loadAndRenderAdminTrendsChart('${containerId}', ${days})" class="px-3 py-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold hover:bg-stone-200">
               Thử lại
             </button>
@@ -447,7 +447,7 @@
       } catch (err) {
         console.error('Lỗi fetchAndRenderAdminAuditLogs:', err);
         container.innerHTML = `
-          <div class="py-12 text-center text-red-500 text-xs font-bold space-y-2">
+          <div class="py-12 text-center text-orange-500 text-xs font-bold space-y-2">
             <p>Không thể tải dữ liệu nhật ký: ${err.message}</p>
             <button onclick="VibeApp.fetchAndRenderAdminAuditLogs()" class="px-3 py-1.5 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-lg text-xs font-bold">
               Tải lại
@@ -488,9 +488,9 @@
     _formatAuditActionBadge(act) {
       let colorClass = 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300';
       if (act.includes('APPROVE') || act.includes('UNBAN')) {
-        colorClass = 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300/60 dark:border-emerald-800/60';
+        colorClass = 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-300/60 dark:border-orange-800/60';
       } else if (act.includes('REJECT') || act.includes('BAN')) {
-        colorClass = 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-300/60 dark:border-rose-800/60';
+        colorClass = 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-300/60 dark:border-orange-800/60';
       } else if (act.includes('BUG')) {
         colorClass = 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-300/60 dark:border-orange-800/60';
       }
@@ -546,7 +546,7 @@
 
             <div class="space-y-1">
               <span class="font-bold text-stone-700 dark:text-stone-300 block">Dữ Liệu Can Thiệp (Payload JSON):</span>
-              <pre class="p-3 rounded-xl bg-stone-950 text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-64 border border-stone-800 scrollbar-thin select-all">${this.escapeHtml(JSON.stringify(log.details, null, 2))}</pre>
+              <pre class="p-3 rounded-xl bg-stone-950 text-orange-400 font-mono text-[11px] overflow-x-auto max-h-64 border border-stone-800 scrollbar-thin select-all">${this.escapeHtml(JSON.stringify(log.details, null, 2))}</pre>
             </div>
           </div>
         `

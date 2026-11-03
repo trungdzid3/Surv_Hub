@@ -48,8 +48,8 @@
         </div>
 
         ${isEnterprise ? `
-          <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-center gap-3">
-            <i data-lucide="info" class="w-5 h-5 text-amber-600 shrink-0"></i>
+          <div class="p-4 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800 text-xs text-orange-900 dark:text-orange-200 flex items-center gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-orange-600 shrink-0"></i>
             <div>
               <strong class="font-bold">Lưu ý cho Doanh Nghiệp:</strong> Tài khoản Doanh Nghiệp không tích lũy điểm thưởng khảo sát. Chợ E-Voucher quy đổi điểm chỉ dành riêng cho Người Điền hoàn thành bài khảo sát.
             </div>
@@ -233,7 +233,7 @@
                       <span class="block text-[10px] text-slate-400 font-mono">E-Voucher Chính Hãng</span>
                     </div>
                   </div>
-                  <span class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-bold text-[11px] border border-emerald-200/60">Khả dụng</span>
+                  <span class="text-orange-700 bg-orange-50 px-2 py-0.5 rounded-md font-bold text-[11px] border border-orange-200/60">Khả dụng</span>
                 </div>
                 <h3 class="text-sm font-extrabold text-slate-900">${v.title}</h3>
                 

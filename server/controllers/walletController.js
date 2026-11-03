@@ -316,44 +316,100 @@ class WalletController {
   }
 
   handlePaymentWebhook(req, res) {
-    try {
-      const configuredSecret = (config.PAYMENT_GATEWAY && config.PAYMENT_GATEWAY.WEBHOOK_SECRET) || process.env.PAYMENT_WEBHOOK_SECRET || '';
+    const configuredSecret = config.PAYMENT_GATEWAY.WEBHOOK_SECRET;
+    const authHeader = req.headers['authorization'] || '';
+    const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : null;
+    const xWebhookSecret = req.headers['x-webhook-secret'];
+    const queryToken = req.query && (req.query.secure_token || req.query.token);
+    const bodyToken = req.body && (req.body.secure_token || req.body.token);
+    const providedToken = bearerToken || xWebhookSecret || queryToken || bodyToken;
+    const isTest = process.env.NODE_ENV === 'test';
 
-      const authHeader = req.headers['authorization'] || '';
-      const bearerToken = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.substring(7).trim() : null;
-      const xWebhookSecret = req.headers['x-webhook-secret'];
-      const queryToken = req.query && (req.query.secure_token || req.query.token);
-      const bodyToken = req.body && (req.body.secure_token || req.body.token);
+    // So sánh timing-safe để kẻ tấn công không đoán được secret qua thời gian phản hồi
+    const isSecretValid = Boolean(configuredSecret && providedToken) && (() => {
+      const secretBuffer = Buffer.from(String(configuredSecret));
+      const providedBuffer = Buffer.from(String(providedToken));
+      if (secretBuffer.length !== providedBuffer.length) {
+        crypto.timingSafeEqual(secretBuffer, secretBuffer);
+        return false;
+      }
+      return crypto.timingSafeEqual(secretBuffer, providedBuffer);
+    })();
 
-      const providedToken = bearerToken || xWebhookSecret || queryToken || bodyToken;
-      const isTest = process.env.NODE_ENV === 'test';
+    if (!isSecretValid && !isTest) {
+      return res.status(401).json({
+        success: false,
+        message: 'Chữ ký hoặc mã xác thực webhook không hợp lệ'
+      });
+    }
 
-      // So sánh timing-safe để kẻ tấn công không đoán được secret qua thời gian phản hồi
-      const isSecretValid = Boolean(configuredSecret && providedToken) && (() => {
-        const secretBuffer = Buffer.from(String(configuredSecret));
-        const providedBuffer = Buffer.from(String(providedToken));
-        if (secretBuffer.length !== providedBuffer.length) {
-          // Vẫn tiêu tốn thời gian so sánh để tránh đoán độ dài qua timing
-          crypto.timingSafeEqual(secretBuffer, secretBuffer);
-          return false;
-        }
-        return crypto.timingSafeEqual(secretBuffer, providedBuffer);
-      })();
+    const payload = req.body;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return res.status(400).json({ success: false, message: 'Payload webhook không hợp lệ' });
+    }
 
-      if (!isSecretValid && !isTest) {
-        return res.status(401).json({
+    const transactions = Array.isArray(payload.data)
+      ? payload.data
+      : (Array.isArray(payload.transactions) ? payload.transactions : [payload]);
+    const validatedTransactions = [];
+
+    for (const item of transactions) {
+      if (!item || typeof item !== 'object') {
+        return res.status(422).json({ success: false, message: 'Giao dịch webhook không hợp lệ' });
+      }
+
+      const contentList = [
+        item.content,
+        item.description,
+        item.memo,
+        item.addInfo,
+        item.code,
+        item.referenceCode,
+        payload.content,
+        payload.description,
+        payload.order_code
+      ].filter(Boolean).map(String);
+      const match = contentList.join(' ').match(/VIBE\d{6}/i);
+      if (!match) {
+        continue;
+      }
+
+      const amountValue = item.transferAmount ?? item.amount ?? payload.transferAmount ?? payload.amount;
+      const amount = Number(amountValue);
+      if (!Number.isSafeInteger(amount) || amount <= 0) {
+        return res.status(422).json({
           success: false,
-          message: 'Chữ ký hoặc mã xác thực webhook không hợp lệ'
+          message: `Số tiền thanh toán của đơn ${match[0].toUpperCase()} không hợp lệ`
         });
       }
 
-      const payload = req.body;
-      const result = ledgerService.handlePaymentWebhook(payload, providedToken);
-      return res.json(result);
-    } catch (err) {
-      console.error('Lỗi handlePaymentWebhook:', err);
-      return res.status(400).json({ success: false, message: err.message });
+      const orderCode = match[0].toUpperCase();
+      const order = db.prepare(
+        'SELECT amount_vnd, status FROM deposit_orders WHERE order_code = ?'
+      ).get(orderCode);
+      if (!order) {
+        return res.status(404).json({ success: false, message: `Không tìm thấy đơn nạp ${orderCode}` });
+      }
+      if (order.status !== 'PENDING') {
+        return res.status(409).json({
+          success: false,
+          message: `Đơn nạp ${orderCode} không ở trạng thái chờ thanh toán`
+        });
+      }
+      if (amount !== Number(order.amount_vnd)) {
+        return res.status(422).json({
+          success: false,
+          message: `Số tiền thanh toán của đơn ${orderCode} không khớp số tiền cần nạp`
+        });
+      }
+      validatedTransactions.push(item);
     }
+
+    if (validatedTransactions.length === 0) {
+      return res.status(422).json({ success: false, message: 'Webhook không chứa giao dịch hợp lệ của đơn nạp' });
+    }
+
+    return res.json(ledgerService.handlePaymentWebhook(payload, providedToken));
   }
 
   simulatePaymentSuccess(req, res) {

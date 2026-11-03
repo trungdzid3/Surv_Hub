@@ -86,7 +86,7 @@
         </div>
 
         <!-- Error Message Alert -->
-        <div id="auth-error-alert" class="hidden mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
+        <div id="auth-error-alert" class="hidden mb-4 p-3 rounded-xl bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/80 text-orange-700 dark:text-orange-300 text-xs font-semibold flex items-center gap-2">
           <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
           <span id="auth-error-text">Lỗi đăng nhập</span>
         </div>
@@ -514,8 +514,8 @@
       const otpInput = document.getElementById('auth-reg-otp');
       if (otpInput) {
         otpInput.focus();
-        otpInput.classList.add('ring-2', 'ring-red-500', 'border-red-500');
-        setTimeout(() => otpInput.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 3000);
+        otpInput.classList.add('ring-2', 'ring-orange-500', 'border-orange-500');
+        setTimeout(() => otpInput.classList.remove('ring-2', 'ring-orange-500', 'border-orange-500'), 3000);
       }
       return;
     }
@@ -528,9 +528,9 @@
       }
       const termsWrapper = document.getElementById('auth-reg-terms-wrapper');
       if (termsWrapper) {
-        termsWrapper.classList.add('border-red-500', 'bg-red-50/70', 'dark:bg-red-950/40');
+        termsWrapper.classList.add('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
         setTimeout(() => {
-          if (termsWrapper) termsWrapper.classList.remove('border-red-500', 'bg-red-50/70', 'dark:bg-red-950/40');
+          if (termsWrapper) termsWrapper.classList.remove('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
         }, 3000);
       }
       termsCheckbox.focus();
@@ -601,9 +601,9 @@
       title: 'Thiết Lập Google OAuth 2.0 Client ID',
       content: `
         <div class="space-y-4 text-xs">
-          <div class="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-stone-200 dark:border-stone-700 rounded-2xl flex items-start gap-2.5">
-            <i data-lucide="info" class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"></i>
-            <div class="leading-relaxed text-amber-900 dark:text-amber-200">
+          <div class="p-3.5 bg-orange-50 dark:bg-orange-950/40 border border-stone-200 dark:border-stone-700 rounded-2xl flex items-start gap-2.5">
+            <i data-lucide="info" class="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"></i>
+            <div class="leading-relaxed text-orange-900 dark:text-orange-200">
               Để mở <strong>cửa sổ đăng nhập chính thức từ máy chủ Google (accounts.google.com)</strong> như trong ảnh chụp, hệ thống cần mã <code>GOOGLE_CLIENT_ID</code> từ Google Cloud Console.
             </div>
           </div>
@@ -621,7 +621,7 @@
                 Điền 2 đường dẫn sau:
                 <ul class="list-disc list-inside pl-4 mt-1.5 space-y-1 text-[11px] font-mono text-slate-700 dark:text-slate-300">
                   <li>Authorized JavaScript origins: <code class="text-orange-600 dark:text-orange-400">http://localhost:3000</code></li>
-                  <li>Authorized redirect URIs: <code class="text-emerald-600 dark:text-emerald-400">http://localhost:3000/api/v1/auth/google/callback</code></li>
+                  <li>Authorized redirect URIs: <code class="text-orange-600 dark:text-orange-400">http://localhost:3000/api/v1/auth/google/callback</code></li>
                 </ul>
               </li>
             </ol>
@@ -663,7 +663,7 @@
     }
 
     // Chọn mặc định tài khoản Trung Nguyễn Thành giống hệt thiết kế
-    this.switchGoogleAccount('trungdzid3@gmail.com', 'Trung Nguyễn Thành', 'T', 'bg-indigo-600');
+    this.switchGoogleAccount('trungdzid3@gmail.com', 'Trung Nguyễn Thành', 'T', 'bg-zinc-600');
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -718,7 +718,7 @@
     const customName = window.prompt('Nhập họ và tên tài khoản Google:', defaultName) || defaultName;
     const initial = (customName.trim()[0] || 'G').toUpperCase();
 
-    this.switchGoogleAccount(email, customName.trim(), initial, 'bg-cyan-600');
+    this.switchGoogleAccount(email, customName.trim(), initial, 'bg-zinc-600');
   },
 
   async submitGoogleConsent() {
@@ -1043,10 +1043,10 @@
     // - Khi ĐÃ điểm danh: Bừng sáng ngọn lửa rực rỡ màu cam/đỏ TikTok (lửa tô màu, viền gradient sáng, số cam lửa đậm nét).
     if (hasCheckedIn) {
       // ĐÃ ĐIỂM DANH HÔM NAY: Ngọn lửa TikTok bừng sáng rực rỡ
-      streakBtn.className = 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-orange-400/80 dark:border-orange-500/80 bg-gradient-to-r from-orange-500/10 via-rose-500/10 to-amber-500/10 dark:from-orange-950/40 dark:to-rose-950/40 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)] hover:shadow-[0_0_16px_rgba(249,115,22,0.3)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black';
+      streakBtn.className = 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-orange-400/80 dark:border-orange-500/80 bg-gradient-to-r from-orange-500/10 via-orange-500/10 to-orange-500/10 dark:from-orange-950/40 dark:to-orange-950/40 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)] hover:shadow-[0_0_16px_rgba(249,115,22,0.3)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black';
       if (streakFlame) {
         streakFlame.className = 'relative flex items-center justify-center text-orange-600 dark:text-orange-400';
-        streakFlame.innerHTML = `<i data-lucide="flame" class="w-4 h-4 fill-orange-500 text-rose-500 stroke-orange-600 drop-shadow-xs"></i>`;
+        streakFlame.innerHTML = `<i data-lucide="flame" class="w-4 h-4 fill-orange-500 text-orange-500 stroke-orange-600 drop-shadow-xs"></i>`;
       }
       streakBtn.title = `Đã điểm danh hôm nay! Chuỗi: ${streakCount} ngày liên tiếp`;
     } else {
@@ -1114,13 +1114,13 @@
     const roadmapHtml = (streak.roadmap || []).map(r => {
       // 1. Ngày 7: Mốc Vàng Đặc Biệt (Đặt chip bên trong card, tuyệt đối không bị đè chữ)
       if (r.is_milestone) {
-        let milestoneClasses = 'border-amber-400/80 bg-gradient-to-b from-amber-50/80 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20 text-amber-700 dark:text-amber-400';
-        let iconHtml = '<i data-lucide="crown" class="w-4 h-4 stroke-[2.2] text-amber-600 dark:text-amber-400"></i>';
+        let milestoneClasses = 'border-orange-400/80 bg-gradient-to-b from-orange-50/80 to-orange-50/40 dark:from-orange-950/30 dark:to-orange-950/20 text-orange-700 dark:text-orange-400';
+        let iconHtml = '<i data-lucide="crown" class="w-4 h-4 stroke-[2.2] text-orange-600 dark:text-orange-400"></i>';
         let statusText = 'Mốc Vàng';
 
         if (r.status === 'CLAIMED') {
-          milestoneClasses = 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400';
-          iconHtml = '<i data-lucide="check-circle-2" class="w-4 h-4 stroke-[2.5] text-emerald-600 dark:text-emerald-400"></i>';
+          milestoneClasses = 'border-orange-300 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-950/20 text-orange-700 dark:text-orange-400';
+          iconHtml = '<i data-lucide="check-circle-2" class="w-4 h-4 stroke-[2.5] text-orange-600 dark:text-orange-400"></i>';
           statusText = 'Đã nhận';
         } else if (r.status === 'TODAY') {
           milestoneClasses = 'border-2 border-orange-500 bg-white dark:bg-stone-900 ring-4 ring-orange-500/20 shadow-md text-orange-600 dark:text-orange-400';
@@ -1130,17 +1130,17 @@
 
         return `
           <div class="flex flex-col items-center justify-between p-2 rounded-2xl border ${milestoneClasses} transition-all relative overflow-hidden group">
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60 mb-0.5 whitespace-nowrap">
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-800 dark:text-orange-300 border border-orange-300/60 dark:border-orange-700/60 mb-0.5 whitespace-nowrap">
               Mốc Vàng
             </span>
             <span class="text-[11px] font-bold text-stone-600 dark:text-stone-300">Ngày ${r.day}</span>
             <div class="my-1 flex items-center justify-center">
               ${iconHtml}
             </div>
-            <span class="font-mono font-black text-xs text-amber-700 dark:text-amber-300">
+            <span class="font-mono font-black text-xs text-orange-700 dark:text-orange-300">
               +${r.points}
             </span>
-            <span class="text-[9px] font-bold text-amber-600/80 dark:text-amber-400/80 mt-0.5">${statusText}</span>
+            <span class="text-[9px] font-bold text-orange-600/80 dark:text-orange-400/80 mt-0.5">${statusText}</span>
           </div>
         `;
       }
@@ -1151,8 +1151,8 @@
       let statusText = 'Khóa';
 
       if (r.status === 'CLAIMED') {
-        statusClasses = 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400';
-        iconHtml = '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5] text-emerald-600 dark:text-emerald-400"></i>';
+        statusClasses = 'bg-orange-50/50 dark:bg-orange-950/20 border-orange-200/80 dark:border-orange-800/60 text-orange-700 dark:text-orange-400';
+        iconHtml = '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5] text-orange-600 dark:text-orange-400"></i>';
         statusText = 'Đã nhận';
       } else if (r.status === 'TODAY') {
         statusClasses = 'bg-white dark:bg-stone-900 border-2 border-orange-600 text-orange-600 dark:text-orange-500 shadow-md ring-4 ring-orange-500/15';
@@ -1166,7 +1166,7 @@
           <div class="my-1.5 flex items-center justify-center">
             ${iconHtml}
           </div>
-          <span class="font-mono font-black text-xs ${r.status === 'TODAY' ? 'text-orange-600 dark:text-orange-400' : (r.status === 'CLAIMED' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-stone-200')}">
+          <span class="font-mono font-black text-xs ${r.status === 'TODAY' ? 'text-orange-600 dark:text-orange-400' : (r.status === 'CLAIMED' ? 'text-orange-700 dark:text-orange-400' : 'text-slate-800 dark:text-stone-200')}">
             +${r.points}
           </span>
           <span class="text-[9px] font-semibold text-stone-400 dark:text-stone-500 mt-0.5">${statusText}</span>
@@ -1223,8 +1223,8 @@
           <div class="p-3 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 text-center">
             <span class="block text-[11px] text-stone-500 dark:text-stone-400 font-medium">Tổng Đã Tích Lũy</span>
             <div class="flex items-center justify-center gap-1 mt-0.5">
-              <i data-lucide="coins" class="w-4 h-4 text-emerald-600"></i>
-              <span class="font-mono font-black text-lg text-emerald-600 dark:text-emerald-400">+${(streak.total_points_earned || 0).toLocaleString('vi-VN')}</span>
+              <i data-lucide="coins" class="w-4 h-4 text-orange-600"></i>
+              <span class="font-mono font-black text-lg text-orange-600 dark:text-orange-400">+${(streak.total_points_earned || 0).toLocaleString('vi-VN')}</span>
             </div>
           </div>
         </div>
@@ -1246,13 +1246,13 @@
         <!-- Checkin Action Button -->
         <div class="pt-0.5">
           ${!streak.has_checked_in_today ? `
-            <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+            <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-700 hover:to-orange-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
               <i data-lucide="zap" class="w-4 h-4 fill-white"></i>
               <span>Điểm Danh Ngay (+${streak.today_reward_points} Điểm)</span>
             </button>
           ` : `
-            <div class="w-full py-3.5 px-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-emerald-200 dark:border-emerald-800/80">
-              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+            <div class="w-full py-3.5 px-4 rounded-2xl bg-orange-50/70 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-orange-200 dark:border-orange-800/80">
+              <i data-lucide="check-circle" class="w-4 h-4 text-orange-600"></i>
               <span>Đã Điểm Danh Hôm Nay (+${streak.today_reward_points} Điểm vào ví)</span>
             </div>
           `}
@@ -1390,7 +1390,7 @@
                    class="w-full text-center text-xl font-mono font-extrabold tracking-[0.3em] py-3 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
           </div>
 
-          <div id="otp-error-alert" class="hidden text-xs text-rose-600 font-semibold text-center"></div>
+          <div id="otp-error-alert" class="hidden text-xs text-orange-600 font-semibold text-center"></div>
 
           <button type="submit" id="otp-submit-btn" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
             <i data-lucide="check" class="w-4 h-4"></i>
@@ -1481,7 +1481,7 @@
               <span class="px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-bold">
                 ${s.category || 'Khảo sát'}
               </span>
-              <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold font-mono">
+              <span class="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 font-bold font-mono">
                 +${(s.reward_points_per_response || 0).toLocaleString()} Điểm (≈ ${(s.reward_points_per_response || 0).toLocaleString()}đ)
               </span>
               <span class="text-slate-500 dark:text-slate-400 font-medium">
@@ -1511,7 +1511,7 @@
                       ${q.options.map(opt => `<div>• ${opt}</div>`).join('')}
                     </div>
                   ` : (q.type === 'RATING_STARS' ? `
-                    <div class="pl-6 text-[11px] text-amber-500 font-medium">★ Đánh giá 1 đến 5 sao</div>
+                    <div class="pl-6 text-[11px] text-orange-500 font-medium">★ Đánh giá 1 đến 5 sao</div>
                   ` : (q.type === 'NUMBER_INPUT' ? `
                     <div class="pl-6 text-[11px] text-slate-400 italic">Nhập số liệu [123]</div>
                   ` : (q.type === 'DATE_INPUT' ? `
@@ -1524,7 +1524,7 @@
             <!-- CTA Banner -->
             <div class="p-4 rounded-2xl bg-orange-600 text-white space-y-2 text-center mt-3">
               <div class="text-xs font-extrabold">Đăng nhập tài khoản để làm khảo sát và nhận ngay +${(s.reward_points_per_response || 0).toLocaleString()} Điểm</div>
-              <p class="text-[11px] text-blue-100">Điểm thưởng có thể quy đổi sang thẻ cào Viettel, Vina, Mobi hoặc rút về tài khoản ngân hàng.</p>
+              <p class="text-[11px] text-zinc-100">Điểm thưởng có thể quy đổi sang thẻ cào Viettel, Vina, Mobi hoặc rút về tài khoản ngân hàng.</p>
               <div class="flex items-center justify-center gap-2 pt-1">
                 <button onclick="VibeApp.closeModal(); VibeApp.openAuthModal('login')" class="px-5 py-2 bg-white text-orange-700 hover:bg-orange-50 dark:bg-stone-800 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95">
                   Đăng Nhập Để Làm Bài
@@ -1648,27 +1648,27 @@
     const themeConfig = {
       success: {
         icon: 'check-circle-2',
-        iconBg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60',
-        progressBar: 'bg-emerald-500',
-        accentBorder: 'border-l-4 border-l-emerald-500'
+        iconBg: 'bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60',
+        progressBar: 'bg-orange-500',
+        accentBorder: 'border-l-4 border-l-orange-500'
       },
       error: {
         icon: 'alert-circle',
-        iconBg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60',
-        progressBar: 'bg-rose-500',
-        accentBorder: 'border-l-4 border-l-rose-500'
+        iconBg: 'bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60',
+        progressBar: 'bg-orange-500',
+        accentBorder: 'border-l-4 border-l-orange-500'
       },
       warning: {
         icon: 'alert-triangle',
-        iconBg: 'bg-stone-100 dark:bg-stone-800 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60',
-        progressBar: 'bg-amber-500',
-        accentBorder: 'border-l-4 border-l-amber-500'
+        iconBg: 'bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60',
+        progressBar: 'bg-orange-500',
+        accentBorder: 'border-l-4 border-l-orange-500'
       },
       info: {
         icon: 'sparkles',
-        iconBg: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60',
-        progressBar: 'bg-indigo-500',
-        accentBorder: 'border-l-4 border-l-indigo-500'
+        iconBg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-800/60',
+        progressBar: 'bg-zinc-500',
+        accentBorder: 'border-l-4 border-l-zinc-500'
       }
     };
 

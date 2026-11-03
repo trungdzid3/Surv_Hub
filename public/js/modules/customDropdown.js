@@ -13,7 +13,79 @@
   const CustomDropdownModule = {
     _activeDropdownId: null,
     _activeDropdownIconId: null,
+    _activeDropdownTriggerId: null,
     _dropdownListenersInitialized: false,
+
+    _getTrigger(dropdownId, triggerId, event) {
+      const explicitTrigger = triggerId ? document.getElementById(triggerId) : null;
+      if (explicitTrigger) return explicitTrigger;
+
+      const eventTrigger = event && event.currentTarget && event.currentTarget !== document
+        ? event.currentTarget
+        : null;
+      const targetTrigger = event && event.target && event.target.closest
+        ? event.target.closest('.custom-dropdown-trigger, [aria-haspopup="listbox"]')
+        : null;
+      const resolvedEventTrigger = eventTrigger || targetTrigger;
+      if (resolvedEventTrigger && (resolvedEventTrigger.matches('.custom-dropdown-trigger, [aria-haspopup="listbox"]') ||
+        resolvedEventTrigger.getAttribute('aria-controls') === dropdownId)) {
+        return resolvedEventTrigger;
+      }
+
+      const controlledTrigger = document.querySelector(`[aria-controls="${dropdownId}"]`);
+      if (controlledTrigger) return controlledTrigger;
+
+      const dropdown = document.getElementById(dropdownId);
+      return dropdown && dropdown.parentElement
+        ? dropdown.parentElement.querySelector('.custom-dropdown-trigger')
+        : null;
+    },
+
+    _getOptions(dropdown) {
+      if (!dropdown) return [];
+      return Array.from(dropdown.querySelectorAll('[role="option"], button, [data-value], [onclick]'))
+        .filter((option) => option.closest('[role="listbox"]') === dropdown &&
+          !option.matches('[disabled], [aria-disabled="true"], .disabled'));
+    },
+
+    _isDisabled(option) {
+      return !option || option.disabled === true ||
+        option.getAttribute('aria-disabled') === 'true' ||
+        option.classList.contains('disabled');
+    },
+
+    _prepareDropdown(dropdown, trigger) {
+      if (!dropdown) return [];
+      dropdown.setAttribute('role', 'listbox');
+      dropdown.setAttribute('aria-orientation', 'vertical');
+      if (trigger) {
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', dropdown.classList.contains('hidden') ? 'false' : 'true');
+        if (!trigger.id) trigger.id = `custom-dropdown-trigger-${dropdown.id || Date.now()}`;
+        if (!dropdown.id) dropdown.id = `${trigger.id}-listbox`;
+        trigger.setAttribute('aria-controls', dropdown.id);
+      }
+
+      const options = Array.from(dropdown.querySelectorAll('[role="option"], button, [data-value], [onclick]'))
+        .filter((option) => option.closest('[role="listbox"]') === dropdown);
+      options.forEach((option) => {
+        option.setAttribute('role', 'option');
+        if (!option.id) option.id = `${dropdown.id}-option-${options.indexOf(option) + 1}`;
+        if (!option.hasAttribute('aria-selected')) option.setAttribute('aria-selected', 'false');
+        option.tabIndex = -1;
+      });
+      return options.filter((option) => !this._isDisabled(option));
+    },
+
+    _focusOption(dropdown, index) {
+      const options = this._getOptions(dropdown);
+      if (!options.length) return;
+      const safeIndex = Math.max(0, Math.min(index, options.length - 1));
+      options.forEach((option, optionIndex) => {
+        option.tabIndex = optionIndex === safeIndex ? 0 : -1;
+      });
+      options[safeIndex].focus();
+    },
 
     /**
      * Khoi tao su kien lang nghe click toan cuc de tu dong dong dropdown khi bam ra ngoai
@@ -23,6 +95,17 @@
       this._dropdownListenersInitialized = true;
 
       document.addEventListener('click', (event) => {
+        const option = event.target && event.target.closest
+          ? event.target.closest('[role="option"]')
+          : null;
+        if (option && option.closest('[role="listbox"]')) {
+          const menu = option.closest('[role="listbox"]');
+          if (!this._isDisabled(option)) {
+            menu.querySelectorAll('[role="option"]').forEach((item) => {
+              item.setAttribute('aria-selected', item === option ? 'true' : 'false');
+            });
+          }
+        }
         if (!this._activeDropdownId) return;
 
         const ddEl = document.getElementById(this._activeDropdownId);
@@ -36,9 +119,58 @@
       });
 
       document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && this._activeDropdownId) {
-          this.closeAllCustomDropdowns();
+        const activeDropdown = this._activeDropdownId
+          ? document.getElementById(this._activeDropdownId)
+          : null;
+        const activeTrigger = this._activeDropdownTriggerId
+          ? document.getElementById(this._activeDropdownTriggerId)
+          : null;
+
+        if (!activeDropdown) {
+          const trigger = event.target && event.target.closest
+            ? event.target.closest('.custom-dropdown-trigger, [aria-haspopup="listbox"]')
+            : null;
+          const dropdownId = trigger ? trigger.getAttribute('aria-controls') : null;
+          if (trigger && dropdownId && ['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) {
+            event.preventDefault();
+            this.toggleCustomDropdown(dropdownId, event, null, trigger.id || null);
+            if (event.key === 'ArrowUp') {
+              const dropdown = document.getElementById(dropdownId);
+              const options = this._getOptions(dropdown);
+              if (options.length) this._focusOption(dropdown, options.length - 1);
+            }
+          }
+          return;
         }
+
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          this.closeAllCustomDropdowns(true);
+          if (activeTrigger && typeof activeTrigger.focus === 'function') activeTrigger.focus();
+          return;
+        }
+
+        if (!activeDropdown || !activeDropdown.contains(event.target)) return;
+        const options = this._getOptions(activeDropdown);
+        if (!options.length) return;
+        const currentIndex = options.indexOf(document.activeElement);
+        let nextIndex = currentIndex;
+
+        if (event.key === 'ArrowDown') nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+        else if (event.key === 'ArrowUp') nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = options.length - 1;
+        else if (event.key === 'Enter' || event.key === ' ') {
+          if (currentIndex < 0) return;
+          event.preventDefault();
+          options[currentIndex].click();
+          return;
+        } else {
+          return;
+        }
+
+        event.preventDefault();
+        this._focusOption(activeDropdown, nextIndex);
       });
     },
 
@@ -52,6 +184,9 @@
 
       if (arg2 && typeof arg2.stopPropagation === 'function') {
         event = arg2;
+        if (typeof arg4 === 'string') {
+          triggerId = arg4;
+        }
       } else if (typeof arg2 === 'string') {
         iconId = arg2;
         if (arg3 && typeof arg3.stopPropagation === 'function') {
@@ -71,6 +206,9 @@
         if (typeof event.preventDefault === 'function') {
           event.preventDefault();
         }
+        if (!triggerId && event.currentTarget && event.currentTarget.id) {
+          triggerId = event.currentTarget.id;
+        }
       }
 
       this.initDropdownListeners();
@@ -79,12 +217,14 @@
       if (!dd) return;
 
       const isOpening = dd.classList.contains('hidden');
+      const trigger = this._getTrigger(dropdownId, triggerId, event);
 
       // Dong cac dropdown khac truoc khi mo dropdown nay
       this.closeAllCustomDropdowns();
 
       if (isOpening) {
         dd.classList.remove('hidden');
+        const options = this._prepareDropdown(dd, trigger);
         let icon = iconId ? document.getElementById(iconId) : null;
         if (!icon && dd.parentElement) {
           icon = dd.parentElement.querySelector('.dropdown-trigger-icon, .custom-dropdown-icon');
@@ -93,7 +233,12 @@
 
         this._activeDropdownId = dropdownId;
         this._activeDropdownIconId = iconId || (icon ? icon.id : null);
-        this._activeDropdownTriggerId = triggerId;
+        this._activeDropdownTriggerId = trigger && trigger.id ? trigger.id : null;
+        if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        if (options.length) {
+          const selectedIndex = options.findIndex((option) => option.getAttribute('aria-selected') === 'true');
+          this._focusOption(dd, selectedIndex >= 0 ? selectedIndex : 0);
+        }
       }
     },
 
@@ -104,6 +249,10 @@
       if (this._activeDropdownId) {
         const dd = document.getElementById(this._activeDropdownId);
         if (dd) dd.classList.add('hidden');
+      }
+      if (this._activeDropdownTriggerId) {
+        const trigger = document.getElementById(this._activeDropdownTriggerId);
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
       }
       if (this._activeDropdownIconId) {
         const icon = document.getElementById(this._activeDropdownIconId);
