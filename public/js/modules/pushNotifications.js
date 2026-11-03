@@ -117,13 +117,19 @@
     // Web dùng Web Notification API.
     if ('Notification' in window) {
       try {
+        if (Notification.permission === 'denied') {
+          this.dismissPushBanner();
+          this.showToast('Thông báo đang bị chặn cho trang này. Hãy mở biểu tượng khóa cạnh địa chỉ trang, cho phép Thông báo rồi tải lại trang.', 'info');
+          return;
+        }
+
         const perm = await Notification.requestPermission();
         this.dismissPushBanner();
         if (perm === 'granted') {
           await this.syncPushSubscriptionToServer();
           this.showToast('Bật thông báo thành công! Bạn sẽ nhận tin ngay khi có khảo sát thưởng cao.', 'success');
         } else {
-          this.showToast('Bạn đã từ chối nhận thông báo. Bạn có thể bật lại trong cài đặt trang web.', 'info');
+          this.showToast('Thông báo chưa được bật. Bạn có thể cho phép lại trong cài đặt trang web.', 'info');
         }
       } catch (permErr) {
         console.warn('Lỗi gọi Notification.requestPermission:', permErr);
