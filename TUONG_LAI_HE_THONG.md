@@ -29,6 +29,7 @@
 | **16. Thời hạn Ghim VIP (`pinned_until`)** | Ghim vô thời hạn cho tới khi đủ mẫu | **Tối đa 07 ngày / 01 lần kích hoạt Ghim VIP**; hết 7 ngày tự động hạ ghim về vị trí tự nhiên | Chống chiếm dụng vĩnh viễn vị trí đầu trang của các bài khó, tạo cơ hội cho bài mới nổi lên. |
 | **17. Cơ chế Huỷ treo sớm & Chống lách chiết khấu** | Hoàn trả toàn bộ `escrow_locked_balance` còn dư; chưa có quy tắc xử lý lượt free và chưa chống lách chiết khấu quy mô | - **Khóa cứng hoàn tiền theo `escrow_locked_balance`**: Không bao giờ hoàn vượt số tiền thực nạp.<br>- **Lượt free**: Nếu bài đã có người làm (`collected > 0`) không hoàn lượt free; chỉ hoàn lượt free khi chưa có ai làm (`collected == 0`).<br>- **Chống lách giảm giá**: Doanh nghiệp huỷ sớm trước mốc quy mô sẽ bị tính lại đơn giá gốc các mẫu đã thu + truy thu `40.000 Credit` phí Ghim/Push đã kích hoạt trước khi hoàn tiền dư.<br>- **Voucher chưa phát**: Voucher kho sàn hoàn tiền `Credit` về ví; Voucher hãng mở khóa tái sử dụng. | Bảo vệ toàn vẹn tài chính cho Sàn, ngăn chặn triệt để hành vi đăng ảo số lượng lớn để lách giảm giá và hưởng dịch vụ VIP miễn phí. |
 | **18. Bố cục Trình Tạo Khảo Sát (Form Builder Layout)** | 1 cột dọc duy nhất: Toàn bộ câu hỏi, bảng giá, cài đặt và nút xuất bản xếp nối đuôi nhau từ trên xuống dưới | **Bố cục 2 Cột chuẩn Google Forms Studio**: **Cột Trái (~65%)** là Canvas thiết kế thẻ câu hỏi y hệt Google Forms (viền nhấn dọc bên trái, 6 chấm kéo thả, thanh công cụ nổi bên cạnh); **Cột Phải (~35%, Sticky)** ghim cố định bảng Giá & Đề xuất, Số mẫu, Bộ lọc, Cài đặt thời hạn và Tạm tính ký quỹ Real-time | Người tạo soạn 20-30 câu hỏi vẫn luôn nhìn thấy bảng tính giá, thù lao đáp viên và nút Xuất bản ngay bên phải mà không phải cuộn lên xuống. |
+| **19. Cơ chế Lưu trữ Dữ liệu Hồ sơ, Avatar & Database khi Deploy** | Ổ đĩa tạm thời (Ephemeral Filesystem) trên Render Free hủy sạch CSDL SQLite và thư mục ảnh đại diện mỗi khi deploy/restart code mới | **Block Volume bền vững 200GB (Oracle Always Free) hoặc Tách rời Cloud Storage R2/Cloudinary**, bảo toàn 100% dữ liệu tài khoản, lịch sử giao dịch và avatar vĩnh viễn | Loại bỏ triệt để rủi ro mất dữ liệu người dùng khi cập nhật phần mềm; chấm dứt hoàn toàn tình trạng reset tài khoản và lỗi ảnh đại diện 404 sau mỗi lần deploy. |
 
 ---
 
@@ -308,3 +309,31 @@ Khi chủ khảo sát chủ động bấm **`[Đóng / Huỷ khảo sát]`** tr�
 5. **Hạch toán Chi phí Rút tiền**: Mọi khoản phí chuyển khoản ngân hàng do sàn chịu phải được ghi nhận vào tài khoản chi phí `PLATFORM_PAYOUT_COST` trên sổ cái kép, tự động đối soát: $\text{Tổng Take Rate} - \text{Tổng Payout Cost} - \text{Infra} > 0$.
 6. **Khóa Van Tiền Mặt Khuyến Mãi**: Tiền thưởng nạp (2% - 10%) và thưởng đổi chéo (+5%) chỉ được phát hành dưới dạng `Credit` (Ví tạo khảo sát), tuyệt đối không cấp bằng `Point` tiền mặt.
 7. **Chặn Thất Thoát Vi Phạm**: Điểm an ủi Screen-out cố định `0đ` (chỉ cộng điểm uy tín); áp dụng trần rút thẻ cào `200.000đ / ngày` đối với tài khoản mới tạo dưới 30 ngày.
+
+---
+
+### 5.3. Chiến Lược Lưu Trữ Dữ Liệu Bền Vững (Database SQLite & File Uploads)
+
+#### A. Đối chiếu Kiến Trúc Lưu Trữ Giữa Hai Giai Đoạn
+
+| Tiêu chí kỹ thuật | Giai đoạn Thử nghiệm (Render Free) | Giai đoạn Vận hành Đích (Oracle Always Free) |
+| :--- | :--- | :--- |
+| **Cơ chế Ổ đĩa** | Ephemeral Filesystem (Đĩa tạm ảo hóa theo container) | Persistent Block Volume (Đĩa cứng gắn trực tiếp vào VM, dung lượng lên tới 200GB) |
+| **Số phận tệp CSDL (`vibesurvey.db`)** | Bị xóa và khôi phục về trạng thái commit trên Git mỗi khi deploy code mới hoặc container restart | Tồn tại bền vững vĩnh viễn; lệnh `git pull` và restart `pm2` chỉ cập nhật mã nguồn, không ảnh hưởng đến tệp database |
+| **Tệp ảnh đại diện (`public/uploads/avatars/`)** | Bị xóa sạch khi container bị hủy; đường dẫn ảnh cũ trả về mã lỗi HTTP 404 | Lưu trực tiếp trên Block Volume bền vững hoặc đẩy sang CDN Cloudflare R2 / Cloudinary |
+| **Cơ chế Phòng ngừa Mất mát** | Chạy hàm `ensureEssentialAccounts()` để tạo lại các tài khoản mẫu cơ sở sau mỗi lần tái lập container | Thiết lập tiến trình sao lưu định kỳ qua `crontab`: snapshot SQLite bằng `VACUUM INTO` / `.backup` và đồng bộ lên Oracle Object Storage |
+
+#### B. Phân Tích Kỹ Thuật 3 Phương Án Lưu Trữ Bền Vững
+
+1. **Phương án 1: Demo Tức Thời (Vận hành có kiểm soát trên Render Free)**:
+   - Sử dụng trong phạm vi thử nghiệm nội bộ và demo giao diện.
+   - Kiểm soát chặt chẽ luồng deploy: Không thực hiện trigger deploy trong thời gian diễn ra phiên đánh giá; sử dụng dữ liệu khởi tạo chuẩn hóa từ `ensureEssentialAccounts()` để đảm bảo toàn bộ luồng nghiệp vụ hoạt động ổn định.
+2. **Phương án 2: Tách Rời Cloud Storage & Cloud Database (Decoupled Cloud Architecture)**:
+   - Dành cho kịch bản triển khai phân tán không dùng máy chủ có ổ đĩa cục bộ bền vững:
+     - Dịch chuyển tệp tải lên sang Cloudflare R2 hoặc Cloudinary qua API tải tệp đa phần (multipart upload); backend chỉ đóng vai trò cấp token xác thực hoặc trung gian upload, lưu đường link tĩnh công khai vào cột `avatar_url`.
+     - Chuyển CSDL SQLite lên Turso Database (hỗ trợ libSQL trên nền tảng đám mây) thông qua biến môi trường cấu hình `DB_PATH`, duy trì trọn vẹn các câu lệnh SQL SQLite hiện hành mà không cần sửa đổi logic backend.
+3. **Phương án 3: Quy Chuẩn Đích Toàn Diện Trên Oracle Cloud Always Free (Được Khuyến Nghị Tuyệt Đối)**:
+   - Tận dụng tối đa tài nguyên miễn phí trọn đời của Oracle Cloud:
+     - Ổ đĩa Block Volume 200GB được mount cố định vào hệ điều hành Ubuntu của VM ARM Ampere A1, đảm bảo tốc độ đọc/ghi I/O tối đa cho chế độ SQLite WAL (Write-Ahead Logging).
+     - Tệp CSDL và toàn bộ thư mục dữ liệu người dùng (`uploads/`) được cô lập an toàn khỏi tiến trình triển khai code Git.
+     - Tự động hóa quy trình sao lưu dữ liệu: Lệnh cronjob thực thi mỗi ngày vào lúc 02:00 sáng để tạo snapshot CSDL an toàn (không khóa bảng) và tải lên Oracle Object Storage (10GB Always Free), thiết lập vòng tròn khép kín cho an toàn dữ liệu và khôi phục sau sự cố.

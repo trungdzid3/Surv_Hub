@@ -462,6 +462,36 @@ Với các khảo sát có gắn kèm Voucher (V mã) nhưng khi đóng bài m�
 7. Backup hằng ngày: `sqlite3 .backup` + `rclone` lên Oracle Object Storage (10GB Always Free).
 8. Gia cố bảo mật: `unattended-upgrades`, `fail2ban`, SSH key-only. Giữ Render chạy song song 1–2 tuần làm fallback URL rồi mới tắt.
 
+### 5. Kế Hoạch Lưu Trữ Dữ Liệu Bền Vững (Database SQLite & Avatar / File Uploads) Khi Triển Khai Cloud
+
+#### 5.1. Phân Tích Điểm Đau Cốt Lõi: Ephemeral Filesystem Trên Render Free
+Khi vận hành trên nền tảng Render Free (hoặc các dịch vụ PaaS containerized không gắn persistent disk), toàn bộ filesystem hoạt động theo cơ chế tạm thời (Ephemeral Filesystem):
+- Mỗi lần kích hoạt deploy code mới, khởi động lại service (restart), hoặc sau khi container ngủ đông (idle wake-up), Render sẽ hủy toàn bộ container cũ và dựng container mới từ image vừa build.
+- Toàn bộ dữ liệu ghi phát sinh trong quá trình chạy ứng dụng — bao gồm tệp cơ sở dữ liệu SQLite tại `server/db/vibesurvey.db` (kèm file WAL/SHM) và toàn bộ tệp hình ảnh người dùng tải lên tại thư mục `public/uploads/avatars/` — đều bị xóa sạch và reset hoàn toàn về trạng thái ban đầu của mã nguồn trên Git.
+- Hậu quả: Người dùng mất hồ sơ đã tạo, số dư ví bị trả về 0, avatar bị mất liên kết (HTTP 404), buộc hệ thống phải dựa vào cơ chế tạm bợ `ensureEssentialAccounts()` để tự phục hồi các tài khoản kiểm thử cơ sở.
+
+#### 5.2. Lộ Trình Kỹ Thuật 3 Phương Án Triển Khai
+
+| Tiêu chí | Phương án 1: Demo Tức Thời (Giữ Render Free) | Phương án 2: Tách Rời Cloud Storage & Cloud DB | Phương án 3: Quy Chuẩn Đích (Oracle Always Free) |
+| :--- | :--- | :--- | :--- |
+| **Mục đích** | Phục vụ kiểm thử, demo đồ án, trình chiếu tính năng | Mở rộng linh hoạt không phụ thuộc máy chủ đơn lẻ | Triển khai sản phẩm chính thức lâu dài, chi phí 0đ |
+| **Lưu trữ Database** | Giữ `server/db/vibesurvey.db` trên filesystem tạm | Chuyển sang Turso (libSQL Cloud) hoặc Supabase / PostgreSQL qua biến môi trường `DB_PATH` / `DATABASE_URL` | SQLite WAL chạy trực tiếp trên Block Volume 200GB gắn cứng vào VM |
+| **Lưu trữ Uploads/Avatar** | Lưu cục bộ `public/uploads/avatars/` trong container | Đẩy ảnh lên Cloudinary API hoặc Cloudflare R2 qua S3-compatible SDK; lưu URL CDN vào database | Lưu trực tiếp vào thư mục trên Block Volume 200GB của VM; phục vụ tĩnh qua Express hoặc Nginx |
+| **Chi phí hàng tháng** | 0 VNĐ | 0 VNĐ (sử dụng gói Free Tier của Cloudinary/R2 và Turso) | 0 VNĐ (nằm trọn trong định mức Always Free của Oracle) |
+| **Rủi ro dữ liệu** | Mất dữ liệu khi deploy hoặc khi container ngủ dậy | Không mất dữ liệu; phụ thuộc giới hạn API gói Free | Dữ liệu bền vững 100%; độc lập, kiểm soát toàn diện |
+
+1. **Phương án 1 (Demo tức thời - Vận hành khép kín trên Render Free)**:
+   - Áp dụng khi cần kiểm thử nhanh hoặc trình diễn tính năng trực tiếp cho hội đồng / khách hàng mà chưa kịp cấu hình hạ tầng VM.
+   - Nguyên tắc vận hành: Giữ nguyên cơ cấu hiện tại; duy trì phiên làm việc không kích hoạt lệnh git push hoặc manual deploy để container không bị tái lập. Cơ chế `ensureEssentialAccounts()` tự động cấp sẵn dữ liệu mẫu chuẩn hóa 1:1 ngay khi server khởi động.
+2. **Phương án 2 (Tách rời Cloud Storage & Cloud Database - Decoupled Architecture)**:
+   - Tách biệt hoàn toàn tầng dữ liệu ra khỏi máy chủ ứng dụng:
+     - **Avatar & Tệp tải lên**: Thay vì lưu vào đĩa cục bộ, tích hợp Cloudinary SDK hoặc Cloudflare R2 (S3 API). Khi người dùng upload ảnh đại diện, backend xử lý nén WebP và đẩy thẳng lên bucket đám mây, chỉ lưu URL ảnh (`https://cdn.example.com/...`) vào trường `users.avatar_url`.
+     - **Cơ sở dữ liệu**: Sử dụng Turso (nền tảng libSQL/SQLite trên Edge) cho phép ứng dụng truy vấn qua giao thức HTTP/WebSocket mà vẫn giữ trọn vẹn cú pháp SQLite, hoặc ánh xạ sang PostgreSQL (Supabase/Neon) thông qua tầng database driver linh hoạt.
+3. **Phương án 3 (Quy chuẩn Đích Oracle Always Free - Khuyến nghị Tuyệt đối)**:
+   - Đây là giải pháp kiến trúc tối ưu nhất cho VibeSurvey, đảm bảo độ trễ truy vấn SQLite ở mức microsecond mà không tốn chi phí:
+     - **Block Volume 200GB gắn cứng**: VM ARM Ampere A1 được gắn ổ cứng Block Volume bền vững. Toàn bộ mã nguồn, tệp CSDL SQLite `server/db/vibesurvey.db` và thư mục `public/uploads/` nằm trực tiếp trên phân vùng đĩa vật lý này. Khi deploy phiên bản mới (qua git pull + restart pm2), dữ liệu trên đĩa hoàn toàn được bảo toàn 100%.
+     - **Cơ chế sao lưu tự động (Automated Backup Pipeline)**: Thiết lập cronjob chạy lệnh `sqlite3 server/db/vibesurvey.db ".backup '/backup/vibesurvey_\$(date +\%F).db'"` hằng ngày, sau đó dùng `rclone` đồng bộ bản snapshot và thư mục `uploads/` lên Oracle Object Storage (10GB Always Free), bảo đảm khả năng phục hồi thảm họa (Disaster Recovery) tức thì.
+
 ---
 
 ## PHẦN VII: KINH TẾ CHI PHÍ THẬT & 7 QUY TẮC BẤT BIẾN CHỐNG LỖ SÀN (NẠP, VOUCHER, BANKING, THẺ CÀO, HẠ TẦNG)
