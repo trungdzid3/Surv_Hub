@@ -33,6 +33,7 @@ c:\Users\Lenovo\Downloads\Linh\
 │   └── app.js                 # Express bootstrap (helmet CSP, CORS whitelist, rate-limit)
 ├── tests/                     # Bộ kiểm thử tự hành 23 tầng (chạy `npm test`, NODE_ENV=test)
 ├── backups/                   # Bản sao lưu dự phòng khi đại tu (timestamp rõ ràng)
+├── docs/architecture/         # Sơ đồ kiến trúc Archify (HTML standalone + JSON nguồn)
 ├── DESIGN.md                  # Quy chuẩn thiết kế giao diện (Design System SSOT)
 ├── BAO_CAO_AUDIT_PHAP_LY_VN.md # Báo cáo audit pháp lý VN 03-11-2026 (7 checklist)
 ├── PROJECT_CONTEXT.md         # Ngữ cảnh liên tục (SSOT tinh gọn - file này)
@@ -85,6 +86,8 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 
 ### 3.4 Kiểm thử
 `npm test` = `tests/run_all_tests.js` fork 23 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; tầng 23 = `tests/test_student_email_domains.js` (catalog tên miền email sinh viên, 18 bài); `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
+- Sơ đồ luồng xác thực email sinh viên: `docs/architecture/student-email-domain-validation.html` (nguồn `.archify/architecture-student-email-domains-*/candidate.json`).
+- Bản đồ code frontend chi tiết: `docs/CODE_MAP.md`.
 
 ## 4. Các Lưu Ý Kỹ Thuật Bắt Buộc (Technical Gotchas)
 1. **Bảo mật câu hỏi bẫy**: API trả câu hỏi cho người điền phải bóc tách 100% `is_attention_check` và `expected_answer`.
@@ -118,3 +121,4 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 5. **Kỹ nợ chấp nhận**: JWT lưu localStorage (đại tu auth riêng khi lên production); DB cũ còn `__profile_*` trong `answers_payload` (đã chặn xuất bằng strip runtime).
 6. **Hạng mục pháp lý dồn sang giai đoạn production** (theo chỉ đạo — đang demo nên chưa làm): thành lập pháp nhân + công bố MST/SĐT footer + thông báo/đăng ký Bộ Công Thương; trang Chính sách bảo mật riêng; API xóa tài khoản/xuất dữ liệu; nhật ký hệ thống ≥ 12 tháng; chi tiết tại `BAO_CAO_AUDIT_PHAP_LY_VN.md`.
 7. **Follow-up modular (không khẩn)**: thay dần 84 chỗ `.toLocaleString('vi-VN')` bằng `VibeUtils.formatVND` và 66 chỗ `lucide.createIcons()` bằng `VibeUtils.refreshIcons` (danh sách trong `docs/CODE_MAP.md`).
+8. **Hồi quy frontend student OTP (phát hiện 03-11)**: `modules/respondent.js` có nút gọi `VibeApp.sendStudentEmailOtpAction()` / `verifyStudentEmailOtpAction()` nhưng 2 hàm đã bị xóa từ commit `efcea1a` (trước đại tu modular) — nút bấm không phản hồi. API backend (`/auth/student/send-otp`, `/verify-otp`) và test tầng 10 vẫn hoạt động; cần khôi phục 2 hàm + `startStudentOtpCooldown` vào module respondent (bản gốc trong commit `bece397`).
