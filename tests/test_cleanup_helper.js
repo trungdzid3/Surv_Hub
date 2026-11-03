@@ -89,6 +89,9 @@ function cleanAllTestData(options = {}) {
         emailLower.startsWith('user1_guard_') ||
         emailLower.startsWith('user2_guard_') ||
         emailLower.startsWith('trial_') ||
+        emailLower.startsWith('matched_') ||
+        emailLower.startsWith('unmatched_') ||
+        /^t_\d{10,}@v\.com$/.test(emailLower) ||
         nameLower.includes('người dùng cá nhân') ||
         nameLower.includes('sinh vien dap vien') ||
         nameLower.includes('creator delete test') ||

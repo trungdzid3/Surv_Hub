@@ -241,6 +241,14 @@ class NotificationService {
 
     const tls = require('tls');
     return new Promise((resolve) => {
+      let settled = false;
+      let timeoutId = null;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(result);
+      };
       const socket = tls.connect(port, host, () => {
         let step = 0;
         let buffer = '';
@@ -307,19 +315,26 @@ class NotificationService {
             step = 9;
             sendCmd('QUIT');
             socket.end();
-            resolve({ success: true, mode: 'LIVE_SMTP' });
+            finish({ success: true, mode: 'LIVE_SMTP' });
           } else if (lastLine.startsWith('5') || lastLine.startsWith('4')) {
             socket.end();
             console.warn('Lỗi SMTP response:', lastLine);
-            resolve({ success: false, error: lastLine });
+            finish({ success: false, error: lastLine });
           }
         });
 
         socket.on('error', (err) => {
           console.warn('Lỗi kết nối SMTP socket:', err.message);
-          resolve({ success: false, error: err.message });
+          finish({ success: false, error: err.message });
         });
       });
+
+      // Render free tier chặn outbound 25/465/587: hủy sau 10 giây thay vì treo vô hạn
+      timeoutId = setTimeout(() => {
+        console.warn('SMTP timeout sau 10 giây (cổng bị chặn hoặc mạng không phản hồi)');
+        try { socket.destroy(); } catch (_) {}
+        finish({ success: false, error: 'SMTP_TIMEOUT' });
+      }, 10000);
     });
   }
 
@@ -342,6 +357,14 @@ class NotificationService {
     const tls = require('tls');
 
     return new Promise((resolve) => {
+      let settled = false;
+      let timeoutId = null;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(result);
+      };
       let socket = net.createConnection(port, host);
       let step = 0;
       let buffer = '';
@@ -383,7 +406,7 @@ class NotificationService {
           secureSocket.on('data', handleData);
           secureSocket.on('error', (err) => {
             console.warn('Lỗi Outlook TLS Socket:', err.message);
-            resolve({ success: false, error: err.message });
+            finish({ success: false, error: err.message });
           });
         } else if (step === 3 && (lastLine.startsWith('250 ') || lastLine.startsWith('250-'))) {
           if (lastLine.startsWith('250 ')) {
@@ -435,19 +458,26 @@ class NotificationService {
           step = 11;
           sendCmd('QUIT');
           socket.end();
-          resolve({ success: true, mode: 'LIVE_OUTLOOK' });
+          finish({ success: true, mode: 'LIVE_OUTLOOK' });
         } else if (lastLine.startsWith('5') || lastLine.startsWith('4')) {
           socket.end();
           console.warn('Lỗi Outlook SMTP response:', lastLine);
-          resolve({ success: false, error: lastLine });
+          finish({ success: false, error: lastLine });
         }
       };
 
       socket.on('data', handleData);
       socket.on('error', (err) => {
         console.warn('Lỗi kết nối Outlook SMTP socket:', err.message);
-        resolve({ success: false, error: err.message });
+        finish({ success: false, error: err.message });
       });
+
+      // Render free tier chặn outbound 25/465/587: hủy sau 10 giây thay vì treo vô hạn
+      timeoutId = setTimeout(() => {
+        console.warn('Outlook SMTP timeout sau 10 giây (cổng bị chặn hoặc mạng không phản hồi)');
+        try { socket.destroy(); } catch (_) {}
+        finish({ success: false, error: 'SMTP_TIMEOUT' });
+      }, 10000);
     });
   }
 
@@ -490,8 +520,13 @@ class NotificationService {
       return { success: true, mode: 'MOCK_TEST_SKIPPED' };
     }
 
+    // Render free tier chặn outbound tới cổng SMTP 25/465/587 (từ 26-09-2025).
+    // Bỏ qua 2 kênh SMTP để không phải chờ timeout 10 giây mỗi kênh trước khi rơi xuống Brevo API.
+    // Đặt ENABLE_SMTP_ON_RENDER=true nếu chạy instance trả phí (được mở cổng SMTP).
+    const smtpPortBlocked = process.env.RENDER === 'true' && process.env.ENABLE_SMTP_ON_RENDER !== 'true';
+
     // 1. Kênh 1: Ưu tiên Gmail SMTP SSL nếu đã cấu hình
-    if (config.SMTP && config.SMTP.USER && config.SMTP.PASS) {
+    if (!smtpPortBlocked && config.SMTP && config.SMTP.USER && config.SMTP.PASS) {
       const smtpRes = await this.sendSmtpEmail({ toEmail, toName, subject, htmlContent, textContent });
       if (smtpRes && smtpRes.success) {
         return smtpRes;
@@ -500,7 +535,7 @@ class NotificationService {
     }
 
     // 2. Kênh 2: Thử Microsoft Outlook SMTP nếu đã cấu hình
-    if (config.OUTLOOK && config.OUTLOOK.USER && config.OUTLOOK.PASS) {
+    if (!smtpPortBlocked && config.OUTLOOK && config.OUTLOOK.USER && config.OUTLOOK.PASS) {
       const outlookRes = await this.sendOutlookEmail({ toEmail, toName, subject, htmlContent, textContent });
       if (outlookRes && outlookRes.success) {
         return outlookRes;

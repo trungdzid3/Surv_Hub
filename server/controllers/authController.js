@@ -1093,18 +1093,40 @@ class AuthController {
         note: 'Mã có hiệu lực trong 5 phút. Vui lòng nhập mã để hoàn tất xác thực sinh viên.'
       });
 
-      notificationService.sendSmartEmail({
-        toEmail: cleanEmail,
-        toName: user.name || 'Sinh viên',
-        subject: emailSubject,
-        htmlContent: emailHtml,
-        textContent: `Ma xac thuc email sinh vien cua ban la: ${otp}. Ma co hieu luc trong 5 phut.`
-      }).catch(e => console.warn('Loi gui Student Email OTP:', e.message));
+      // Phải chờ kết quả gửi thật: nếu thất bại thì không được báo "đã gửi" cho người dùng
+      let emailSendResult = { success: false, reason: 'Không có phản hồi từ dịch vụ email' };
+      try {
+        emailSendResult = await notificationService.sendSmartEmail({
+          toEmail: cleanEmail,
+          toName: user.name || 'Sinh viên',
+          subject: emailSubject,
+          htmlContent: emailHtml,
+          textContent: `Ma xac thuc email sinh vien cua ban la: ${otp}. Ma co hieu luc trong 5 phut.`
+        }) || emailSendResult;
+      } catch (e) {
+        console.warn('Loi gui Student Email OTP:', e.message);
+        emailSendResult = { success: false, reason: e.message };
+      }
+
+      if (!emailSendResult.success) {
+        // Hủy mã vừa tạo để người dùng được yêu cầu lại ngay, không bị kẹt cooldown 60 giây
+        db.prepare('UPDATE users SET student_otp = NULL, student_otp_expires_at = NULL, student_otp_sent_at = NULL WHERE id = ?').run(user.id);
+        const failReason = emailSendResult.reason || emailSendResult.error || 'Không rõ nguyên nhân';
+        console.warn(`[STUDENT OTP] Gui that bai toi ${maskedEmail}: ${JSON.stringify(failReason).slice(0, 300)}`);
+
+        return res.status(503).json({
+          success: false,
+          message: 'Hệ thống chưa gửi được email xác thực tới hộp thư của bạn. Vui lòng thử lại sau ít phút hoặc liên hệ bộ phận hỗ trợ.',
+          maskedEmail,
+          debugOtp: config.NODE_ENV === 'test' ? otp : undefined
+        });
+      }
 
       return res.json({
         success: true,
         message: `Mã xác thực gồm 6 chữ số đã được gửi đến email ${maskedEmail}. Vui lòng nhập mã để hoàn tất!`,
         maskedEmail,
+        channel: emailSendResult.mode || undefined,
         debugOtp: config.NODE_ENV === 'test' ? otp : undefined
       });
     } catch (err) {
