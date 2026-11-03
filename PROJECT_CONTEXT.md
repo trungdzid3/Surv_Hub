@@ -24,14 +24,14 @@ c:\Users\Lenovo\Downloads\Linh\
 ├── android/                   # Dự án Capacitor Android Native
 ├── public/                    # Tài nguyên tĩnh SPA (app.js, index.html, logo.svg, assets)
 ├── server/                    # Mã nguồn máy chủ Node.js & Express
-│   ├── config/                # Cấu hình kinh tế + secrets (index.js), danh mục trường ĐH, tỉnh thành
+│   ├── config/                # Cấu hình kinh tế + secrets (index.js), danh mục tên miền email sinh viên (universityEmailDomains.json), tỉnh thành
 │   ├── controllers/           # Auth, Survey, Wallet, Admin controllers
 │   ├── repositories/          # Data Access Layer (surveyRepository.js)
 │   ├── services/              # AntiFraud, Ledger, PricingEngine, FormParser, Webhook, Sentinel, AuditLog
 │   ├── db/                    # Database init (database.js), SQLite DB file
 │   ├── middlewares/           # Auth JWT, RateLimit, IpBan, Validation
 │   └── app.js                 # Express bootstrap (helmet CSP, CORS whitelist, rate-limit)
-├── tests/                     # Bộ kiểm thử tự hành 17 tầng (chạy `npm test`, NODE_ENV=test)
+├── tests/                     # Bộ kiểm thử tự hành 23 tầng (chạy `npm test`, NODE_ENV=test)
 ├── backups/                   # Bản sao lưu dự phòng khi đại tu (timestamp rõ ràng)
 ├── DESIGN.md                  # Quy chuẩn thiết kế giao diện (Design System SSOT)
 ├── BAO_CAO_AUDIT_PHAP_LY_VN.md # Báo cáo audit pháp lý VN 03-11-2026 (7 checklist)
@@ -59,7 +59,8 @@ c:\Users\Lenovo\Downloads\Linh\
 | `services/webhookService.js` | Đồng bộ Sheets | `dispatchGoogleSheetsSync`, `formatPayload`, guard SSRF (`isValidUrl`/`isSafeUrl`) |
 | `services/notificationService.js` | Email đa kênh | `sendSmartEmail` (Resend → Brevo → SMTP), `buildOtpEmailTemplate`, log `email_notifications_log` |
 | `services/forumSentinelService.js` + `geminiSentinelService.js` | Kiểm duyệt AI nội bộ | Quét diễn đàn định kỳ, `auditContent` (Gemini flash-lite, chỉ verdict JSON), ẩn bài + trừ trust ngầm |
-| `services/matchingService.js` / `voucherService.js` / `pushNotificationService.js` / `auditLogService.js` / `logoCrawlerService.js` | Lọc đối tượng (504 dòng) / voucher (892) / web push / `logAction` admin / crawler logo | — |
+| `services/matchingService.js` / `voucherService.js` / `pushNotificationService.js` / `auditLogService.js` / `logoCrawlerService.js` | Lọc đối tượng (504 dòng) / voucher (892) / web push / `logAction` admin / crawler logo | `isStudentEmailValid` (~427: chuẩn `.edu.vn`/`.ac.vn`/`.udn.vn` + `emailSuffix` của `UNIVERSITIES` + catalog mở rộng), `detectUniversityFromEmail` (~482: danh bạ cũ trước, fallback `source: 'CATALOG'`) |
+| `config/universityEmailDomains.json` + `services/universityDomainService.js` | Danh mục 320 tên miền email sinh viên (316 `student_usable`) bóc tách từ tài liệu tham chiếu cấu trúc email ĐH; không chứa email cá nhân; thay thế `config/vietnam_colleges_universities.json` (293 entry legacy, không code nào dùng) | `normalizeDomain`, `isKnownStudentDomain` (khớp cả subdomain), `findInstitutionByDomain`, `getStudentDomains`, `getStats` |
 | `middlewares/auth.js` / `ipBan.js` / `rateLimit.js` | JWT + role + chặn BANNED / IP cấm / fixed-window in-memory (skip `NODE_ENV=test`) | — |
 | `db/database.js` | Schema + migrations | Bảng `migrations` idempotent (~380, try/catch từng câu), `ensureEssentialAccounts` (seed từ `SEED_ACCOUNT_PASSWORDS`) |
 
@@ -83,7 +84,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 `users` (PII: `demographics_json`, OTP cột, trust_score) · `surveys` (+ `allow_email_collection`) · `questions` (logic_json, is_attention_check) · `responses` (`answers_payload`, quality_score) · `point_transactions` (sổ cái kép, 7 loại tx) · `deposit_orders` · `payout_requests` · `fraud_logs` / `device_ip_logs` / `banned_ips` · `registration_otps` · `voucher_campaigns` / `voucher_codes` · `forum_posts` / `forum_comments` / `forum_post_likes` · `notifications` / `push_subscriptions` / `daily_streaks` · `admin_audit_logs` / `bug_reports` / `warranty_claims` / `email_notifications_log` / `vat_invoices`.
 
 ### 3.4 Kiểm thử
-`npm test` = `tests/run_all_tests.js` fork 17 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
+`npm test` = `tests/run_all_tests.js` fork 23 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; tầng 23 = `tests/test_student_email_domains.js` (catalog tên miền email sinh viên, 18 bài); `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
 
 ## 4. Các Lưu Ý Kỹ Thuật Bắt Buộc (Technical Gotchas)
 1. **Bảo mật câu hỏi bẫy**: API trả câu hỏi cho người điền phải bóc tách 100% `is_attention_check` và `expected_answer`.
@@ -100,7 +101,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 
 ## 5. Hướng Dẫn Bàn Giao Cho Phiên Tiếp Theo
 - Trước khi bắt đầu: đọc `PROJECT_CONTEXT.md` này + `DESIGN.md` + `AGENTS.md`.
-- Kiểm tra toàn vẹn: chạy `npm test` (17 tầng, phải 100% PASS).
+- Kiểm tra toàn vẹn: chạy `npm test` (23 tầng, phải 100% PASS).
 - Sau khi chỉnh sửa code: `node -c <file>`, nâng cache-buster nếu đụng app.js, `npm run sync:android`, cập nhật mục "Việc Đang Mở" trong file này, commit + push (auto_github_sync: true).
 - Giao tiếp tiếng Việt, cấm emoji/icon màu trong mọi đầu ra.
 
@@ -111,7 +112,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 
 ## 7. Việc Đang Mở (Open Issues — xong việc nào xóa việc đó)
 1. **Điều khoản mục 2 "tịch thu số dư"** (sau Wave 5 nằm tại `public/js/modules/modalsTerms.js`, khối openTermsModal) — CHỜ USER CHỐT CÂU CHỮ theo bản mẫu Argon (kết hợp A+B+C bỏ D, mẫu đã lưu trong git history commit 35b32b5): tạm ngưng quyền quy đổi khi trust < 40; hủy thù lao từng giao dịch REJECTED_FRAUD theo sổ cái; bảo lưu + quyền quyết toán phần dư; khiếu nại 07 ngày làm việc.
-2. **BẢO MẬT KHẨN - chờ user quyết (audit 03-11-2026)**: (a) `Danh Sách Email Sinh Viên.docx` ĐÃ KIỂM TRA 03-11-2026: **KHÔNG phải PII** — là tài liệu tham chiếu kiến trúc email đại học VN (1.730 đoạn, 337 domain, 28 địa chỉ minh họa đều đuôi `.edu.vn`, 0 dòng danh sách email cá nhân); logic xác thực thực tế dùng danh mục 258 trường trong `server/services/matchingService.js` (`isStudentEmailValid`, domain + `emailSuffix`), không đọc file này. File đã untrack + gitignore (vẫn còn trên đĩa) và nằm trong lịch sử git public (commit bece397) nhưng rủi ro PII thấp — chỉ cần purge lịch sử nếu muốn giữ tài sản nội bộ; (b) mật khẩu thật từng commit trong lịch sử (`scripts/clean_database.js`, JWT/webhook secret mặc định cũ ở commit fb78956 trở về trước) → ĐỔI mật khẩu Gmail cá nhân + xoay `JWT_SECRET`/`PAYMENT_WEBHOOK_SECRET` trong `.env` nếu chưa; (c) xóa `quickAdminLogin` (creds cứng trong app bundle — hiện ở modules/adminConsole.js).
+2. **BẢO MẬT KHẨN - chờ user quyết (audit 03-11-2026)**: (a) `Danh Sách Email Sinh Viên.docx` ĐÃ KIỂM TRA 03-11-2026: **KHÔNG phải PII** — là tài liệu tham chiếu kiến trúc email đại học VN (1.730 đoạn, 337 domain, 28 địa chỉ minh họa đều đuôi `.edu.vn`, 0 dòng danh sách email cá nhân); logic xác thực dùng `matchingService.UNIVERSITIES` + catalog `server/config/universityEmailDomains.json` (320 tên miền, 316 dùng được), không đọc file docx lúc chạy. File đã untrack + gitignore (vẫn còn trên đĩa) và nằm trong lịch sử git public (commit bece397) nhưng rủi ro PII thấp — chỉ cần purge lịch sử nếu muốn giữ tài sản nội bộ; (b) mật khẩu thật từng commit trong lịch sử (`scripts/clean_database.js`, JWT/webhook secret mặc định cũ ở commit fb78956 trở về trước) → ĐỔI mật khẩu Gmail cá nhân + xoay `JWT_SECRET`/`PAYMENT_WEBHOOK_SECRET` trong `.env` nếu chưa; (c) xóa `quickAdminLogin` (creds cứng trong app bundle — hiện ở modules/adminConsole.js).
 3. **Vuln runtime chưa sửa (chờ duyệt)**: rate-limit lấy XFF do client kiểm soát (`server/middlewares/rateLimit.js:9` — nên dùng CF-Connecting-IP); trả OTP trong response khi gửi mail fail (`authController.js:137`); OTP dùng Math.random + không đếm lần thử sai; SSRF webhookService (thiếu DNS lookup như formParserService); upload ảnh nặc danh 10MB không kiểm magic byte; cụm cổng hậu `NODE_ENV=test` (walletController/ledgerService/authController) — cần gate theo allow-list + tách biến `ENABLE_TEST_HOOKS`.
 4. **Review frontend chưa sửa (READ-ONLY 03-11)**: P0-1 màu semantic ngoài palette light mode (~700 class emerald/red/amber/indigo); P0-2 tương phản WCAG (#EA580C trên trắng 3.6:1 → nên #C2410C cho text nhỏ); P1 gradient/glow trên CTA + card; P1-3 customDropdown thiếu điều hướng bàn phím/ARIA; P1-4 nút icon-only thiếu aria-label; P2 transition:all (6 chỗ styles.css + 341 class), leak visibilitychange (ĐÃ FIX trong pushNotifications.js Wave 1), thiếu prefers-reduced-motion. Chi tiết file:line trong báo cáo phiên 03-11.
 5. **Kỹ nợ chấp nhận**: JWT lưu localStorage (đại tu auth riêng khi lên production); DB cũ còn `__profile_*` trong `answers_payload` (đã chặn xuất bằng strip runtime).

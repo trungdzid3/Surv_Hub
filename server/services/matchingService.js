@@ -3,6 +3,8 @@
  * Theo chỉ đạo chiến lược Gemini 4 Argon (SurvHub v2.0)
  */
 
+const universityDomainService = require('./universityDomainService');
+
 class MatchingService {
   constructor() {
         this.UNIVERSITIES = [
@@ -457,7 +459,10 @@ class MatchingService {
       return u.emailSuffix.some(s => domainPart === s || domainPart.endsWith('.' + s));
     });
 
-    if (!isStandardEdu && !isKnownSchool) return false;
+    // Bổ sung danh mục tên miền sinh viên mở rộng (config/universityEmailDomains.json)
+    const isCatalogSchool = universityDomainService.isKnownStudentDomain(domainPart);
+
+    if (!isStandardEdu && !isKnownSchool && !isCatalogSchool) return false;
 
     if (universityCode && universityCode !== 'ALL') {
       const uni = this.UNIVERSITIES.find(u => u.code === universityCode);
@@ -487,6 +492,20 @@ class MatchingService {
         return uni;
       }
     }
+
+    // Fallback: danh mục tên miền mở rộng (trường chưa có trong UNIVERSITIES)
+    const catalogEntry = universityDomainService.findInstitutionByDomain(domainPart);
+    if (catalogEntry && catalogEntry.institution) {
+      return {
+        code: catalogEntry.code,
+        name: catalogEntry.institution,
+        shortName: catalogEntry.institution,
+        domain: catalogEntry.domain,
+        emailSuffix: [catalogEntry.domain],
+        source: 'CATALOG'
+      };
+    }
+
     return null;
   }
 

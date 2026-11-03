@@ -146,6 +146,12 @@ const testSuites = [
     name: 'Tầng 22: Survey Logic ID Map Consistency Suite',
     description: 'Kiểm tra tính nhất quán bản đồ ID logic_json khi chỉnh sửa câu hỏi',
     file: 'test_survey_logic_id_map.js'
+  },
+  {
+    id: 23,
+    name: 'Tầng 23: Danh mục tên miền email sinh viên mở rộng',
+    description: 'Kiểm tra catalog universityEmailDomains.json, chuẩn hóa tên miền, xác thực email sinh viên và nhận diện trường',
+    file: 'test_student_email_domains.js'
   }
 ];
 

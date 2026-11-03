@@ -1,0 +1,2590 @@
+{
+  "meta": {
+    "source_file": "Danh Sách Email Sinh Viên.docx",
+    "source_type": "tai_lieu_tham_chieu_cau_truc_email_dai_hoc",
+    "extracted_at": "2026-11-03",
+    "paragraphs_scanned": 1730,
+    "institution_rows": 252,
+    "domains_total": 320,
+    "student_usable_total": 316,
+    "non_standard_domains": [
+      "caodangyduocnhatrang.vn",
+      "caodangyduocsaigon.vn",
+      "gust-vast.vn",
+      "hcmcons.vn",
+      "hiu.vn",
+      "isvnu.vn",
+      "napa.vn",
+      "student.hiu.vn",
+      "vanlanguni.vn",
+      "vast.vn"
+    ],
+    "method": "Boc tach tu bang cau truc email sinh vien trong tai lieu (ten truong / ma / dong ten mien / dong mau email). student_usable=true khi: duoi .edu.vn/.ac.vn/.udn.vn, hoac tien to sinh vien (st./sv./student./ms./gm./sis./e.), hoac ten mien xuat hien dung trong mau email cua dong. KHONG chua email ca nhan.",
+    "notes": [
+      "student_usable=true la tap dung de xac thuc email sinh vien luc dang ky.",
+      "Ten mien student_usable=false chi luu de tra cuu/anh xa ten truong, khong dung de chap nhan xac thuc."
+    ]
+  },
+  "domains": [
+    {
+      "domain": "ajc.edu.vn",
+      "institution": "Học viện Báo chí và Tuyên truyền",
+      "code": "HBT / AJC",
+      "pattern": "[MSSV]@st.ajc.edu.vn",
+      "student_usable": true,
+      "source_index": 574
+    },
+    {
+      "domain": "auv.edu.vn",
+      "institution": "Trường Đại học Mỹ tại Việt Nam (Đà Nẵng)",
+      "code": "AUV",
+      "pattern": "[student]@auv.edu.vn",
+      "student_usable": true,
+      "source_index": 1260
+    },
+    {
+      "domain": "bafu.edu.vn",
+      "institution": "Trường Đại học Nông – Lâm Bắc Giang",
+      "code": "DBA / BAFU",
+      "pattern": "[MSSV]@bafu.edu.vn",
+      "student_usable": true,
+      "source_index": 470
+    },
+    {
+      "domain": "betu.edu.vn",
+      "institution": "Trường Đại học Kinh tế – Kỹ thuật Bình Dương",
+      "code": "DKB / BETU",
+      "pattern": "[MSSV]@ktkt.edu.vn (Microsoft Office 365)",
+      "student_usable": true,
+      "source_index": 1328
+    },
+    {
+      "domain": "bhiu.edu.vn",
+      "institution": "Trường Đại học Quốc tế Bắc Hà (Bắc Ninh)",
+      "code": "DBH / BHIU",
+      "pattern": "[MSSV]@bhiu.edu.vn",
+      "student_usable": true,
+      "source_index": 1198
+    },
+    {
+      "domain": "blu.edu.vn",
+      "institution": "Trường Đại học Bạc Liêu",
+      "code": "DBL / BLU",
+      "pattern": "[MSSV]@blu.edu.vn",
+      "student_usable": true,
+      "source_index": 1000
+    },
+    {
+      "domain": "bmu.edu.vn",
+      "institution": "Trường Đại học Y Dược Buôn Ma Thuột (Đắk Lắk)",
+      "code": "BMT / BMU",
+      "pattern": "[MSSV]@bmu.edu.vn",
+      "student_usable": true,
+      "source_index": 1308
+    },
+    {
+      "domain": "bvu.edu.vn",
+      "institution": "Trường Đại học Bà Rịa – Vũng Tàu",
+      "code": "DBV / BVU",
+      "pattern": "[MSSV]@bvu.edu.vn (Office 365)",
+      "student_usable": true,
+      "source_index": 1424
+    },
+    {
+      "domain": "caodangyduocnhatrang.vn",
+      "institution": "Trường Cao đẳng Y Dược Sài Gòn (TP.HCM & Cơ sở Nha Trang)",
+      "code": null,
+      "pattern": null,
+      "student_usable": false,
+      "source_index": 1632
+    },
+    {
+      "domain": "caodangyduocsaigon.vn",
+      "institution": "Trường Cao đẳng Y Dược Sài Gòn (TP.HCM & Cơ sở Nha Trang)",
+      "code": null,
+      "pattern": null,
+      "student_usable": false,
+      "source_index": 1632
+    },
+    {
+      "domain": "caothang.edu.vn",
+      "institution": "Trường Cao đẳng Kỹ thuật Cao Thắng",
+      "code": null,
+      "pattern": "[MSSV]@caothang.edu.vn",
+      "student_usable": true,
+      "source_index": 1488
+    },
+    {
+      "domain": "cct.edu.vn",
+      "institution": "Trường Cao đẳng Công nghệ, Kinh tế và Thủy lợi Miền Trung",
+      "code": null,
+      "pattern": "[MSSV]@cct.edu.vn",
+      "student_usable": true,
+      "source_index": 1602
+    },
+    {
+      "domain": "cdhue.edu.vn",
+      "institution": "Trường Cao đẳng Huế",
+      "code": null,
+      "pattern": "[MSSV]@cdhue.edu.vn",
+      "student_usable": true,
+      "source_index": 1608
+    },
+    {
+      "domain": "cdktcnnt.edu.vn",
+      "institution": "Trường Cao đẳng Kỹ thuật Công nghệ Nha Trang",
+      "code": null,
+      "pattern": "[MSSV]@cdktcnnt.edu.vn",
+      "student_usable": true,
+      "source_index": 1620
+    },
+    {
+      "domain": "cdsptw.edu.vn",
+      "institution": "Trường Cao đẳng Sư phạm Trung ương (Hà Nội, Nha Trang, TP.HCM)",
+      "code": null,
+      "pattern": "[MSSV]@cdsptw.edu.vn",
+      "student_usable": true,
+      "source_index": 1590
+    },
+    {
+      "domain": "cdtm.edu.vn",
+      "institution": "Trường Cao đẳng Thương mại (Đà Nẵng)",
+      "code": null,
+      "pattern": "[MSSV]@cdtm.edu.vn",
+      "student_usable": true,
+      "source_index": 1596
+    },
+    {
+      "domain": "cofer.edu.vn",
+      "institution": "Trường Cao đẳng Kinh tế Đối ngoại (COFER)",
+      "code": null,
+      "pattern": "[chữ_đầu_họ_lót + tên][MSSV]@cofer.edu.vn",
+      "student_usable": true,
+      "source_index": 1494
+    },
+    {
+      "domain": "ctim.edu.vn",
+      "institution": "Trường Cao đẳng CTIM",
+      "code": null,
+      "pattern": "[MSSV]@ctim.edu.vn (Gmail sinh viên / Google Workspace)",
+      "student_usable": true,
+      "source_index": 1518
+    },
+    {
+      "domain": "cva.edu.vn",
+      "institution": "Trường Đại học Chu Văn An (Hưng Yên – Trường ĐH Ecopark)",
+      "code": "DCA / CVA",
+      "pattern": "[MSSV]@cva.edu.vn",
+      "student_usable": true,
+      "source_index": 1204
+    },
+    {
+      "domain": "cyk.edu.vn",
+      "institution": "Trường Cao đẳng Y tế Khánh Hòa",
+      "code": null,
+      "pattern": "[MSSV]@cyk.edu.vn",
+      "student_usable": true,
+      "source_index": 1614
+    },
+    {
+      "domain": "daihoccongnghedonga.edu.vn",
+      "institution": "Trường Đại học Công nghệ Đông Á (Bắc Ninh & Hà Nội)",
+      "code": "DDA / EAUT",
+      "pattern": "[MSSV]@eaut.edu.vn",
+      "student_usable": true,
+      "source_index": 1138
+    },
+    {
+      "domain": "daihochalong.edu.vn",
+      "institution": "Trường Đại học Hạ Long (Quảng Ninh)",
+      "code": "HLU",
+      "pattern": "[MSSV]@daihochalong.edu.vn",
+      "student_usable": true,
+      "source_index": 898
+    },
+    {
+      "domain": "daihochoabinh.edu.vn",
+      "institution": "Trường Đại học Hòa Bình",
+      "code": "ETU / HBU",
+      "pattern": "[MSSV]@daihochoabinh.edu.vn",
+      "student_usable": true,
+      "source_index": 1174
+    },
+    {
+      "domain": "daihoclongan.edu.vn",
+      "institution": "Trường Đại học Kinh tế Công nghiệp Long An",
+      "code": "DLA",
+      "pattern": "[MSSV]@daihoclongan.edu.vn",
+      "student_usable": true,
+      "source_index": 1430
+    },
+    {
+      "domain": "daihocpccc.edu.vn",
+      "institution": "Trường Đại học Phòng cháy Chữa cháy",
+      "code": "PCH / UFP",
+      "pattern": "[mã_học_viên]@daihocpccc.edu.vn",
+      "student_usable": true,
+      "source_index": 1098
+    },
+    {
+      "domain": "daihoctantrao.edu.vn",
+      "institution": "Trường Đại học Tân Trào (Tuyên Quang)",
+      "code": "TQU",
+      "pattern": "[MSSV]@daihoctantrao.edu.vn",
+      "student_usable": true,
+      "source_index": 940
+    },
+    {
+      "domain": "daihocyhanoi.edu.vn",
+      "institution": "Trường Đại học Y Hà Nội",
+      "code": "YHB / HMU",
+      "pattern": "[MSSV]@daihocyhanoi.edu.vn hoặc [tên_định_danh]@hmu.edu.vn",
+      "student_usable": true,
+      "source_index": 630
+    },
+    {
+      "domain": "dainam.edu.vn",
+      "institution": "Trường Đại học Đại Nam",
+      "code": "DDN / DNU",
+      "pattern": "[MSSV]@dainam.edu.vn (Khuyến nghị chuẩn hóa chữ ký và đuôi trường học)",
+      "student_usable": true,
+      "source_index": 1132
+    },
+    {
+      "domain": "dau.edu.vn",
+      "institution": "Trường Đại học Kiến trúc Đà Nẵng",
+      "code": "KTD / DAU",
+      "pattern": "[MSSV]@dau.edu.vn",
+      "student_usable": true,
+      "source_index": 1254
+    },
+    {
+      "domain": "dav.edu.vn",
+      "institution": "Học viện Ngoại giao",
+      "code": "HQT / DAV",
+      "pattern": "[tên_hoặc_MSSV]@dav.edu.vn",
+      "student_usable": true,
+      "source_index": 568
+    },
+    {
+      "domain": "dbdhnhatrang.edu.vn",
+      "institution": "Các Trường Dự bị Đại học Dân tộc (Trung ương Việt Trì, Sầm Sơn, Nha Trang, TP.HCM)",
+      "code": "CEPU / DBDT",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 1018
+    },
+    {
+      "domain": "dbdtss.edu.vn",
+      "institution": "Các Trường Dự bị Đại học Dân tộc (Trung ương Việt Trì, Sầm Sơn, Nha Trang, TP.HCM)",
+      "code": "CEPU / DBDT",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 1018
+    },
+    {
+      "domain": "dhcd.edu.vn",
+      "institution": "Trường Đại học Công đoàn",
+      "code": "LDA / TUU",
+      "pattern": "[MSSV]@dhcd.edu.vn",
+      "student_usable": true,
+      "source_index": 580
+    },
+    {
+      "domain": "dhhp.edu.vn",
+      "institution": "Trường Đại học Hải Phòng",
+      "code": "THP / DHP",
+      "pattern": "[MSSV]@dhhp.edu.vn",
+      "student_usable": true,
+      "source_index": 892
+    },
+    {
+      "domain": "dhkthc.edu.vn",
+      "institution": "Học viện Kỹ thuật và Công nghệ An ninh (Trường ĐH Kỹ thuật - Hậu cần CAND)",
+      "code": "HCH",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 1092
+    },
+    {
+      "domain": "dhktyduocdn.edu.vn",
+      "institution": "Trường Đại học Kỹ thuật Y – Dược Đà Nẵng",
+      "code": "DDN / DUMTP",
+      "pattern": "[MSSV]@dhktyduocdn.edu.vn",
+      "student_usable": true,
+      "source_index": 690
+    },
+    {
+      "domain": "dhs.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Huế (Sư phạm, Y Dược, Nông Lâm, Kinh tế, Ngoại ngữ, Nghệ thuật, Luật)",
+      "code": "DHS, DHY, DHL, DHK, DHF, DHN, HUL",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 250
+    },
+    {
+      "domain": "dhtv.edu.vn",
+      "institution": "Trường Đại học Trưng Vương (Vĩnh Phúc)",
+      "code": "DVP / TVU",
+      "pattern": "[MSSV]@dhtv.edu.vn",
+      "student_usable": true,
+      "source_index": 1216
+    },
+    {
+      "domain": "dlu.edu.vn",
+      "institution": "Trường Đại học Đà Lạt (Lâm Đồng)",
+      "code": "TDL / DLU",
+      "pattern": "[MSSV]@dlu.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 916
+    },
+    {
+      "domain": "dnpu.edu.vn",
+      "institution": "Trường Đại học Đồng Nai",
+      "code": "DND / DNU",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 856
+    },
+    {
+      "domain": "dntu.edu.vn",
+      "institution": "Trường Đại học Công nghệ Đồng Nai",
+      "code": "DCD / DNTU",
+      "pattern": "[MSSV]@dntu.edu.vn",
+      "student_usable": true,
+      "source_index": 1412
+    },
+    {
+      "domain": "donga.edu.vn",
+      "institution": "Trường Đại học Đông Á (Đà Nẵng)",
+      "code": "DAD / UDA",
+      "pattern": "[MSSV]@donga.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 1248
+    },
+    {
+      "domain": "dtdl.edu.vn",
+      "institution": "Trường Cao đẳng Điện tử – Điện lạnh Hà Nội",
+      "code": null,
+      "pattern": "[MSSV]@dtdl.edu.vn",
+      "student_usable": true,
+      "source_index": 1566
+    },
+    {
+      "domain": "dtu.edu.vn",
+      "institution": "Đại học Duy Tân (Đà Nẵng)",
+      "code": "DDT / DTU",
+      "pattern": "[tên_định_danh]@dtu.edu.vn",
+      "student_usable": true,
+      "source_index": 1242
+    },
+    {
+      "domain": "due.edu.vn",
+      "institution": "Trường Đại học Kinh tế – ĐH Đà Nẵng",
+      "code": "DUE",
+      "pattern": "[MSSV]@due.udn.vn",
+      "student_usable": true,
+      "source_index": 208
+    },
+    {
+      "domain": "due.udn.vn",
+      "institution": "Trường Đại học Kinh tế – ĐH Đà Nẵng",
+      "code": "DUE",
+      "pattern": "[MSSV]@due.udn.vn",
+      "student_usable": true,
+      "source_index": 208
+    },
+    {
+      "domain": "dut.udn.vn",
+      "institution": "Trường Đại học Bách khoa – ĐH Đà Nẵng",
+      "code": "DUT",
+      "pattern": "[MSSV]@sv.dut.udn.vn",
+      "student_usable": true,
+      "source_index": 202
+    },
+    {
+      "domain": "dvtdt.edu.vn",
+      "institution": "Trường Đại học Văn hóa, Thể thao và Du lịch Thanh Hóa",
+      "code": "DVD / TUCST",
+      "pattern": "[MSSV]@dvtdt.edu.vn",
+      "student_usable": true,
+      "source_index": 812
+    },
+    {
+      "domain": "e.tlu.edu.vn",
+      "institution": "Trường Đại học Thủy lợi",
+      "code": "TLA / TLU",
+      "pattern": "[MSSV]@e.tlu.edu.vn",
+      "student_usable": true,
+      "source_index": 320
+    },
+    {
+      "domain": "eaut.edu.vn",
+      "institution": "Trường Đại học Công nghệ Đông Á (Bắc Ninh & Hà Nội)",
+      "code": "DDA / EAUT",
+      "pattern": "[MSSV]@eaut.edu.vn",
+      "student_usable": true,
+      "source_index": 1138
+    },
+    {
+      "domain": "education.vnu.edu.vn",
+      "institution": "Trường Đại học Giáo dục – ĐHQGHN",
+      "code": null,
+      "pattern": "[MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 68
+    },
+    {
+      "domain": "eiu.edu.vn",
+      "institution": "Trường Đại học Quốc tế Miền Đông (Bình Dương)",
+      "code": "EIU",
+      "pattern": "[tên].[họ].[khóa]@eiu.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 1400
+    },
+    {
+      "domain": "epu.edu.vn",
+      "institution": "Trường Đại học Điện lực",
+      "code": "DDL / EPU",
+      "pattern": "[MSSV]@epu.edu.vn",
+      "student_usable": true,
+      "source_index": 344
+    },
+    {
+      "domain": "fbu.edu.vn",
+      "institution": "Trường Đại học Tài chính – Ngân hàng Hà Nội",
+      "code": "FBU",
+      "pattern": "[MSSV]@fbu.edu.vn",
+      "student_usable": true,
+      "source_index": 1156
+    },
+    {
+      "domain": "fpt.edu.vn",
+      "institution": "Trường Đại học FPT (Hà Nội, TP.HCM, Đà Nẵng, Cần Thơ, Quy Nhơn)",
+      "code": "FPT",
+      "pattern": "[tên][viết_tắt_họ_đệm][mã_ngành_MSSV]@fpt.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 1114
+    },
+    {
+      "domain": "ftu.edu.vn",
+      "institution": "Trường Đại học Ngoại thương (Hà Nội, Quảng Ninh & Phân hiệu TP.HCM)",
+      "code": "NTH / FTU",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 490
+    },
+    {
+      "domain": "giadinh.edu.vn",
+      "institution": "Trường Đại học Gia Định",
+      "code": "DGD / GDU",
+      "pattern": "[MSSV]@giadinh.edu.vn",
+      "student_usable": true,
+      "source_index": 1394
+    },
+    {
+      "domain": "gm.uit.edu.vn",
+      "institution": "Trường Đại học Công nghệ Thông tin – ĐHQG-HCM",
+      "code": "VNUHCM-UIT",
+      "pattern": "[MSSV]@gm.uit.edu.vn (Google) và [MSSV]@ms.uit.edu.vn (MS 365)",
+      "student_usable": true,
+      "source_index": 128
+    },
+    {
+      "domain": "gust-vast.vn",
+      "institution": "Học viện Khoa học và Công nghệ (Viện Hàn lâm KH&CN Việt Nam)",
+      "code": "GUST",
+      "pattern": "[học_viên]@gust-vast.vn",
+      "student_usable": true,
+      "source_index": 476
+    },
+    {
+      "domain": "hactech.edu.vn",
+      "institution": "Đại học Bách khoa Hà Nội (Hà Nội)",
+      "code": null,
+      "pattern": "[tên_định_danh_MSSV]@hactech.edu.vn",
+      "student_usable": true,
+      "source_index": 1500
+    },
+    {
+      "domain": "hanu.edu.vn",
+      "institution": "Trường Đại học Hà Nội",
+      "code": "HAN / HANU",
+      "pattern": "[MSSV]@s.hanu.edu.vn",
+      "student_usable": true,
+      "source_index": 722
+    },
+    {
+      "domain": "hau.edu.vn",
+      "institution": "Trường Đại học Kiến trúc Hà Nội",
+      "code": "KHA / HAU",
+      "pattern": "[MSSV]@hau.edu.vn",
+      "student_usable": true,
+      "source_index": 332
+    },
+    {
+      "domain": "haui.edu.vn",
+      "institution": "ĐẠI HỌC CÔNG NGHIỆP HÀ NỘI (HaUI)",
+      "code": null,
+      "pattern": "[MSSV]@st.haui.edu.vn",
+      "student_usable": true,
+      "source_index": 190
+    },
+    {
+      "domain": "hcct.edu.vn",
+      "institution": "Trường Cao đẳng Thương mại và Du lịch Hà Nội (HCCT)",
+      "code": null,
+      "pattern": "[MSSV]@hcct.edu.vn",
+      "student_usable": true,
+      "source_index": 1584
+    },
+    {
+      "domain": "hce.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Huế (Sư phạm, Y Dược, Nông Lâm, Kinh tế, Ngoại ngữ, Nghệ thuật, Luật)",
+      "code": "DHS, DHY, DHL, DHK, DHF, DHN, HUL",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 250
+    },
+    {
+      "domain": "hcmcons.vn",
+      "institution": "Nhạc viện TP. Hồ Chí Minh",
+      "code": "NVS / HCMCONS",
+      "pattern": "[MSSV]@hcmcons.vn",
+      "student_usable": true,
+      "source_index": 782
+    },
+    {
+      "domain": "hcmuc.edu.vn",
+      "institution": "Trường Đại học Văn hóa TP. Hồ Chí Minh",
+      "code": "VHS / HCMUC",
+      "pattern": "[MSSV]@hcmuc.edu.vn",
+      "student_usable": true,
+      "source_index": 740
+    },
+    {
+      "domain": "hcmue.edu.vn",
+      "institution": "Trường Đại học Sư phạm TP. Hồ Chí Minh",
+      "code": "SPS / HCMUE",
+      "pattern": "[MSSV]@student.hcmue.edu.vn",
+      "student_usable": true,
+      "source_index": 716
+    },
+    {
+      "domain": "hcmufa.edu.vn",
+      "institution": "Trường Đại học Mỹ thuật TP. Hồ Chí Minh",
+      "code": "MTS / HCMUFA",
+      "pattern": "[MSSV]@hcmufa.edu.vn",
+      "student_usable": true,
+      "source_index": 758
+    },
+    {
+      "domain": "hcmulaw.edu.vn",
+      "institution": "Trường Đại học Luật TP. Hồ Chí Minh",
+      "code": "LPS / HCMULAW",
+      "pattern": "[MSSV]@hcmulaw.edu.vn",
+      "student_usable": true,
+      "source_index": 550
+    },
+    {
+      "domain": "hcmussh.edu.vn",
+      "institution": "Trường Đại học Khoa học Xã hội và Nhân văn – ĐHQG-HCM",
+      "code": "VNUHCM-USSH",
+      "pattern": "[MSSV]@hcmussh.edu.vn",
+      "student_usable": true,
+      "source_index": 134
+    },
+    {
+      "domain": "hcmut.edu.vn",
+      "institution": "Trường Đại học Bách khoa – ĐHQG-HCM",
+      "code": "VNUHCM-UT (HCMUT)",
+      "pattern": "[tên].[họ_đệm_hoặc_MSSV]@hcmut.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 116
+    },
+    {
+      "domain": "hdiu.edu.vn",
+      "institution": "Trường Đại học Đông Đô",
+      "code": "DDU",
+      "pattern": "[MSSV]@hdiu.edu.vn",
+      "student_usable": true,
+      "source_index": 1168
+    },
+    {
+      "domain": "hdu.edu.vn",
+      "institution": "Trường Đại học Hồng Đức (Thanh Hóa)",
+      "code": "HDT / HDU",
+      "pattern": "[MSSV]@hdu.edu.vn",
+      "student_usable": true,
+      "source_index": 904
+    },
+    {
+      "domain": "hht.edu.vn",
+      "institution": "Trường Cao đẳng Công nghệ Cao Hà Nội (HHT)",
+      "code": null,
+      "pattern": "[MSSV]@hht.edu.vn",
+      "student_usable": true,
+      "source_index": 1578
+    },
+    {
+      "domain": "hitu.edu.vn",
+      "institution": "Trường Cao đẳng Công Thương TP. Hồ Chí Minh (HITC)",
+      "code": null,
+      "pattern": "[MSSV]@hitu.edu.vn",
+      "student_usable": true,
+      "source_index": 1542
+    },
+    {
+      "domain": "hiu.vn",
+      "institution": "Trường Đại học Quốc tế Hồng Bàng",
+      "code": "DHB / HIU",
+      "pattern": "[MSSV]@student.hiu.vn",
+      "student_usable": false,
+      "source_index": 1364
+    },
+    {
+      "domain": "hlu.edu.vn",
+      "institution": "Trường Đại học Luật Hà Nội",
+      "code": "LPH / HLU",
+      "pattern": "[MSSV]@hlu.edu.vn",
+      "student_usable": true,
+      "source_index": 544
+    },
+    {
+      "domain": "hluv.edu.vn",
+      "institution": "Trường Đại học Hoa Lư (Ninh Bình)",
+      "code": "DHL / HLU",
+      "pattern": "[MSSV]@hluv.edu.vn",
+      "student_usable": true,
+      "source_index": 952
+    },
+    {
+      "domain": "hmtu.edu.vn",
+      "institution": "Trường Đại học Kỹ thuật Y tế Hải Dương",
+      "code": "DKY / HMTU",
+      "pattern": "[MSSV]@hmtu.edu.vn",
+      "student_usable": true,
+      "source_index": 696
+    },
+    {
+      "domain": "hmu.edu.vn",
+      "institution": "Trường Đại học Y Hà Nội",
+      "code": "YHB / HMU",
+      "pattern": "[MSSV]@daihocyhanoi.edu.vn hoặc [tên_định_danh]@hmu.edu.vn",
+      "student_usable": true,
+      "source_index": 630
+    },
+    {
+      "domain": "hnivc.edu.vn",
+      "institution": "Trường Cao đẳng nghề Công nghiệp Hà Nội (HNIVC)",
+      "code": null,
+      "pattern": "[MSSV]@hnivc.edu.vn",
+      "student_usable": true,
+      "source_index": 1572
+    },
+    {
+      "domain": "hnue.edu.vn",
+      "institution": "Trường Đại học Sư phạm Hà Nội",
+      "code": "SPH / HNUE",
+      "pattern": "[MSSV]@hnue.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 710
+    },
+    {
+      "domain": "hocvienhaiquan.edu.vn",
+      "institution": "Học viện Hải quân",
+      "code": "HGH / VNA",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 1050
+    },
+    {
+      "domain": "hou.edu.vn",
+      "institution": "Trường Đại học Mở Hà Nội",
+      "code": "MHN / HOU",
+      "pattern": "[MSSV]@sv.hou.edu.vn",
+      "student_usable": true,
+      "source_index": 526
+    },
+    {
+      "domain": "hpmu.edu.vn",
+      "institution": "Trường Đại học Y Dược Hải Phòng",
+      "code": "YPB / HPMU",
+      "pattern": "[MSSV]@hpmu.edu.vn",
+      "student_usable": true,
+      "source_index": 660
+    },
+    {
+      "domain": "hpu.edu.vn",
+      "institution": "Trường Đại học Quản lý và Công nghệ Hải Phòng (Trước đây là ĐH Dân lập Hải Phòng)",
+      "code": "DHP / HPU",
+      "pattern": "[MSSV]@hpu.edu.vn",
+      "student_usable": true,
+      "source_index": 1186
+    },
+    {
+      "domain": "hpu2.edu.vn",
+      "institution": "Trường Đại học Sư phạm Hà Nội 2 (Vĩnh Phúc)",
+      "code": "SP2 / HPU2",
+      "pattern": "[MSSV]@hpu2.edu.vn",
+      "student_usable": true,
+      "source_index": 728
+    },
+    {
+      "domain": "hsb.edu.vn",
+      "institution": "Trường Quản trị và Kinh doanh – ĐHQGHN",
+      "code": "VNU-HSB",
+      "pattern": "[tên_định_danh]@hsb.edu.vn hoặc [MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 92
+    },
+    {
+      "domain": "htu.edu.vn",
+      "institution": "Trường Đại học Hà Tĩnh",
+      "code": "DHT / HTU",
+      "pattern": "[MSSV]@htu.edu.vn",
+      "student_usable": true,
+      "source_index": 958
+    },
+    {
+      "domain": "huaf.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Huế (Sư phạm, Y Dược, Nông Lâm, Kinh tế, Ngoại ngữ, Nghệ thuật, Luật)",
+      "code": "DHS, DHY, DHL, DHK, DHF, DHN, HUL",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 250
+    },
+    {
+      "domain": "hubt.edu.vn",
+      "institution": "Trường Đại học Kinh doanh và Công nghệ Hà Nội",
+      "code": "DQK / HUBT",
+      "pattern": "[MSSV]@hubt.edu.vn",
+      "student_usable": true,
+      "source_index": 1180
+    },
+    {
+      "domain": "huc.edu.vn",
+      "institution": "Trường Đại học Văn hóa Hà Nội",
+      "code": "VHH / HUC",
+      "pattern": "[MSSV]@huc.edu.vn",
+      "student_usable": true,
+      "source_index": 734
+    },
+    {
+      "domain": "huce.edu.vn",
+      "institution": "Trường Đại học Xây dựng Hà Nội",
+      "code": "XDA / HUCE",
+      "pattern": "[MSSV]@huce.edu.vn hoặc [tên].[MSSV]@huce.edu.vn",
+      "student_usable": true,
+      "source_index": 326
+    },
+    {
+      "domain": "huemed-univ.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Huế (Sư phạm, Y Dược, Nông Lâm, Kinh tế, Ngoại ngữ, Nghệ thuật, Luật)",
+      "code": "DHS, DHY, DHL, DHK, DHF, DHN, HUL",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 250
+    },
+    {
+      "domain": "hueuni.edu.vn",
+      "institution": "ĐẠI HỌC HUẾ (HUEUNI)",
+      "code": "DHH",
+      "pattern": "[MSSV]@hueuni.edu.vn hoặc theo từng trường thành viên",
+      "student_usable": true,
+      "source_index": 238
+    },
+    {
+      "domain": "hufi.edu.vn",
+      "institution": "Trường Đại học Công Thương TP. Hồ Chí Minh (Trước đây là ĐH Công nghiệp Thực phẩm TP.HCM)",
+      "code": "DCT / HUIT (HUFI)",
+      "pattern": "[MSSV]@st.huit.edu.vn",
+      "student_usable": true,
+      "source_index": 380
+    },
+    {
+      "domain": "huflis.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Huế (Sư phạm, Y Dược, Nông Lâm, Kinh tế, Ngoại ngữ, Nghệ thuật, Luật)",
+      "code": "DHS, DHY, DHL, DHK, DHF, DHN, HUL",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 250
+    },
+    {
+      "domain": "hul.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Huế (Sư phạm, Y Dược, Nông Lâm, Kinh tế, Ngoại ngữ, Nghệ thuật, Luật)",
+      "code": "DHS, DHY, DHL, DHK, DHF, DHN, HUL",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 250
+    },
+    {
+      "domain": "humg.edu.vn",
+      "institution": "Trường Đại học Mỏ – Địa chất",
+      "code": "MDA / HUMG",
+      "pattern": "[MSSV]@sv.humg.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 338
+    },
+    {
+      "domain": "hup.edu.vn",
+      "institution": "Trường Đại học Dược Hà Nội",
+      "code": "DKH / HUP",
+      "pattern": "[MSSV]@hup.edu.vn",
+      "student_usable": true,
+      "source_index": 636
+    },
+    {
+      "domain": "hupes.edu.vn",
+      "institution": "Trường Đại học Sư phạm Thể dục Thể thao Hà Nội",
+      "code": "TDH / HUPES",
+      "pattern": "[MSSV]@hupes.edu.vn",
+      "student_usable": true,
+      "source_index": 824
+    },
+    {
+      "domain": "huph.edu.vn",
+      "institution": "Trường Đại học Y tế Công cộng",
+      "code": "YTC / HUPH",
+      "pattern": "[MSSV]@huph.edu.vn",
+      "student_usable": true,
+      "source_index": 678
+    },
+    {
+      "domain": "hus.edu.vn",
+      "institution": "Trường Đại học Khoa học Tự nhiên – ĐHQGHN",
+      "code": "VNU-HUS",
+      "pattern": "[tên][họ_đệm]_[khóa]@hus.edu.vn hoặc [MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 44
+    },
+    {
+      "domain": "husc.edu.vn",
+      "institution": "Trường Đại học Khoa học – ĐH Huế",
+      "code": "HUSC",
+      "pattern": "[MSSV]@husc.edu.vn",
+      "student_usable": true,
+      "source_index": 244
+    },
+    {
+      "domain": "hutech.edu.vn",
+      "institution": "Trường Đại học Công nghệ TP. Hồ Chí Minh",
+      "code": "DKC / HUTECH",
+      "pattern": "[MSSV]@hutech.edu.vn",
+      "student_usable": true,
+      "source_index": 1340
+    },
+    {
+      "domain": "hvannd.edu.vn",
+      "institution": "Học viện An ninh Nhân dân",
+      "code": "ANH / C500",
+      "pattern": "[mã_học_viên]@hvannd.edu.vn",
+      "student_usable": true,
+      "source_index": 1080
+    },
+    {
+      "domain": "hvcsnd.edu.vn",
+      "institution": "Học viện Cảnh sát Nhân dân",
+      "code": "CSH / PPA",
+      "pattern": "[mã_học_viên]@hvcsnd.edu.vn",
+      "student_usable": true,
+      "source_index": 1086
+    },
+    {
+      "domain": "hvnh.edu.vn",
+      "institution": "Học viện Ngân hàng",
+      "code": "NHH / BAV",
+      "pattern": "[MSSV]@hvnh.edu.vn",
+      "student_usable": true,
+      "source_index": 508
+    },
+    {
+      "domain": "hvpnvn.edu.vn",
+      "institution": "Học viện Phụ nữ Việt Nam",
+      "code": "HPN / VWA",
+      "pattern": "[MSSV]@hvpnvn.edu.vn",
+      "student_usable": true,
+      "source_index": 592
+    },
+    {
+      "domain": "hvtc.edu.vn",
+      "institution": "Học viện Tài chính",
+      "code": "HTC / AOF",
+      "pattern": "[MSSV]@sv.hvtc.edu.vn",
+      "student_usable": true,
+      "source_index": 520
+    },
+    {
+      "domain": "hvu.edu.vn",
+      "institution": "Trường Đại học Hùng Vương (Phú Thọ)",
+      "code": "THV / HVU",
+      "pattern": "[MSSV]@hvu.edu.vn",
+      "student_usable": true,
+      "source_index": 934
+    },
+    {
+      "domain": "ich.edu.vn",
+      "institution": "Trường Cao đẳng Quốc tế TP.HCM (ICH)",
+      "code": null,
+      "pattern": "[MSSV]@ich.edu.vn",
+      "student_usable": true,
+      "source_index": 1560
+    },
+    {
+      "domain": "ictu.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Thái Nguyên (Sư phạm, Y Dược, Nông Lâm, Kinh tế & QTKD, CNTT & Truyền thông, Khoa học)",
+      "code": "TNUE, TUMP, TUAF, TUEBA, ICTU, TNUS",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 274
+    },
+    {
+      "domain": "isvnu.vn",
+      "institution": "Trường Quốc tế – ĐHQGHN",
+      "code": "VNU-IS",
+      "pattern": "[MSSV]@isvnu.vn hoặc [MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 98
+    },
+    {
+      "domain": "itc.edu.vn",
+      "institution": "Trường Cao đẳng Công nghệ Thông tin TP.HCM (ITC)",
+      "code": null,
+      "pattern": "[MSSV]@itc.edu.vn",
+      "student_usable": true,
+      "source_index": 1548
+    },
+    {
+      "domain": "iuh.edu.vn",
+      "institution": "Trường Đại học Công nghiệp TP. Hồ Chí Minh",
+      "code": "IUH",
+      "pattern": "[MSSV]@student.iuh.edu.vn",
+      "student_usable": true,
+      "source_index": 374
+    },
+    {
+      "domain": "iuv.edu.vn",
+      "institution": "Trường Đại học Công nghiệp Vinh (Nghệ An)",
+      "code": "DCV / IUV",
+      "pattern": "[MSSV]@iuv.edu.vn",
+      "student_usable": true,
+      "source_index": 1272
+    },
+    {
+      "domain": "kthcm.edu.vn",
+      "institution": "Trường Cao đẳng Kinh tế TP. Hồ Chí Minh (HCE)",
+      "code": "UBND TP.HCM",
+      "pattern": "[MSSV]@kthcm.edu.vn",
+      "student_usable": true,
+      "source_index": 1530
+    },
+    {
+      "domain": "ktkt.edu.vn",
+      "institution": "Trường Đại học Kinh tế – Kỹ thuật Bình Dương",
+      "code": "DKB / BETU",
+      "pattern": "[MSSV]@ktkt.edu.vn (Microsoft Office 365)",
+      "student_usable": true,
+      "source_index": 1328
+    },
+    {
+      "domain": "law.vnu.edu.vn",
+      "institution": "Trường Đại học Luật – ĐHQGHN",
+      "code": "VNU-UL",
+      "pattern": "[MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 86
+    },
+    {
+      "domain": "lhu.edu.vn",
+      "institution": "Trường Đại học Lạc Hồng (Đồng Nai)",
+      "code": "DLH / LHU",
+      "pattern": "[MSSV]@lhu.edu.vn",
+      "student_usable": true,
+      "source_index": 1406
+    },
+    {
+      "domain": "lms.utc.edu.vn",
+      "institution": "Trường Đại học Giao thông Vận tải",
+      "code": "GHA / UTC",
+      "pattern": "[tên][MSSV]@st.utc.edu.vn hoặc @lms.utc.edu.vn",
+      "student_usable": true,
+      "source_index": 302
+    },
+    {
+      "domain": "lqdtu.edu.vn",
+      "institution": "Học viện Kỹ thuật Quân sự (Trường Đại học Kỹ thuật Lê Quý Đôn)",
+      "code": "KQH / MTA (LQDTU)",
+      "pattern": "[mã_học_viên]@mta.edu.vn",
+      "student_usable": true,
+      "source_index": 1032
+    },
+    {
+      "domain": "lttc.edu.vn",
+      "institution": "Trường Cao đẳng Kỹ thuật Lý Tự Trọng TP.HCM",
+      "code": "UBND TP.HCM",
+      "pattern": "[MSSV]@lttc.edu.vn",
+      "student_usable": true,
+      "source_index": 1536
+    },
+    {
+      "domain": "ltvu.edu.vn",
+      "institution": "Trường Đại học Lương Thế Vinh (Nam Định)",
+      "code": "DTV / LTVU",
+      "pattern": "[MSSV]@ltvu.edu.vn",
+      "student_usable": true,
+      "source_index": 1210
+    },
+    {
+      "domain": "mail.tdc.edu.vn",
+      "institution": "Trường Cao đẳng Công nghệ Thủ Đức (TDC)",
+      "code": "UBND TP.HCM",
+      "pattern": "[MSSV]@mail.tdc.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 1524
+    },
+    {
+      "domain": "medvnu.edu.vn",
+      "institution": "Trường Đại học Khoa học Sức khỏe – ĐHQG-HCM",
+      "code": "VNUHCM-UHS",
+      "pattern": "[MSSV]@uhsvnu.edu.vn",
+      "student_usable": true,
+      "source_index": 158
+    },
+    {
+      "domain": "mku.edu.vn",
+      "institution": "Trường Đại học Cửu Long (Vĩnh Long)",
+      "code": "DCL / MKU",
+      "pattern": "[MSSV]@mku.edu.vn",
+      "student_usable": true,
+      "source_index": 1460
+    },
+    {
+      "domain": "ms.uit.edu.vn",
+      "institution": "Trường Đại học Công nghệ Thông tin – ĐHQG-HCM",
+      "code": "VNUHCM-UIT",
+      "pattern": "[MSSV]@gm.uit.edu.vn (Google) và [MSSV]@ms.uit.edu.vn (MS 365)",
+      "student_usable": true,
+      "source_index": 128
+    },
+    {
+      "domain": "msa.edu.vn",
+      "institution": "Học viện Khoa học Quân sự",
+      "code": "NQH / MSA",
+      "pattern": "[mã_học_viên]@msa.edu.vn",
+      "student_usable": true,
+      "source_index": 1044
+    },
+    {
+      "domain": "mta.edu.vn",
+      "institution": "Học viện Kỹ thuật Quân sự (Trường Đại học Kỹ thuật Lê Quý Đôn)",
+      "code": "KQH / MTA (LQDTU)",
+      "pattern": "[mã_học_viên]@mta.edu.vn",
+      "student_usable": true,
+      "source_index": 1032
+    },
+    {
+      "domain": "mtu.edu.vn",
+      "institution": "Trường Đại học Xây dựng Miền Tây",
+      "code": "MTU",
+      "pattern": "[MSSV]@mtu.edu.vn",
+      "student_usable": true,
+      "source_index": 440
+    },
+    {
+      "domain": "muce.edu.vn",
+      "institution": "Trường Đại học Xây dựng Miền Trung",
+      "code": "XDT / MUCE",
+      "pattern": "[MSSV]@muce.edu.vn",
+      "student_usable": true,
+      "source_index": 434
+    },
+    {
+      "domain": "mut.edu.vn",
+      "institution": "Trường Đại học Công nghệ Miền Đông (Đồng Nai)",
+      "code": "MUT",
+      "pattern": "[MSSV]@mut.edu.vn",
+      "student_usable": true,
+      "source_index": 1418
+    },
+    {
+      "domain": "mythuatcongnghiep.edu.vn",
+      "institution": "Trường Đại học Mỹ thuật Công nghiệp",
+      "code": "MCN / UAD",
+      "pattern": "[MSSV]@mythuatcongnghiep.edu.vn",
+      "student_usable": true,
+      "source_index": 752
+    },
+    {
+      "domain": "mythuatvietnam.edu.vn",
+      "institution": "Trường Đại học Mỹ thuật Việt Nam",
+      "code": "MTH / VNUFA",
+      "pattern": "[MSSV]@mythuatvietnam.edu.vn",
+      "student_usable": true,
+      "source_index": 746
+    },
+    {
+      "domain": "naem.edu.vn",
+      "institution": "Học viện Quản lý Giáo dục",
+      "code": "HVQ / NAEM",
+      "pattern": "[MSSV]@naem.edu.vn",
+      "student_usable": true,
+      "source_index": 604
+    },
+    {
+      "domain": "napa.vn",
+      "institution": "Học viện Hành chính Quốc gia (Đã sáp nhập Trường Đại học Nội vụ Hà Nội - NVH)",
+      "code": "HHC / NAPA",
+      "pattern": "[MSSV]@napa.vn",
+      "student_usable": true,
+      "source_index": 562
+    },
+    {
+      "domain": "nce.edu.vn",
+      "institution": "Trường Cao đẳng Sư phạm Trung ương (Hà Nội, Nha Trang, TP.HCM)",
+      "code": null,
+      "pattern": "[MSSV]@cdsptw.edu.vn",
+      "student_usable": true,
+      "source_index": 1590
+    },
+    {
+      "domain": "nctu.edu.vn",
+      "institution": "Trường Đại học Nam Cần Thơ",
+      "code": "DNC",
+      "pattern": "[MSSV]@nctu.edu.vn",
+      "student_usable": true,
+      "source_index": 1442
+    },
+    {
+      "domain": "ndun.edu.vn",
+      "institution": "Trường Đại học Điều dưỡng Nam Định",
+      "code": "YDD / NDUN",
+      "pattern": "[MSSV]@ndun.edu.vn",
+      "student_usable": true,
+      "source_index": 684
+    },
+    {
+      "domain": "neu.edu.vn",
+      "institution": "ĐẠI HỌC KINH TẾ QUỐC DÂN (NEU)",
+      "code": "NEU",
+      "pattern": "[MSSV]@st.neu.edu.vn",
+      "student_usable": true,
+      "source_index": 178
+    },
+    {
+      "domain": "nguyentrai.edu.vn",
+      "institution": "Trường Đại học Nguyễn Trãi",
+      "code": "NTU",
+      "pattern": "[MSSV]@nguyentrai.edu.vn",
+      "student_usable": true,
+      "source_index": 1162
+    },
+    {
+      "domain": "ntc.edu.vn",
+      "institution": "Trường Cao đẳng Du lịch Nha Trang",
+      "code": null,
+      "pattern": "[MSSV]@ntc.edu.vn",
+      "student_usable": true,
+      "source_index": 1626
+    },
+    {
+      "domain": "ntt.edu.vn",
+      "institution": "Trường Đại học Nguyễn Tất Thành",
+      "code": "DTT / NTTU",
+      "pattern": "[MSSV]@ntt.edu.vn",
+      "student_usable": true,
+      "source_index": 1352
+    },
+    {
+      "domain": "ntu.edu.vn",
+      "institution": "Trường Đại học Nha Trang",
+      "code": "TSN / NTU",
+      "pattern": "[MSSV]@ntu.edu.vn",
+      "student_usable": true,
+      "source_index": 862
+    },
+    {
+      "domain": "nuce.edu.vn",
+      "institution": "Trường Đại học Xây dựng Hà Nội",
+      "code": "XDA / HUCE",
+      "pattern": "[MSSV]@huce.edu.vn hoặc [tên].[MSSV]@huce.edu.vn",
+      "student_usable": true,
+      "source_index": 326
+    },
+    {
+      "domain": "nute.edu.vn",
+      "institution": "Trường Đại học Sư phạm Kỹ thuật Nam Định",
+      "code": "SKN / NUTE",
+      "pattern": "[MSSV]@nute.edu.vn",
+      "student_usable": true,
+      "source_index": 422
+    },
+    {
+      "domain": "ou.edu.vn",
+      "institution": "Trường Đại học Mở TP. Hồ Chí Minh",
+      "code": "MBS / OU",
+      "pattern": "[MSSV][tên]@ou.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 532
+    },
+    {
+      "domain": "pctu.edu.vn",
+      "institution": "Trường Đại học Phan Châu Trinh (Quảng Nam)",
+      "code": "DPC / PCTU",
+      "pattern": "[MSSV]@pctu.edu.vn",
+      "student_usable": true,
+      "source_index": 1266
+    },
+    {
+      "domain": "pdu.edu.vn",
+      "institution": "Trường Đại học Phạm Văn Đồng (Quảng Ngãi)",
+      "code": "DPQ / PDU",
+      "pattern": "[MSSV]@pdu.edu.vn",
+      "student_usable": true,
+      "source_index": 976
+    },
+    {
+      "domain": "phuongdong.edu.vn",
+      "institution": "Trường Đại học Phương Đông",
+      "code": "DPD / PDU",
+      "pattern": "[MSSV]@phuongdong.edu.vn",
+      "student_usable": true,
+      "source_index": 1144
+    },
+    {
+      "domain": "pnt.edu.vn",
+      "institution": "Trường Đại học Y Khoa Phạm Ngọc Thạch",
+      "code": "TYS / PNTU",
+      "pattern": "[MSSV]@pnt.edu.vn",
+      "student_usable": true,
+      "source_index": 648
+    },
+    {
+      "domain": "pou.edu.vn",
+      "institution": "Trường Đại học Thái Bình Dương (Khánh Hòa)",
+      "code": "TBD / POU",
+      "pattern": "[MSSV]@pou.edu.vn",
+      "student_usable": true,
+      "source_index": 1290
+    },
+    {
+      "domain": "ptit.edu.vn",
+      "institution": "Học viện Công nghệ Bưu chính Viễn thông",
+      "code": "BVH / PTIT",
+      "pattern": "[tên][viết_tắt_họ_đệm].[MSSV]@stu.ptit.edu.vn",
+      "student_usable": true,
+      "source_index": 314
+    },
+    {
+      "domain": "pyu.edu.vn",
+      "institution": "Trường Đại học Phú Yên",
+      "code": "DPY / PYU",
+      "pattern": "[MSSV]@pyu.edu.vn",
+      "student_usable": true,
+      "source_index": 982
+    },
+    {
+      "domain": "qbu.edu.vn",
+      "institution": "Trường Đại học Quảng Bình",
+      "code": "DQB / QBU",
+      "pattern": "[MSSV]@qbu.edu.vn",
+      "student_usable": true,
+      "source_index": 964
+    },
+    {
+      "domain": "qnamuni.edu.vn",
+      "institution": "Trường Đại học Quảng Nam",
+      "code": "DQU",
+      "pattern": "[MSSV]@qnamuni.edu.vn",
+      "student_usable": true,
+      "source_index": 970
+    },
+    {
+      "domain": "qnu.edu.vn",
+      "institution": "Trường Đại học Quy Nhơn (Bình Định)",
+      "code": "DQN / QNU",
+      "pattern": "[MSSV]@qnu.edu.vn",
+      "student_usable": true,
+      "source_index": 910
+    },
+    {
+      "domain": "qtu.edu.vn",
+      "institution": "Trường Đại học Quang Trung (Bình Định / Gia Lai)",
+      "code": "DQT / QTU",
+      "pattern": "[MSSV]@qtu.edu.vn",
+      "student_usable": true,
+      "source_index": 1284
+    },
+    {
+      "domain": "qui.edu.vn",
+      "institution": "Trường Đại học Công nghiệp Quảng Ninh",
+      "code": "DDM / QUI",
+      "pattern": "[MSSV]@qui.edu.vn",
+      "student_usable": true,
+      "source_index": 452
+    },
+    {
+      "domain": "rmit.edu.vn",
+      "institution": "Đại học RMIT Việt Nam (TP.HCM & Hà Nội)",
+      "code": "RMIT",
+      "pattern": "s[MSSV]@rmit.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 1466
+    },
+    {
+      "domain": "s.hanu.edu.vn",
+      "institution": "Trường Đại học Hà Nội",
+      "code": "HAN / HANU",
+      "pattern": "[MSSV]@s.hanu.edu.vn",
+      "student_usable": true,
+      "source_index": 722
+    },
+    {
+      "domain": "saodo.edu.vn",
+      "institution": "Trường Đại học Sao Đỏ",
+      "code": "SDU",
+      "pattern": "[MSSV]@saodo.edu.vn",
+      "student_usable": true,
+      "source_index": 464
+    },
+    {
+      "domain": "sgu.edu.vn",
+      "institution": "Trường Đại học Sài Gòn",
+      "code": "SGD / SGU",
+      "pattern": "[MSSV]@sv.sgu.edu.vn",
+      "student_usable": true,
+      "source_index": 874
+    },
+    {
+      "domain": "sinhvien.hoasen.edu.vn",
+      "institution": "Trường Đại học Hoa Sen",
+      "code": "DTH / HSU",
+      "pattern": "[tên].[họ_đệm_MSSV]@sinhvien.hoasen.edu.vn",
+      "student_usable": true,
+      "source_index": 1346
+    },
+    {
+      "domain": "sis.hust.edu.vn",
+      "institution": "ĐẠI HỌC BÁCH KHOA HÀ NỘI (HUST)",
+      "code": "HUST (BKA)",
+      "pattern": "[tên].[viết_tắt_họ_đệm][MSSV_bỏ_20_đầu]@sis.hust.edu.vn",
+      "student_usable": true,
+      "source_index": 172
+    },
+    {
+      "domain": "siu.edu.vn",
+      "institution": "Trường Đại học Quốc tế Sài Gòn",
+      "code": "TTQ / SIU",
+      "pattern": "[MSSV]@siu.edu.vn",
+      "student_usable": true,
+      "source_index": 1376
+    },
+    {
+      "domain": "skda.edu.vn",
+      "institution": "Trường Đại học Sân khấu – Điện ảnh Hà Nội",
+      "code": "SKD / SKDA",
+      "pattern": "[MSSV]@skda.edu.vn",
+      "student_usable": true,
+      "source_index": 764
+    },
+    {
+      "domain": "skdahcm.edu.vn",
+      "institution": "Trường Đại học Sân khấu – Điện ảnh TP. Hồ Chí Minh",
+      "code": "SKS",
+      "pattern": "[MSSV]@skdahcm.edu.vn",
+      "student_usable": true,
+      "source_index": 770
+    },
+    {
+      "domain": "spnttw.edu.vn",
+      "institution": "Trường Đại học Sư phạm Nghệ thuật Trung ương",
+      "code": "GNT / NUAE",
+      "pattern": "[MSSV]@spnttw.edu.vn",
+      "student_usable": true,
+      "source_index": 818
+    },
+    {
+      "domain": "sqcb.edu.vn",
+      "institution": "Trường Đại học Ngô Quyền (Trường Sĩ quan Công binh)",
+      "code": "SNQ",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 1074
+    },
+    {
+      "domain": "st.ajc.edu.vn",
+      "institution": "Học viện Báo chí và Tuyên truyền",
+      "code": "HBT / AJC",
+      "pattern": "[MSSV]@st.ajc.edu.vn",
+      "student_usable": true,
+      "source_index": 574
+    },
+    {
+      "domain": "st.buh.edu.vn",
+      "institution": "Trường Đại học Ngân hàng TP. Hồ Chí Minh",
+      "code": "NHS / HUB",
+      "pattern": "[MSSV]@st.buh.edu.vn hoặc [MSSV]@st.hub.edu.vn",
+      "student_usable": true,
+      "source_index": 514
+    },
+    {
+      "domain": "st.buv.edu.vn",
+      "institution": "Trường Đại học Anh Quốc Việt Nam (Hà Nội & Hưng Yên)",
+      "code": "BUV",
+      "pattern": "[MSSV]@st.buv.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 1234
+    },
+    {
+      "domain": "st.epu.edu.vn",
+      "institution": "Trường Đại học Điện lực",
+      "code": "DDL / EPU",
+      "pattern": "[MSSV]@epu.edu.vn",
+      "student_usable": true,
+      "source_index": 344
+    },
+    {
+      "domain": "st.hau.edu.vn",
+      "institution": "Trường Đại học Kiến trúc Hà Nội",
+      "code": "KHA / HAU",
+      "pattern": "[MSSV]@hau.edu.vn",
+      "student_usable": true,
+      "source_index": 332
+    },
+    {
+      "domain": "st.haui.edu.vn",
+      "institution": "ĐẠI HỌC CÔNG NGHIỆP HÀ NỘI (HaUI)",
+      "code": null,
+      "pattern": "[MSSV]@st.haui.edu.vn",
+      "student_usable": true,
+      "source_index": 190
+    },
+    {
+      "domain": "st.hcmuaf.edu.vn",
+      "institution": "Trường Đại học Nông Lâm TP. Hồ Chí Minh (Kèm Phân hiệu Ninh Thuận / Khánh Hòa)",
+      "code": "NLS / NLU",
+      "pattern": "[MSSV]@st.hcmuaf.edu.vn",
+      "student_usable": true,
+      "source_index": 392
+    },
+    {
+      "domain": "st.hpmu.edu.vn",
+      "institution": "Trường Đại học Y Dược Hải Phòng",
+      "code": "YPB / HPMU",
+      "pattern": "[MSSV]@hpmu.edu.vn",
+      "student_usable": true,
+      "source_index": 660
+    },
+    {
+      "domain": "st.hub.edu.vn",
+      "institution": "Trường Đại học Ngân hàng TP. Hồ Chí Minh",
+      "code": "NHS / HUB",
+      "pattern": "[MSSV]@st.buh.edu.vn hoặc [MSSV]@st.hub.edu.vn",
+      "student_usable": true,
+      "source_index": 514
+    },
+    {
+      "domain": "st.huc.edu.vn",
+      "institution": "Trường Đại học Văn hóa Hà Nội",
+      "code": "VHH / HUC",
+      "pattern": "[MSSV]@huc.edu.vn",
+      "student_usable": true,
+      "source_index": 734
+    },
+    {
+      "domain": "st.huflit.edu.vn",
+      "institution": "Trường Đại học Ngoại ngữ – Tin học TP. Hồ Chí Minh",
+      "code": "DNT / HUFLIT",
+      "pattern": "[MSSV]@st.huflit.edu.vn (Office 365 for Student)",
+      "student_usable": true,
+      "source_index": 1316
+    },
+    {
+      "domain": "st.huit.edu.vn",
+      "institution": "Trường Đại học Công Thương TP. Hồ Chí Minh (Trước đây là ĐH Công nghiệp Thực phẩm TP.HCM)",
+      "code": "DCT / HUIT (HUFI)",
+      "pattern": "[MSSV]@st.huit.edu.vn",
+      "student_usable": true,
+      "source_index": 380
+    },
+    {
+      "domain": "st.hup.edu.vn",
+      "institution": "Trường Đại học Dược Hà Nội",
+      "code": "DKH / HUP",
+      "pattern": "[MSSV]@hup.edu.vn",
+      "student_usable": true,
+      "source_index": 636
+    },
+    {
+      "domain": "st.huph.edu.vn",
+      "institution": "Trường Đại học Y tế Công cộng",
+      "code": "YTC / HUPH",
+      "pattern": "[MSSV]@huph.edu.vn",
+      "student_usable": true,
+      "source_index": 678
+    },
+    {
+      "domain": "st.hvnh.edu.vn",
+      "institution": "Học viện Ngân hàng",
+      "code": "NHH / BAV",
+      "pattern": "[MSSV]@hvnh.edu.vn",
+      "student_usable": true,
+      "source_index": 508
+    },
+    {
+      "domain": "st.lhu.edu.vn",
+      "institution": "Trường Đại học Lạc Hồng (Đồng Nai)",
+      "code": "DLH / LHU",
+      "pattern": "[MSSV]@lhu.edu.vn",
+      "student_usable": true,
+      "source_index": 1406
+    },
+    {
+      "domain": "st.neu.edu.vn",
+      "institution": "ĐẠI HỌC KINH TẾ QUỐC DÂN (NEU)",
+      "code": "NEU",
+      "pattern": "[MSSV]@st.neu.edu.vn",
+      "student_usable": true,
+      "source_index": 178
+    },
+    {
+      "domain": "st.ntu.edu.vn",
+      "institution": "Trường Đại học Nha Trang",
+      "code": "TSN / NTU",
+      "pattern": "[MSSV]@ntu.edu.vn",
+      "student_usable": true,
+      "source_index": 862
+    },
+    {
+      "domain": "st.phenikaa-uni.edu.vn",
+      "institution": "Đại học Phenikaa",
+      "code": "PKA",
+      "pattern": "[MSSV]@st.phenikaa-uni.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 1120
+    },
+    {
+      "domain": "st.qnu.edu.vn",
+      "institution": "Trường Đại học Quy Nhơn (Bình Định)",
+      "code": "DQN / QNU",
+      "pattern": "[MSSV]@qnu.edu.vn",
+      "student_usable": true,
+      "source_index": 910
+    },
+    {
+      "domain": "st.tvu.edu.vn",
+      "institution": "ĐẠI HỌC TRÀ VINH (TVU)",
+      "code": "TVU (DVT)",
+      "pattern": "[MSSV]@st.tvu.edu.vn",
+      "student_usable": true,
+      "source_index": 286
+    },
+    {
+      "domain": "st.uah.edu.vn",
+      "institution": "Trường Đại học Kiến trúc TP. Hồ Chí Minh",
+      "code": "KTS / UAH",
+      "pattern": "[MSSV]@uah.edu.vn",
+      "student_usable": true,
+      "source_index": 398
+    },
+    {
+      "domain": "st.ueh.edu.vn",
+      "institution": "ĐẠI HỌC KINH TẾ TP. HỒ CHÍ MINH (UEH)",
+      "code": "UEH",
+      "pattern": "[tên_hoặc_MSSV]@st.ueh.edu.vn; riêng Viện ISB dùng [MSSV]@student.isb.edu.vn",
+      "student_usable": true,
+      "source_index": 184
+    },
+    {
+      "domain": "st.uel.edu.vn",
+      "institution": "Trường Đại học Kinh tế – Luật – ĐHQG-HCM",
+      "code": "VNUHCM-UEL",
+      "pattern": "[tên][họ_đệm][MSSV]@st.uel.edu.vn hoặc [MSSV]@st.uel.edu.vn",
+      "student_usable": true,
+      "source_index": 140
+    },
+    {
+      "domain": "st.umt.edu.vn",
+      "institution": "Trường Đại học Quản lý và Công nghệ TP. Hồ Chí Minh",
+      "code": "UMT",
+      "pattern": "[MSSV]@st.umt.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 1382
+    },
+    {
+      "domain": "st.usth.edu.vn",
+      "institution": "Trường Đại học Khoa học và Công nghệ Hà Nội (ĐH Việt – Pháp)",
+      "code": "USTH",
+      "pattern": "[tên_họ_khóa]@st.usth.edu.vn",
+      "student_usable": true,
+      "source_index": 1012
+    },
+    {
+      "domain": "st.utc.edu.vn",
+      "institution": "Trường Đại học Giao thông Vận tải",
+      "code": "GHA / UTC",
+      "pattern": "[tên][MSSV]@st.utc.edu.vn hoặc @lms.utc.edu.vn",
+      "student_usable": true,
+      "source_index": 302
+    },
+    {
+      "domain": "st.utehy.edu.vn",
+      "institution": "Trường Đại học Sư phạm Kỹ thuật Hưng Yên",
+      "code": "SKH / UTEHY",
+      "pattern": "[MSSV]@utehy.edu.vn",
+      "student_usable": true,
+      "source_index": 416
+    },
+    {
+      "domain": "st.utt.edu.vn",
+      "institution": "Trường Đại học Công nghệ Giao thông Vận tải",
+      "code": "GTA / UTT",
+      "pattern": "[MSSV]@st.utt.edu.vn",
+      "student_usable": true,
+      "source_index": 350
+    },
+    {
+      "domain": "st.vaa.edu.vn",
+      "institution": "Học viện Hàng không Việt Nam",
+      "code": "HHK / VAA",
+      "pattern": "[MSSV]@vaa.edu.vn",
+      "student_usable": true,
+      "source_index": 410
+    },
+    {
+      "domain": "st.vimaru.edu.vn",
+      "institution": "Trường Đại học Hàng hải Việt Nam",
+      "code": "HHA / VIMARU",
+      "pattern": "[tên_đăng_nhập]@st.vimaru.edu.vn (Mật khẩu mặc định: dd/mm/yyyy)",
+      "student_usable": true,
+      "source_index": 308
+    },
+    {
+      "domain": "st.vju.ac.vn",
+      "institution": "Trường Đại học Việt Nhật – ĐHQGHN",
+      "code": "VNU-VJU",
+      "pattern": "[MSSV]@st.vju.ac.vn hoặc [MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 80
+    },
+    {
+      "domain": "st.vnuf.edu.vn",
+      "institution": "Trường Đại học Lâm nghiệp",
+      "code": "LNH / VNUF",
+      "pattern": "[MSSV]@vnuf.edu.vn",
+      "student_usable": true,
+      "source_index": 356
+    },
+    {
+      "domain": "stu.edu.vn",
+      "institution": "Trường Đại học Công nghệ Sài Gòn",
+      "code": "DSG / STU",
+      "pattern": "[MSSV]@student.stu.edu.vn",
+      "student_usable": true,
+      "source_index": 1388
+    },
+    {
+      "domain": "stu.ptit.edu.vn",
+      "institution": "Học viện Công nghệ Bưu chính Viễn thông",
+      "code": "BVH / PTIT",
+      "pattern": "[tên][viết_tắt_họ_đệm].[MSSV]@stu.ptit.edu.vn",
+      "student_usable": true,
+      "source_index": 314
+    },
+    {
+      "domain": "student.agu.edu.vn",
+      "institution": "Trường Đại học An Giang – ĐHQG-HCM",
+      "code": "VNUHCM-AGU",
+      "pattern": "[tên_định_danh_hoặc_MSSV]@student.agu.edu.vn",
+      "student_usable": true,
+      "source_index": 152
+    },
+    {
+      "domain": "student.bdu.edu.vn",
+      "institution": "Trường Đại học Bình Dương",
+      "code": "DBD / BDU",
+      "pattern": "[MSSV]@student.bdu.edu.vn (Microsoft Teams / Office 365)",
+      "student_usable": true,
+      "source_index": 1322
+    },
+    {
+      "domain": "student.bmu.edu.vn",
+      "institution": "Trường Đại học Y Dược Buôn Ma Thuột (Đắk Lắk)",
+      "code": "BMT / BMU",
+      "pattern": "[MSSV]@bmu.edu.vn",
+      "student_usable": true,
+      "source_index": 1308
+    },
+    {
+      "domain": "student.ctu.edu.vn",
+      "institution": "ĐẠI HỌC CẦN THƠ (CTU)",
+      "code": "CTU (TCT)",
+      "pattern": "[tên][MSSV]@student.ctu.edu.vn",
+      "student_usable": true,
+      "source_index": 280
+    },
+    {
+      "domain": "student.ctuet.edu.vn",
+      "institution": "Trường Đại học Kỹ thuật – Công nghệ Cần Thơ",
+      "code": "KCT / CTUT",
+      "pattern": "[MSSV]@student.ctuet.edu.vn",
+      "student_usable": true,
+      "source_index": 404
+    },
+    {
+      "domain": "student.ctump.edu.vn",
+      "institution": "Trường Đại học Y Dược Cần Thơ",
+      "code": "YCT / CTUMP",
+      "pattern": "[MSSV]@student.ctump.edu.vn",
+      "student_usable": true,
+      "source_index": 654
+    },
+    {
+      "domain": "student.dthu.edu.vn",
+      "institution": "Trường Đại học Đồng Tháp",
+      "code": "SPD / DTHU",
+      "pattern": "[MSSV]@student.dthu.edu.vn",
+      "student_usable": true,
+      "source_index": 850
+    },
+    {
+      "domain": "student.fulbright.edu.vn",
+      "institution": "Trường Đại học Fulbright Việt Nam (TP.HCM)",
+      "code": "FUV",
+      "pattern": "[tên].[họ].[khóa]@student.fulbright.edu.vn",
+      "student_usable": true,
+      "source_index": 1472
+    },
+    {
+      "domain": "student.hcmiu.edu.vn",
+      "institution": "Trường Đại học Quốc tế – ĐHQG-HCM",
+      "code": "VNUHCM-IU",
+      "pattern": "[MSSV]@student.hcmiu.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 146
+    },
+    {
+      "domain": "student.hcmue.edu.vn",
+      "institution": "Trường Đại học Sư phạm TP. Hồ Chí Minh",
+      "code": "SPS / HCMUE",
+      "pattern": "[MSSV]@student.hcmue.edu.vn",
+      "student_usable": true,
+      "source_index": 716
+    },
+    {
+      "domain": "student.hcmus.edu.vn",
+      "institution": "Trường Đại học Khoa học Tự nhiên – ĐHQG-HCM",
+      "code": "VNUHCM-US (HCMUS)",
+      "pattern": "[MSSV + 2 số cuối CCCD]@student.hcmus.edu.vn",
+      "student_usable": true,
+      "source_index": 122
+    },
+    {
+      "domain": "student.hcmute.edu.vn",
+      "institution": "Trường Đại học Sư phạm Kỹ thuật TP. Hồ Chí Minh",
+      "code": "SPK / HCMUTE",
+      "pattern": "[MSSV]@student.hcmute.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 368
+    },
+    {
+      "domain": "student.hiu.vn",
+      "institution": "Trường Đại học Quốc tế Hồng Bàng",
+      "code": "DHB / HIU",
+      "pattern": "[MSSV]@student.hiu.vn",
+      "student_usable": true,
+      "source_index": 1364
+    },
+    {
+      "domain": "student.isb.edu.vn",
+      "institution": "ĐẠI HỌC KINH TẾ TP. HỒ CHÍ MINH (UEH)",
+      "code": "UEH",
+      "pattern": "[tên_hoặc_MSSV]@st.ueh.edu.vn; riêng Viện ISB dùng [MSSV]@student.isb.edu.vn",
+      "student_usable": true,
+      "source_index": 184
+    },
+    {
+      "domain": "student.iuh.edu.vn",
+      "institution": "Trường Đại học Công nghiệp TP. Hồ Chí Minh",
+      "code": "IUH",
+      "pattern": "[MSSV]@student.iuh.edu.vn",
+      "student_usable": true,
+      "source_index": 374
+    },
+    {
+      "domain": "student.stu.edu.vn",
+      "institution": "Trường Đại học Công nghệ Sài Gòn",
+      "code": "DSG / STU",
+      "pattern": "[MSSV]@student.stu.edu.vn",
+      "student_usable": true,
+      "source_index": 1388
+    },
+    {
+      "domain": "student.tdmu.edu.vn",
+      "institution": "Trường Đại học Thủ Dầu Một (Bình Dương)",
+      "code": "TDM / TDMU",
+      "pattern": "[MSSV]@student.tdmu.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 880
+    },
+    {
+      "domain": "student.tdtu.edu.vn",
+      "institution": "Trường Đại học Tôn Đức Thắng (Trụ sở TP.HCM & Phân hiệu Khánh Hòa, Bảo Lộc, Cà Mau)",
+      "code": "DTT / TDTU",
+      "pattern": "[MSSV]@student.tdtu.edu.vn (Mật khẩu khởi tạo: TDTU[MSSV], VD: TDTUA25H9999)",
+      "student_usable": true,
+      "source_index": 844
+    },
+    {
+      "domain": "student.vgu.edu.vn",
+      "institution": "Trường Đại học Việt – Đức (Bình Dương)",
+      "code": "VGU",
+      "pattern": "[student_id]@student.vgu.edu.vn",
+      "student_usable": true,
+      "source_index": 1006
+    },
+    {
+      "domain": "sv.dainam.edu.vn",
+      "institution": "Trường Đại học Đại Nam",
+      "code": "DDN / DNU",
+      "pattern": "[MSSV]@dainam.edu.vn (Khuyến nghị chuẩn hóa chữ ký và đuôi trường học)",
+      "student_usable": true,
+      "source_index": 1132
+    },
+    {
+      "domain": "sv.dnpu.edu.vn",
+      "institution": "Trường Đại học Đồng Nai",
+      "code": "DND / DNU",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 856
+    },
+    {
+      "domain": "sv.dut.udn.vn",
+      "institution": "Trường Đại học Bách khoa – ĐH Đà Nẵng",
+      "code": "DUT",
+      "pattern": "[MSSV]@sv.dut.udn.vn",
+      "student_usable": true,
+      "source_index": 202
+    },
+    {
+      "domain": "sv.hlu.edu.vn",
+      "institution": "Trường Đại học Luật Hà Nội",
+      "code": "LPH / HLU",
+      "pattern": "[MSSV]@hlu.edu.vn",
+      "student_usable": true,
+      "source_index": 544
+    },
+    {
+      "domain": "sv.hou.edu.vn",
+      "institution": "Trường Đại học Mở Hà Nội",
+      "code": "MHN / HOU",
+      "pattern": "[MSSV]@sv.hou.edu.vn",
+      "student_usable": true,
+      "source_index": 526
+    },
+    {
+      "domain": "sv.hpu2.edu.vn",
+      "institution": "Trường Đại học Sư phạm Hà Nội 2 (Vĩnh Phúc)",
+      "code": "SP2 / HPU2",
+      "pattern": "[MSSV]@hpu2.edu.vn",
+      "student_usable": true,
+      "source_index": 728
+    },
+    {
+      "domain": "sv.humg.edu.vn",
+      "institution": "Trường Đại học Mỏ – Địa chất",
+      "code": "MDA / HUMG",
+      "pattern": "[MSSV]@sv.humg.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 338
+    },
+    {
+      "domain": "sv.hutech.edu.vn",
+      "institution": "Trường Đại học Công nghệ TP. Hồ Chí Minh",
+      "code": "DKC / HUTECH",
+      "pattern": "[MSSV]@hutech.edu.vn",
+      "student_usable": true,
+      "source_index": 1340
+    },
+    {
+      "domain": "sv.hvtc.edu.vn",
+      "institution": "Học viện Tài chính",
+      "code": "HTC / AOF",
+      "pattern": "[MSSV]@sv.hvtc.edu.vn",
+      "student_usable": true,
+      "source_index": 520
+    },
+    {
+      "domain": "sv.ntt.edu.vn",
+      "institution": "Trường Đại học Nguyễn Tất Thành",
+      "code": "DTT / NTTU",
+      "pattern": "[MSSV]@ntt.edu.vn",
+      "student_usable": true,
+      "source_index": 1352
+    },
+    {
+      "domain": "sv.sgu.edu.vn",
+      "institution": "Trường Đại học Sài Gòn",
+      "code": "SGD / SGU",
+      "pattern": "[MSSV]@sv.sgu.edu.vn",
+      "student_usable": true,
+      "source_index": 874
+    },
+    {
+      "domain": "sv.tmu.edu.vn",
+      "institution": "Trường Đại học Thương mại",
+      "code": "TMA / TMU",
+      "pattern": "[MSSV]@sv.tmu.edu.vn hoặc [MSSV]@tmu.edu.vn",
+      "student_usable": true,
+      "source_index": 502
+    },
+    {
+      "domain": "sv.ufm.edu.vn",
+      "institution": "Trường Đại học Tài chính – Marketing",
+      "code": "DMS / UFM",
+      "pattern": "[MSSV]@sv.ufm.edu.vn",
+      "student_usable": true,
+      "source_index": 496
+    },
+    {
+      "domain": "sv.uneti.edu.vn",
+      "institution": "Trường Đại học Kinh tế – Kỹ thuật Công nghiệp",
+      "code": "DKK / UNETI",
+      "pattern": "[MSSV]@sv.uneti.edu.vn",
+      "student_usable": true,
+      "source_index": 362
+    },
+    {
+      "domain": "sv.ussh.edu.vn",
+      "institution": "Trường Đại học Khoa học Xã hội và Nhân văn – ĐHQGHN",
+      "code": "VNU-USSH",
+      "pattern": "[MSSV]@sv.ussh.edu.vn",
+      "student_usable": true,
+      "source_index": 50
+    },
+    {
+      "domain": "sv.ut.edu.vn",
+      "institution": "Trường Đại học Giao thông Vận tải TP. Hồ Chí Minh",
+      "code": "GTS / UTH",
+      "pattern": "[MSSV]@sv.ut.edu.vn hoặc [MSSV]@ut.edu.vn",
+      "student_usable": true,
+      "source_index": 386
+    },
+    {
+      "domain": "sv.vhu.edu.vn",
+      "institution": "Trường Đại học Văn Hiến",
+      "code": "DVH / VHU",
+      "pattern": "[MSSV]@sv.vhu.edu.vn (Office 365)",
+      "student_usable": true,
+      "source_index": 1370
+    },
+    {
+      "domain": "sv.vnua.edu.vn",
+      "institution": "Học viện Nông nghiệp Việt Nam (Trước đây là ĐH Nông nghiệp Hà Nội)",
+      "code": "HVN / VNUA",
+      "pattern": "[MSSV]@sv.vnua.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 538
+    },
+    {
+      "domain": "tbu.edu.vn",
+      "institution": "Trường Đại học Thái Bình",
+      "code": "TBU",
+      "pattern": "[MSSV]@tbu.edu.vn",
+      "student_usable": true,
+      "source_index": 946
+    },
+    {
+      "domain": "tbump.edu.vn",
+      "institution": "Trường Đại học Y Dược Thái Bình",
+      "code": "YTB / TBUMP",
+      "pattern": "[MSSV]@tbump.edu.vn",
+      "student_usable": true,
+      "source_index": 666
+    },
+    {
+      "domain": "tckt.edu.vn",
+      "institution": "Trường Đại học Tài chính – Kế toán (Quảng Ngãi)",
+      "code": "DKT / UFA",
+      "pattern": "[MSSV]@tckt.edu.vn",
+      "student_usable": true,
+      "source_index": 610
+    },
+    {
+      "domain": "tcqtkd.edu.vn",
+      "institution": "Trường Đại học Tài chính – Quản trị kinh doanh (Hưng Yên)",
+      "code": "DFA / UFBA",
+      "pattern": "[MSSV]@tcqtkd.edu.vn",
+      "student_usable": true,
+      "source_index": 616
+    },
+    {
+      "domain": "tcu.edu.vn",
+      "institution": "Trường Sĩ quan Thông tin (Trường Đại học Thông tin Liên lạc)",
+      "code": "TTG / TCU",
+      "pattern": "[mã_học_viên]@tcu.edu.vn",
+      "student_usable": true,
+      "source_index": 1056
+    },
+    {
+      "domain": "tdc.edu.vn",
+      "institution": "Trường Cao đẳng Công nghệ Thủ Đức (TDC)",
+      "code": "UBND TP.HCM",
+      "pattern": "[MSSV]@mail.tdc.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 1524
+    },
+    {
+      "domain": "tdnu.edu.vn",
+      "institution": "Trường Đại học Trần Đại Nghĩa (Trường Sĩ quan Kỹ thuật Quân sự - Vinhempich)",
+      "code": "ZCH / TDNU",
+      "pattern": "[mã_học_viên]@tdnu.edu.vn",
+      "student_usable": true,
+      "source_index": 1068
+    },
+    {
+      "domain": "tdu.edu.vn",
+      "institution": "Trường Đại học Tây Đô (Cần Thơ)",
+      "code": "DTD / TDU",
+      "pattern": "[MSSV]@tdu.edu.vn",
+      "student_usable": true,
+      "source_index": 1448
+    },
+    {
+      "domain": "tgu.edu.vn",
+      "institution": "Trường Đại học Tiền Giang",
+      "code": "TTG / TGU",
+      "pattern": "[MSSV]@tgu.edu.vn",
+      "student_usable": true,
+      "source_index": 988
+    },
+    {
+      "domain": "thanglong.edu.vn",
+      "institution": "Trường Đại học Thăng Long",
+      "code": "DTL / TLU",
+      "pattern": "[mã_SV]@thanglong.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 1126
+    },
+    {
+      "domain": "thanhdo.edu.vn",
+      "institution": "Trường Đại học Thành Đô",
+      "code": "TDD / TDU",
+      "pattern": "[MSSV]@thanhdo.edu.vn",
+      "student_usable": true,
+      "source_index": 1150
+    },
+    {
+      "domain": "tks.edu.vn",
+      "institution": "Trường Đại học Kiểm sát Hà Nội",
+      "code": "DKS / HPU",
+      "pattern": "[MSSV]@tks.edu.vn",
+      "student_usable": true,
+      "source_index": 556
+    },
+    {
+      "domain": "tlu.edu.vn",
+      "institution": "Trường Đại học Thủy lợi",
+      "code": "TLA / TLU",
+      "pattern": "[MSSV]@e.tlu.edu.vn",
+      "student_usable": true,
+      "source_index": 320
+    },
+    {
+      "domain": "tmu.edu.vn",
+      "institution": "Trường Đại học Thương mại",
+      "code": "TMA / TMU",
+      "pattern": "[MSSV]@sv.tmu.edu.vn hoặc [MSSV]@tmu.edu.vn",
+      "student_usable": true,
+      "source_index": 502
+    },
+    {
+      "domain": "tnu.edu.vn",
+      "institution": "ĐẠI HỌC THÁI NGUYÊN (TNU)",
+      "code": "TNU",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 256
+    },
+    {
+      "domain": "tnue.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Thái Nguyên (Sư phạm, Y Dược, Nông Lâm, Kinh tế & QTKD, CNTT & Truyền thông, Khoa học)",
+      "code": "TNUE, TUMP, TUAF, TUEBA, ICTU, TNUS",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 274
+    },
+    {
+      "domain": "tnufl.edu.vn",
+      "institution": "Trường Đại học Ngoại ngữ – ĐH Thái Nguyên",
+      "code": "TNUFL",
+      "pattern": "[MSSV]@tnufl.edu.vn",
+      "student_usable": true,
+      "source_index": 268
+    },
+    {
+      "domain": "tnus.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Thái Nguyên (Sư phạm, Y Dược, Nông Lâm, Kinh tế & QTKD, CNTT & Truyền thông, Khoa học)",
+      "code": "TNUE, TUMP, TUAF, TUEBA, ICTU, TNUS",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 274
+    },
+    {
+      "domain": "tnut.edu.vn",
+      "institution": "Trường Đại học Kỹ thuật Công nghiệp – ĐH Thái Nguyên",
+      "code": "TNUT",
+      "pattern": "[MSSV]@tnut.edu.vn",
+      "student_usable": true,
+      "source_index": 262
+    },
+    {
+      "domain": "tokyo-human.edu.vn",
+      "institution": "Trường Đại học Tokyo Việt Nam (Hưng Yên)",
+      "code": "THUV",
+      "pattern": "[MSSV]@tokyo-human.edu.vn",
+      "student_usable": true,
+      "source_index": 1228
+    },
+    {
+      "domain": "truongnoivu.edu.vn",
+      "institution": "Học viện Hành chính Quốc gia (Đã sáp nhập Trường Đại học Nội vụ Hà Nội - NVH)",
+      "code": "HHC / NAPA",
+      "pattern": "[MSSV]@napa.vn",
+      "student_usable": true,
+      "source_index": 562
+    },
+    {
+      "domain": "tsqkq.edu.vn",
+      "institution": "Trường Sĩ quan Không quân",
+      "code": "KGH / AFOC",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 1062
+    },
+    {
+      "domain": "ttn.edu.vn",
+      "institution": "Trường Đại học Tây Nguyên (Đắk Lắk)",
+      "code": "TTN / TNU",
+      "pattern": "[MSSV]@ttn.edu.vn",
+      "student_usable": true,
+      "source_index": 922
+    },
+    {
+      "domain": "ttu.edu.vn",
+      "institution": "Trường Đại học Tân Tạo (Long An)",
+      "code": "TTU",
+      "pattern": "[tên].[họ]@ttu.edu.vn",
+      "student_usable": true,
+      "source_index": 1436
+    },
+    {
+      "domain": "tuaf.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Thái Nguyên (Sư phạm, Y Dược, Nông Lâm, Kinh tế & QTKD, CNTT & Truyền thông, Khoa học)",
+      "code": "TNUE, TUMP, TUAF, TUEBA, ICTU, TNUS",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 274
+    },
+    {
+      "domain": "tueba.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Thái Nguyên (Sư phạm, Y Dược, Nông Lâm, Kinh tế & QTKD, CNTT & Truyền thông, Khoa học)",
+      "code": "TNUE, TUMP, TUAF, TUEBA, ICTU, TNUS",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 274
+    },
+    {
+      "domain": "tump.edu.vn",
+      "institution": "Các trường thành viên khác thuộc ĐH Thái Nguyên (Sư phạm, Y Dược, Nông Lâm, Kinh tế & QTKD, CNTT & Truyền thông, Khoa học)",
+      "code": "TNUE, TUMP, TUAF, TUEBA, ICTU, TNUS",
+      "pattern": null,
+      "student_usable": true,
+      "source_index": 274
+    },
+    {
+      "domain": "tvu.edu.vn",
+      "institution": "ĐẠI HỌC TRÀ VINH (TVU)",
+      "code": "TVU (DVT)",
+      "pattern": "[MSSV]@st.tvu.edu.vn",
+      "student_usable": true,
+      "source_index": 286
+    },
+    {
+      "domain": "uah.edu.vn",
+      "institution": "Trường Đại học Kiến trúc TP. Hồ Chí Minh",
+      "code": "KTS / UAH",
+      "pattern": "[MSSV]@uah.edu.vn",
+      "student_usable": true,
+      "source_index": 398
+    },
+    {
+      "domain": "ueb.edu.vn",
+      "institution": "Trường Đại học Kinh tế – ĐHQGHN",
+      "code": "VNU-UEB",
+      "pattern": "[MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 62
+    },
+    {
+      "domain": "ued.udn.vn",
+      "institution": "Trường Đại học Sư phạm – ĐH Đà Nẵng",
+      "code": "UED",
+      "pattern": "[MSSV]@ued.udn.vn",
+      "student_usable": true,
+      "source_index": 214
+    },
+    {
+      "domain": "uef.edu.vn",
+      "institution": "Trường Đại học Kinh tế – Tài chính TP. Hồ Chí Minh",
+      "code": "KTC / UEF",
+      "pattern": "[tên][họ_đệm][MSSV]@uef.edu.vn (Google Workspace)",
+      "student_usable": true,
+      "source_index": 1358
+    },
+    {
+      "domain": "uet.vnu.edu.vn",
+      "institution": "Trường Đại học Công nghệ – ĐHQGHN",
+      "code": "VNU-UET",
+      "pattern": "[MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 38
+    },
+    {
+      "domain": "ufl.udn.vn",
+      "institution": "Trường Đại học Ngoại ngữ – ĐH Đà Nẵng",
+      "code": "UFLS",
+      "pattern": "[MSSV]@ufl.udn.vn",
+      "student_usable": true,
+      "source_index": 220
+    },
+    {
+      "domain": "uhsvnu.edu.vn",
+      "institution": "Trường Đại học Khoa học Sức khỏe – ĐHQG-HCM",
+      "code": "VNUHCM-UHS",
+      "pattern": "[MSSV]@uhsvnu.edu.vn",
+      "student_usable": true,
+      "source_index": 158
+    },
+    {
+      "domain": "ukb.edu.vn",
+      "institution": "Trường Đại học Kinh Bắc (Bắc Ninh)",
+      "code": "UKB",
+      "pattern": "[MSSV]@ukb.edu.vn",
+      "student_usable": true,
+      "source_index": 1192
+    },
+    {
+      "domain": "ukh.edu.vn",
+      "institution": "Trường Đại học Khánh Hòa",
+      "code": "UKH",
+      "pattern": "[MSSV]@ukh.edu.vn",
+      "student_usable": true,
+      "source_index": 868
+    },
+    {
+      "domain": "ulsa.edu.vn",
+      "institution": "Trường Đại học Lao động – Xã hội (Trụ sở Hà Nội & Cơ sở II TP.HCM)",
+      "code": "DLX & DLS / ULSA",
+      "pattern": "[MSSV]@ulsa.edu.vn",
+      "student_usable": true,
+      "source_index": 586
+    },
+    {
+      "domain": "ulsa2.edu.vn",
+      "institution": "Trường Đại học Lao động – Xã hội (Trụ sở Hà Nội & Cơ sở II TP.HCM)",
+      "code": "DLX & DLS / ULSA",
+      "pattern": "[MSSV]@ulsa.edu.vn",
+      "student_usable": true,
+      "source_index": 586
+    },
+    {
+      "domain": "ump.edu.vn",
+      "institution": "Trường Đại học Y Dược TP. Hồ Chí Minh",
+      "code": "YDS / UMP",
+      "pattern": "[tên_hoặc_MSSV]@ump.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 642
+    },
+    {
+      "domain": "ump.vnu.edu.vn",
+      "institution": "Trường Đại học Y Dược – ĐHQGHN",
+      "code": "VNU-UMP",
+      "pattern": "[MSSV]@vnu.edu.vn",
+      "student_usable": true,
+      "source_index": 74
+    },
+    {
+      "domain": "umt.edu.vn",
+      "institution": "Trường Đại học Quản lý và Công nghệ TP. Hồ Chí Minh",
+      "code": "UMT",
+      "pattern": "[MSSV]@st.umt.edu.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 1382
+    },
+    {
+      "domain": "uneti.edu.vn",
+      "institution": "Trường Đại học Kinh tế – Kỹ thuật Công nghiệp",
+      "code": "DKK / UNETI",
+      "pattern": "[MSSV]@sv.uneti.edu.vn",
+      "student_usable": true,
+      "source_index": 362
+    },
+    {
+      "domain": "upes.edu.vn",
+      "institution": "Trường Đại học Thể dục Thể thao TP. Hồ Chí Minh",
+      "code": "TDS / UPES",
+      "pattern": "[MSSV]@upes.edu.vn",
+      "student_usable": true,
+      "source_index": 800
+    },
+    {
+      "domain": "upes1.edu.vn",
+      "institution": "Trường Đại học Thể dục Thể thao Bắc Ninh",
+      "code": "TDN / UPES1",
+      "pattern": "[MSSV]@upes1.edu.vn",
+      "student_usable": true,
+      "source_index": 794
+    },
+    {
+      "domain": "upes2.edu.vn",
+      "institution": "Trường Đại học Sư phạm Thể dục Thể thao TP. Hồ Chí Minh",
+      "code": "STS",
+      "pattern": "[MSSV]@upes2.edu.vn",
+      "student_usable": true,
+      "source_index": 830
+    },
+    {
+      "domain": "upes3.edu.vn",
+      "institution": "Trường Đại học Thể dục Thể thao Đà Nẵng",
+      "code": "TTD / DSUPES",
+      "pattern": "[MSSV]@upes3.edu.vn",
+      "student_usable": true,
+      "source_index": 806
+    },
+    {
+      "domain": "upt.edu.vn",
+      "institution": "Trường Đại học Phan Thiết (Bình Thuận / Lâm Đồng)",
+      "code": "DPT / UPT",
+      "pattern": "[MSSV]@upt.edu.vn",
+      "student_usable": true,
+      "source_index": 1302
+    },
+    {
+      "domain": "ut.edu.vn",
+      "institution": "Trường Đại học Giao thông Vận tải TP. Hồ Chí Minh",
+      "code": "GTS / UTH",
+      "pattern": "[MSSV]@sv.ut.edu.vn hoặc [MSSV]@ut.edu.vn",
+      "student_usable": true,
+      "source_index": 386
+    },
+    {
+      "domain": "utb.edu.vn",
+      "institution": "Trường Đại học Tây Bắc (Sơn La)",
+      "code": "TBB / UTU",
+      "pattern": "[MSSV]@utb.edu.vn",
+      "student_usable": true,
+      "source_index": 928
+    },
+    {
+      "domain": "ute.udn.vn",
+      "institution": "Trường Đại học Sư phạm Kỹ thuật – ĐH Đà Nẵng",
+      "code": "UTE",
+      "pattern": "[MSSV]@ute.udn.vn",
+      "student_usable": true,
+      "source_index": 226
+    },
+    {
+      "domain": "utehy.edu.vn",
+      "institution": "Trường Đại học Sư phạm Kỹ thuật Hưng Yên",
+      "code": "SKH / UTEHY",
+      "pattern": "[MSSV]@utehy.edu.vn",
+      "student_usable": true,
+      "source_index": 416
+    },
+    {
+      "domain": "utt.edu.vn",
+      "institution": "Trường Đại học Công nghệ Giao thông Vận tải",
+      "code": "GTA / UTT",
+      "pattern": "[MSSV]@st.utt.edu.vn",
+      "student_usable": true,
+      "source_index": 350
+    },
+    {
+      "domain": "vaa.edu.vn",
+      "institution": "Học viện Hàng không Việt Nam",
+      "code": "HHK / VAA",
+      "pattern": "[MSSV]@vaa.edu.vn",
+      "student_usable": true,
+      "source_index": 410
+    },
+    {
+      "domain": "vanlanguni.vn",
+      "institution": "Trường Đại học Văn Lang",
+      "code": "DVL / VLU",
+      "pattern": "[tên].[MSSV]@vanlanguni.vn (Microsoft 365)",
+      "student_usable": true,
+      "source_index": 1334
+    },
+    {
+      "domain": "vast.vn",
+      "institution": "Học viện Khoa học và Công nghệ (Viện Hàn lâm KH&CN Việt Nam)",
+      "code": "GUST",
+      "pattern": "[học_viên]@gust-vast.vn",
+      "student_usable": false,
+      "source_index": 476
+    },
+    {
+      "domain": "vhu.edu.vn",
+      "institution": "Trường Đại học Văn Hiến",
+      "code": "DVH / VHU",
+      "pattern": "[MSSV]@sv.vhu.edu.vn (Office 365)",
+      "student_usable": true,
+      "source_index": 1370
+    },
+    {
+      "domain": "viendong.edu.vn",
+      "institution": "Trường Cao đẳng Viễn Đông",
+      "code": null,
+      "pattern": "[MSSV]@viendong.edu.vn",
+      "student_usable": true,
+      "source_index": 1554
+    },
+    {
+      "domain": "vietbac.edu.vn",
+      "institution": "Trường Đại học Việt Bắc (Thái Nguyên)",
+      "code": "DVB / VBU",
+      "pattern": "[MSSV]@vietbac.edu.vn",
+      "student_usable": true,
+      "source_index": 1222
+    },
+    {
+      "domain": "vinhuni.edu.vn",
+      "institution": "Trường Đại học Vinh",
+      "code": "TDV / VU",
+      "pattern": "[MSSV]@vinhuni.edu.vn",
+      "student_usable": true,
+      "source_index": 886
+    },
+    {
+      "domain": "viu.edu.vn",
+      "institution": "Trường Đại học Công nghiệp Việt – Hung",
+      "code": "VHD / VIU",
+      "pattern": "[MSSV]@viu.edu.vn",
+      "student_usable": true,
+      "source_index": 458
+    },
+    {
+      "domain": "vku.udn.vn",
+      "institution": "Trường Đại học Công nghệ Thông tin và Truyền thông Việt – Hàn – ĐH Đà Nẵng",
+      "code": "VKU",
+      "pattern": "[tên][họ_đệm].[khóa_ngành]@vku.udn.vn hoặc [MSSV]@vku.udn.vn",
+      "student_usable": true,
+      "source_index": 232
+    },
+    {
+      "domain": "vmmu.edu.vn",
+      "institution": "Học viện Quân y",
+      "code": "YQH / VMMU",
+      "pattern": "[mã_học_viên]@vmmu.edu.vn",
+      "student_usable": true,
+      "source_index": 1038
+    },
+    {
+      "domain": "vnad.edu.vn",
+      "institution": "Học viện Múa Việt Nam",
+      "code": "NMV / VNAD",
+      "pattern": "[MSSV]@vnad.edu.vn",
+      "student_usable": true,
+      "source_index": 788
+    },
+    {
+      "domain": "vnam.edu.vn",
+      "institution": "Học viện Âm nhạc Quốc gia Việt Nam",
+      "code": "NVN / VNAM",
+      "pattern": "[MSSV]@vnam.edu.vn",
+      "student_usable": true,
+      "source_index": 776
+    },
+    {
+      "domain": "vnkgu.edu.vn",
+      "institution": "Trường Đại học Kiên Giang",
+      "code": "TKG / KGU",
+      "pattern": "[MSSV]@vnkgu.edu.vn",
+      "student_usable": true,
+      "source_index": 994
+    },
+    {
+      "domain": "vnu.edu.vn",
+      "institution": "ĐẠI HỌC QUỐC GIA HÀ NỘI (VNU)",
+      "code": "VNU",
+      "pattern": "[MSSV]@vnu.edu.vn (Microsoft 365 / Google)",
+      "student_usable": true,
+      "source_index": 32
+    },
+    {
+      "domain": "vnuf.edu.vn",
+      "institution": "Trường Đại học Lâm nghiệp",
+      "code": "LNH / VNUF",
+      "pattern": "[MSSV]@vnuf.edu.vn",
+      "student_usable": true,
+      "source_index": 356
+    },
+    {
+      "domain": "vttu.edu.vn",
+      "institution": "Trường Đại học Võ Trường Toản (Hậu Giang)",
+      "code": "VTT / VTTU",
+      "pattern": "[MSSV]@vttu.edu.vn",
+      "student_usable": true,
+      "source_index": 1454
+    },
+    {
+      "domain": "vui.edu.vn",
+      "institution": "Trường Đại học Công nghiệp Việt – Trì",
+      "code": "VTI / VUI",
+      "pattern": "[MSSV]@vui.edu.vn",
+      "student_usable": true,
+      "source_index": 446
+    },
+    {
+      "domain": "vute.edu.vn",
+      "institution": "Trường Đại học Sư phạm Kỹ thuật Vinh",
+      "code": "SKV / VUTE",
+      "pattern": "[MSSV]@vute.edu.vn",
+      "student_usable": true,
+      "source_index": 428
+    },
+    {
+      "domain": "vutm.edu.vn",
+      "institution": "Học viện Y – Dược học Cổ truyền Việt Nam",
+      "code": "HYD / VUTM",
+      "pattern": "[MSSV]@vutm.edu.vn",
+      "student_usable": true,
+      "source_index": 672
+    },
+    {
+      "domain": "vxut.edu.vn",
+      "institution": "Trường Đại học Công nghệ Vạn Xuân (Nghệ An)",
+      "code": "DVX / VXUT",
+      "pattern": "[MSSV]@vxut.edu.vn",
+      "student_usable": true,
+      "source_index": 1278
+    },
+    {
+      "domain": "vya.edu.vn",
+      "institution": "Học viện Thanh thiếu niên Việt Nam",
+      "code": "HTN / VYA",
+      "pattern": "[MSSV]@vya.edu.vn",
+      "student_usable": true,
+      "source_index": 598
+    },
+    {
+      "domain": "yersin.edu.vn",
+      "institution": "Trường Đại học Yersin Đà Lạt (Lâm Đồng)",
+      "code": "DYD / YERSIN",
+      "pattern": "[MSSV]@yersin.edu.vn",
+      "student_usable": true,
+      "source_index": 1296
+    }
+  ]
+}
