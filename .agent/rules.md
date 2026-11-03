@@ -54,6 +54,12 @@ Tài liệu quy chiếu SSOT: `DESIGN.md` (Giao diện), `KE_HOACH_TONG_THE.md` 
   - **Cấm Xung đột Ghi đè (Zero Race Condition)**: Tuyệt đối **KHÔNG để 2 Subagent cùng chỉnh sửa chung một file tại cùng một thời điểm**. Mỗi Subagent chỉ được toàn quyền thao tác trên các file, module hoặc endpoint độc lập được Lead Orchestrator phân định rõ ràng trong `task.md`.
 - **Phân công & Giám sát**: Agent chính (Lead Orchestrator) lên kế hoạch trong `task.md`, phân quyền danh sách file sở hữu cho từng Subagent (`.agent/*.md`), điều phối, tích hợp kết quả và tổng hợp báo cáo nghiệm thu; không tự làm hết trong luồng đơn lẻ.
 
+### 6A. Vai trò Bộ não và Định tuyến Thực thi của Lead Orchestrator
+- Lead Orchestrator chỉ đóng vai trò bộ não và điều phối: tự quyết định dùng subagent nội bộ, OpenCode CLI ưu tiên, hoặc subagent bên trong CLI dựa trên loại vấn đề, cùng các ưu nhược điểm của Desktop so với CLI.
+- Ưu tiên OpenCode CLI cho tác vụ coding hoặc test dài, tác vụ cần subprocess, hoặc cần chạy liên tục ngoài phiên Desktop.
+- Dùng subagent nội bộ cho phân tích cô lập, review, truy vết hoặc các nhiệm vụ cần tách context; dùng Antigravity/Desktop cho tương tác UI/browser hoặc khi cần duy trì session.
+- Lead Orchestrator chịu trách nhiệm phân rã task, khóa file, phân phạm vi không trùng lặp, tổng hợp kết quả và kiểm tra cuối cùng; không giao trùng phạm vi cho các agent.
+
 ### 7. Chu trình Thực thi Từ Kế hoạch Đến Bàn giao (Plan-to-Execution Workflow)
 - Khi nhận các lệnh thực thi (*"triển khai đi"*, *"tiến hành"*, *"làm đi"*), Agent tuân thủ 4 bước:
   1. **Nạp danh sách**: Đọc `task.md` lấy các việc chưa xong (`[ ]`).

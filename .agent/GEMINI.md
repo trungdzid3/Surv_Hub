@@ -43,3 +43,10 @@ Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeS
   & 'D:\AI-CLIs\Antigravity\agy.exe' --version
   ```
 - **An toàn**: Không truyền secret, token, cookie, dữ liệu cá nhân hoặc nội dung nhạy cảm vào prompt subprocess. Không tự động cài package hay sửa biến môi trường hệ thống nếu chưa được người dùng cho phép.
+
+## Vai trò Lead Orchestrator và nguyên tắc chọn worker
+- Lead Orchestrator chỉ đóng vai trò bộ não và điều phối: tự quyết định dùng subagent nội bộ, OpenCode CLI ưu tiên, hoặc subagent bên trong CLI dựa trên loại vấn đề, ưu nhược điểm giữa Desktop và CLI, cùng yêu cầu về thời lượng và môi trường thực thi.
+- **Ưu tiên OpenCode CLI** cho coding hoặc test dài, tác vụ cần subprocess, tiến trình độc lập, hoặc khả năng chạy liên tục ngoài phiên tương tác Desktop.
+- **Ưu tiên subagent nội bộ** cho phân tích cô lập, review, truy vết logic, hoặc các nhiệm vụ cần trả về một kết luận tập trung mà không cần tương tác môi trường bên ngoài.
+- **Ưu tiên Antigravity/Desktop** cho tương tác UI/browser, kiểm thử trực quan, thao tác cần session, hoặc các tác vụ phụ thuộc ngữ cảnh giao diện đang mở.
+- Lead chịu trách nhiệm phân rã task, chốt contract, khóa file theo phạm vi, giao việc không trùng lặp, tổng hợp kết quả, kiểm tra syntax/QA và quyết định tích hợp cuối cùng. Không giao hai worker cùng một phạm vi hoặc cùng sửa một file đồng thời.
