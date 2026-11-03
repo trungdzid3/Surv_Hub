@@ -12,6 +12,43 @@ const webhookService = require('../services/webhookService');
 const pushNotificationService = require('../services/pushNotificationService');
 const surveyRepository = require('../repositories/surveyRepository');
 
+/**
+ * Kiểm tra Magic Bytes cho tệp ảnh nhị phân được upload:
+ * - JPEG: 3 byte đầu là FF D8 FF
+ * - PNG: 4 byte đầu là 89 50 4E 47
+ * - GIF: 4 byte đầu là 47 49 46 38 ('GIF8')
+ * - WebP: byte 0..3 là 52 49 46 46 ('RIFF') và byte 8..11 là 57 42 45 50 ('WEBP')
+ * @param {Buffer} buffer
+ * @returns {'jpg' | 'png' | 'gif' | 'webp' | null}
+ */
+function verifyImageMagicBytes(buffer) {
+  if (!buffer || !Buffer.isBuffer(buffer) || buffer.length < 3) {
+    return null;
+  }
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return 'jpg';
+  }
+  if (buffer.length < 4) return null;
+  // PNG: 89 50 4E 47
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+    return 'png';
+  }
+  // GIF: 47 49 46 38 ('GIF8')
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
+    return 'gif';
+  }
+  // WebP: byte 0..3 là 'RIFF' (52 49 46 46) và byte 8..11 là 'WEBP' (57 42 45 50)
+  if (
+    buffer.length >= 12 &&
+    buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+    buffer[8] === 0x57 && buffer[9] === 0x42 && buffer[10] === 0x45 && buffer[11] === 0x50
+  ) {
+    return 'webp';
+  }
+  return null;
+}
+
 class SurveyController {
 
   /**
@@ -2431,13 +2468,22 @@ class SurveyController {
       }
 
       const rawExt = matches[1].toLowerCase();
-      const allowedExts = ['png', 'jpg', 'jpeg', 'webp'];
+      const allowedExts = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
       if (!allowedExts.includes(rawExt)) {
-        return res.status(400).json({ success: false, message: 'Định dạng ảnh không được hỗ trợ. Chỉ chấp nhận PNG, JPG, WebP' });
+        return res.status(400).json({ success: false, message: 'Định dạng ảnh không được hỗ trợ. Chỉ chấp nhận PNG, JPG, WebP, GIF' });
       }
       let ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
       const base64Content = matches[2];
       const buffer = Buffer.from(base64Content, 'base64');
+
+      const detectedType = verifyImageMagicBytes(buffer);
+      if (!detectedType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nội dung tệp không phải là định dạng hình ảnh hợp lệ (Magic byte mismatch)'
+        });
+      }
+      ext = detectedType === 'jpg' ? 'jpg' : detectedType;
 
       // Giới hạn dung lượng tối đa 10MB (quy định tiêu chuẩn ảnh Facebook)
       if (buffer.length > 10 * 1024 * 1024) {

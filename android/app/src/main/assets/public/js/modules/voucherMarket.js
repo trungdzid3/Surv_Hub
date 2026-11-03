@@ -38,7 +38,7 @@
           </div>
           ${!isEnterprise ? `
             <div class="text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 px-3.5 py-2 rounded-xl shadow-2xs self-start font-mono">
-              Số dư khả dụng: <strong class="text-orange-600 dark:text-orange-400 font-bold">${userPoints.toLocaleString()}</strong> Điểm
+              Số dư khả dụng: <strong class="text-orange-600 dark:text-orange-400 font-bold">${(window.VibeUtils && window.VibeUtils.formatVND ? window.VibeUtils.formatVND(userPoints) : Number(userPoints || 0).toLocaleString('vi-VN'))}</strong> Điểm
             </div>
           ` : `
             <div class="text-xs font-bold text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-3.5 py-2 rounded-xl self-start">
@@ -100,14 +100,14 @@
                   <p class="text-xs text-stone-500 dark:text-stone-400 line-clamp-2 leading-relaxed">${v.instructions || 'Áp dụng trên toàn quốc'}</p>
                   
                   <div class="pt-1 text-xs text-stone-600 dark:text-stone-400 font-medium">
-                    Trị giá: <strong class="text-stone-900 dark:text-stone-100 font-mono font-bold">${Number(v.face_value_vnd || 0).toLocaleString('vi-VN')} VNĐ</strong>
+                    Trị giá: <strong class="text-stone-900 dark:text-stone-100 font-mono font-bold">${(window.VibeUtils && window.VibeUtils.formatVND ? window.VibeUtils.formatVND(v.face_value_vnd) : Number(v.face_value_vnd || 0).toLocaleString('vi-VN'))} VNĐ</strong>
                   </div>
                 </div>
 
                 <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
                   <div class="text-xs">
                     <span class="text-stone-400 block font-normal text-[11px]">Chi phí đổi:</span>
-                    <strong class="text-sm sm:text-base font-bold text-orange-600 dark:text-orange-500 font-mono">${(v.points_cost || 0).toLocaleString()} Điểm</strong>
+                    <strong class="text-sm sm:text-base font-bold text-orange-600 dark:text-orange-500 font-mono">${(window.VibeUtils && window.VibeUtils.formatVND ? window.VibeUtils.formatVND(v.points_cost) : Number(v.points_cost || 0).toLocaleString('vi-VN'))} Điểm</strong>
                   </div>
                   <button onclick="VibeApp.redeemVoucher('${v.id}')" 
                           ${(isEnterprise || isOutOfStock || !canAfford) ? 'disabled' : ''}
@@ -123,7 +123,11 @@
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && window.VibeUtils.refreshIcons) {
+      window.VibeUtils.refreshIcons();
+    } else if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
   },
 
   async redeemVoucher(campaignId) {
@@ -253,7 +257,11 @@
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && window.VibeUtils.refreshIcons) {
+      window.VibeUtils.refreshIcons();
+    } else if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
   },
   };
 

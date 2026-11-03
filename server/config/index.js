@@ -35,10 +35,17 @@ if (runtimeEnvironment === 'production' &&
   throw new Error('PAYMENT_WEBHOOK_SECRET phải được cấu hình bằng secret riêng trong môi trường production');
 }
 
+// Cờ ENABLE_TEST_HOOKS: Chỉ cho phép true khi runtimeEnvironment === 'test' hoặc process.env.ENABLE_TEST_HOOKS === 'true'.
+// Tuyệt đối trên production (runtimeEnvironment === 'production') thì luôn luôn bằng false (fail-closed hard lock).
+const enableTestHooks = runtimeEnvironment !== 'production' && (
+  runtimeEnvironment === 'test' || process.env.ENABLE_TEST_HOOKS === 'true'
+);
+
 module.exports = {
   PORT: process.env.PORT || 3000,
   APP_URL: process.env.APP_URL || 'http://localhost:3000',
   NODE_ENV: runtimeEnvironment,
+  ENABLE_TEST_HOOKS: enableTestHooks,
   // Ho tro fallback tu dong cho moi truong demo/thu nghiem ma khong lam crash server
   JWT_SECRET: configuredJwtSecret || demoJwtSecret,
   DB_PATH: process.env.DB_PATH || path.join(__dirname, '../db/vibesurvey.db'),

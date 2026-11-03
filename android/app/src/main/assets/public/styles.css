@@ -736,7 +736,8 @@ html.dark .likert-clean-btn.selected {
 .fintech-card-bg {
   background: linear-gradient(135deg, #F97316 0%, #EA580C 50%, #C2410C 100%);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 16px 36px -10px rgba(234, 88, 12, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: 0 10px 25px -5px rgba(234, 88, 12, 0.2), 0 4px 10px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Modal Backdrop */
@@ -1250,7 +1251,7 @@ html.dark .custom-checkbox-box {
 .custom-checkbox-input:checked + .custom-checkbox-box {
   background-color: #EA580C;
   border-color: #EA580C;
-  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.2);
 }
 .custom-checkbox-icon {
   width: 0.75rem;
@@ -1670,7 +1671,7 @@ html.dark .theme-icon-moon {
 
 .vibe-switch:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-page, #ffffff), 0 0 0 4px rgba(234, 88, 12, 0.45);
+  box-shadow: 0 0 0 2px var(--bg-page, #ffffff), 0 0 0 4px rgba(234, 88, 12, 0.25);
 }
 
 .vibe-switch:hover {

@@ -3,6 +3,7 @@
  * Chịu trách nhiệm chuyển tiếp câu trả lời của đáp viên sang Google Sheets Webhook (Google Apps Script)
  * theo cơ chế Bất đồng bộ Không chặn luồng (Non-blocking Fire-and-Forget).
  */
+const dns = require('dns').promises;
 
 class WebhookService {
   /**
@@ -107,6 +108,47 @@ class WebhookService {
   }
 
   /**
+   * Kiểm tra URL Webhook an toàn bất đồng bộ (chống SSRF & DNS Rebinding)
+   * Phân giải tên miền thành danh sách IP và đối chiếu dải IP thực tế.
+   * Nếu bất kỳ IP nào là private, loopback, link-local hoặc cloud metadata, trả về false (trừ khi NODE_ENV === 'test').
+   * @param {string} url
+   * @returns {Promise<boolean>}
+   */
+  async isSafeUrlAsync(url) {
+    if (!this.isValidUrl(url)) return false;
+    try {
+      const parsed = new URL(url.trim());
+      if (this.isPrivateOrLoopbackHost(parsed.hostname)) {
+        return process.env.NODE_ENV === 'test';
+      }
+
+      try {
+        const addresses = await dns.lookup(parsed.hostname, { all: true });
+        if (!addresses || addresses.length === 0) {
+          return false;
+        }
+        for (const entry of addresses) {
+          if (this.isPrivateOrLoopbackHost(entry.address)) {
+            if (process.env.NODE_ENV === 'test') {
+              return true;
+            }
+            return false;
+          }
+        }
+      } catch (dnsErr) {
+        if (process.env.NODE_ENV === 'test') {
+          return true;
+        }
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * Chuẩn hóa Payload gửi sang Google Sheets theo đúng Đặc tả Mục 12
    * @param {object} responseData 
    * @returns {object}
@@ -149,8 +191,9 @@ class WebhookService {
         return { success: false, message: 'URL webhook không hợp lệ' };
       }
 
-      if (!this.isSafeUrl(webhookUrl)) {
-        console.warn(`[WebhookSync] Từ chối gửi: URL webhook không an toàn (SSRF) - ${webhookUrl}`);
+      const isSafe = await this.isSafeUrlAsync(webhookUrl);
+      if (!isSafe) {
+        console.warn(`[WebhookSync] Từ chối gửi: URL webhook không an toàn (SSRF / DNS Rebinding) - ${webhookUrl}`);
         return { success: false, message: 'URL webhook khong an toan (SSRF)' };
       }
 

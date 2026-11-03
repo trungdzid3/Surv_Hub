@@ -23,6 +23,15 @@
 
   window.VibeApp = window.VibeApp || {};
 
+  const formatMoney = (val) => (window.VibeUtils && window.VibeUtils.formatVND ? window.VibeUtils.formatVND(val) : Number(val || 0).toLocaleString('vi-VN'));
+  const refreshIcons = () => {
+    if (window.VibeUtils && window.VibeUtils.refreshIcons) {
+      window.VibeUtils.refreshIcons();
+    } else if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
+  };
+
   const WalletLedgerModule = {
   // ==================== VIEW 5: VÍ & RÚT TIỀN (MODERN FINTECH) ====================
   async renderWalletView(root) {
@@ -85,11 +94,11 @@
 
               <div class="mt-4">
                 <div class="flex items-baseline gap-2">
-                  <span class="text-3xl sm:text-4xl font-black font-mono text-white tracking-tight drop-shadow-xs">${curPoints.toLocaleString('vi-VN')}</span>
+                  <span class="text-3xl sm:text-4xl font-black font-mono text-white tracking-tight drop-shadow-xs">${formatMoney(curPoints)}</span>
                   <span class="text-xl sm:text-2xl font-bold text-white drop-shadow-xs">Point</span>
                 </div>
                 <div class="text-xs sm:text-sm font-medium text-white/95 mt-0.5 font-mono">
-                  ≈ ${curPoints.toLocaleString('vi-VN')} VNĐ
+                  ≈ ${formatMoney(curPoints)} VNĐ
                 </div>
               </div>
             </div>
@@ -135,7 +144,7 @@
 
               <div class="mt-4">
                 <div class="flex items-baseline gap-2">
-                  <span class="text-3xl sm:text-4xl font-extrabold font-mono text-stone-900 dark:text-white tracking-tight">${curCredit.toLocaleString('vi-VN')}</span>
+                  <span class="text-3xl sm:text-4xl font-extrabold font-mono text-stone-900 dark:text-white tracking-tight">${formatMoney(curCredit)}</span>
                   <span class="text-sm font-bold text-stone-500 dark:text-stone-400">Credit</span>
                 </div>
                 <div class="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500 mt-2 font-medium">
@@ -270,9 +279,9 @@
                       <td class="py-3 px-3.5 font-mono text-stone-500">#${t.id || 'TXN'}</td>
                       <td class="py-3 px-3.5 font-bold text-stone-900 dark:text-white font-mono text-[11px]">${t.type || t.tx_type || 'TRANSACTION'}</td>
                       <td class="py-3 px-3.5 font-mono font-bold ${isPlus ? 'text-orange-600 dark:text-orange-400' : 'text-stone-900 dark:text-stone-100'}">
-                        ${isPlus ? '+' : ''}${Number(t.amount || 0).toLocaleString('vi-VN')} ${t.currency || 'POINT'}
+                        ${isPlus ? '+' : ''}${formatMoney(t.amount)} ${t.currency || 'POINT'}
                       </td>
-                      <td class="py-3 px-3.5 font-mono font-bold text-stone-700 dark:text-stone-300">${Number(t.balance_after || 0).toLocaleString('vi-VN')}</td>
+                      <td class="py-3 px-3.5 font-mono font-bold text-stone-700 dark:text-stone-300">${formatMoney(t.balance_after)}</td>
                       <td class="py-3 px-3.5 text-stone-500 text-[11px] font-mono">${new Date(t.created_at).toLocaleString('vi-VN')}</td>
                     </tr>
                   `;
@@ -285,7 +294,7 @@
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    refreshIcons();
   },
 
   // ==================== TƯƠNG TÁC TRANG VÍ (WALLET INTERACTION ENGINE) ====================
@@ -357,7 +366,7 @@
     const isPoint = (tx.currency || 'POINT').toUpperCase() === 'POINT';
     const amountVal = Math.abs(Number(tx.amount || 0));
     const prefix = isPositive ? '+' : '-';
-    const amtStr = prefix + amountVal.toLocaleString('vi-VN') + (isPoint ? ' Point' : ' Credit');
+    const amtStr = prefix + formatMoney(amountVal) + (isPoint ? ' Point' : ' Credit');
 
     const typeUpper = (tx.type || '').toUpperCase();
     const rawDesc = tx.description || tx.type || 'Giao dịch ví';
@@ -493,7 +502,7 @@
 
     container.innerHTML = txList.slice(0, 15).map(tx => this.renderTransactionRowHtml(tx)).join('');
 
-    if (window.lucide) window.lucide.createIcons();
+    refreshIcons();
   },
 
   toggleWalletTimeDropdown(e) {
@@ -541,7 +550,7 @@
           <div class="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200/80 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 space-y-1">
             <div class="flex items-center justify-between font-bold text-slate-800 dark:text-slate-100">
               <span>Số dư khả dụng:</span>
-              <span class="text-orange-600 dark:text-orange-400 font-mono">${maxPoints.toLocaleString()} Điểm (${maxPoints.toLocaleString('vi-VN')}đ)</span>
+              <span class="text-orange-600 dark:text-orange-400 font-mono">${formatMoney(maxPoints)} Điểm (${formatMoney(maxPoints)}đ)</span>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-slate-400">Mốc 10.000đ áp dụng cho thẻ cào điện thoại. Chuyển khoản ngân hàng miễn phí từ 100.000đ (dưới 100.000đ phí 2.000đ bù phí cổng).</p>
           </div>
@@ -716,7 +725,7 @@
     const feeEl = document.getElementById('payout-summary-fee');
     const receiveEl = document.getElementById('payout-summary-receive');
 
-    if (amountEl) amountEl.textContent = `${vnd.toLocaleString('vi-VN')} VNĐ`;
+    if (amountEl) amountEl.textContent = `${formatMoney(vnd)} VNĐ`;
     if (feeEl) {
       if (fee === 0) {
         feeEl.innerHTML = '<span class="text-orange-600 font-bold">0đ (Miễn phí 100%)</span>';
@@ -724,7 +733,7 @@
         feeEl.innerHTML = '<span class="text-orange-600 font-bold">2.000 VNĐ (Phí cổng NAPAS)</span>';
       }
     }
-    if (receiveEl) receiveEl.textContent = `${actual.toLocaleString('vi-VN')} VNĐ`;
+    if (receiveEl) receiveEl.textContent = `${formatMoney(actual)} VNĐ`;
   },
 
   async submitPayoutAction() {
@@ -803,7 +812,7 @@
                   </div>
                   <div class="flex justify-between items-center pb-2 border-b border-stone-200/80 dark:border-stone-800">
                     <span class="text-stone-500 dark:text-stone-400">Mệnh giá thẻ:</span>
-                    <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">${Number(card.card_value_vnd).toLocaleString('vi-VN')} VNĐ</span>
+                    <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">${formatMoney(card.card_value_vnd)} VNĐ</span>
                   </div>
                   <div class="p-2.5 bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 flex items-center justify-between">
                     <div>
@@ -878,7 +887,7 @@
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="text-xs font-bold text-stone-700 dark:text-stone-300">Số điểm muốn đổi:</label>
-              <span class="text-[11px] text-stone-500 font-mono">Khả dụng: ${currentPoints.toLocaleString()} Điểm</span>
+              <span class="text-[11px] text-stone-500 font-mono">Khả dụng: ${formatMoney(currentPoints)} Điểm</span>
             </div>
             <input type="number" id="swap-points-input" value="${defaultPoints}" min="1000" max="${currentPoints}" step="500" 
                    oninput="VibeApp.updateSwapPointsPreview()"
@@ -888,7 +897,7 @@
           <!-- Preview Real-time -->
           <div class="p-3 bg-stone-50 dark:bg-stone-900/60 rounded-xl border border-stone-200/80 dark:border-stone-800 text-xs flex justify-between items-center">
             <span class="text-stone-600 dark:text-stone-400 font-medium">Credit thực nhận (+5%):</span>
-            <span id="swap-credit-preview" class="font-mono font-bold text-orange-600 dark:text-orange-400 text-sm">${initialCredit.toLocaleString('vi-VN')} VNĐ</span>
+            <span id="swap-credit-preview" class="font-mono font-bold text-orange-600 dark:text-orange-400 text-sm">${formatMoney(initialCredit)} VNĐ</span>
           </div>
 
           <div class="flex gap-2.5 pt-2">
@@ -910,7 +919,7 @@
     if (!input || !preview) return;
     const pts = parseInt(input.value, 10) || 0;
     const credit = Math.floor(pts * 1.05);
-    preview.textContent = `${credit.toLocaleString('vi-VN')} VNĐ`;
+    preview.textContent = `${formatMoney(credit)} VNĐ`;
   },
 
   async submitSwapPoints() {
@@ -922,7 +931,7 @@
 
     const user = this.state.currentUser;
     if (user && (user.point_balance || 0) < pts) {
-      this.showToast(`Số dư không đủ. Bạn chỉ có ${(user.point_balance || 0).toLocaleString()} điểm`, 'warning');
+      this.showToast(`Số dư không đủ. Bạn chỉ có ${formatMoney(user.point_balance || 0)} điểm`, 'warning');
       return;
     }
 
@@ -936,7 +945,7 @@
         this.haptic('success');
         this.closeModal();
         const addedVnd = res.creditAddedVnd || Math.floor(pts * 1.05);
-        this.showToast(`Đổi thành công ${pts.toLocaleString()} điểm sang ${addedVnd.toLocaleString('vi-VN')} VNĐ Credit (+5% thưởng)!`, 'success');
+        this.showToast(`Đổi thành công ${formatMoney(pts)} điểm sang ${formatMoney(addedVnd)} VNĐ Credit (+5% thưởng)!`, 'success');
         if (this.state.currentUser) {
           this.state.currentUser.point_balance = res.newPointBalance;
           this.state.currentUser.credit_balance = res.newCreditBalance;
@@ -999,10 +1008,10 @@
     const bonusVndEl = document.getElementById('deposit-calc-bonus-vnd');
     const totalCreditEl = document.getElementById('deposit-calc-total-credit');
 
-    if (amountEl) amountEl.textContent = `${amount.toLocaleString('vi-VN')} VNĐ`;
+    if (amountEl) amountEl.textContent = `${formatMoney(amount)} VNĐ`;
     if (bonusPctEl) bonusPctEl.textContent = `+${calc.percent}% (${calc.tierName})`;
-    if (bonusVndEl) bonusVndEl.textContent = `+${calc.bonusVnd.toLocaleString('vi-VN')} Credit`;
-    if (totalCreditEl) totalCreditEl.textContent = `${calc.totalCredit.toLocaleString('vi-VN')} Credit`;
+    if (bonusVndEl) bonusVndEl.textContent = `+${formatMoney(calc.bonusVnd)} Credit`;
+    if (totalCreditEl) totalCreditEl.textContent = `${formatMoney(calc.totalCredit)} Credit`;
   },
 
   setDepositPreset(amount) {
@@ -1176,7 +1185,7 @@
               <div class="p-2.5 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
                 <div>
                   <div class="text-[10px] text-stone-500 dark:text-stone-400">Số tiền nạp:</div>
-                  <div class="font-mono font-bold text-orange-600 dark:text-orange-400 text-sm mt-0.5">${Number(order.amountVnd).toLocaleString('vi-VN')} VNĐ</div>
+                  <div class="font-mono font-bold text-orange-600 dark:text-orange-400 text-sm mt-0.5">${formatMoney(order.amountVnd)} VNĐ</div>
                 </div>
                 <button type="button" onclick="VibeApp.copyValue('${order.amountVnd}', 'Số tiền')" class="px-2.5 py-1.5 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-lg font-bold border border-stone-200 dark:border-stone-700 text-[11px] transition-all">
                   Sao chép
@@ -1198,7 +1207,7 @@
 
           <!-- Lưu ý quan trọng -->
           <div class="p-2.5 bg-stone-100 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
-            Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và mã nội dung <strong>${order.orderCode}</strong>. Tổng Credit nhận: <strong>${Number(order.creditAmount).toLocaleString('vi-VN')} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + Number(order.bonusCreditVnd).toLocaleString('vi-VN') + ' Credit thưởng)' : ''}.
+            Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và mã nội dung <strong>${order.orderCode}</strong>. Tổng Credit nhận: <strong>${formatMoney(order.creditAmount)} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(order.bonusCreditVnd) + ' Credit thưởng)' : ''}.
           </div>
 
           <!-- Nút hành động & Giả lập thanh toán -->
@@ -1272,11 +1281,11 @@
                 <div class="p-3 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-xs space-y-1.5 text-left max-w-sm mx-auto">
                   <div class="flex justify-between text-stone-600 dark:text-stone-400">
                     <span>Số tiền nạp:</span>
-                    <span class="font-mono font-bold text-stone-900 dark:text-white">${Number(order.amount_vnd).toLocaleString('vi-VN')} VNĐ</span>
+                    <span class="font-mono font-bold text-stone-900 dark:text-white">${formatMoney(order.amount_vnd)} VNĐ</span>
                   </div>
                   <div class="flex justify-between text-stone-600 dark:text-stone-400">
                     <span>Credit được cộng:</span>
-                    <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">+${Number(order.credit_amount || order.amount_vnd).toLocaleString('vi-VN')} Credit</span>
+                    <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">+${formatMoney(order.credit_amount || order.amount_vnd)} Credit</span>
                   </div>
                 </div>
 

@@ -29,6 +29,43 @@ function maskEmail(email) {
   return `${local.slice(0, 2)}***${local.length > 3 ? local.slice(-1) : ''}@${domain}`;
 }
 
+/**
+ * Kiểm tra Magic Bytes cho tệp ảnh nhị phân được upload:
+ * - JPEG: 3 byte đầu là FF D8 FF
+ * - PNG: 4 byte đầu là 89 50 4E 47
+ * - GIF: 4 byte đầu là 47 49 46 38 ('GIF8')
+ * - WebP: byte 0..3 là 52 49 46 46 ('RIFF') và byte 8..11 là 57 42 45 50 ('WEBP')
+ * @param {Buffer} buffer
+ * @returns {'jpg' | 'png' | 'gif' | 'webp' | null}
+ */
+function verifyImageMagicBytes(buffer) {
+  if (!buffer || !Buffer.isBuffer(buffer) || buffer.length < 3) {
+    return null;
+  }
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return 'jpg';
+  }
+  if (buffer.length < 4) return null;
+  // PNG: 89 50 4E 47
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+    return 'png';
+  }
+  // GIF: 47 49 46 38 ('GIF8')
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) {
+    return 'gif';
+  }
+  // WebP: byte 0..3 là 'RIFF' (52 49 46 46) và byte 8..11 là 'WEBP' (57 42 45 50)
+  if (
+    buffer.length >= 12 &&
+    buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+    buffer[8] === 0x57 && buffer[9] === 0x42 && buffer[10] === 0x45 && buffer[11] === 0x50
+  ) {
+    return 'webp';
+  }
+  return null;
+}
+
 function hashLoginOtp(otp) {
   return crypto.createHmac('sha256', config.JWT_SECRET).update(String(otp)).digest('hex');
 }
@@ -1830,8 +1867,9 @@ class AuthController {
         if (mime.includes('jpeg') || mime.includes('jpg')) ext = 'jpg';
         else if (mime.includes('webp')) ext = 'webp';
         else if (mime.includes('png')) ext = 'png';
+        else if (mime.includes('gif')) ext = 'gif';
         else {
-          return res.status(400).json({ success: false, message: 'Định dạng ảnh không hỗ trợ. Vui lòng chọn PNG, JPG hoặc WebP' });
+          return res.status(400).json({ success: false, message: 'Định dạng ảnh không hỗ trợ. Vui lòng chọn PNG, JPG, GIF hoặc WebP' });
         }
         buffer = Buffer.from(matches[2], 'base64');
       } else if (cleanInput.startsWith('http://') || cleanInput.startsWith('https://') || cleanInput.startsWith('/uploads/')) {
@@ -1856,13 +1894,7 @@ class AuthController {
           if (!buffer || buffer.length === 0) {
             return res.status(400).json({ success: false, message: 'Dữ liệu ảnh không hợp lệ' });
           }
-          if (buffer.length >= 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
-            ext = 'png';
-          } else if (buffer.length >= 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
-            ext = 'jpg';
-          } else if (buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') {
-            ext = 'webp';
-          }
+
         } catch (e) {
           return res.status(400).json({ success: false, message: 'Dữ liệu ảnh không hợp lệ' });
         }
@@ -1871,6 +1903,15 @@ class AuthController {
       if (!buffer || buffer.length === 0) {
         return res.status(400).json({ success: false, message: 'Dữ liệu ảnh không hợp lệ' });
       }
+
+      const detectedType = verifyImageMagicBytes(buffer);
+      if (!detectedType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nội dung tệp không phải là định dạng hình ảnh hợp lệ (Magic byte mismatch)'
+        });
+      }
+      ext = detectedType === 'jpg' ? 'jpg' : detectedType;
 
       if (buffer.length > 5 * 1024 * 1024) {
         return res.status(400).json({ success: false, message: 'Dung lượng ảnh tối đa 5MB' });
