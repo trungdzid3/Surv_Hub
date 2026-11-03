@@ -116,7 +116,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 
 ## 6. Thông Tin Liên Hệ Thực Tế (Sản Phẩm Demo — Chưa Kinh Doanh)
 - Chưa có pháp nhân; footer KHÔNG đưa MSDN/MST/trụ sở/kênh MXH giả định cho đến khi có thực tế.
-- Địa chỉ: KTX B3, ĐH Bách Khoa Hà Nội (link Google Maps `https://share.google/dPIe7cYsGVPNhs4vC`).
+- Địa chỉ: Kí túc xá B3, Đại học Bách khoa Hà Nội (link Google Maps `https://maps.app.goo.gl/dGL8PMp5K2o9yYz68`).
 - Hỗ trợ đáp viên & Hợp tác doanh nghiệp: `linharmykxbnvn@gmail.com`; Email phản ánh: `ngthtrung.son@gmail.com`.
 
 ## 7. Việc Đang Mở (Open Issues — xong việc nào xóa việc đó)
