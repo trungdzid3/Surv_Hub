@@ -29,6 +29,7 @@ Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeS
 
 ## Multi-Agent CLI qua OpenCode
 - **CLI OpenCode portable**: `D:\AI-CLIs\OpenCode\opencode.exe`.
+- **CLI Antigravity portable**: `D:\AI-CLIs\Antigravity\agy.exe`.
 - **Mục đích**: Dùng OpenCode như một worker AI subprocess độc lập để xử lý task được Lead Orchestrator phân công; không tự ý giao việc trùng file cho nhiều worker.
 - **Lệnh tự động chuẩn trên Windows PowerShell**:
   ```powershell
@@ -37,4 +38,8 @@ Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeS
 - **Quy tắc prompt**: Prompt phải nêu rõ mục tiêu, repository, file được khóa, giới hạn không sửa file ngoài phạm vi, yêu cầu kiểm tra và định dạng báo cáo ngắn.
 - **Giao tiếp qua subprocess**: Có thể gọi executable bằng `System.Diagnostics.Process` hoặc Python `subprocess.Popen`, truyền prompt qua `stdin`, đọc `stdout` và `stderr`; phải đặt timeout và xử lý exit code khác `0`.
 - **Mở rộng thư mục CLI**: Các CLI AI khác đặt trong thư mục con riêng dưới `D:\AI-CLIs\` (ví dụ `D:\AI-CLIs\Gemini\`, `D:\AI-CLIs\Claude\`). Mỗi CLI phải được kiểm tra bằng lệnh `--help` hoặc lệnh tương đương trước khi đưa vào workflow.
+- **Lệnh Antigravity**:
+  ```powershell
+  & 'D:\AI-CLIs\Antigravity\agy.exe' --version
+  ```
 - **An toàn**: Không truyền secret, token, cookie, dữ liệu cá nhân hoặc nội dung nhạy cảm vào prompt subprocess. Không tự động cài package hay sửa biến môi trường hệ thống nếu chưa được người dùng cho phép.
