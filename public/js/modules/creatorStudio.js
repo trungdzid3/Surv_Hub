@@ -3092,7 +3092,7 @@
         }">
               <div class="flex items-center gap-2.5 min-w-0">
                 <div class="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0 border border-stone-200/60 dark:border-stone-700 overflow-hidden">
-                  ${c.brand_logo ? `<img src="${c.brand_logo}" alt="${c.brand_name}" class="w-6 h-6 object-contain" onerror="this.src='/assets/logos/generic-voucher.svg';">` : `<i data-lucide="tag" class="w-4 h-4 text-orange-600"></i>`}
+                  ${c.brand_logo ? `<img src="${c.brand_logo}" alt="${c.brand_name}" class="w-6 h-6 object-contain" onerror="this.onerror=null;this.src='/assets/logos/default-voucher.svg';">` : `<i data-lucide="tag" class="w-4 h-4 text-orange-600"></i>`}
                 </div>
                 <div class="min-w-0">
                   <div class="flex items-center gap-1.5">

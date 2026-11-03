@@ -104,6 +104,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 12. **Render free tier chặn outbound cổng 25/465/587** (từ 26-09-2025): 2 kênh SMTP (Gmail/Outlook) sẽ treo rồi timeout trên Render. `sendSmartEmail` tự bỏ qua SMTP khi `process.env.RENDER === 'true'` (bật lại bằng `ENABLE_SMTP_ON_RENDER=true` nếu dùng instance trả phí); kênh khả dụng duy nhất là Brevo REST API. Sender Brevo phải là email đã xác thực trong tài khoản Brevo, nếu không API trả 400 và không gửi được mail.
 13. **OTP sinh viên phải phản ánh đúng kết quả gửi**: `authController.sendStudentEmailOtp` `await` `sendSmartEmail`, trả HTTP 503 + hủy `student_otp*` (reset cooldown) khi gửi thất bại; không được báo "đã gửi" khi chưa gửi. Cả 2 hàm SMTP có timeout 10 giây để không treo request.
 14. **Dọn tài khoản test**: `tests/test_cleanup_helper.js` nhận diện thêm `matched_*`, `unmatched_*`, `t_<timestamp>@v.com`; nếu bảng xếp hạng diễn đàn hiện tên lạ 0 form thì kiểm tra tài khoản rác trong `users` trước khi sửa UI.
+15. **Tài nguyên 3D phải nằm trong `public/assets/3d/`**: commit `921bceb` (Wave 1) đã xóa trắng thư mục này khỏi bản web (chỉ còn bản Android) khiến ảnh ví/coin/gift vỡ 404 trên web; đã khôi phục 33 file. Khi thêm ảnh/icon mới, luôn đặt trong `public/` rồi chạy `npm run sync:android`, không làm ngược lại. Kiểm tra nhanh: liệt kê mọi đường dẫn `/assets/...` trong `public/js/**` và đối chiếu sự tồn tại trước khi commit.
 
 ## 5. Hướng Dẫn Bàn Giao Cho Phiên Tiếp Theo
 - Trước khi bắt đầu: đọc `PROJECT_CONTEXT.md` này + `DESIGN.md` + `AGENTS.md`.

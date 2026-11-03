@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 160" fill="none">
+  <defs>
+    <!-- Gradient thân ví cam Sunset đa tầng cao cấp -->
+    <linearGradient id="WClean_sunsetBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9E42" />
+      <stop offset="35%" stop-color="#FB923C" />
+      <stop offset="70%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+
+    <!-- Gradient bóng đổ chân ví -->
+    <linearGradient id="WClean_bodyShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EA580C" stop-opacity="0" />
+      <stop offset="100%" stop-color="#9A3412" stop-opacity="0.35" />
+    </linearGradient>
+
+    <!-- Gradient thẻ ATM 1 (thẻ sau, nhô cao hơn, màu vàng kem hoàng yến) -->
+    <linearGradient id="WClean_cardYellowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="50%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#EAB308" />
+    </linearGradient>
+
+    <!-- Gradient thẻ ATM 2 (thẻ trước, nhô thấp hơn, màu trắng ngọc cam đào) -->
+    <linearGradient id="WClean_cardWhiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#FFF7ED" />
+      <stop offset="100%" stop-color="#FED7AA" />
+    </linearGradient>
+
+    <!-- Gradient quai cài ví cam ấm -->
+    <linearGradient id="WClean_claspGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="60%" stop-color="#EA580C" />
+      <stop offset="100%" stop-color="#C2410C" />
+    </linearGradient>
+
+    <!-- Gradient cúc bấm kim loại vàng kim -->
+    <linearGradient id="WClean_goldButtonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="50%" stop-color="#FACC15" />
+      <stop offset="100%" stop-color="#CA8A04" />
+    </linearGradient>
+  </defs>
+
+  <g>
+    <!-- Bóng tiếp xúc mặt sàn mờ êm dịu, tương thích cả Dark & Light Mode -->
+    <ellipse cx="110" cy="154" rx="74" ry="5.5" fill="#000000" fill-opacity="0.12" />
+
+    <!-- 1. CẶP THẺ NGÂN HÀNG THÒ RA TỪ MIỆNG VÍ (CHÉO GÓC THEO ẢNH MẪU 1) -->
+    <!-- Thẻ sau (Thẻ 1 - Vàng hoàng yến, nghiêng -21 độ, nhô cao) -->
+    <g transform="translate(104, 48) rotate(-21) translate(-104, -48)">
+      <!-- Bóng nhẹ của thẻ sau -->
+      <rect x="66" y="22" width="76" height="48" rx="8" fill="#000000" fill-opacity="0.08" transform="translate(0, 2)" />
+      <!-- Thân thẻ vàng -->
+      <rect x="66" y="22" width="76" height="48" rx="8" fill="url(#WClean_cardYellowGrad)" />
+      <!-- Dải băng từ / vệt highlight trên thẻ -->
+      <rect x="66" y="32" width="76" height="10" fill="#CA8A04" fill-opacity="0.25" />
+      <!-- Chip vi mạch thẻ bo góc -->
+      <rect x="74" y="47" width="12" height="9" rx="2" fill="#FEF08A" />
+      <rect x="76" y="49" width="8" height="5" rx="1" fill="#CA8A04" fill-opacity="0.5" />
+      <!-- Viền sáng viền mép thẻ -->
+      <rect x="67" y="23" width="74" height="46" rx="7" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="1" fill="none" />
+    </g>
+
+    <!-- Thẻ trước (Thẻ 2 - Trắng ngọc cam sữa, nghiêng -8 độ, nhô thấp hơn) -->
+    <g transform="translate(118, 56) rotate(-8) translate(-118, -56)">
+      <!-- Bóng đổ nhẹ của thẻ trước -->
+      <rect x="80" y="32" width="76" height="48" rx="8" fill="#000000" fill-opacity="0.09" transform="translate(0, 2)" />
+      <!-- Thân thẻ trắng ngọc -->
+      <rect x="80" y="32" width="76" height="48" rx="8" fill="url(#WClean_cardWhiteGrad)" />
+      <!-- Vệt trang trí ngang thẻ tông cam pastel -->
+      <rect x="80" y="44" width="76" height="7" fill="#FDBA74" fill-opacity="0.45" />
+      <rect x="80" y="54" width="45" height="4" rx="2" fill="#FB923C" fill-opacity="0.35" />
+      <!-- Chip thẻ nhỏ -->
+      <rect x="88" y="62" width="11" height="8" rx="2" fill="#FDE047" />
+      <!-- Viền sáng viền thẻ -->
+      <rect x="81" y="33" width="74" height="46" rx="7" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="1" fill="none" />
+    </g>
+
+    <!-- 2. THÂN VÍ DA 3D MÀU CAM SUNSET NẰM NGANG BO TRÒN 4 GÓC (THEO ẢNH MẪU 1) -->
+    <!-- Thân chính ví: x=34, y=54, rộng 152, cao 96, bo góc tròn 22px múp míp -->
+    <g>
+      <!-- Lớp thân ví chính -->
+      <rect x="34" y="54" width="152" height="96" rx="22" fill="url(#WClean_sunsetBody)" />
+
+      <!-- Lớp bóng đổ khối 3D claymorphism ở cạnh dưới thân ví -->
+      <rect x="34" y="54" width="152" height="96" rx="22" fill="url(#WClean_bodyShadow)" />
+
+      <!-- Đường phản quang sáng mềm ở mép trên và cạnh trái thân ví -->
+      <path d="M 56 56 L 164 56 C 176 56, 184 64, 184 76" 
+            stroke="#FFFFFF" 
+            stroke-width="2.5" 
+            stroke-linecap="round" 
+            stroke-opacity="0.35" 
+            fill="none" />
+
+      <!-- Highlight cạnh trái mềm mại -->
+      <path d="M 36 76 C 36 64, 44 56, 56 56" 
+            stroke="#FFFFFF" 
+            stroke-width="2.5" 
+            stroke-linecap="round" 
+            stroke-opacity="0.45" 
+            fill="none" />
+
+      <!-- Đường may khâu thủ công trang trí quanh thân ví (Stitching line) -->
+      <rect x="40" y="60" width="140" height="84" rx="17" 
+            stroke="#FED7AA" 
+            stroke-width="1.2" 
+            stroke-dasharray="3.5 2.5" 
+            stroke-linecap="round" 
+            stroke-opacity="0.6" 
+            fill="none" />
+    </g>
+
+    <!-- 3. QUAI CÀI VÍ (CLASP / STRAP TAB) HÌNH VIÊN THUỐC BÊN PHẢI (THEO ĐÚNG ẢNH MẪU 1) -->
+    <g>
+      <!-- Khe hở / đường rãnh trắng cách ly bo tròn bao quanh quai cài -->
+      <rect x="141" y="82" width="53" height="42" rx="21" fill="#FFFFFF" />
+      <rect x="141" y="82" width="53" height="42" rx="21" fill="#000000" fill-opacity="0.04" />
+
+      <!-- Thân quai cài bo tròn hình viên thuốc màu cam -->
+      <rect x="144" y="85" width="47" height="36" rx="18" fill="url(#WClean_claspGrad)" />
+
+      <!-- Vệt highlight trên mép quai cài -->
+      <path d="M 160 87 L 176 87 C 184 87, 189 91, 189 97" 
+            stroke="#FFFFFF" 
+            stroke-width="1.5" 
+            stroke-linecap="round" 
+            stroke-opacity="0.4" 
+            fill="none" />
+
+      <!-- Cúc bấm kim loại tròn ở giữa quai cài -->
+      <!-- Vòng ngoài: trắng ngọc sáng bóng -->
+      <circle cx="165" cy="103" r="8.5" fill="#FFFFFF" />
+      <circle cx="165" cy="103" r="8.5" fill="#000000" fill-opacity="0.08" />
+      
+      <!-- Vòng viền vàng kim loại -->
+      <circle cx="165" cy="103" r="7" fill="url(#WClean_goldButtonGrad)" />
+
+      <!-- Lõi cúc tròn vàng đậm dập nổi -->
+      <circle cx="165" cy="103" r="4.8" fill="#D97706" />
+      <circle cx="165" cy="103" r="4.8" fill="#FDE047" fill-opacity="0.8" />
+
+      <!-- Điểm bóng sáng 3D trên cúc bấm -->
+      <circle cx="163.2" cy="101.2" r="1.5" fill="#FFFFFF" />
+    </g>
+
+    <!-- 4. CÁC NGÔI SAO VÀNG 4 CÁNH LẤP LÁNH (SPARKLES) ĐỒNG BỘ STYLE APP -->
+    <!-- Ngôi sao phía trên bên trái -->
+    <path d="M 28 36
+             C 28 30, 28 30, 22 30
+             C 28 30, 28 30, 28 24
+             C 28 30, 28 30, 34 30
+             C 28 30, 28 30, 28 36 Z" 
+          fill="#FDE047" fill-opacity="0.85" />
+
+    <!-- Ngôi sao nhỏ phía trên bên phải -->
+    <path d="M 198 32
+             C 198 27, 198 27, 193 27
+             C 198 27, 198 27, 198 22
+             C 198 27, 198 27, 203 27
+             C 198 27, 198 27, 198 32 Z" 
+          fill="#FDE047" fill-opacity="0.75" />
+
+    <!-- Ngôi sao nhỏ phía dưới bên phải -->
+    <path d="M 204 128
+             C 204 124, 204 124, 200 124
+             C 204 124, 204 124, 204 120
+             C 204 124, 204 124, 208 124
+             C 204 124, 204 124, 204 128 Z" 
+          fill="#FDE047" fill-opacity="0.65" />
+  </g>
+</svg>
