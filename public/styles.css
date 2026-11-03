@@ -1392,6 +1392,140 @@ html.dark textarea:-webkit-autofill {
 /* =========================================================
    PUSH NOTIFICATION ENGINE & BELL ANIMATIONS
    ========================================================= */
+.push-permission-banner {
+  width: min(calc(100% - 2rem), 1152px);
+  margin: 12px auto 0;
+  padding: 14px 16px;
+  border: 1px solid #E7E5E4;
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: #18181B;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.push-permission-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.push-permission-banner__message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.push-permission-banner__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #FFF7ED;
+  color: #EA580C;
+}
+
+.push-permission-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.push-permission-banner__primary,
+.push-permission-banner__dismiss {
+  min-height: 34px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.push-permission-banner__primary {
+  padding: 0 13px;
+  border: 1px solid #EA580C;
+  background: #EA580C;
+  color: #FFFFFF;
+}
+
+.push-permission-banner__primary:hover {
+  background: #C2410C;
+}
+
+.push-permission-banner__primary:active,
+.push-permission-banner__dismiss:active {
+  transform: scale(0.98);
+}
+
+.push-permission-banner__dismiss {
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: #71717A;
+}
+
+.push-permission-banner__dismiss:hover {
+  color: #18181B;
+}
+
+.push-permission-banner button:focus-visible {
+  outline: 2px solid #EA580C;
+  outline-offset: 3px;
+}
+
+html.dark .push-permission-banner {
+  border-color: #2E2E36;
+  background: #1C1C20;
+  color: #FFFFFF;
+}
+
+html.dark .push-permission-banner__icon {
+  background: rgba(234, 88, 12, 0.12);
+}
+
+html.dark .push-permission-banner__dismiss {
+  color: #A1A1AA;
+}
+
+html.dark .push-permission-banner__dismiss:hover {
+  color: #FFFFFF;
+}
+
+@media (max-width: 639px) {
+  .push-permission-banner {
+    width: calc(100% - 2rem);
+    margin-top: 10px;
+    padding: 13px 14px;
+  }
+
+  .push-permission-banner__inner {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .push-permission-banner__message {
+    align-items: flex-start;
+  }
+
+  .push-permission-banner__actions {
+    justify-content: flex-start;
+  }
+
+  .push-permission-banner__primary {
+    flex: 1 1 auto;
+  }
+}
+
 @keyframes bellRing {
   0% { transform: rotate(0); }
   10% { transform: rotate(14deg); }

@@ -86,28 +86,6 @@
   <div class="pointer-events-none fixed bottom-10 -left-20 w-[420px] h-[420px] bg-orange-300/15 rounded-full blur-3xl opacity-60 -z-10 dark:opacity-0 transition-opacity"></div>
 
 
-  <!-- ==================== BANNER CẤP QUYỀN THÔNG BÁO ==================== -->
-  <div id="push-permission-banner" class="hidden bg-stone-900 dark:bg-stone-950 text-white border-b border-stone-800 px-4 py-2 text-xs transition-all push-banner-enter z-50">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
-      <div class="flex items-center gap-2.5 text-center sm:text-left">
-        <div class="w-6 h-6 rounded-full bg-orange-600/20 text-orange-500 border border-orange-500/30 flex items-center justify-center shrink-0">
-          <i data-lucide="bell" class="w-3.5 h-3.5"></i>
-        </div>
-        <span class="font-medium text-stone-200">
-          Bật thông báo trên trình duyệt để nhận tin ngay khi có khảo sát thưởng cao hoặc hỏa tốc
-        </span>
-      </div>
-      <div class="flex items-center gap-2 shrink-0">
-        <button onclick="VibeApp.requestPushPermission()" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-[11px] shadow-sm transition-all active:scale-95">
-          Cho Phép Thông Báo Web
-        </button>
-        <button onclick="VibeApp.dismissPushBanner()" class="px-2.5 py-1 text-stone-400 hover:text-white text-[11px] font-medium transition-colors">
-          Để Sau
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- ==================== HIGH-END SAAS NAVBAR ==================== -->
   <header class="sticky top-0 z-40 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
@@ -210,6 +188,24 @@
   </header>
 
   <!-- ==================== MAIN CONTENT ==================== -->
+  <!-- ==================== BANNER CẤP QUYỀN THÔNG BÁO ==================== -->
+  <div id="push-permission-banner" class="hidden push-permission-banner push-banner-enter" role="status">
+    <div class="push-permission-banner__inner">
+      <div class="push-permission-banner__message">
+        <span class="push-permission-banner__icon" aria-hidden="true"><i data-lucide="bell" class="w-4 h-4"></i></span>
+        <span class="push-banner-message">Bật thông báo để nhận khảo sát thưởng cao.</span>
+      </div>
+      <div class="push-permission-banner__actions">
+        <button type="button" onclick="VibeApp.requestPushPermission()" class="push-permission-banner__primary">
+          Cho Phép Thông Báo Web
+        </button>
+        <button type="button" onclick="VibeApp.dismissPushBanner()" class="push-permission-banner__dismiss">
+          Để Sau
+        </button>
+      </div>
+    </div>
+  </div>
+
   <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
     <div id="app-root">
       <div class="flex flex-col items-center justify-center py-20 space-y-3">

@@ -149,14 +149,14 @@
     const bannerEl = document.getElementById('push-permission-banner');
     if (!bannerEl) return;
 
-    const messageEl = bannerEl.querySelector('span.font-medium');
+    const messageEl = bannerEl.querySelector('.push-banner-message');
     const actionEl = bannerEl.querySelector('button[onclick*="requestPushPermission"]');
     if (isAndroidCapacitor) {
-      if (messageEl) messageEl.textContent = 'Cho phép thông báo Android để nhận tin ngay khi có khảo sát thưởng cao hoặc hỏa tốc';
-      if (actionEl) actionEl.textContent = 'Cho Phép Thông Báo Android';
+      if (messageEl) messageEl.textContent = 'Cho phép thông báo Android để nhận khảo sát thưởng cao.';
+      if (actionEl) actionEl.textContent = 'Bật thông báo Android';
     } else {
-      if (messageEl) messageEl.textContent = 'Bật thông báo trên trình duyệt để nhận tin ngay khi có khảo sát thưởng cao hoặc hỏa tốc';
-      if (actionEl) actionEl.textContent = 'Cho Phép Thông Báo Web';
+      if (messageEl) messageEl.textContent = 'Bật thông báo để nhận khảo sát thưởng cao.';
+      if (actionEl) actionEl.textContent = 'Bật thông báo Web';
     }
   },
 
