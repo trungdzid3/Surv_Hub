@@ -4,6 +4,20 @@ require('dotenv').config();
 require('dotenv').config({ path: path.join(__dirname, '../../.env'), override: false });
 
 const runtimeEnvironment = process.env.NODE_ENV || 'development';
+
+// Lớp CSDL: sqlite (mặc định, file cục bộ) | turso (bắt buộc remote, fail-closed) | auto (Turso khi có cấu hình, ngược lại SQLite)
+const SUPPORTED_DB_DRIVERS = ['sqlite', 'turso', 'auto'];
+const configuredDbDriver = String(process.env.DB_DRIVER || 'sqlite').trim().toLowerCase();
+if (!SUPPORTED_DB_DRIVERS.includes(configuredDbDriver)) {
+  throw new Error(`DB_DRIVER="${configuredDbDriver}" không hợp lệ. Chỉ chấp nhận: ${SUPPORTED_DB_DRIVERS.join(', ')}`);
+}
+
+// Timeout kết nối Turso: chỉ nhận số nguyên dương, mặc định 15000ms
+const parsedTursoTimeout = parseInt(process.env.TURSO_TIMEOUT_MS, 10);
+const tursoTimeoutMs = Number.isFinite(parsedTursoTimeout) && parsedTursoTimeout > 0
+  ? parsedTursoTimeout
+  : 15000;
+
 const demoJwtSecret = 'vibesurvey_demo_jwt_secret_key_2026_xyz';
 const configuredJwtSecret = String(process.env.JWT_SECRET || '').trim();
 const demoWebhookSecret = 'vibesurvey_demo_webhook_secret_2026';
@@ -28,6 +42,13 @@ module.exports = {
   // Ho tro fallback tu dong cho moi truong demo/thu nghiem ma khong lam crash server
   JWT_SECRET: configuredJwtSecret || demoJwtSecret,
   DB_PATH: process.env.DB_PATH || path.join(__dirname, '../db/vibesurvey.db'),
+  DB_DRIVER: configuredDbDriver,
+  // Turso/libSQL cloud: chỉ dùng khi DB_DRIVER=turso (fail-closed) hoặc auto (có đủ cấu hình)
+  TURSO: {
+    DATABASE_URL: String(process.env.TURSO_DATABASE_URL || '').trim(),
+    AUTH_TOKEN: String(process.env.TURSO_AUTH_TOKEN || '').trim(),
+    TIMEOUT_MS: tursoTimeoutMs
+  },
 
   // Cấu hình Cổng Thanh Toán & VietQR Napas247
   PAYMENT_GATEWAY: {

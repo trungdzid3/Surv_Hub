@@ -3,20 +3,181 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../config');
 
-// Đảm bảo thư mục db tồn tại
+// Đảm bảo thư mục db tồn tại (chỉ cần cho driver SQLite cục bộ)
 const dbDir = path.dirname(config.DB_PATH);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const db = new DatabaseSync(config.DB_PATH);
+// ---------------------------------------------------------------------------
+// Chọn driver CSDL: giữ nguyên node:sqlite DatabaseSync cho local/test.
+// Turso/libSQL chỉ được bật khi driver `libsql` giữ đúng hợp đồng đồng bộ
+// db.prepare().get/run/all() + db.exec() và vượt qua bài kiểm tra sẵn sàng.
+// ---------------------------------------------------------------------------
+function createLocalDatabase() {
+  const localDb = new DatabaseSync(config.DB_PATH);
+  // Kích hoạt WAL mode, Foreign Keys & Busy Timeout cho độ bền ACID cao nhất
+  localDb.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
+    PRAGMA busy_timeout = 5000;
+  `);
+  return localDb;
+}
 
-// Kích hoạt WAL mode, Foreign Keys & Busy Timeout cho độ bền ACID cao nhất
-db.exec(`
-  PRAGMA journal_mode = WAL;
-  PRAGMA foreign_keys = ON;
-  PRAGMA busy_timeout = 5000;
-`);
+// Giá trị mẫu trong .env.example tuyệt đối không được dùng làm cấu hình thật.
+const TURSO_PLACEHOLDER_URL_FRAGMENT = 'your-database-name';
+const TURSO_PLACEHOLDER_TOKEN = 'your_turso_auth_token_here';
+const TURSO_REMOTE_SCHEME = /^(libsql|https?|wss?):\/\//i;
+
+function getTursoConfigState() {
+  const databaseUrl = config.TURSO.DATABASE_URL;
+  const authToken = config.TURSO.AUTH_TOKEN;
+
+  if (!databaseUrl && !authToken) return 'empty';
+  if (!databaseUrl || !authToken) return 'incomplete';
+  if (databaseUrl.toLowerCase().includes(TURSO_PLACEHOLDER_URL_FRAGMENT) ||
+      authToken.toLowerCase() === TURSO_PLACEHOLDER_TOKEN) {
+    return 'placeholder';
+  }
+  if (!TURSO_REMOTE_SCHEME.test(databaseUrl)) return 'invalid-scheme';
+  return 'ready';
+}
+
+const TURSO_CONFIG_ERRORS = {
+  empty: 'thiếu TURSO_DATABASE_URL và TURSO_AUTH_TOKEN',
+  incomplete: 'cần đủ cả TURSO_DATABASE_URL và TURSO_AUTH_TOKEN',
+  placeholder: 'giá trị vẫn là mẫu trong .env.example, hãy thay bằng thông tin Turso thật',
+  'invalid-scheme': 'TURSO_DATABASE_URL phải là libsql://, https://, http://, ws:// hoặc wss://'
+};
+
+// libsql trả thêm khóa `_metadata` vào mỗi dòng; loại bỏ để giữ đúng shape
+// bản ghi như node:sqlite trước đây (tránh rò rỉ metadata ra API response).
+function sanitizeRow(row) {
+  if (row && typeof row === 'object' && !Array.isArray(row) &&
+      Object.prototype.hasOwnProperty.call(row, '_metadata')) {
+    const cleanRow = { ...row };
+    delete cleanRow._metadata;
+    return cleanRow;
+  }
+  return row;
+}
+
+function wrapLibsqlStatement(statement) {
+  let proxy;
+  proxy = new Proxy(statement, {
+    get(target, prop) {
+      if (prop === 'get') {
+        return (...args) => sanitizeRow(target.get(...args));
+      }
+      if (prop === 'all') {
+        return (...args) => {
+          const rows = target.all(...args);
+          return Array.isArray(rows) ? rows.map(sanitizeRow) : rows;
+        };
+      }
+      if (prop === 'iterate') {
+        return (...args) => {
+          const iterator = target.iterate(...args);
+          return {
+            next() {
+              const result = iterator.next();
+              if (!result.done) {
+                result.value = sanitizeRow(result.value);
+              }
+              return result;
+            },
+            return(...returnArgs) {
+              return typeof iterator.return === 'function'
+                ? iterator.return(...returnArgs)
+                : { done: true, value: undefined };
+            },
+            [Symbol.iterator]() {
+              return this;
+            }
+          };
+        };
+      }
+      // Giữ khả năng chuỗi hóa như better-sqlite3: stmt.pluck().get(...)
+      if (prop === 'pluck' || prop === 'raw' || prop === 'safeIntegers') {
+        return (...args) => {
+          target[prop](...args);
+          return proxy;
+        };
+      }
+      const value = target[prop];
+      return typeof value === 'function' ? value.bind(target) : value;
+    }
+  });
+  return proxy;
+}
+
+function wrapLibsqlDatabase(rawDb) {
+  return new Proxy(rawDb, {
+    get(target, prop) {
+      if (prop === 'prepare') {
+        return (sql) => wrapLibsqlStatement(target.prepare(sql));
+      }
+      const value = target[prop];
+      return typeof value === 'function' ? value.bind(target) : value;
+    }
+  });
+}
+
+function createTursoDatabase() {
+  const configState = getTursoConfigState();
+  if (configState !== 'ready') {
+    throw new Error(`DB_DRIVER=turso không thể khởi tạo: ${TURSO_CONFIG_ERRORS[configState]}`);
+  }
+
+  let LibsqlDatabase;
+  try {
+    // Chỉ nạp driver khi thực sự dùng remote, local/test không phụ thuộc native libsql
+    LibsqlDatabase = require('libsql');
+  } catch (err) {
+    throw new Error(`Không tải được driver libsql: ${err.message}`);
+  }
+
+  const rawDb = new LibsqlDatabase(config.TURSO.DATABASE_URL, {
+    authToken: config.TURSO.AUTH_TOKEN,
+    timeout: config.TURSO.TIMEOUT_MS
+  });
+
+  try {
+    // Kiểm tra thật: đọc dữ liệu + quyền điều khiển transaction đồng bộ mà
+    // các repository hiện tại đang dùng (BEGIN IMMEDIATE / COMMIT / ROLLBACK).
+    rawDb.prepare('SELECT 1 AS ok').get();
+    rawDb.exec('BEGIN IMMEDIATE TRANSACTION');
+    rawDb.exec('ROLLBACK');
+  } catch (err) {
+    try { rawDb.close(); } catch (_) { /* bỏ qua lỗi đóng kết nối */ }
+    throw new Error(`Turso/libSQL chưa sẵn sàng: ${err.message}`);
+  }
+
+  return wrapLibsqlDatabase(rawDb);
+}
+
+function createDatabase() {
+  if (config.DB_DRIVER === 'sqlite') {
+    return { db: createLocalDatabase(), engine: 'sqlite' };
+  }
+
+  // auto: chỉ dùng SQLite cục bộ khi hoàn toàn không có cấu hình Turso.
+  // Nếu đã cấu hình (kể cả sai/mẫu) thì fail-closed, không âm thầm ghi xuống file.
+  if (config.DB_DRIVER === 'auto') {
+    if (getTursoConfigState() === 'empty') {
+      return { db: createLocalDatabase(), engine: 'sqlite' };
+    }
+    return { db: createTursoDatabase(), engine: 'turso' };
+  }
+
+  // DB_DRIVER=turso: fail-closed, không âm thầm rơi về SQLite cục bộ
+  return { db: createTursoDatabase(), engine: 'turso' };
+}
+
+const { db, engine: dbEngine } = createDatabase();
+// Không log URL/token để tránh lộ thông tin kết nối trong log hệ thống.
+console.log(`[DB] Driver: ${dbEngine}${dbEngine === 'turso' ? ' (remote)' : ` (${config.DB_PATH})`}`);
 
 function initSchema() {
   db.exec(`
