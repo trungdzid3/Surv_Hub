@@ -291,6 +291,189 @@
     }
   },
 
+  _renderLoginChallenge(response, email, password) {
+    const formBody = document.getElementById('auth-form-body');
+    const errorAlert = document.getElementById('auth-error-alert');
+    if (!formBody) return;
+
+    this._loginChallenge = {
+      challengeId: response.challengeId,
+      maskedEmail: response.maskedEmail || '',
+      verifyEndpoint: response.verifyEndpoint || '/auth/login/verify-otp',
+      resendEndpoint: response.resendEndpoint || '/auth/login/resend-otp',
+      requiresTotp: Boolean(response.requiresTotp),
+      email,
+      password
+    };
+    if (errorAlert) errorAlert.classList.add('hidden');
+
+    const challenge = this._loginChallenge;
+    formBody.innerHTML = `
+      <form onsubmit="VibeApp.verifyLoginOtp(event)" class="space-y-4" novalidate>
+        <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800/70 text-orange-800 dark:text-orange-200 text-xs leading-relaxed" role="status">
+          ${challenge.requiresTotp
+            ? 'Nhập mã 6 số từ ứng dụng xác thực để hoàn tất đăng nhập.'
+            : `Mã xác thực đã được gửi đến <strong>${this._escapeAuthHtml(challenge.maskedEmail || 'email của bạn')}</strong>.`}
+        </div>
+        <div>
+          <label for="auth-login-otp" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+            ${challenge.requiresTotp ? 'Mã authenticator (6 số)' : 'Mã OTP (6 số)'}
+          </label>
+          <input type="text" id="auth-login-otp" inputmode="numeric" autocomplete="one-time-code"
+                 maxlength="6" pattern="[0-9]{6}" required autofocus
+                 aria-describedby="auth-login-otp-help"
+                 placeholder="Nhập 6 chữ số"
+                 class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-center text-lg font-mono font-bold tracking-[0.35em] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
+          <p id="auth-login-otp-help" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">
+            Mã chỉ gồm 6 chữ số. Không chia sẻ mã này với người khác.
+          </p>
+        </div>
+        <button type="submit" id="auth-login-otp-submit" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4"></i> Xác minh và đăng nhập
+        </button>
+        <div class="flex items-center justify-between gap-3 text-[11px]">
+          <button type="button" id="btn-resend-login-otp" onclick="VibeApp.resendLoginOtp()" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">
+            <span id="login-otp-resend-text">Gửi lại mã</span>
+          </button>
+          <button type="button" onclick="VibeApp.cancelLoginChallenge()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+            Quay lại đăng nhập
+          </button>
+        </div>
+      </form>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    this._startLoginOtpCooldown(Number(response.resendAfter || 60));
+    document.getElementById('auth-login-otp')?.focus();
+  },
+
+  _escapeAuthHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+  },
+
+  _showLoginChallengeError(message) {
+    const errorAlert = document.getElementById('auth-error-alert');
+    const errorText = document.getElementById('auth-error-text');
+    if (errorAlert && errorText) {
+      errorText.textContent = message;
+      errorAlert.classList.remove('hidden');
+    }
+  },
+
+  _startLoginOtpCooldown(seconds = 60) {
+    if (this._loginOtpTimer) clearInterval(this._loginOtpTimer);
+    this._loginOtpCooldownEndTime = Date.now() + Math.max(0, seconds) * 1000;
+    this._updateLoginOtpCooldown();
+    this._loginOtpTimer = setInterval(() => {
+      this._updateLoginOtpCooldown();
+      if (Date.now() >= this._loginOtpCooldownEndTime) {
+        clearInterval(this._loginOtpTimer);
+        this._loginOtpTimer = null;
+      }
+    }, 1000);
+  },
+
+  _updateLoginOtpCooldown() {
+    const button = document.getElementById('btn-resend-login-otp');
+    const text = document.getElementById('login-otp-resend-text');
+    if (!button || !text) return;
+    const remaining = Math.max(0, Math.ceil((this._loginOtpCooldownEndTime - Date.now()) / 1000));
+    button.disabled = remaining > 0;
+    button.classList.toggle('opacity-50', remaining > 0);
+    button.classList.toggle('cursor-not-allowed', remaining > 0);
+    text.textContent = remaining > 0 ? `Gửi lại mã (${remaining}s)` : 'Gửi lại mã';
+  },
+
+  async resendLoginOtp() {
+    const challenge = this._loginChallenge;
+    if (!challenge || Date.now() < this._loginOtpCooldownEndTime) return;
+    const button = document.getElementById('btn-resend-login-otp');
+    if (button) button.disabled = true;
+    try {
+      const response = await this.api(challenge.resendEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({ challengeId: challenge.challengeId, email: challenge.email })
+      });
+      if (response.challengeId) challenge.challengeId = response.challengeId;
+      if (response.maskedEmail) challenge.maskedEmail = response.maskedEmail;
+      this._startLoginOtpCooldown(Number(response.resendAfter || 60));
+      this._showLoginChallengeError('');
+      document.getElementById('auth-error-alert')?.classList.add('hidden');
+      this.showToast('Mã xác thực mới đã được gửi.', 'success');
+    } catch (error) {
+      this._showLoginChallengeError(error.message || 'Không thể gửi lại mã xác thực. Vui lòng thử lại sau.');
+      if (button) button.disabled = false;
+    }
+  },
+
+  cancelLoginChallenge() {
+    if (this._loginOtpTimer) clearInterval(this._loginOtpTimer);
+    this._loginOtpTimer = null;
+    this._loginChallenge = null;
+    const formBody = document.getElementById('auth-form-body');
+    if (formBody) {
+      formBody.innerHTML = this.getAuthFormHtml('login');
+      if (window.lucide) window.lucide.createIcons();
+    }
+  },
+
+  async verifyLoginOtp(event) {
+    if (event) event.preventDefault();
+    const challenge = this._loginChallenge;
+    const otpInput = document.getElementById('auth-login-otp');
+    const submitButton = document.getElementById('auth-login-otp-submit');
+    const otp = otpInput?.value.trim();
+    if (!challenge || !/^\d{6}$/.test(otp || '')) {
+      this._showLoginChallengeError('Vui lòng nhập đúng mã gồm 6 chữ số.');
+      otpInput?.focus();
+      return;
+    }
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Đang xác minh...';
+    }
+    try {
+      const response = await this.api(challenge.verifyEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({ challengeId: challenge.challengeId, otp, code: otp })
+      });
+      if (!response.success || !response.token) throw new Error(response.message || 'Mã xác thực không hợp lệ.');
+      this._completeLogin(response);
+    } catch (error) {
+      const message = error.message || 'Mã xác thực không hợp lệ.';
+      const errorCode = String(error.code || error.data?.code || error.data?.error || '').toUpperCase();
+      this._showLoginChallengeError(/expired|hết hạn|EXPIRED/i.test(message) || errorCode.includes('EXPIRED')
+        ? 'Mã xác thực đã hết hạn. Vui lòng gửi lại mã.'
+        : /too many|quá nhiều|attempt/i.test(message) || errorCode.includes('TOO_MANY') || errorCode.includes('ATTEMPTS')
+          ? 'Bạn đã nhập sai quá nhiều lần. Vui lòng gửi lại mã hoặc thử lại sau.'
+          : message);
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4"></i> Xác minh và đăng nhập';
+        if (window.lucide) window.lucide.createIcons();
+      }
+      otpInput?.focus();
+    }
+  },
+
+  _completeLogin(response) {
+    this.state.token = response.token;
+    this.state.currentUser = response.user;
+    localStorage.setItem('survhub_token', response.token);
+    localStorage.setItem('survhub_cached_user', JSON.stringify(response.user));
+    localStorage.setItem('vibesurvey_cached_user', JSON.stringify(response.user));
+    this._loginChallenge = null;
+    this.closeModal();
+    this.showToast(`Chào mừng ${response.user.name}! Đăng nhập thành công.`, 'success');
+    this.applyUserInterface();
+    if (this.state.pendingSurveyId) {
+      const pendingId = this.state.pendingSurveyId;
+      this.state.pendingSurveyId = null;
+      setTimeout(() => this.startSurveySession(pendingId), 350);
+    }
+  },
+
   selectRegisterRole(role) {
     const cardResp = document.getElementById('role-card-respondent');
     const cardCreator = document.getElementById('role-card-creator');
@@ -348,24 +531,12 @@
         body: JSON.stringify({ email, password })
       });
 
-      if (res.success) {
-        this.state.token = res.token;
-        this.state.currentUser = res.user;
-        localStorage.setItem('survhub_token', res.token);
-        localStorage.setItem('survhub_cached_user', JSON.stringify(res.user));
-        localStorage.setItem('vibesurvey_cached_user', JSON.stringify(res.user));
-        this.closeModal();
-        this.showToast(`Chào mừng ${res.user.name}! Đăng nhập thành công.`, 'success');
-        this.applyUserInterface();
-
-        // Tự động chuyển thẳng vào làm bài nếu đến từ Deep-link Email
-        if (this.state.pendingSurveyId) {
-          const pendingId = this.state.pendingSurveyId;
-          this.state.pendingSurveyId = null;
-          setTimeout(() => {
-            this.startSurveySession(pendingId);
-          }, 350);
-        }
+      if ((res.requiresOtp || res.requiresTotp) && res.challengeId) {
+        this._renderLoginChallenge(res, email, password);
+      } else if (res.success && res.token) {
+          this._completeLogin(res);
+      } else {
+        throw new Error(res.message || 'Phản hồi đăng nhập không hợp lệ.');
       }
     } catch (err) {
       if (errorAlert && errorText) {

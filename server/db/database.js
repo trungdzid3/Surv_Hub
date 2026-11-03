@@ -545,6 +545,20 @@ function initSchema() {
       expires_at INTEGER NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );`,
+    `CREATE TABLE IF NOT EXISTS login_challenges (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      otp_hash TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      consumed_at INTEGER,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );`,
+    'CREATE INDEX IF NOT EXISTS idx_login_challenges_user ON login_challenges(user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_login_challenges_expiry ON login_challenges(expires_at);',
+    'ALTER TABLE users ADD COLUMN totp_secret_encrypted TEXT;',
+    'ALTER TABLE users ADD COLUMN totp_pending_secret_encrypted TEXT;',
+    'ALTER TABLE users ADD COLUMN totp_enabled INTEGER DEFAULT 0;',
     `CREATE TABLE IF NOT EXISTS admin_audit_logs (
       id TEXT PRIMARY KEY,
       admin_id TEXT NOT NULL,

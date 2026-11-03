@@ -1,9 +1,21 @@
 # TASK: ĐẠI TU MODULAR HÓA app.js THEO MIỀN NGHIỆP VỤ (8 WAVE) - TIẾN ĐỘ ĐÊM 03-11-2026
 
+## LOGIN 2FA HARDENING 03-11-2026
+- [x] Task L1: Triển khai email OTP sau mật khẩu và TOTP RFC6238 tùy chọn, token chỉ phát hành sau khi hoàn tất xác thực hai bước | [Agent: auth-2fa-backend-specialist] | [Skill: security-audit] | [Locked Files: server/controllers/authController.js, server/db/database.js, server/routes/api.js]
+- [x] Task L2: Cập nhật giao diện đăng nhập để xử lý bước OTP, trạng thái 2FA và không lưu token trước khi xác minh | [Agent: auth-2fa-frontend-specialist] | [Skill: design-taste-frontend] | [Locked Files: public/js/modules/modalsTerms.js]
+- [x] Task L3: Bổ sung kiểm thử hồi quy cho login OTP/TOTP, chạy syntax và kiểm tra browser flow | [Agent: auth-2fa-qa-specialist] | [Skill: security-audit] | [Locked Files: tests/test_auth_2fa.js]
+- [x] Task L4: Tích hợp, cập nhật context/code map và nghiệm thu toàn bộ | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, docs/CODE_MAP.md]
+
 ## SECURITY PATCH 03-11-2026
 - [x] Task S1: Fail-closed payment webhook và xác minh số tiền giao dịch | [Agent: payment-webhook-specialist] | [Skill: security-audit] | [Locked Files: server/config/index.js, server/controllers/walletController.js]
 - [x] Task S2: Bắt buộc ownership cho deposit-order lookup | [Agent: deposit-order-specialist] | [Skill: security-audit] | [Locked Files: server/routes/api.js, server/services/ledgerService.js]
 - [x] Task S3: Tích hợp kiểm thử, cập nhật ngữ cảnh và xác minh diff | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, tests/]
+
+## ACCOUNT SECURITY HARDENING 03-11-2026
+- [x] Task A1: Fail-closed JWT và kiểm tra session/token tại middleware | [Agent: account-session-specialist] | [Skill: security-audit] | [Locked Files: server/config/index.js, server/middlewares/auth.js]
+- [x] Task A2: Hardening OTP đăng ký và xác minh auth flow | [Agent: otp-auth-specialist] | [Skill: security-audit] | [Locked Files: server/controllers/authController.js]
+- [x] Task A3: Tin cậy IP và rate-limit chống brute force | [Agent: rate-limit-specialist] | [Skill: security-audit] | [Locked Files: server/middlewares/rateLimit.js, server/app.js]
+- [x] Task A4: Tích hợp kiểm thử, cập nhật context và rà soát thay đổi | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, tests/]
 
 Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data/catalogs.js + utils.js + 7 module miền nghiệp vụ (creator-studio, respondent, wallet-ledger, admin-console, forum, modals-terms, notifications). Mỗi wave: node -c + npm test + sync:android + commit.
 

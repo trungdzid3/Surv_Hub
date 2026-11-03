@@ -19,6 +19,13 @@ router.use(checkIpBannedMiddleware);
 router.post('/auth/register', (req, res) => authController.register(req, res));
 router.post('/auth/send-registration-otp', (req, res) => authController.sendRegistrationOtp(req, res));
 router.post('/auth/login', (req, res) => authController.login(req, res));
+router.post('/auth/verify-login-otp', (req, res) => authController.verifyLoginOtp(req, res));
+// Alias tương thích frontend cũ: /auth/login/verify-otp
+router.post('/auth/login/verify-otp', (req, res) => authController.verifyLoginOtp(req, res));
+router.post('/auth/totp/setup', authenticateToken, (req, res) => authController.setupTotp(req, res));
+router.post('/auth/totp/enable', authenticateToken, (req, res) => authController.enableTotp(req, res));
+router.post('/auth/totp/disable', authenticateToken, (req, res) => authController.disableTotp(req, res));
+router.post('/auth/totp/verify', authenticateToken, (req, res) => authController.verifyTotp(req, res));
 router.post('/auth/google-auth', (req, res) => authController.googleAuth(req, res));
 router.get('/auth/google', (req, res) => authController.initiateGoogleOAuth(req, res));
 router.get('/auth/google/callback', (req, res) => authController.handleGoogleOAuthCallback(req, res));

@@ -152,6 +152,12 @@ const testSuites = [
     name: 'Tầng 23: Danh mục tên miền email sinh viên mở rộng',
     description: 'Kiểm tra catalog universityEmailDomains.json, chuẩn hóa tên miền, xác thực email sinh viên và nhận diện trường',
     file: 'test_student_email_domains.js'
+  },
+  {
+    id: 24,
+    name: 'Tầng 24: Login OTP-aware & 2FA Regression Suite',
+    description: 'Kiểm tra token chỉ cấp sau OTP, giới hạn OTP sai, single-use và expiry challenge',
+    file: 'test_auth_2fa.js'
   }
 ];
 

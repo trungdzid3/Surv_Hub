@@ -127,7 +127,24 @@ async function runApiTests() {
       const dataLogin = await resLogin.json();
       assert.strictEqual(resLogin.status, 200);
       assert.strictEqual(dataLogin.success, true);
-      assert(dataLogin.token);
+      assert.strictEqual(dataLogin.token, undefined, 'Không được phát hành token trước khi hoàn tất OTP');
+      assert.strictEqual(dataLogin.requiresOtp, true);
+      assert(dataLogin.challengeId);
+      assert(/^\d{6}$/.test(dataLogin.debugOtp), 'NODE_ENV=test phải trả debugOtp để hoàn tất challenge');
+
+      const resVerifyLogin = await fetch(`${baseUrl}/auth/verify-login-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          challengeId: dataLogin.challengeId,
+          otp: dataLogin.debugOtp
+        })
+      });
+      const dataVerifyLogin = await resVerifyLogin.json();
+      assert.strictEqual(resVerifyLogin.status, 200);
+      assert.strictEqual(dataVerifyLogin.success, true);
+      assert(dataVerifyLogin.token);
+      creatorToken = dataVerifyLogin.token;
 
       // Kiểm tra đăng nhập sai mật khẩu -> 401
       const resWrongPw = await fetch(`${baseUrl}/auth/login`, {

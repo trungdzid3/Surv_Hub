@@ -8,6 +8,10 @@ const { createRateLimiter } = require('./middlewares/rateLimit');
 
 const app = express();
 
+// Cloudflare Tunnel kết nối vào localhost. Chỉ tin proxy loopback để req.ip
+// được suy ra từ X-Forwarded-For; client truy cập trực tiếp không thể tự chọn IP.
+app.set('trust proxy', (ip) => ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1');
+
 // Bao mat voi Helmet (cau hinh cho phep SPA, CDN va nhung assets/iframe an toan)
 app.use(
   helmet({
@@ -94,6 +98,21 @@ app.use('/src', express.static(path.join(__dirname, '../src')));
 // (mount theo thứ tự: limiter tổng trước, limiter auth hẹp hơn sau, cả 2 đều trước router)
 app.use('/api/v1', createRateLimiter({ windowMs: 60000, max: 300 }));
 app.use('/api/v1/auth', createRateLimiter({ windowMs: 60000, max: 60, message: 'Quá nhiều thao tác xác thực. Vui lòng thử lại sau một phút.' }));
+app.use('/api/v1/auth/login', createRateLimiter({
+  windowMs: 60000,
+  max: 10,
+  message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau một phút.'
+}));
+app.use('/api/v1/auth/register', createRateLimiter({
+  windowMs: 60000,
+  max: 10,
+  message: 'Quá nhiều yêu cầu tạo tài khoản. Vui lòng thử lại sau một phút.'
+}));
+app.use('/api/v1/auth/send-registration-otp', createRateLimiter({
+  windowMs: 60000,
+  max: 5,
+  message: 'Quá nhiều yêu cầu gửi mã xác thực. Vui lòng thử lại sau một phút.'
+}));
 
 // Mount API v1
 app.use('/api/v1', apiRoutes);

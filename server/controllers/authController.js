@@ -9,6 +9,109 @@ const antiFraudService = require('../services/antiFraudService');
 
 // Bộ nhớ đệm kiểm soát tần suất gửi OTP đăng ký theo IP (Tối đa 5 lần / 10 phút)
 const registrationIpRateLimiter = new Map();
+// Schema hiện tại chưa có cột đếm lần thử; giữ invariant tối đa 5 lần thử cho mỗi OTP trong process.
+const registrationOtpAttempts = new Map();
+const studentOtpAttempts = new Map();
+const emailOtpAttempts = new Map();
+
+function hashRegistrationOtp(otp) {
+  return crypto.createHmac('sha256', config.JWT_SECRET).update(String(otp)).digest('hex');
+}
+
+function secureOtpEquals(expectedHash, otp) {
+  const actualHash = Buffer.from(hashRegistrationOtp(otp), 'hex');
+  const storedHash = Buffer.from(String(expectedHash), 'hex');
+  return actualHash.length === storedHash.length && crypto.timingSafeEqual(actualHash, storedHash);
+}
+
+function maskEmail(email) {
+  const [local, domain] = String(email).split('@');
+  return `${local.slice(0, 2)}***${local.length > 3 ? local.slice(-1) : ''}@${domain}`;
+}
+
+function hashLoginOtp(otp) {
+  return crypto.createHmac('sha256', config.JWT_SECRET).update(String(otp)).digest('hex');
+}
+
+function secureHashEquals(expectedHash, value) {
+  const expected = Buffer.from(String(expectedHash || ''), 'hex');
+  const actual = Buffer.from(hashLoginOtp(value), 'hex');
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+function base32Encode(buffer) {
+  let bits = 0;
+  let value = 0;
+  let output = '';
+  for (const byte of buffer) {
+    value = (value << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      output += BASE32_ALPHABET[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) output += BASE32_ALPHABET[(value << (5 - bits)) & 31];
+  return output;
+}
+
+function base32Decode(input) {
+  const normalized = String(input || '').toUpperCase().replace(/=+$/, '').replace(/\s/g, '');
+  let bits = 0;
+  let value = 0;
+  const output = [];
+  for (const char of normalized) {
+    const index = BASE32_ALPHABET.indexOf(char);
+    if (index < 0) throw new Error('Secret TOTP không hợp lệ');
+    value = (value << 5) | index;
+    bits += 5;
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return Buffer.from(output);
+}
+
+function encryptTotpSecret(secret) {
+  const key = crypto.createHash('sha256').update(config.JWT_SECRET).digest();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(secret, 'utf8'), cipher.final()]);
+  return `${iv.toString('base64url')}.${cipher.getAuthTag().toString('base64url')}.${encrypted.toString('base64url')}`;
+}
+
+function decryptTotpSecret(payload) {
+  const [ivPart, tagPart, dataPart] = String(payload || '').split('.');
+  if (!ivPart || !tagPart || !dataPart) throw new Error('Secret TOTP không hợp lệ');
+  const key = crypto.createHash('sha256').update(config.JWT_SECRET).digest();
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivPart, 'base64url'));
+  decipher.setAuthTag(Buffer.from(tagPart, 'base64url'));
+  return Buffer.concat([decipher.update(Buffer.from(dataPart, 'base64url')), decipher.final()]).toString('utf8');
+}
+
+function hotp(secret, counter) {
+  const key = base32Decode(secret);
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeBigUInt64BE(BigInt(counter));
+  const digest = crypto.createHmac('sha1', key).update(counterBuffer).digest();
+  const offset = digest[digest.length - 1] & 15;
+  const code = (digest.readUInt32BE(offset) & 0x7fffffff) % 1000000;
+  return String(code).padStart(6, '0');
+}
+
+function verifyTotp(secret, token, timestamp = Date.now()) {
+  if (!/^\d{6}$/.test(String(token || ''))) return false;
+  const counter = Math.floor(timestamp / 30000);
+  for (let drift = -1; drift <= 1; drift += 1) {
+    const expected = Buffer.from(hotp(secret, counter + drift));
+    const actual = Buffer.from(String(token));
+    if (crypto.timingSafeEqual(expected, actual)) return true;
+  }
+  return false;
+}
 
 class AuthController {
   /**
@@ -39,7 +142,7 @@ class AuthController {
       }
 
       // Kiểm tra tần suất gửi mã (Cooldown 60 giây) chống spam bấm liên tục
-      const lastOtpRecord = db.prepare('SELECT otp, created_at FROM registration_otps WHERE email = ?').get(cleanEmail);
+      const lastOtpRecord = db.prepare('SELECT created_at FROM registration_otps WHERE email = ?').get(cleanEmail);
       if (lastOtpRecord && lastOtpRecord.created_at) {
         const lastSentTime = new Date(lastOtpRecord.created_at + 'Z').getTime();
         const now = Date.now();
@@ -55,17 +158,9 @@ class AuthController {
       }
 
       // Khống chế tần suất gửi OTP theo địa chỉ IP (Tối đa 5 lần / 10 phút) để chặn bot quét tự động
-      const userAgent = (req.headers && req.headers['user-agent'] || '').toLowerCase();
-      const isInternalTest = (req.headers && req.headers['x-test-suite']) || 
-                             userAgent.includes('node') || 
-                             userAgent.includes('undici') || 
-                             cleanEmail.startsWith('cooldown_test_') || 
-                             cleanEmail.includes('test') || 
-                             cleanEmail.includes('example.com') || 
-                             cleanEmail.includes('vibetest.vn') || 
-                             process.env.NODE_ENV === 'test';
+      const isInternalTest = process.env.NODE_ENV === 'test';
 
-      const rawIp = req.headers && (req.headers['x-forwarded-for'] || (req.socket && req.socket.remoteAddress) || req.ip);
+      const rawIp = req.ip;
       if (!isInternalTest && rawIp) {
         const clientIp = String(rawIp).split(',')[0].trim();
         const nowMs = Date.now();
@@ -84,7 +179,7 @@ class AuthController {
       }
 
       // Tạo mã OTP ngẫu nhiên 6 chữ số (mỗi lần sinh mã mới sẽ hủy bỏ hoàn toàn mã cũ)
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = crypto.randomInt(100000, 1000000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 phút
 
       // Lưu hoặc cập nhật ghi đè OTP vào bảng registration_otps (Hủy mã cũ ngay lập tức)
@@ -92,7 +187,8 @@ class AuthController {
         INSERT INTO registration_otps (email, otp, expires_at)
         VALUES (?, ?, ?)
         ON CONFLICT(email) DO UPDATE SET otp = excluded.otp, expires_at = excluded.expires_at, created_at = CURRENT_TIMESTAMP
-      `).run(cleanEmail, otp, expiresAt);
+      `).run(cleanEmail, hashRegistrationOtp(otp), expiresAt);
+      registrationOtpAttempts.delete(cleanEmail);
 
       // Che một phần địa chỉ email trước khi ghi log (không bao giờ in mã OTP ra console)
       const parts = cleanEmail.split('@');
@@ -131,22 +227,29 @@ class AuthController {
         emailError = err.message;
       }
 
-      // Nếu tất cả kênh email đều hết quota, gửi thất bại hoặc đang chạy bộ kiểm thử tự hành:
-      // Tự động trả về debugOtp để người dùng/test runner vẫn hoàn tất được quy trình
-      // (Chỉ trả OTP khi kênh email thất bại hoặc môi trường test, không rò rỉ mã trong môi trường thật)
-      const returnOtp = (!emailSent || emailMode === 'MOCK_TEST_SKIPPED' || config.NODE_ENV === 'test') ? otp : undefined;
+      const isTestEnv = process.env.NODE_ENV === 'test';
+      if (!emailSent && !isTestEnv) {
+        db.prepare('DELETE FROM registration_otps WHERE email = ?').run(cleanEmail);
+        registrationOtpAttempts.delete(cleanEmail);
+        return res.status(503).json({
+          success: false,
+          message: 'Không thể gửi mã xác thực lúc này. Vui lòng thử lại sau.',
+          maskedEmail,
+          quotaExceeded: true,
+          channel: emailMode
+        });
+      }
+
       let responseMessage = `Mã xác thực gồm 6 chữ số đã được gửi đến hộp thư ${maskedEmail}. Vui lòng nhập mã để hoàn tất đăng ký!`;
-      if (emailMode === 'MOCK_TEST_SKIPPED') {
+      if (isTestEnv && emailMode === 'MOCK_TEST_SKIPPED') {
         responseMessage = `[Chế độ Thử Nghiệm] Mã xác thực đăng ký của bạn là: ${otp}`;
-      } else if (!emailSent) {
-        responseMessage = `Các kênh gửi email đạt giới hạn hoặc chưa cấu hình. Mã xác thực của bạn là: ${otp}`;
       }
 
       return res.json({
         success: true,
         message: responseMessage,
         maskedEmail,
-        debugOtp: returnOtp,
+        debugOtp: isTestEnv ? otp : undefined,
         quotaExceeded: !emailSent,
         channel: emailMode
       });
@@ -201,12 +304,27 @@ class AuthController {
           });
         }
         if (Date.now() > Number(otpRecord.expires_at)) {
+          registrationOtpAttempts.delete(cleanEmail);
           return res.status(400).json({ 
             success: false, 
             message: 'Mã xác thực OTP đã hết hạn (sau 10 phút). Vui lòng bấm "Gửi mã" để nhận mã mới.' 
           });
         }
-        if (otpRecord.otp !== cleanOtp) {
+        const attempts = registrationOtpAttempts.get(cleanEmail) || 0;
+        if (attempts >= 5) {
+          return res.status(429).json({
+            success: false,
+            message: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng bấm "Gửi mã" để nhận mã mới.'
+          });
+        }
+        if (!secureOtpEquals(otpRecord.otp, cleanOtp)) {
+          registrationOtpAttempts.set(cleanEmail, attempts + 1);
+          if (attempts + 1 >= 5) {
+            return res.status(429).json({
+              success: false,
+              message: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng bấm "Gửi mã" để nhận mã mới.'
+            });
+          }
           return res.status(400).json({ 
             success: false, 
             message: 'Mã xác thực OTP không chính xác. Vui lòng kiểm tra lại hộp thư email.' 
@@ -216,9 +334,10 @@ class AuthController {
         // Khớp OTP -> Đánh dấu email đã xác thực 100% và xóa OTP đã dùng
         isEmailVerified = 1;
         db.prepare('DELETE FROM registration_otps WHERE email = ?').run(cleanEmail);
+        registrationOtpAttempts.delete(cleanEmail);
       }
 
-      const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+      const rawIp = req.ip;
       const deviceFingerprint = req.body.device_fingerprint || req.headers['x-device-fingerprint'] || null;
 
       // 1. Kiểm tra an ninh IP & Thiết bị (Chặn Ban IP / Multi-Account)
@@ -304,7 +423,7 @@ class AuthController {
     }
   }
 
-  login(req, res) {
+  async login(req, res) {
     try {
       const { email, password } = req.body;
 
@@ -326,7 +445,7 @@ class AuthController {
         return res.status(401).json({ success: false, message: 'Email hoặc mật khẩu không chính xác' });
       }
 
-      const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+      const rawIp = req.ip;
       const deviceFingerprint = req.body.device_fingerprint || req.headers['x-device-fingerprint'] || null;
 
       // Giám sát an ninh IP & Thiết bị
@@ -336,47 +455,53 @@ class AuthController {
         return res.status(403).json({ success: false, isBanned: true, message: abuseErr.message });
       }
 
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        config.JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const challengeId = crypto.randomUUID();
+      const otp = crypto.randomInt(100000, 1000000).toString();
+      const expiresAt = Date.now() + 10 * 60 * 1000;
+      db.prepare(`
+        UPDATE login_challenges SET consumed_at = ? WHERE user_id = ? AND consumed_at IS NULL
+      `).run(Date.now(), user.id);
+      db.prepare(`
+        INSERT INTO login_challenges (id, user_id, otp_hash, expires_at)
+        VALUES (?, ?, ?, ?)
+      `).run(challengeId, user.id, hashLoginOtp(otp), expiresAt);
 
-      let demographics = null;
-      if (user.demographics_json) {
-        try { demographics = JSON.parse(user.demographics_json); } catch (e) {}
+      const notificationService = require('../services/notificationService');
+      const maskedEmail = maskEmail(user.email);
+      let emailSent = false;
+      try {
+        const result = await notificationService.sendSmartEmail({
+          toEmail: user.email,
+          toName: user.name,
+          subject: '[SurvHub] Mã OTP đăng nhập của bạn',
+          htmlContent: notificationService.buildOtpEmailTemplate({
+            title: 'XÁC THỰC ĐĂNG NHẬP',
+            name: user.name || 'Bạn',
+            otp,
+            validMinutes: 10,
+            actionDescription: 'đăng nhập vào tài khoản SurvHub',
+            note: 'Mã chỉ dùng một lần và tuyệt đối không chia sẻ cho bất kỳ ai.'
+          }),
+          textContent: `Mã OTP đăng nhập SurvHub của bạn là ${otp}. Mã có hiệu lực trong 10 phút.`
+        });
+        emailSent = Boolean(result && result.success);
+      } catch (emailError) {
+        console.warn('Lỗi gửi Login OTP:', emailError.message);
+      }
+      const isTestEnv = process.env.NODE_ENV === 'test';
+      if (!emailSent && !isTestEnv) {
+        db.prepare('DELETE FROM login_challenges WHERE id = ?').run(challengeId);
+        return res.status(503).json({ success: false, message: 'Không thể gửi mã xác thực lúc này. Vui lòng thử lại sau.' });
       }
 
       return res.json({
         success: true,
-        message: 'Đăng nhập thành công',
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          avatar_url: user.avatar_url || null,
-          credit_balance: user.credit_balance,
-          point_balance: user.point_balance,
-          trust_score: user.trust_score,
-          free_trial_surveys_available: user.free_trial_surveys_available !== undefined ? user.free_trial_surveys_available : 1,
-          fast_track_tickets: user.fast_track_tickets || 0,
-          account_tier: user.account_tier || 'PERSONAL',
-          is_student_verified: user.is_student_verified || 0,
-          student_karma: user.student_karma || 0,
-          student_email: user.student_email || null,
-          profile_completed: user.profile_completed || 0,
-          demographic_locked_until: user.demographic_locked_until || null,
-          free_quota_remaining: user.free_quota_remaining || 0,
-          enterprise_verify_level: user.enterprise_verify_level || 0,
-          brand_name: user.brand_name || null,
-          company_legal_name: user.company_legal_name || null,
-          is_google_linked: user.is_google_linked || 0,
-          is_email_verified: user.is_email_verified || 0,
-          status: user.status,
-          demographics
-        }
+        message: `Mã xác thực đã được gửi đến ${maskedEmail}`,
+        challengeId,
+        maskedEmail,
+        requiresOtp: true,
+        requiresTotp: Boolean(user.totp_enabled),
+        debugOtp: isTestEnv ? otp : undefined
       });
     } catch (err) {
       if (err.message && (err.message.includes('khóa') || err.message.includes('cấm') || err.message.includes('bị khóa'))) {
@@ -384,6 +509,121 @@ class AuthController {
       }
       console.error('Lỗi login:', err);
       return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+  }
+
+  verifyLoginOtp(req, res) {
+    try {
+      const { challengeId, otp, totp } = req.body;
+      if (!challengeId || !/^\d{6}$/.test(String(otp || ''))) {
+        return res.status(400).json({ success: false, message: 'Vui lòng cung cấp challengeId và mã OTP 6 số' });
+      }
+      const challenge = db.prepare(`
+        SELECT c.*, u.email, u.role, u.name, u.status, u.totp_enabled, u.totp_secret_encrypted
+        FROM login_challenges c JOIN users u ON u.id = c.user_id WHERE c.id = ?
+      `).get(challengeId);
+      if (!challenge || challenge.consumed_at || challenge.expires_at <= Date.now()) {
+        return res.status(401).json({ success: false, message: 'Mã xác thực đã hết hạn hoặc không còn hiệu lực' });
+      }
+      if (challenge.attempts >= 5) {
+        db.prepare('UPDATE login_challenges SET consumed_at = ? WHERE id = ?').run(Date.now(), challengeId);
+        return res.status(429).json({ success: false, message: 'Challenge đã bị vô hiệu hóa do quá nhiều lần thử' });
+      }
+      if (!secureHashEquals(challenge.otp_hash, otp)) {
+        const attempts = challenge.attempts + 1;
+        db.prepare('UPDATE login_challenges SET attempts = ?, consumed_at = CASE WHEN ? >= 5 THEN ? ELSE consumed_at END WHERE id = ?')
+          .run(attempts, attempts, attempts >= 5 ? Date.now() : null, challengeId);
+        return res.status(401).json({ success: false, message: 'Mã xác thực không chính xác', remainingAttempts: Math.max(0, 5 - attempts) });
+      }
+      if (challenge.totp_enabled) {
+        let validTotp = false;
+        try {
+          validTotp = verifyTotp(decryptTotpSecret(challenge.totp_secret_encrypted), totp);
+        } catch (_) {}
+        if (!validTotp) {
+          const attempts = challenge.attempts + 1;
+          db.prepare('UPDATE login_challenges SET attempts = ?, consumed_at = CASE WHEN ? >= 5 THEN ? ELSE consumed_at END WHERE id = ?')
+            .run(attempts, attempts, attempts >= 5 ? Date.now() : null, challengeId);
+          return res.status(401).json({
+            success: false,
+            message: 'Vui lòng cung cấp mã TOTP hợp lệ',
+            requiresTotp: true,
+            remainingAttempts: Math.max(0, 5 - attempts)
+          });
+        }
+      }
+
+      db.prepare('UPDATE login_challenges SET consumed_at = ? WHERE id = ?').run(Date.now(), challengeId);
+      const token = jwt.sign(
+        { id: challenge.user_id, email: challenge.email, role: challenge.role },
+        config.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      const freshUser = db.prepare('SELECT * FROM users WHERE id = ?').get(challenge.user_id);
+      delete freshUser.password_hash;
+      delete freshUser.totp_secret_encrypted;
+      delete freshUser.totp_pending_secret_encrypted;
+      return res.json({ success: true, message: 'Đăng nhập thành công', token, user: freshUser });
+    } catch (err) {
+      console.error('Lỗi verifyLoginOtp:', err);
+      return res.status(500).json({ success: false, message: 'Lỗi máy chủ nội bộ' });
+    }
+  }
+
+  setupTotp(req, res) {
+    try {
+      const user = db.prepare('SELECT email, totp_enabled FROM users WHERE id = ?').get(req.user.id);
+      if (!user) return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+      if (user.totp_enabled) return res.status(409).json({ success: false, message: 'TOTP đã được bật' });
+      const secret = base32Encode(crypto.randomBytes(20));
+      db.prepare('UPDATE users SET totp_pending_secret_encrypted = ? WHERE id = ?')
+        .run(encryptTotpSecret(secret), req.user.id);
+      const issuer = 'VibeSurvey';
+      const otpauthUri = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(user.email)}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+      return res.json({ success: true, secret, otpauthUri });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: 'Không thể khởi tạo TOTP' });
+    }
+  }
+
+  enableTotp(req, res) {
+    try {
+      const { token } = req.body;
+      const user = db.prepare('SELECT totp_pending_secret_encrypted FROM users WHERE id = ?').get(req.user.id);
+      if (!user || !user.totp_pending_secret_encrypted || !verifyTotp(decryptTotpSecret(user.totp_pending_secret_encrypted), token)) {
+        return res.status(400).json({ success: false, message: 'Mã TOTP không hợp lệ hoặc phiên thiết lập đã hết hạn' });
+      }
+      db.prepare('UPDATE users SET totp_secret_encrypted = ?, totp_pending_secret_encrypted = NULL, totp_enabled = 1 WHERE id = ?')
+        .run(user.totp_pending_secret_encrypted, req.user.id);
+      return res.json({ success: true, enabled: true, message: 'Đã bật xác thực TOTP' });
+    } catch (err) {
+      return res.status(400).json({ success: false, message: 'Không thể bật TOTP' });
+    }
+  }
+
+  disableTotp(req, res) {
+    try {
+      const { token } = req.body;
+      const user = db.prepare('SELECT totp_secret_encrypted, totp_enabled FROM users WHERE id = ?').get(req.user.id);
+      if (!user || !user.totp_enabled || !verifyTotp(decryptTotpSecret(user.totp_secret_encrypted), token)) {
+        return res.status(401).json({ success: false, message: 'Mã TOTP không hợp lệ' });
+      }
+      db.prepare('UPDATE users SET totp_secret_encrypted = NULL, totp_pending_secret_encrypted = NULL, totp_enabled = 0 WHERE id = ?')
+        .run(req.user.id);
+      return res.json({ success: true, enabled: false, message: 'Đã tắt xác thực TOTP' });
+    } catch (err) {
+      return res.status(400).json({ success: false, message: 'Không thể tắt TOTP' });
+    }
+  }
+
+  verifyTotp(req, res) {
+    try {
+      const { token } = req.body;
+      const user = db.prepare('SELECT totp_secret_encrypted, totp_enabled FROM users WHERE id = ?').get(req.user.id);
+      const valid = Boolean(user && user.totp_enabled && verifyTotp(decryptTotpSecret(user.totp_secret_encrypted), token));
+      return res.status(valid ? 200 : 401).json({ success: valid, valid, message: valid ? 'Mã TOTP hợp lệ' : 'Mã TOTP không hợp lệ' });
+    } catch (err) {
+      return res.status(401).json({ success: false, valid: false, message: 'Mã TOTP không hợp lệ' });
     }
   }
 
@@ -530,7 +770,7 @@ class AuthController {
   /**
    * Gửi mã OTP xác thực email thực tế
    */
-  sendVerificationOtp(req, res) {
+  async sendVerificationOtp(req, res) {
     try {
       const user = req.user;
       if (!user) {
@@ -554,11 +794,12 @@ class AuthController {
       }
 
       // Tạo mã OTP ngẫu nhiên 6 chữ số (ghi đè và hủy mã cũ)
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = crypto.randomInt(100000, 1000000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // Có hiệu lực trong 10 phút
       const sentAt = Date.now();
 
-      db.prepare('UPDATE users SET email_otp = ?, email_otp_expires_at = ?, email_otp_sent_at = ? WHERE id = ?').run(otp, expiresAt, sentAt, user.id);
+      db.prepare('UPDATE users SET email_otp = ?, email_otp_expires_at = ?, email_otp_sent_at = ? WHERE id = ?').run(hashRegistrationOtp(otp), expiresAt, sentAt, user.id);
+      emailOtpAttempts.delete(user.id);
 
       // Che một phần địa chỉ email trước khi ghi log (không bao giờ in mã OTP ra console)
       const parts = user.email.split('@');
@@ -567,32 +808,45 @@ class AuthController {
       console.log(`\n=======================================================\n[EMAIL OTP SERVICE] Gửi mã xác thực đến: ${maskedEmail} | Mã có hiệu lực trong 10 phút\n=======================================================\n`);
 
       // Bắn email thật qua bộ điều phối thông minh đa kênh (Resend -> Brevo -> SMTP)
-      if (user.email) {
-        const notificationService = require('../services/notificationService');
-        const emailSubject = `[SurvHub] Mã xác thực tài khoản của bạn: ${otp}`;
-        const emailHtml = notificationService.buildOtpEmailTemplate({
-          title: 'XÁC THỰC TÀI KHOẢN & ĐẶT LẠI MẬT KHẨU',
-          name: user.name || 'Bạn',
-          otp,
-          validMinutes: 10,
-          actionDescription: 'xác thực tài khoản và đặt lại mật khẩu',
-          note: 'Nếu bạn không gửi yêu cầu này, vui lòng đổi mật khẩu ngay để bảo vệ tài khoản.'
-        });
+      const notificationService = require('../services/notificationService');
+      const emailSubject = `[SurvHub] Mã xác thực tài khoản của bạn: ${otp}`;
+      const emailHtml = notificationService.buildOtpEmailTemplate({
+        title: 'XÁC THỰC TÀI KHOẢN & ĐẶT LẠI MẬT KHẨU',
+        name: user.name || 'Bạn',
+        otp,
+        validMinutes: 10,
+        actionDescription: 'xác thực tài khoản và đặt lại mật khẩu',
+        note: 'Nếu bạn không gửi yêu cầu này, vui lòng đổi mật khẩu ngay để bảo vệ tài khoản.'
+      });
 
-        notificationService.sendSmartEmail({
+      let emailResult = { success: false };
+      try {
+        emailResult = await notificationService.sendSmartEmail({
           toEmail: user.email,
           toName: user.name,
           subject: emailSubject,
           htmlContent: emailHtml,
           textContent: `Mã xác thực OTP của bạn là: ${otp}. Mã có hiệu lực trong 10 phút.`
-        }).catch(e => console.warn('Lỗi gửi OTP Verification đa kênh:', e.message));
+        }) || emailResult;
+      } catch (e) {
+        console.warn('Lỗi gửi OTP Verification đa kênh:', e.message);
+      }
+
+      if (!emailResult.success && process.env.NODE_ENV !== 'test') {
+        db.prepare('UPDATE users SET email_otp = NULL, email_otp_expires_at = NULL, email_otp_sent_at = NULL WHERE id = ?').run(user.id);
+        emailOtpAttempts.delete(user.id);
+        return res.status(503).json({
+          success: false,
+          message: 'Không thể gửi mã xác thực lúc này. Vui lòng thử lại sau.',
+          maskedEmail
+        });
       }
 
       return res.json({
         success: true,
         message: `Mã xác thực gồm 6 chữ số đã được gửi đến hộp thư ${maskedEmail}. Vui lòng kiểm tra email của bạn!`,
         maskedEmail,
-        debugOtp: config.NODE_ENV === 'test' ? otp : undefined
+        debugOtp: process.env.NODE_ENV === 'test' ? otp : undefined
       });
     } catch (err) {
       console.error('Lỗi sendVerificationOtp:', err);
@@ -620,15 +874,32 @@ class AuthController {
       }
 
       if (Date.now() > Number(row.email_otp_expires_at)) {
+        emailOtpAttempts.delete(user.id);
         return res.status(400).json({ success: false, message: 'Mã xác thực đã hết hạn. Vui lòng yêu cầu mã OTP mới' });
       }
 
-      if (row.email_otp !== cleanOtp) {
+      const attempts = emailOtpAttempts.get(user.id) || 0;
+      if (attempts >= 5) {
+        return res.status(429).json({
+          success: false,
+          message: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới'
+        });
+      }
+
+      if (!secureOtpEquals(row.email_otp, cleanOtp)) {
+        emailOtpAttempts.set(user.id, attempts + 1);
+        if (attempts + 1 >= 5) {
+          return res.status(429).json({
+            success: false,
+            message: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới'
+          });
+        }
         return res.status(400).json({ success: false, message: 'Mã xác thực không chính xác. Vui lòng kiểm tra lại' });
       }
 
       // Khớp OTP -> Cập nhật trạng thái
       db.prepare('UPDATE users SET is_email_verified = 1, email_otp = NULL, email_otp_expires_at = NULL WHERE id = ?').run(user.id);
+      emailOtpAttempts.delete(user.id);
 
       const updatedUser = db.prepare('SELECT id, email, name, role, avatar_url, credit_balance, point_balance, trust_score, status, free_trial_surveys_available, is_google_linked, is_email_verified FROM users WHERE id = ?').get(user.id);
 
@@ -717,7 +988,7 @@ class AuthController {
         return res.status(400).json({ success: false, message: 'Thông tin xác thực Google không hợp lệ hoặc thiếu email' });
       }
 
-      const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+      const rawIp = req.ip;
       const deviceFingerprint = req.body.device_fingerprint || req.headers['x-device-fingerprint'] || null;
 
       // Kiểm tra xem đã có user nào liên kết với google_id này chưa
@@ -1065,7 +1336,7 @@ class AuthController {
       }
 
       // Sinh OTP 6 chữ số ngẫu nhiên (hết hạn sau 5 phút)
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = crypto.randomInt(100000, 1000000).toString();
       const expiresAt = Date.now() + 5 * 60 * 1000;
       const sentAt = Date.now();
 
@@ -1073,7 +1344,8 @@ class AuthController {
         UPDATE users 
         SET student_email = ?, student_otp = ?, student_otp_expires_at = ?, student_otp_sent_at = ? 
         WHERE id = ?
-      `).run(cleanEmail, otp, expiresAt, sentAt, user.id);
+      `).run(cleanEmail, hashRegistrationOtp(otp), expiresAt, sentAt, user.id);
+      studentOtpAttempts.delete(user.id);
 
       // Che một phần địa chỉ email trước khi ghi log (không bao giờ in mã OTP ra console)
       const parts = cleanEmail.split('@');
@@ -1111,6 +1383,7 @@ class AuthController {
       if (!emailSendResult.success) {
         // Hủy mã vừa tạo để người dùng được yêu cầu lại ngay, không bị kẹt cooldown 60 giây
         db.prepare('UPDATE users SET student_otp = NULL, student_otp_expires_at = NULL, student_otp_sent_at = NULL WHERE id = ?').run(user.id);
+        studentOtpAttempts.delete(user.id);
         const failReason = emailSendResult.reason || emailSendResult.error || 'Không rõ nguyên nhân';
         console.warn(`[STUDENT OTP] Gui that bai toi ${maskedEmail}: ${JSON.stringify(failReason).slice(0, 300)}`);
 
@@ -1118,7 +1391,7 @@ class AuthController {
           success: false,
           message: 'Hệ thống chưa gửi được email xác thực tới hộp thư của bạn. Vui lòng thử lại sau ít phút hoặc liên hệ bộ phận hỗ trợ.',
           maskedEmail,
-          debugOtp: config.NODE_ENV === 'test' ? otp : undefined
+          debugOtp: process.env.NODE_ENV === 'test' ? otp : undefined
         });
       }
 
@@ -1127,7 +1400,7 @@ class AuthController {
         message: `Mã xác thực gồm 6 chữ số đã được gửi đến email ${maskedEmail}. Vui lòng nhập mã để hoàn tất!`,
         maskedEmail,
         channel: emailSendResult.mode || undefined,
-        debugOtp: config.NODE_ENV === 'test' ? otp : undefined
+        debugOtp: process.env.NODE_ENV === 'test' ? otp : undefined
       });
     } catch (err) {
       console.error('Lỗi sendStudentEmailOtp:', err);
@@ -1158,10 +1431,26 @@ class AuthController {
       }
 
       if (Date.now() > Number(row.student_otp_expires_at)) {
+        studentOtpAttempts.delete(user.id);
         return res.status(400).json({ success: false, message: 'Mã xác thực OTP đã hết hạn (sau 5 phút). Vui lòng yêu cầu mã mới' });
       }
 
-      if (row.student_otp !== cleanOtp) {
+      const attempts = studentOtpAttempts.get(user.id) || 0;
+      if (attempts >= 5) {
+        return res.status(429).json({
+          success: false,
+          message: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới'
+        });
+      }
+
+      if (!secureOtpEquals(row.student_otp, cleanOtp)) {
+        studentOtpAttempts.set(user.id, attempts + 1);
+        if (attempts + 1 >= 5) {
+          return res.status(429).json({
+            success: false,
+            message: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới'
+          });
+        }
         return res.status(400).json({ success: false, message: 'Mã xác thực OTP không chính xác. Vui lòng kiểm tra lại' });
       }
 
@@ -1187,6 +1476,7 @@ class AuthController {
             free_quota_remaining = ?
         WHERE id = ?
       `).run(nowIso, expiresIso, newFreeQuota, user.id);
+      studentOtpAttempts.delete(user.id);
 
       const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
       delete updatedUser.password_hash;

@@ -4,8 +4,17 @@ require('dotenv').config();
 require('dotenv').config({ path: path.join(__dirname, '../../.env'), override: false });
 
 const runtimeEnvironment = process.env.NODE_ENV || 'development';
+const demoJwtSecret = 'vibesurvey_demo_jwt_secret_key_2026_xyz';
+const configuredJwtSecret = String(process.env.JWT_SECRET || '').trim();
 const demoWebhookSecret = 'vibesurvey_demo_webhook_secret_2026';
 const configuredWebhookSecret = String(process.env.PAYMENT_WEBHOOK_SECRET || '').trim();
+
+if (runtimeEnvironment === 'production' &&
+    (!configuredJwtSecret ||
+      configuredJwtSecret === demoJwtSecret ||
+      configuredJwtSecret.length < 32)) {
+  throw new Error('JWT_SECRET phải được cấu hình bằng secret riêng dài tối thiểu 32 ký tự trong môi trường production');
+}
 
 if (runtimeEnvironment === 'production' &&
     (!configuredWebhookSecret || configuredWebhookSecret === demoWebhookSecret)) {
@@ -17,7 +26,7 @@ module.exports = {
   APP_URL: process.env.APP_URL || 'http://localhost:3000',
   NODE_ENV: runtimeEnvironment,
   // Ho tro fallback tu dong cho moi truong demo/thu nghiem ma khong lam crash server
-  JWT_SECRET: process.env.JWT_SECRET || 'vibesurvey_demo_jwt_secret_key_2026_xyz',
+  JWT_SECRET: configuredJwtSecret || demoJwtSecret,
   DB_PATH: process.env.DB_PATH || path.join(__dirname, '../db/vibesurvey.db'),
 
   // Cấu hình Cổng Thanh Toán & VietQR Napas247
