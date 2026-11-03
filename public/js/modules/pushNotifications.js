@@ -32,11 +32,25 @@
     this._shownAlerts = this._shownAlerts || new Set();
     this._lastAlertCheckTime = Date.now();
 
-    // 1. Kiểm tra hiển thị Banner xin cấp quyền Web Notification
+    // 1. Hiển thị banner theo nền tảng: Android dùng LocalNotifications, Web dùng Notification API.
     const bannerDismissed = (localStorage.getItem('survhub_push_banner_dismissed') || localStorage.getItem('vibesurvey_push_banner_dismissed')) === '1';
     const bannerEl = document.getElementById('push-permission-banner');
+    const isAndroidCapacitor = this._isAndroidCapacitor();
 
-    if ('Notification' in window) {
+    this._configurePushBanner(isAndroidCapacitor);
+
+    if (isAndroidCapacitor) {
+      window.Capacitor.Plugins.LocalNotifications.checkPermissions().then((permission) => {
+        if (permission && permission.display === 'granted') {
+          this.syncPushSubscriptionToServer().catch(() => { });
+        } else if (!bannerDismissed && bannerEl) {
+          bannerEl.classList.remove('hidden');
+          if (window.lucide) window.lucide.createIcons();
+        }
+      }).catch(() => {
+        if (!bannerDismissed && bannerEl) bannerEl.classList.remove('hidden');
+      });
+    } else if ('Notification' in window) {
       if (Notification.permission === 'default' && !bannerDismissed && bannerEl) {
         bannerEl.classList.remove('hidden');
         if (window.lucide) window.lucide.createIcons();
@@ -82,16 +96,25 @@
   async requestPushPermission() {
     this.haptic('light');
 
-    // 1. Yêu cầu quyền trên Android Capacitor
-    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    // Android Capacitor chỉ dùng quyền LocalNotifications, tuyệt đối không gọi Web Notification API.
+    if (this._isAndroidCapacitor()) {
       try {
-        await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+        const permission = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+        this.dismissPushBanner();
+        if (permission && permission.display === 'granted') {
+          await this.syncPushSubscriptionToServer();
+          this.showToast('Đã bật quyền thông báo Android. Bạn sẽ nhận tin ngay khi có khảo sát thưởng cao.', 'success');
+        } else {
+          this.showToast('Bạn đã từ chối quyền thông báo Android. Có thể bật lại trong cài đặt ứng dụng.', 'info');
+        }
       } catch (err) {
         console.warn('Yêu cầu quyền Android LocalNotifications:', err);
+        this.dismissPushBanner();
       }
+      return;
     }
 
-    // 2. Yêu cầu quyền qua Web Notification API
+    // Web dùng Web Notification API.
     if ('Notification' in window) {
       try {
         const perm = await Notification.requestPermission();
@@ -109,6 +132,31 @@
     } else {
       this.dismissPushBanner();
       this.showToast('Trình duyệt hiện tại chưa hỗ trợ API thông báo đẩy Web Notification.', 'info');
+    }
+  },
+
+  _isAndroidCapacitor() {
+    return Boolean(
+      window.Capacitor &&
+      window.Capacitor.Plugins &&
+      window.Capacitor.Plugins.LocalNotifications &&
+      typeof window.Capacitor.getPlatform === 'function' &&
+      window.Capacitor.getPlatform() === 'android'
+    );
+  },
+
+  _configurePushBanner(isAndroidCapacitor) {
+    const bannerEl = document.getElementById('push-permission-banner');
+    if (!bannerEl) return;
+
+    const messageEl = bannerEl.querySelector('span.font-medium');
+    const actionEl = bannerEl.querySelector('button[onclick*="requestPushPermission"]');
+    if (isAndroidCapacitor) {
+      if (messageEl) messageEl.textContent = 'Cho phép thông báo Android để nhận tin ngay khi có khảo sát thưởng cao hoặc hỏa tốc';
+      if (actionEl) actionEl.textContent = 'Cho Phép Thông Báo Android';
+    } else {
+      if (messageEl) messageEl.textContent = 'Bật thông báo trên trình duyệt để nhận tin ngay khi có khảo sát thưởng cao hoặc hỏa tốc';
+      if (actionEl) actionEl.textContent = 'Cho Phép Thông Báo Web';
     }
   },
 
@@ -213,11 +261,11 @@
     // 2. Hiển thị Popup đẩy thông báo ở góc màn hình
     this.showPushPopup(alert);
 
-    // 3. Kích hoạt Web Notification nếu đã được cấp quyền
-    if ('Notification' in window && Notification.permission === 'granted') {
+    // 3. Web Notification chỉ chạy trên web, không chạy trong Android Capacitor.
+    if (!this._isAndroidCapacitor() && 'Notification' in window && Notification.permission === 'granted') {
       try {
-        const n = new Notification(alert.title || '[HỎA TỐC] Khảo sát mới', {
-          body: alert.body || 'Khảo sát thù lao cao vừa mở.',
+        const n = new Notification(alert.title || 'Khảo sát mới trên SurvHub', {
+          body: alert.body || 'Có khảo sát mới phù hợp với bạn trên SurvHub.',
           icon: '/logo.svg',
           badge: '/logo.svg',
           tag: 'survey-' + (alert.survey_id || 'new')
@@ -230,8 +278,8 @@
       } catch (e) { }
     }
 
-    // 4. Kích hoạt Native Notification trên Android Capacitor
-    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+    // 4. Native Notification chỉ chạy trên Android Capacitor.
+    if (this._isAndroidCapacitor()) {
       try {
         window.Capacitor.Plugins.LocalNotifications.schedule({
           notifications: [{

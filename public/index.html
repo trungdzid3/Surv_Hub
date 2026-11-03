@@ -86,7 +86,7 @@
   <div class="pointer-events-none fixed bottom-10 -left-20 w-[420px] h-[420px] bg-orange-300/15 rounded-full blur-3xl opacity-60 -z-10 dark:opacity-0 transition-opacity"></div>
 
 
-  <!-- ==================== BANNER CẤP QUYỀN THÔNG BÁO WEB PUSH ==================== -->
+  <!-- ==================== BANNER CẤP QUYỀN THÔNG BÁO ==================== -->
   <div id="push-permission-banner" class="hidden bg-stone-900 dark:bg-stone-950 text-white border-b border-stone-800 px-4 py-2 text-xs transition-all push-banner-enter z-50">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
       <div class="flex items-center gap-2.5 text-center sm:text-left">
@@ -94,12 +94,12 @@
           <i data-lucide="bell" class="w-3.5 h-3.5"></i>
         </div>
         <span class="font-medium text-stone-200">
-          Bật thông báo để nhận tin ngay khi có khảo sát thưởng cao hoặc hỏa tốc
+          Bật thông báo trên trình duyệt để nhận tin ngay khi có khảo sát thưởng cao hoặc hỏa tốc
         </span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button onclick="VibeApp.requestPushPermission()" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-[11px] shadow-sm transition-all active:scale-95">
-          Bật Thông Báo
+          Cho Phép Thông Báo Web
         </button>
         <button onclick="VibeApp.dismissPushBanner()" class="px-2.5 py-1 text-stone-400 hover:text-white text-[11px] font-medium transition-colors">
           Để Sau
@@ -553,7 +553,7 @@
   <script src="/js/modules/bugReportModule.js?v=4.0.0_1793300000"></script>
   <script src="/js/modules/adminAnalyticsModule.js?v=4.0.0_1793300000"></script>
   <script src="/js/modules/voucherMarket.js?v=4.9.6_modular_wave1"></script>
-  <script src="/js/modules/pushNotifications.js?v=4.9.6_modular_wave1"></script>
+  <script src="/js/modules/pushNotifications.js?v=4.9.7_permission_platform"></script>
   <!-- WAVE 2 MODULAR: Mieng vi tien & so cai ledger (VIEW 5) tach tu app.js, nap truoc app.js -->
   <script src="/js/modules/wallet-ledger.js?v=4.9.7_modular_wave2"></script>
   <!-- WAVE 3 MODULAR: Phan he quan tri (VIEW 8-10 + Admin Fast Command Console + SubNav quan tri) tach tu app.js, nap truoc app.js -->
