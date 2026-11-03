@@ -422,6 +422,96 @@ body::before {
   }
 }
 
+/* Mobile navigation: flat 68px bar with safe-area support, no floating dock treatment. */
+.mobile-bottom-shell {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: #FFFFFF;
+}
+.mobile-bottom-nav {
+  min-height: 68px;
+  width: 100%;
+  padding: 5px 8px;
+  border-top: 1px solid #E7E5E4;
+  background: #FFFFFF;
+  color: #71717A;
+}
+.mobile-nav-item {
+  min-width: 0;
+  flex: 1 1 0;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+.mobile-nav-link,
+.mobile-nav-action {
+  width: 100%;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #71717A;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+}
+.mobile-nav-icon,
+.mobile-nav-action-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mobile-nav-label {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mobile-nav-link.is-active,
+.mobile-nav-action {
+  color: #EA580C;
+}
+.mobile-nav-action-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #EA580C;
+  color: #FFFFFF;
+}
+.mobile-nav-action .mobile-nav-label {
+  font-weight: 700;
+}
+html.dark .mobile-bottom-shell,
+html.dark .mobile-bottom-nav {
+  background: #18181B;
+}
+html.dark .mobile-bottom-nav {
+  border-top-color: #2E2E36;
+  color: #A1A1AA;
+}
+html.dark .mobile-nav-link,
+html.dark .mobile-nav-action {
+  color: #A1A1AA;
+}
+html.dark .mobile-nav-link.is-active,
+html.dark .mobile-nav-action {
+  color: #F97316;
+}
+html.dark .mobile-nav-action-icon {
+  background: #EA580C;
+  color: #FFFFFF;
+}
+@media (min-width: 768px) {
+  .mobile-bottom-shell {
+    display: none;
+  }
+}
+
 /* ==================== BENTO CARD TỐI GIẢN (ÍT KHUNG, SHADOW NHẤC LÊN, KHÔNG SÁNG VIỀN) ==================== */
 .bento-card {
   background: var(--bg-card);

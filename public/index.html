@@ -77,7 +77,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="/styles.css?v=4.9.3_smooth_toggle_switch">
+  <link rel="stylesheet" href="/styles.css?v=4.9.4_mobile_bottom_nav">
 </head>
 <body class="bg-[#FFF8F5] dark:bg-[#121214] text-slate-800 dark:text-stone-100 min-h-[100svh] overflow-x-clip flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased safe-bottom">
   <!-- ==================== STITCH AMBIENT ATMOSPHERIC GLOWS ==================== -->
@@ -280,9 +280,9 @@
     </div>
   </footer>
 
-  <!-- ==================== MOBILE FLOATING DOCK NAV (BONG BÓNG NỔI BO TRÒN KÈM NHÃN CHỮ) ==================== -->
-  <div class="md:hidden fixed bottom-2.5 sm:bottom-3 left-0 right-0 z-40 px-3 sm:px-4 pointer-events-none flex justify-center">
-    <nav id="mobile-bottom-nav" class="pointer-events-auto w-full max-w-md bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-stone-800 rounded-2xl sm:rounded-3xl px-2 py-1.5 shadow-[0_12px_36px_-6px_rgba(0,0,0,0.18),0_4px_16px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_40px_-6px_rgba(0,0,0,0.7)] flex justify-around items-center transition-all duration-300">
+  <!-- ==================== MOBILE BOTTOM NAV ==================== -->
+  <div class="mobile-bottom-shell md:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none">
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav pointer-events-auto flex items-center justify-around">
       <!-- Render theo vai trò -->
     </nav>
   </div>
@@ -570,6 +570,6 @@
   <script src="/js/modules/respondent.js?v=4.9.13_student_otp_fix"></script>
 
   <!-- Application Main Script -->
-  <script src="/app.js?v=4.9.12_modular_wave7"></script>
+  <script src="/app.js?v=4.9.13_mobile_bottom_nav"></script>
 </body>
 </html>
