@@ -586,7 +586,7 @@
                   <div class="space-y-3 p-3.5 bg-stone-50/80 dark:bg-stone-900/60 rounded-xl border border-stone-200/80 dark:border-stone-800 text-xs">
                     <div class="flex items-center justify-between">
                       <span class="font-bold text-stone-800 dark:text-stone-200">Thông tin ưu đãi tài trợ:</span>
-                      <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">Phí sàn: 0đ (Miễn phí)</span>
+                      <span class="text-[11px] font-bold text-orange-600 dark:text-orange-400 font-mono">Phí sàn: 0đ (Miễn phí)</span>
                     </div>
 
                     <div class="space-y-1">
@@ -751,7 +751,7 @@
               <span id="sidebar-effective-price" class="font-mono font-bold text-stone-900 dark:text-white">${calc.effectivePrice.toLocaleString('vi-VN')} Credit/mẫu</span>
             </div>
             ${calc.freeDeductionSamples > 0 ? `
-              <div class="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+              <div class="flex justify-between text-orange-600 dark:text-orange-400 font-semibold">
                 <span>Lượt miễn phí:</span>
                 <span class="font-mono font-bold">-${calc.freeDeductionSamples} mẫu (-${calc.freeDeductionVnd.toLocaleString('vi-VN')}đ)</span>
               </div>
@@ -792,7 +792,7 @@
           <!-- Số dư ví hiện có -->
           <div class="p-2.5 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between text-xs">
             <span class="text-stone-500">Số dư khả dụng:</span>
-            <span class="font-mono font-bold ${userCredit >= calc.finalEscrowCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">
+            <span class="font-mono font-bold ${userCredit >= calc.finalEscrowCredit ? 'text-orange-600 dark:text-orange-400' : 'text-orange-500'}">
               ${userCredit.toLocaleString('vi-VN')} Credit
             </span>
           </div>
@@ -815,7 +815,7 @@
             </div>
             ${this.state.editingSurveyId ? `
               <button type="button" onclick="VibeApp.confirmDeleteSurvey('${this.state.editingSurveyId}', '${(this.state.draftTitle || '').replace(/'/g, "\\'")}')" 
-                      class="w-full py-2.5 px-3 rounded-xl border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95">
+                      class="w-full py-2.5 px-3 rounded-xl border border-orange-200 dark:border-orange-900/50 hover:bg-orange-50 dark:hover:bg-orange-950/40 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 <span>Xóa Khảo Sát Này</span>
               </button>
@@ -1530,24 +1530,24 @@
                   </div>
 
                   <!-- Thẻ số liệu tối ưu dung lượng -->
-                  <div class="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-xl">
+                  <div class="p-3 bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/40 rounded-xl">
                     <div class="flex items-center justify-between text-xs mb-1.5">
-                      <span class="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                      <span class="font-bold text-orange-800 dark:text-orange-300 flex items-center gap-1">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-orange-600"></i>
                         Đã tối ưu hóa siêu nhẹ bằng WebP
                       </span>
-                      <span class="font-mono font-black text-emerald-600 dark:text-emerald-400">
+                      <span class="font-mono font-black text-orange-600 dark:text-orange-400">
                         Giảm ${compressed.savedPercent}%
                       </span>
                     </div>
-                    <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-emerald-200/60 dark:border-emerald-800/30">
+                    <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-orange-200/60 dark:border-orange-800/30">
                       <div>
                         <div class="text-[10px] text-stone-500">Kích thước gốc</div>
                         <div class="font-mono text-xs font-bold text-stone-700 dark:text-stone-300">${this._formatFileSize(compressed.originalSize)}</div>
                       </div>
                       <div>
                         <div class="text-[10px] text-stone-500">Sau nén WebP</div>
-                        <div class="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300">${this._formatFileSize(compressed.compressedSize)}</div>
+                        <div class="font-mono text-xs font-bold text-orange-700 dark:text-orange-300">${this._formatFileSize(compressed.compressedSize)}</div>
                       </div>
                       <div>
                         <div class="text-[10px] text-stone-500">Định dạng</div>
@@ -1868,9 +1868,9 @@
       title: 'Biểu Mẫu Microsoft Forms Bị Giới Hạn Quyền (Lỗi 401)',
       content: `
         <div class="space-y-4 text-left max-h-[75vh] overflow-y-auto pr-1">
-          <div class="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3">
-            <i data-lucide="shield-alert" class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"></i>
-            <div class="space-y-1 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+          <div class="p-3.5 rounded-2xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/60 flex items-start gap-3">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-orange-600 dark:text-orange-400 shrink-0 mt-0.5"></i>
+            <div class="space-y-1 text-xs text-orange-900 dark:text-orange-200 leading-relaxed">
               <div class="font-extrabold text-sm">Microsoft Forms đang bật chế độ bảo vệ / yêu cầu đăng nhập</div>
               <p>Biểu mẫu hiện đang bật chế độ <strong>"Chỉ người trong tổ chức có thể phản hồi"</strong> hoặc <strong>"Ghi lại tên (Record name)"</strong>. Máy chủ công khai không thể truy cập để tự động bóc tách danh sách câu hỏi.</p>
             </div>
@@ -1883,7 +1883,7 @@
             </div>
 
             <!-- PHƯƠNG ÁN 1 (KHUYÊN DÙNG): MỞ QUYỀN CÔNG KHAI -->
-            <div class="p-3.5 bg-gradient-to-br from-orange-50/70 to-amber-50/40 dark:from-stone-900 dark:to-orange-950/20 rounded-xl border-2 border-orange-300 dark:border-orange-800 space-y-2.5">
+            <div class="p-3.5 bg-gradient-to-br from-orange-50/70 to-orange-50/40 dark:from-stone-900 dark:to-orange-950/20 rounded-xl border-2 border-orange-300 dark:border-orange-800 space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="font-black text-orange-900 dark:text-orange-300 flex items-center gap-1.5">
                   <i data-lucide="unlock" class="w-4 h-4 text-orange-600"></i>
@@ -1941,7 +1941,7 @@
             </button>
             <button type="button" onclick="VibeApp.closeModal(); VibeApp.switchCreateSurveyTab('EXTERNAL_URL')" 
                     class="flex-1 py-2 px-3 rounded-xl bg-stone-900 hover:bg-black text-white dark:bg-stone-800 dark:hover:bg-stone-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-stone-800 dark:border-stone-700">
-              <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+              <i data-lucide="check" class="w-4 h-4 text-orange-400"></i>
               <span>Tạo Dạng Liên Kết Ngoài</span>
             </button>
           </div>
@@ -1974,8 +1974,8 @@
       content: `
         <div class="space-y-6 text-left">
           <!-- Top alert banner: Tinh tế, thoáng đãng, phân cấp rõ -->
-          <div class="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-4">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+          <div class="p-4 sm:p-5 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-start gap-4">
+            <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
               <i data-lucide="lock" class="w-5 h-5"></i>
             </div>
             <div class="space-y-1">
@@ -2069,26 +2069,26 @@
                 <div class="p-3.5 rounded-xl bg-white/80 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-2 text-xs text-stone-600 dark:text-stone-300">
                   <div class="font-extrabold text-slate-900 dark:text-white text-[11.5px] uppercase tracking-wider">Cam Kết Bảo Mật:</div>
                   <div class="flex items-center gap-2">
-                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-600 shrink-0"></i>
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>
                     <span>Không lưu mật khẩu, không yêu cầu chia sẻ Cookie cá nhân.</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-600 shrink-0"></i>
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>
                     <span>Chỉ đọc tiêu đề, câu hỏi & các lựa chọn để nạp vào Studio.</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <i data-lucide="check" class="w-3.5 h-3.5 text-green-600 shrink-0"></i>
+                    <i data-lucide="check" class="w-3.5 h-3.5 text-orange-600 shrink-0"></i>
                     <span>Có thể hủy quyền kết nối bất cứ lúc nào với 1 chạm.</span>
                   </div>
                 </div>
 
                 ${hasOAuth && oauthEmail ? `
-                  <div class="p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center justify-between text-xs">
+                  <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 flex items-center justify-between text-xs">
                     <div class="flex items-center gap-2 truncate">
-                      <i data-lucide="check-circle-2" class="w-4 h-4 text-green-600 shrink-0"></i>
-                      <span class="font-bold text-green-900 dark:text-green-200 truncate">Đã kết nối: ${oauthEmail}</span>
+                      <i data-lucide="check-circle-2" class="w-4 h-4 text-orange-600 shrink-0"></i>
+                      <span class="font-bold text-orange-900 dark:text-orange-200 truncate">Đã kết nối: ${oauthEmail}</span>
                     </div>
-                    <button type="button" onclick="VibeApp.disconnectGoogleForms()" class="text-red-600 dark:text-red-400 hover:underline font-extrabold text-xs shrink-0 ml-2">Hủy kết nối</button>
+                    <button type="button" onclick="VibeApp.disconnectGoogleForms()" class="text-orange-600 dark:text-orange-400 hover:underline font-extrabold text-xs shrink-0 ml-2">Hủy kết nối</button>
                   </div>
                 ` : ''}
               </div>
@@ -2382,7 +2382,7 @@
                       <i data-lucide="image" class="w-3.5 h-3.5 text-orange-600"></i>
                       <span>Đổi ảnh bìa</span>
                     </button>
-                    <button type="button" onclick="VibeApp.removeStudioCoverImage()" class="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 flex items-center gap-1 shadow-md">
+                    <button type="button" onclick="VibeApp.removeStudioCoverImage()" class="px-3 py-1.5 rounded-xl bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 flex items-center gap-1 shadow-md">
                       <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                       <span>Gỡ ảnh</span>
                     </button>
@@ -2644,11 +2644,11 @@
       queuePriority = 'Ưu tiên hiển thị nổi bật';
     } else if (pct <= 70) {
       levelText = 'Mức thù lao cao (Gắn huy hiệu [Thưởng Cao], đáp viên làm trước)';
-      badgeClass = 'text-amber-600 dark:text-amber-400';
+      badgeClass = 'text-orange-600 dark:text-orange-400';
       queuePriority = 'Đẩy luồng ưu tiên cao';
     } else {
       levelText = 'Mức thù lao vượt trội (Đẩy luồng tối đa, kích thích gom mẫu tức thì)';
-      badgeClass = 'text-emerald-600 dark:text-emerald-400 font-bold';
+      badgeClass = 'text-orange-600 dark:text-orange-400 font-bold';
       queuePriority = 'Ưu tiên tối đa toàn sàn';
     }
 
@@ -3399,14 +3399,14 @@
         <!-- Question Image Preview in Studio -->
         ${q.image_url ? `
           <div class="relative group my-3 rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 shadow-xs" onclick="event.stopPropagation()">
-            <img src="${q.image_url}" alt="Ảnh minh họa câu hỏi" class="w-full max-h-72 object-contain bg-black/5 dark:bg-black/40 mx-auto" onerror="this.onerror=null; this.src=''; this.parentElement.classList.add('border-red-300');">
+            <img src="${q.image_url}" alt="Ảnh minh họa câu hỏi" class="w-full max-h-72 object-contain bg-black/5 dark:bg-black/40 mx-auto" onerror="this.onerror=null; this.src=''; this.parentElement.classList.add('border-orange-300');">
             <div class="p-2 bg-white/95 dark:bg-stone-900/95 backdrop-blur-sm border-t border-stone-200 dark:border-stone-800 flex items-center justify-between text-xs">
               <span class="text-[11px] text-stone-500 font-mono truncate max-w-[200px] sm:max-w-[320px]">${q.image_url}</span>
               <div class="flex items-center gap-1.5 shrink-0">
                 <button type="button" onclick="event.stopPropagation(); VibeApp.openImagePickerModal('question', ${qIdx})" class="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 text-[11px] font-bold transition-colors">
                   Đổi ảnh
                 </button>
-                <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioQuestionImage(${qIdx})" class="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-[11px] font-bold transition-colors">
+                <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioQuestionImage(${qIdx})" class="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 text-[11px] font-bold transition-colors">
                   Gỡ ảnh
                 </button>
               </div>
@@ -3431,7 +3431,7 @@
                 <i data-lucide="copy" class="w-4 h-4"></i>
               </button>
               ${list.length > 1 ? `
-                <button type="button" onclick="event.stopPropagation(); VibeApp.removeBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Xóa phân đoạn này">
+                <button type="button" onclick="event.stopPropagation(); VibeApp.removeBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-orange-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Xóa phân đoạn này">
                   <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
               ` : ''}
@@ -3475,7 +3475,7 @@
             </button>
 
             ${list.length > 1 ? `
-              <button type="button" onclick="event.stopPropagation(); VibeApp.removeBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-red-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Xóa câu hỏi">
+              <button type="button" onclick="event.stopPropagation(); VibeApp.removeBuilderQuestion(${qIdx})" class="p-1.5 rounded-lg text-stone-400 hover:text-orange-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors flex items-center gap-1" title="Xóa câu hỏi">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             ` : ''}
@@ -3743,7 +3743,7 @@
               ` : ''}
 
               ${opts.length > 2 ? `
-                <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioOption(${qIdx}, ${optIdx})" class="p-1 text-stone-400 hover:text-red-500 shrink-0" title="Xóa tùy chọn">
+                <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioOption(${qIdx}, ${optIdx})" class="p-1 text-stone-400 hover:text-orange-500 shrink-0" title="Xóa tùy chọn">
                   <i data-lucide="x" class="w-3.5 h-3.5"></i>
                 </button>
               ` : ''}
@@ -3957,7 +3957,7 @@
                            autocomplete="off" spellcheck="false"
                            placeholder="Tiêu chí ${rIdx + 1}..." class="flex-1 p-1 bg-transparent border-0 border-b border-stone-200 dark:border-stone-800 focus:border-orange-600 focus:outline-none text-xs text-stone-800 dark:text-stone-200">
                     ${rows.length > 1 ? `
-                      <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioGridRow(${qIdx}, ${rIdx})" class="text-stone-400 hover:text-red-500 p-0.5">
+                      <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioGridRow(${qIdx}, ${rIdx})" class="text-stone-400 hover:text-orange-500 p-0.5">
                         <i data-lucide="x" class="w-3 h-3"></i>
                       </button>
                     ` : ''}
@@ -3984,7 +3984,7 @@
                            autocomplete="off" spellcheck="false"
                            placeholder="Cột ${cIdx + 1}..." class="flex-1 p-1 bg-transparent border-0 border-b border-stone-200 dark:border-stone-800 focus:border-orange-600 focus:outline-none text-xs text-stone-800 dark:text-stone-200">
                     ${columns.length > 1 ? `
-                      <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioGridCol(${qIdx}, ${cIdx})" class="text-stone-400 hover:text-red-500 p-0.5">
+                      <button type="button" onclick="event.stopPropagation(); VibeApp.removeStudioGridCol(${qIdx}, ${cIdx})" class="text-stone-400 hover:text-orange-500 p-0.5">
                         <i data-lucide="x" class="w-3 h-3"></i>
                       </button>
                     ` : ''}
@@ -4058,8 +4058,8 @@
     if (q.type === 'RATING_STARS') {
       return `
         <div class="p-3 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-center space-y-2">
-          <div class="flex items-center justify-center gap-2 text-amber-500">
-            ${[1, 2, 3, 4, 5].map(() => `<i data-lucide="star" class="w-6 h-6 fill-amber-400 text-amber-400"></i>`).join('')}
+          <div class="flex items-center justify-center gap-2 text-orange-500">
+            ${[1, 2, 3, 4, 5].map(() => `<i data-lucide="star" class="w-6 h-6 fill-orange-400 text-orange-400"></i>`).join('')}
           </div>
           <div class="text-[11px] text-stone-500">Thang đánh giá từ 1 đến 5 sao theo tiêu chuẩn quốc tế.</div>
         </div>
@@ -4610,7 +4610,7 @@
         <!-- Nút gỡ giới hạn (X) -->
         <button type="button" 
                 onclick="event.stopPropagation(); VibeApp.setStudioQuestionValidationType(${qIdx}, 'NONE')" 
-                class="p-1 rounded-md text-stone-400 hover:text-red-500 hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-colors shrink-0" 
+                class="p-1 rounded-md text-stone-400 hover:text-orange-500 hover:bg-stone-200/50 dark:hover:bg-stone-800 transition-colors shrink-0"
                 title="Gỡ giới hạn này">
           <i data-lucide="x" class="w-3.5 h-3.5"></i>
         </button>

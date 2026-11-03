@@ -152,7 +152,7 @@
           <!-- 1. Phân loại sự cố -->
           <div class="space-y-1.5">
             <label class="block text-xs font-bold text-stone-700 dark:text-stone-200">
-              Phân loại danh mục sự cố <span class="text-red-500">*</span>
+              Phân loại danh mục sự cố <span class="text-orange-500">*</span>
             </label>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               ${categories.map(c => `
@@ -195,7 +195,7 @@
           <!-- 3. Tiêu đề sự cố -->
           <div class="space-y-1">
             <label class="block text-xs font-bold text-stone-700 dark:text-stone-200">
-              Tiêu đề sự cố ngắn gọn <span class="text-red-500">*</span>
+              Tiêu đề sự cố ngắn gọn <span class="text-orange-500">*</span>
             </label>
             <input type="text" id="bug-report-title" value="${safeTitle}"
                    oninput="VibeApp.state.bugReport.title = this.value"
@@ -206,7 +206,7 @@
           <!-- 4. Mô tả chi tiết -->
           <div class="space-y-1">
             <label class="block text-xs font-bold text-stone-700 dark:text-stone-200">
-              Mô tả chi tiết & các bước tái hiện lỗi <span class="text-red-500">*</span>
+              Mô tả chi tiết & các bước tái hiện lỗi <span class="text-orange-500">*</span>
             </label>
             <textarea id="bug-report-desc" rows="3"
                       oninput="VibeApp.state.bugReport.description = this.value"
@@ -231,7 +231,7 @@
                     <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
                     <span>Xem trực tiếp</span>
                   </button>
-                  <button type="button" onclick="VibeApp.removeBugReportImage()" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 flex items-center gap-1 shadow-md">
+                  <button type="button" onclick="VibeApp.removeBugReportImage()" class="px-3 py-1.5 bg-orange-600 text-white rounded-lg text-xs font-bold hover:bg-orange-700 flex items-center gap-1 shadow-md">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     <span>Gỡ ảnh</span>
                   </button>
@@ -368,9 +368,9 @@
         }
 
         const statusBadges = {
-          PENDING: { label: 'Chờ tiếp nhận', color: 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800' },
-          INVESTIGATING: { label: 'Đang kiểm tra & xử lý', color: 'bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-800' },
-          RESOLVED: { label: 'Đã khắc phục hoàn tất', color: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800' },
+          PENDING: { label: 'Chờ tiếp nhận', color: 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800' },
+          INVESTIGATING: { label: 'Đang kiểm tra & xử lý', color: 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800' },
+          RESOLVED: { label: 'Đã khắc phục hoàn tất', color: 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800' },
           REJECTED: { label: 'Đã đóng / Không thể tái hiện', color: 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-300 dark:border-stone-700' }
         };
 
@@ -411,8 +411,8 @@
                   ` : ''}
 
                   ${r.admin_notes ? `
-                    <div class="p-2.5 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
-                      <div class="flex items-center gap-1 font-bold text-[11px] text-emerald-700 dark:text-emerald-400">
+                    <div class="p-2.5 rounded-lg bg-orange-50/80 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/60 text-xs text-orange-900 dark:text-orange-200 space-y-1">
+                      <div class="flex items-center gap-1 font-bold text-[11px] text-orange-700 dark:text-orange-400">
                         <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
                         <span>Phản hồi từ Đội ngũ Kỹ thuật:</span>
                       </div>
@@ -434,7 +434,7 @@
       } catch (err) {
         console.error('Lỗi khi tải lịch sử báo lỗi:', err);
         container.innerHTML = `
-          <div class="p-6 text-center text-xs text-red-500">
+          <div class="p-6 text-center text-xs text-orange-500">
             Không thể tải danh sách báo lỗi: ${err.message}
           </div>
         `;
@@ -716,19 +716,19 @@
               <span class="text-xl font-black text-stone-900 dark:text-white font-mono mt-1 block">${stats.total}</span>
             </div>
 
-            <div onclick="VibeApp.setAdminBugFilter('status', 'PENDING')" class="p-3.5 rounded-xl border ${this._adminBugState.status === 'PENDING' ? 'border-amber-500 bg-amber-50/40 dark:bg-amber-950/30' : 'border-stone-200 dark:border-[#2E2E36] bg-white dark:bg-[#1C1C20]'} cursor-pointer hover:border-amber-400 transition-all">
-              <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400 block">Chờ Tiếp Nhận</span>
-              <span class="text-xl font-black text-amber-600 dark:text-amber-400 font-mono mt-1 block">${stats.pending}</span>
+            <div onclick="VibeApp.setAdminBugFilter('status', 'PENDING')" class="p-3.5 rounded-xl border ${this._adminBugState.status === 'PENDING' ? 'border-orange-500 bg-orange-50/40 dark:bg-orange-950/30' : 'border-stone-200 dark:border-[#2E2E36] bg-white dark:bg-[#1C1C20]'} cursor-pointer hover:border-orange-400 transition-all">
+              <span class="text-[11px] font-bold text-orange-600 dark:text-orange-400 block">Chờ Tiếp Nhận</span>
+              <span class="text-xl font-black text-orange-600 dark:text-orange-400 font-mono mt-1 block">${stats.pending}</span>
             </div>
 
-            <div onclick="VibeApp.setAdminBugFilter('status', 'INVESTIGATING')" class="p-3.5 rounded-xl border ${this._adminBugState.status === 'INVESTIGATING' ? 'border-sky-500 bg-sky-50/40 dark:bg-sky-950/30' : 'border-stone-200 dark:border-[#2E2E36] bg-white dark:bg-[#1C1C20]'} cursor-pointer hover:border-sky-400 transition-all">
-              <span class="text-[11px] font-bold text-sky-600 dark:text-sky-400 block">Đang Kiểm Tra</span>
-              <span class="text-xl font-black text-sky-600 dark:text-sky-400 font-mono mt-1 block">${stats.investigating}</span>
+            <div onclick="VibeApp.setAdminBugFilter('status', 'INVESTIGATING')" class="p-3.5 rounded-xl border ${this._adminBugState.status === 'INVESTIGATING' ? 'border-orange-500 bg-orange-50/40 dark:bg-orange-950/30' : 'border-stone-200 dark:border-[#2E2E36] bg-white dark:bg-[#1C1C20]'} cursor-pointer hover:border-orange-400 transition-all">
+              <span class="text-[11px] font-bold text-orange-600 dark:text-orange-400 block">Đang Kiểm Tra</span>
+              <span class="text-xl font-black text-orange-600 dark:text-orange-400 font-mono mt-1 block">${stats.investigating}</span>
             </div>
 
-            <div onclick="VibeApp.setAdminBugFilter('status', 'RESOLVED')" class="p-3.5 rounded-xl border ${this._adminBugState.status === 'RESOLVED' ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30' : 'border-stone-200 dark:border-[#2E2E36] bg-white dark:bg-[#1C1C20]'} cursor-pointer hover:border-emerald-400 transition-all">
-              <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">Đã Khắc Phục</span>
-              <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1 block">${stats.resolved}</span>
+            <div onclick="VibeApp.setAdminBugFilter('status', 'RESOLVED')" class="p-3.5 rounded-xl border ${this._adminBugState.status === 'RESOLVED' ? 'border-orange-500 bg-orange-50/40 dark:bg-orange-950/30' : 'border-stone-200 dark:border-[#2E2E36] bg-white dark:bg-[#1C1C20]'} cursor-pointer hover:border-orange-400 transition-all">
+              <span class="text-[11px] font-bold text-orange-600 dark:text-orange-400 block">Đã Khắc Phục</span>
+              <span class="text-xl font-black text-orange-600 dark:text-orange-400 font-mono mt-1 block">${stats.resolved}</span>
             </div>
           </div>
 
@@ -809,9 +809,9 @@
                     </tr>
                   ` : reports.map(r => {
                     const statusInfo = {
-                      PENDING: { label: 'Chờ tiếp nhận', badge: 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800' },
-                      INVESTIGATING: { label: 'Đang kiểm tra', badge: 'bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 border-sky-300 dark:border-sky-800' },
-                      RESOLVED: { label: 'Đã khắc phục', badge: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800' },
+                      PENDING: { label: 'Chờ tiếp nhận', badge: 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800' },
+                      INVESTIGATING: { label: 'Đang kiểm tra', badge: 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800' },
+                      RESOLVED: { label: 'Đã khắc phục', badge: 'bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border-orange-300 dark:border-orange-800' },
                       REJECTED: { label: 'Đã đóng', badge: 'bg-stone-100 dark:bg-stone-800 text-stone-500 border-stone-300 dark:border-stone-700' }
                     }[r.status] || { label: r.status, badge: 'bg-stone-100 text-stone-600' };
 
@@ -825,7 +825,7 @@
                         <td class="py-3 px-3 w-36 whitespace-nowrap align-middle">
                           <span class="font-bold text-stone-800 dark:text-stone-200 block truncate" title="${this.getAdminBugFilterCategoryLabel(r.category)}">${this.getAdminBugFilterCategoryLabel(r.category)}</span>
                           <span class="text-[10px] font-semibold uppercase block ${
-                            r.severity === 'CRITICAL' ? 'text-red-600 font-bold' : (r.severity === 'HIGH' ? 'text-orange-600' : 'text-stone-400')
+                            r.severity === 'CRITICAL' ? 'text-orange-600 font-bold' : (r.severity === 'HIGH' ? 'text-orange-600' : 'text-stone-400')
                           }">${r.severity}</span>
                         </td>
 
@@ -890,7 +890,7 @@
         console.error('Lỗi tải danh sách báo lỗi admin:', err);
         const content = document.getElementById('admin-bug-content');
         if (content) {
-          content.innerHTML = `<div class="p-8 text-center text-xs text-red-500">Lỗi: ${err.message}</div>`;
+          content.innerHTML = `<div class="p-8 text-center text-xs text-orange-500">Lỗi: ${err.message}</div>`;
         }
       }
     },
@@ -951,7 +951,7 @@
             </div>
             <div>
               <span class="text-[10px] text-stone-400 block font-medium">Mức độ ảnh hưởng:</span>
-              <span class="font-bold uppercase ${bug.severity === 'CRITICAL' ? 'text-red-600' : 'text-orange-600'}">${bug.severity}</span>
+              <span class="font-bold uppercase ${bug.severity === 'CRITICAL' ? 'text-orange-600' : 'text-orange-600'}">${bug.severity}</span>
               <span class="text-[10px] text-stone-400 block font-mono">${new Date(bug.created_at).toLocaleString('vi-VN')}</span>
             </div>
           </div>
@@ -1010,9 +1010,9 @@
 
               <div id="admin-bug-status-dropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 z-50 p-1.5 rounded-xl bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] shadow-2xl space-y-1">
                 ${[
-                  { val: 'PENDING', label: 'Chờ tiếp nhận (PENDING)', dot: 'bg-amber-500' },
-                  { val: 'INVESTIGATING', label: 'Đang kiểm tra & khắc phục (INVESTIGATING)', dot: 'bg-blue-500' },
-                  { val: 'RESOLVED', label: 'Đã khắc phục hoàn tất (RESOLVED)', dot: 'bg-emerald-500' },
+                  { val: 'PENDING', label: 'Chờ tiếp nhận (PENDING)', dot: 'bg-orange-500' },
+                  { val: 'INVESTIGATING', label: 'Đang kiểm tra & khắc phục (INVESTIGATING)', dot: 'bg-zinc-500' },
+                  { val: 'RESOLVED', label: 'Đã khắc phục hoàn tất (RESOLVED)', dot: 'bg-orange-500' },
                   { val: 'REJECTED', label: 'Đã đóng / Không thể tái hiện (REJECTED)', dot: 'bg-stone-400' }
                 ].map(st => `
                   <div onclick="VibeApp.selectAdminBugStatus('${st.val}', '${st.label}', '${st.dot}')" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold hover:bg-stone-100 dark:hover:bg-[#25252B] transition-colors ${bug.status === st.val ? 'text-orange-600 font-bold bg-orange-50/50 dark:bg-orange-950/20' : 'text-stone-700 dark:text-stone-300'}">
@@ -1036,7 +1036,7 @@
 
         <!-- Footer Buttons -->
         <div class="p-4 border-t border-stone-100 dark:border-[#2E2E36] flex items-center justify-between shrink-0 bg-stone-50/50 dark:bg-[#161619]">
-          <button type="button" onclick="VibeApp.deleteAdminBug('${bug.id}')" class="px-3 py-2 rounded-xl border border-red-200 dark:border-red-900/40 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs font-bold transition-colors">
+          <button type="button" onclick="VibeApp.deleteAdminBug('${bug.id}')" class="px-3 py-2 rounded-xl border border-orange-200 dark:border-orange-900/40 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30 text-xs font-bold transition-colors">
             Xóa Tin Rác
           </button>
           <div class="flex items-center gap-2">
@@ -1163,10 +1163,10 @@
 
     getBugStatusDotClass(st) {
       switch (st) {
-        case 'INVESTIGATING': return 'bg-blue-500';
-        case 'RESOLVED': return 'bg-emerald-500';
+        case 'INVESTIGATING': return 'bg-zinc-500';
+        case 'RESOLVED': return 'bg-orange-500';
         case 'REJECTED': return 'bg-stone-400';
-        default: return 'bg-amber-500';
+        default: return 'bg-orange-500';
       }
     }
   };

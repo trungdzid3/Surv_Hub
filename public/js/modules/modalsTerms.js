@@ -269,17 +269,31 @@
             </div>
           </div>
 
-          <!-- Quy tắc & Điều khoản bắt buộc tích mới được đăng ký -->
-          <div class="p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/60 transition-all" id="auth-reg-terms-wrapper">
-            <label class="flex items-start gap-2.5 cursor-pointer select-none group">
-              <input type="checkbox" id="auth-reg-terms" required class="mt-0.5 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-orange-600 focus:ring-orange-500 cursor-pointer accent-orange-600" onchange="VibeApp.handleTermsCheckboxChange(this.checked)">
-              <span class="text-[11px] leading-snug text-stone-600 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
-                Tôi đã đọc, hiểu rõ và đồng ý với 
-                <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event)" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">
-                  Điều khoản dịch vụ & Quy tắc nền tảng SurvHub
-                </a>.
-              </span>
-            </label>
+          <!-- Quy tắc, Điều khoản & Đồng ý dữ liệu cá nhân (tách riêng từng mục đích) -->
+          <div class="space-y-2">
+            <div class="p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/60 transition-all" id="auth-reg-terms-wrapper">
+              <label class="flex items-start gap-2.5 cursor-pointer select-none group">
+                <input type="checkbox" id="auth-reg-terms" required class="mt-0.5 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-orange-600 focus:ring-orange-500 cursor-pointer accent-orange-600 shrink-0" onchange="VibeApp.handleTermsCheckboxChange(this.checked)">
+                <span class="text-[11px] leading-snug text-stone-600 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
+                  Tôi đã đọc, hiểu và đồng ý với
+                  <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, false, 'terms')" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">Điều khoản dịch vụ</a>
+                  và
+                  <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, false, 'rules')" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">Quy chế hoạt động</a>.
+                  Tôi xác nhận mình từ đủ 18 tuổi, hoặc nếu dưới 18 tuổi thì đã có sự đồng ý của cha, mẹ hoặc người đại diện theo pháp luật.
+                </span>
+              </label>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/60 transition-all" id="auth-reg-privacy-wrapper">
+              <label class="flex items-start gap-2.5 cursor-pointer select-none group">
+                <input type="checkbox" id="auth-reg-privacy" required class="mt-0.5 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-orange-600 focus:ring-orange-500 cursor-pointer accent-orange-600 shrink-0">
+                <span class="text-[11px] leading-snug text-stone-600 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
+                  Tôi đồng ý để SurvHub xử lý dữ liệu cá nhân của mình, bao gồm dữ liệu cá nhân nhạy cảm nếu tôi tự nguyện cung cấp, theo
+                  <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, false, 'privacy')" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">Chính sách bảo vệ dữ liệu cá nhân</a>.
+                  Tôi hiểu rằng mình có thể rút lại sự đồng ý bất kỳ lúc nào.
+                </span>
+              </label>
+            </div>
           </div>
 
           <button type="submit" id="auth-submit-btn" class="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
@@ -692,9 +706,11 @@
     }
 
     const termsCheckbox = document.getElementById('auth-reg-terms');
+    const privacyCheckbox = document.getElementById('auth-reg-privacy');
+
     if (termsCheckbox && !termsCheckbox.checked) {
       if (errorAlert && errorText) {
-        errorText.textContent = 'Vui lòng đọc và tích chọn đồng ý với Điều khoản dịch vụ & Quy tắc nền tảng SurvHub để tạo tài khoản';
+        errorText.textContent = 'Vui lòng đọc và tích chọn đồng ý với Điều khoản dịch vụ và Quy chế hoạt động để tạo tài khoản';
         errorAlert.classList.remove('hidden');
       }
       const termsWrapper = document.getElementById('auth-reg-terms-wrapper');
@@ -705,6 +721,22 @@
         }, 3000);
       }
       termsCheckbox.focus();
+      return;
+    }
+
+    if (privacyCheckbox && !privacyCheckbox.checked) {
+      if (errorAlert && errorText) {
+        errorText.textContent = 'Vui lòng tích chọn đồng ý để SurvHub xử lý dữ liệu cá nhân theo Chính sách bảo vệ dữ liệu cá nhân';
+        errorAlert.classList.remove('hidden');
+      }
+      const privacyWrapper = document.getElementById('auth-reg-privacy-wrapper');
+      if (privacyWrapper) {
+        privacyWrapper.classList.add('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
+        setTimeout(() => {
+          if (privacyWrapper) privacyWrapper.classList.remove('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
+        }, 3000);
+      }
+      privacyCheckbox.focus();
       return;
     }
 
@@ -983,7 +1015,7 @@
     }
   },
 
-  openTermsModal(event, isReadOnly = false) {
+  openTermsModal(event, isReadOnly = false, initialDocId = 'terms') {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -993,124 +1025,93 @@
     const modal = document.getElementById('terms-modal');
     if (!modal) return;
 
+    const policy = window.SURVHUB_POLICY_DOCS;
+    if (!policy || !Array.isArray(policy.docs) || policy.docs.length === 0) {
+      this.showToast('Không thể tải văn bản pháp lý. Vui lòng tải lại trang và thử lại.', 'error');
+      return;
+    }
+
+    const docs = policy.docs;
+    const activeDoc = docs.find(d => d.id === initialDocId) || docs[0];
+    this._termsReadOnly = Boolean(isReadOnly);
+    this._termsActiveDoc = activeDoc.id;
+
+    const tabsHtml = docs.map(doc => {
+      const isActive = doc.id === activeDoc.id;
+      const stateCls = isActive
+        ? 'bg-orange-600 text-white shadow-sm'
+        : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800';
+      return `
+        <button type="button"
+          onclick="VibeApp.openTermsModal(event, ${isReadOnly ? 'true' : 'false'}, '${doc.id}')"
+          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all active:scale-95 ${stateCls}">
+          <i data-lucide="${doc.icon}" class="w-3.5 h-3.5"></i>
+          <span>${doc.label}</span>
+        </button>`;
+    }).join('');
+
+    const sectionsHtml = activeDoc.sections.map(sec => `
+      <section class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
+        <h4 class="flex items-start gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide leading-snug">
+          <i data-lucide="${sec.icon}" class="w-4 h-4 text-orange-600 shrink-0 mt-0.5"></i>
+          <span>${sec.title}</span>
+        </h4>
+        <div class="policy-doc-body text-[11px] text-stone-600 dark:text-stone-400 leading-relaxed">${sec.html}</div>
+      </section>`).join('');
+
     modal.innerHTML = `
-      <div class="bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 dark:border-stone-800 transform transition-all relative flex flex-col max-h-[92vh]">
-        
+      <div class="bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl border border-stone-200 dark:border-stone-800 transform transition-all relative flex flex-col max-h-[94vh]">
+
         <!-- Header -->
-        <div class="flex items-start justify-between pb-4 border-b border-stone-200 dark:border-stone-800 flex-shrink-0">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
+        <div class="flex items-start justify-between gap-3 pb-4 border-b border-stone-200 dark:border-stone-800 flex-shrink-0">
+          <div class="space-y-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-orange-100 dark:bg-orange-950/70 text-orange-700 dark:text-orange-400">
                 <i data-lucide="shield-check" class="w-3 h-3"></i>
-                Chính Sách Nền Tảng
+                Văn bản pháp lý
               </span>
-              <span class="text-[10px] font-mono font-medium text-stone-400 dark:text-stone-500">v3.2.0</span>
+              <span class="text-[10px] font-mono font-medium text-stone-400 dark:text-stone-500">v${policy.meta.version}</span>
+              <span class="text-[10px] font-medium text-stone-400 dark:text-stone-500">Hiệu lực ${policy.meta.effectiveDate}</span>
             </div>
             <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-              Điều Khoản Dịch Vụ & Quy Tắc Nền Tảng SurvHub
+              ${activeDoc.title}
             </h3>
-            <p class="text-xs text-stone-500 dark:text-stone-400">
-              Quy chuẩn minh bạch cho Người làm bài (Đáp Viên) và Doanh Nghiệp nghiên cứu
+            <p class="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+              ${activeDoc.subtitle}
             </p>
           </div>
-          <button onclick="VibeApp.closeTermsModal()" class="p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors -mr-1 -mt-1">
+          <button onclick="VibeApp.closeTermsModal()" aria-label="Đóng văn bản pháp lý" class="p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors -mr-1 -mt-1 shrink-0">
             <i data-lucide="x" class="w-5 h-5 stroke-[2.2]"></i>
           </button>
         </div>
 
-        <!-- Scrollable Body Content -->
-        <div class="flex-1 overflow-y-auto pr-2 py-4 space-y-4 text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-sans">
-          
-          <!-- Box 1: Quy định tài khoản & Tỷ giá -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="user-check" class="w-4 h-4 text-orange-600"></i>
-              <span>1. Quy Định Sở Hữu Tài Khoản & Định Giá 1:1 VNĐ</span>
-            </div>
-            <ul class="list-disc list-inside space-y-1 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Nguyên tắc 1 tài khoản chính chủ:</strong> Mỗi cá nhân chỉ được sử dụng duy nhất 01 tài khoản gắn liền với 01 email và số điện thoại xác thực. Nghiêm cấm tạo nhiều tài khoản (multi-account) trên cùng 1 thiết bị để trục lợi quà tặng tân thủ hay lượt làm bài.</li>
-              <li><strong>Tỷ giá minh bạch:</strong> Điểm thưởng khảo sát <code>1 Point = 1 VNĐ</code>. Số dư nạp ví Doanh Nghiệp <code>1 Credit = 1 VNĐ</code>. Hệ thống không sử dụng token ảo hoặc đơn vị quy đổi khó hiểu.</li>
-            </ul>
-          </div>
-
-          <!-- Box 2: Quy chuẩn Người làm khảo sát (Respondent & Anti-Fraud) -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="shield-alert" class="w-4 h-4 text-orange-600"></i>
-              <span>2. Tiêu Chuẩn Trả Lời & Hệ Thống Chống Gian Lận (Anti-Fraud)</span>
-            </div>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              SurvHub tích hợp công nghệ chống gian lận đa tầng tự động. Đáp viên đồng ý tuân thủ và chịu chế tài kiểm duyệt:
-            </p>
-            <ul class="list-disc list-inside space-y-1.5 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Bẫy thời gian (Speed Trap):</strong> Bắt buộc dành thời gian tối thiểu hợp lý để đọc hiểu câu hỏi. Các bài làm bấm chọn siêu tốc trong vài giây sẽ bị từ chối công nhận.</li>
-              <li><strong>Bẫy chú ý (Attention Check):</strong> Phải chú ý các câu hỏi kiểm tra ngẫu nhiên (ví dụ: "Hãy chọn đáp án thứ ba"). Trả lời sai sẽ bị hủy kết quả bài làm.</li>
-              <li><strong>Bẫy chọn thẳng hàng (Straight-lining):</strong> Nghiêm cấm chọn một đường liên tục trên các thang đo ma trận mà không phân biệt câu hỏi.</li>
-              <li><strong>Cấm spam tự luận & sử dụng bot:</strong> Nghiêm cấm gõ ký tự rác, sao chép văn bản lặp lại, hoặc sử dụng tiện ích extension, bot script, AI can thiệp tự động làm bài.</li>
-              <li><strong>Điểm uy tín (Trust Score):</strong> Tài khoản khởi điểm 85.0 điểm. Gian lận bị trừ điểm; dưới 60.0 điểm bị tạm dừng đổi thưởng; dưới 40.0 điểm bị khóa tài khoản vĩnh viễn và tịch thu số dư vi phạm.</li>
-            </ul>
-          </div>
-
-          <!-- Box 3: Quy chuẩn Doanh Nghiệp tạo khảo sát & Ký quỹ Escrow -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="layers" class="w-4 h-4 text-orange-600"></i>
-              <span>3. Quy Chuẩn Doanh Nghiệp Tạo Khảo Sát & Ký Quỹ Escrow An Toàn</span>
-            </div>
-            <ul class="list-disc list-inside space-y-1.5 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Ký quỹ Escrow minh bạch:</strong> Khi xuất bản bài khảo sát, ngân sách được khóa an toàn trong quỹ Escrow và chỉ giải ngân cho đáp viên khi câu trả lời vượt qua toàn bộ kiểm duyệt chất lượng.</li>
-              <li><strong>Hoàn tiền 100% khi đóng khảo sát:</strong> Khi bài khảo sát kết thúc hoặc đóng sớm, toàn bộ số tiền mẫu chưa thu thập được sẽ được hoàn lại 100% vào ví Credit của Doanh Nghiệp.</li>
-              <li><strong>Nghiêm cấm nội dung độc hại:</strong> Tuyệt đối cấm tạo khảo sát vi phạm pháp luật Việt Nam, đồi trụy, cờ bạc, lừa đảo đa cấp, hoặc thu thập trái phép mật khẩu ngân hàng, mã OTP, số CCCD. Vi phạm sẽ bị gỡ bài và khóa tài khoản không hoàn tiền.</li>
-              <li><strong>Bảo hành mẫu doanh nghiệp:</strong> Doanh nghiệp (Enterprise) được cam kết bảo hành 1 đổi 1 trong vòng 7 ngày cho các mẫu không đúng phân khúc mục tiêu.</li>
-            </ul>
-          </div>
-
-          <!-- Box 4: Chính sách Đổi thưởng & Nạp rút -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="wallet" class="w-4 h-4 text-orange-600"></i>
-              <span>4. Chính Sách Đổi Thưởng, Nạp Tiền & Lệ Phí Xử Lý</span>
-            </div>
-            <ul class="list-disc list-inside space-y-1 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Đổi thẻ cào điện thoại:</strong> Tối thiểu từ 10.000 VNĐ (Viettel, VinaPhone, MobiFone), phí xử lý 0 VNĐ.</li>
-              <li><strong>Rút tiền ngân hàng / Ví MoMo:</strong> Tối thiểu từ 50.000 VNĐ (phí 2.000 VNĐ); từ 100.000 VNĐ trở lên miễn phí 100%.</li>
-              <li><strong>Nạp tiền Doanh Nghiệp:</strong> Tối thiểu 20.000 VNĐ qua VietQR tự động cộng số dư trong vòng 30 giây.</li>
-              <li><strong>Thời gian giải ngân đổi thưởng:</strong> Kiểm duyệt và chuyển thưởng tự động trong vòng 24 - 48 giờ làm việc.</li>
-            </ul>
-          </div>
-
-          <!-- Box 5: Bảo mật thông tin Luật Bảo Vệ Dữ Liệu Cá Nhân & Nghị định 13 -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="lock" class="w-4 h-4 text-orange-600"></i>
-              <span>5. Bảo Vệ Dữ Liệu Cá Nhân (Luật Bảo Vệ Dữ Liệu Cá Nhân 91/2025/QH15 & Nghị Định 356/2025/NĐ-CP)</span>
-            </div>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              Thông tin nhân khẩu học của bạn (giới tính, khu vực, trường, ngành, độ tuổi) CHỈ được nền tảng sử dụng nội bộ để ghép cặp những khảo sát phù hợp với bạn. Những dữ liệu này KHÔNG BAO GIỜ được chuyển giao cho Doanh Nghiệp hay xuất hiện trong kết quả khảo sát. Doanh Nghiệp chỉ nhận câu trả lời khảo sát dưới dạng thống kê ẩn danh, gắn với mã phiên làm bài.
-            </p>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              Địa chỉ email tài khoản của bạn CHỈ được chia sẻ cho Doanh Nghiệp khi họ bật chế độ thu thập email cho bài khảo sát đó, và bạn sẽ luôn được thông báo rõ ràng ngay trước khi bắt đầu làm. Số điện thoại, tài khoản thanh toán và các dữ liệu nhạy cảm khác không bao giờ được chia sẻ cho Doanh Nghiệp dưới bất kỳ hình thức nào. SurvHub cam kết không bán dữ liệu cá nhân cho bên thứ ba vì bất kỳ mục đích thương mại nào.
-            </p>
-          </div>
-
-          <!-- Box 6: Trọng tài giải quyết khiếu nại -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="scale" class="w-4 h-4 text-orange-600"></i>
-              <span>6. Sổ Cái Giao Dịch & Trọng Tài Giải Quyết Khiếu Nại</span>
-            </div>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              Hệ thống Sổ cái đối soát giao dịch kép (Double-entry Ledger) và Audit Log máy chủ là căn cứ xác minh tối cao. Mọi khiếu nại được tiếp nhận qua kênh hỗ trợ trực tuyến và xử lý dứt điểm trong vòng 03 ngày làm việc.
-            </p>
-          </div>
-
+        <!-- Tab chọn văn bản -->
+        <div class="flex flex-col sm:flex-row gap-1.5 py-3 flex-shrink-0">
+          ${tabsHtml}
         </div>
 
-        ${isReadOnly ? '' : `
+        <!-- Scrollable Body Content -->
+        <div class="flex-1 overflow-y-auto pr-1.5 py-1 space-y-3">
+          ${sectionsHtml}
+          <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/60">
+            <p class="text-[11px] text-orange-900 dark:text-orange-200 leading-relaxed">
+              <strong>Lưu ý:</strong> Bạn đang đọc phiên bản ${policy.meta.version}, cập nhật ngày ${policy.meta.lastUpdated}. Khi có thay đổi quan trọng, SurvHub thông báo trước ít nhất 07 ngày. Việc tiếp tục sử dụng dịch vụ sau ngày hiệu lực đồng nghĩa bạn chấp nhận văn bản mới.
+            </p>
+          </div>
+        </div>
+
+        ${isReadOnly ? `
+        <!-- Footer Actions (che do chi doc) -->
+        <div class="pt-4 border-t border-stone-200 dark:border-stone-800 flex items-center justify-end gap-2.5 flex-shrink-0">
+          <button type="button" onclick="VibeApp.closeTermsModal()" class="px-5 py-2.5 rounded-xl bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-white text-white dark:text-stone-900 text-xs font-bold transition-all active:scale-95">
+            Đóng
+          </button>
+        </div>
+        ` : `
         <!-- Footer Actions -->
         <div class="pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
-          <p class="text-[11px] text-stone-500 dark:text-stone-400 text-center sm:text-left">
-            Bằng việc bấm xác nhận, bạn cam kết tuân thủ đầy đủ các quy định trên.
+          <p class="text-[11px] text-stone-500 dark:text-stone-400 text-center sm:text-left leading-relaxed">
+            Bằng việc bấm xác nhận, bạn cam kết đã đọc và tuân thủ Điều khoản dịch vụ, Quy chế hoạt động và Chính sách bảo vệ dữ liệu cá nhân.
           </p>
           <div class="flex items-center gap-2.5 w-full sm:w-auto">
             <button type="button" onclick="VibeApp.closeTermsModal()" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition-all active:scale-95">
@@ -1118,7 +1119,7 @@
             </button>
             <button type="button" onclick="VibeApp.acceptTermsFromModal()" class="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5">
               <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
-              <span>Tôi Đồng Ý Điều Khoản</span>
+              <span>Tôi Đồng Ý</span>
             </button>
           </div>
         </div>
@@ -1147,14 +1148,27 @@
 
   acceptTermsFromModal() {
     this.haptic('success');
+    const activeDoc = this._termsActiveDoc || 'terms';
     this.closeTermsModal();
+
+    if (activeDoc === 'privacy') {
+      const privacyCheckbox = document.getElementById('auth-reg-privacy');
+      if (privacyCheckbox) {
+        privacyCheckbox.checked = true;
+        this.showToast('Đã xác nhận đồng ý xử lý dữ liệu cá nhân theo Chính sách bảo vệ dữ liệu cá nhân!', 'success');
+      } else {
+        this.showToast('Đã ghi nhận bạn đồng ý với Chính sách bảo vệ dữ liệu cá nhân của SurvHub!', 'success');
+      }
+      return;
+    }
+
     const termsCheckbox = document.getElementById('auth-reg-terms');
     if (termsCheckbox) {
       termsCheckbox.checked = true;
       this.handleTermsCheckboxChange(true);
-      this.showToast('Đã xác nhận đồng ý với Điều khoản dịch vụ & Quy tắc nền tảng!', 'success');
+      this.showToast('Đã xác nhận đồng ý với Điều khoản dịch vụ và Quy chế hoạt động!', 'success');
     } else {
-      this.showToast('Đã ghi nhận bạn đồng ý với Điều khoản & Quy tắc nền tảng SurvHub!', 'success');
+      this.showToast('Đã ghi nhận bạn đồng ý với văn bản pháp lý của SurvHub!', 'success');
     }
   },
 

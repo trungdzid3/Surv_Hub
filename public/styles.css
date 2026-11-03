@@ -1860,6 +1860,149 @@ html.dark .vibe-switch.active:hover,
   font-style: italic !important;
 }
 
+/* =========================================================
+   VĂN BẢN PHÁP LÝ (.policy-doc-body)
+   Khôi phục định dạng danh sách, bảng và đoạn văn cho nội dung
+   Điều khoản dịch vụ / Chính sách bảo mật / Quy chế hoạt động.
+   Tailwind Preflight reset làm mất bullet và number mặc định.
+   ========================================================= */
+.policy-doc-body p {
+  margin: 0.4rem 0;
+  line-height: 1.65;
+}
+
+.policy-doc-body p:first-child {
+  margin-top: 0;
+}
+
+.policy-doc-body p:last-child {
+  margin-bottom: 0;
+}
+
+.policy-doc-body ul,
+.policy-doc-body ol {
+  padding-left: 1.15rem !important;
+  margin: 0.4rem 0 !important;
+}
+
+.policy-doc-body ul {
+  list-style-type: disc !important;
+}
+
+.policy-doc-body ol {
+  list-style-type: decimal !important;
+}
+
+.policy-doc-body li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+  padding-left: 0.1rem;
+}
+
+.policy-doc-body li > ul,
+.policy-doc-body li > ol {
+  margin: 0.25rem 0 !important;
+}
+
+.policy-doc-body strong,
+.policy-doc-body b {
+  font-weight: 700 !important;
+  color: #1c1917;
+}
+
+.dark .policy-doc-body strong,
+.dark .policy-doc-body b {
+  color: #fafaf9;
+}
+
+.policy-doc-body em,
+.policy-doc-body i {
+  font-style: italic !important;
+}
+
+.policy-doc-body a {
+  color: #ea580c;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-word;
+}
+
+.dark .policy-doc-body a {
+  color: #fb923c;
+}
+
+.policy-doc-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  font-weight: 600;
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.35rem;
+  background-color: #f5f5f4;
+  color: #1c1917;
+}
+
+.dark .policy-doc-body code {
+  background-color: #292524;
+  color: #fafaf9;
+}
+
+.policy-doc-body table {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 11px;
+}
+
+.policy-doc-body thead th {
+  text-align: left;
+  font-weight: 800;
+  padding: 0.4rem 0.5rem;
+  background-color: #f5f5f4;
+  border-bottom: 1px solid #d6d3d1;
+  white-space: nowrap;
+}
+
+.dark .policy-doc-body thead th {
+  background-color: #292524;
+  border-bottom-color: #44403c;
+}
+
+.policy-doc-body tbody td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #e7e5e4;
+  vertical-align: top;
+}
+
+.dark .policy-doc-body tbody td {
+  border-bottom-color: #292524;
+}
+
+.policy-doc-body tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.policy-doc-body .overflow-x-auto {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 420px) {
+  .policy-doc-body {
+    font-size: 10.5px;
+  }
+
+  .policy-doc-body table {
+    font-size: 10px;
+  }
+
+  .policy-doc-body thead th,
+  .policy-doc-body tbody td {
+    padding: 0.35rem 0.4rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

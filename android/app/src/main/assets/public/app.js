@@ -1551,7 +1551,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }).join('');
     }
 
-    // Mobile Bottom Floating Nav (Kiểu Bong Bóng Nổi Bo Tròn Đẳng Cấp, Có Nhãn Chữ Rõ Ràng Dưới Icon)
+    // Mobile bottom navigation giữ nguyên route, role và thứ tự item trên mọi vai trò.
     if (mobileNav) {
       let mobileItems = [];
       const effectiveRole = user ? (user.role === 'ADMIN' ? (this.state.adminViewMode || 'ADMIN') : user.role) : 'GUEST';
@@ -1602,38 +1602,35 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         const clickAction = tab.isAuthAction ? `VibeApp.openAuthModal('login')` : `VibeApp.navigate('${tab.id}')`;
         const displayLabel = tab.mobileLabel || tab.label;
 
-        // Nút hành động chính ở giữa: Action Button dạng tròn cam nổi bật trung tâm kèm nhãn cam in đậm bên dưới
+        // CTA giữa dùng cùng chiều cao thanh nav, chỉ nhấn nhẹ bằng màu cam.
         if (tab.isCenterAction) {
           const centerIcon = tab.centerIcon || tab.icon || 'plus';
-          const iconSizeClass = centerIcon === 'plus' ? 'w-5.5 h-5.5 stroke-[2.8]' : 'w-5 h-5 stroke-[2.4]';
+          const iconSizeClass = centerIcon === 'plus' ? 'w-5 h-5 stroke-[2.6]' : 'w-5 h-5 stroke-[2.3]';
           return `
-            <div class="flex-1 min-w-0 flex justify-center items-center">
+            <div class="mobile-nav-item">
               <button onclick="${clickAction}" 
                       title="${tab.label}" 
                       aria-label="${tab.label}"
-                      class="relative -mt-3.5 flex flex-col items-center justify-center group active:scale-90 transition-all select-none">
-                <div class="w-10.5 h-10.5 rounded-full bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-lg shadow-orange-600/35 transition-all ${isActive ? 'ring-2 ring-orange-500 ring-offset-2 dark:ring-offset-stone-900 shadow-orange-600/50 scale-105' : ''}">
+                      class="mobile-nav-action group active:scale-95 transition-transform select-none">
+                <div class="mobile-nav-action-icon ${isActive ? 'is-active' : ''}">
                   <i data-lucide="${centerIcon}" class="${iconSizeClass}"></i>
                 </div>
-                <span class="text-[9.5px] sm:text-[10px] leading-none mt-1 tracking-tight font-bold text-orange-600 dark:text-orange-400 truncate max-w-[64px] text-center">${displayLabel}</span>
+                <span class="mobile-nav-label">${displayLabel}</span>
               </button>
             </div>
           `;
         }
 
         return `
-          <div class="flex-1 min-w-0 flex justify-center items-center">
+          <div class="mobile-nav-item">
             <button onclick="${clickAction}" 
                     title="${tab.label}" 
                     aria-label="${tab.label}"
-                    class="relative w-full py-1 flex flex-col items-center justify-center transition-all duration-200 active:scale-90 group select-none ${isActive
-            ? 'text-orange-600 dark:text-orange-400 font-bold'
-            : 'text-stone-400 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 font-medium'
-          }">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all ${isActive ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400' : 'group-hover:bg-stone-50 dark:group-hover:bg-stone-800/40'}">
-                <i data-lucide="${tab.icon}" class="w-4.5 h-4.5 transition-transform group-hover:scale-110 ${isActive ? 'stroke-[2.4] scale-105' : 'stroke-[1.8]'}"></i>
+                    class="mobile-nav-link group transition-colors active:scale-95 ${isActive ? 'is-active' : ''}">
+              <div class="mobile-nav-icon">
+                <i data-lucide="${tab.icon}" class="w-5 h-5 ${isActive ? 'stroke-[2.4]' : 'stroke-[1.9]'}"></i>
               </div>
-              <span class="text-[9.5px] sm:text-[10px] leading-none mt-1 tracking-tight truncate max-w-[62px] text-center ${isActive ? 'text-orange-600 dark:text-orange-400 font-bold' : 'text-stone-500 dark:text-stone-400'}">${displayLabel}</span>
+              <span class="mobile-nav-label">${displayLabel}</span>
             </button>
           </div>
         `;

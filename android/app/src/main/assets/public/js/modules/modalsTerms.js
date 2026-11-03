@@ -86,7 +86,7 @@
         </div>
 
         <!-- Error Message Alert -->
-        <div id="auth-error-alert" class="hidden mb-4 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/80 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
+        <div id="auth-error-alert" class="hidden mb-4 p-3 rounded-xl bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/80 text-orange-700 dark:text-orange-300 text-xs font-semibold flex items-center gap-2">
           <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
           <span id="auth-error-text">Lỗi đăng nhập</span>
         </div>
@@ -269,17 +269,31 @@
             </div>
           </div>
 
-          <!-- Quy tắc & Điều khoản bắt buộc tích mới được đăng ký -->
-          <div class="p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/60 transition-all" id="auth-reg-terms-wrapper">
-            <label class="flex items-start gap-2.5 cursor-pointer select-none group">
-              <input type="checkbox" id="auth-reg-terms" required class="mt-0.5 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-orange-600 focus:ring-orange-500 cursor-pointer accent-orange-600" onchange="VibeApp.handleTermsCheckboxChange(this.checked)">
-              <span class="text-[11px] leading-snug text-stone-600 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
-                Tôi đã đọc, hiểu rõ và đồng ý với 
-                <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event)" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">
-                  Điều khoản dịch vụ & Quy tắc nền tảng SurvHub
-                </a>.
-              </span>
-            </label>
+          <!-- Quy tắc, Điều khoản & Đồng ý dữ liệu cá nhân (tách riêng từng mục đích) -->
+          <div class="space-y-2">
+            <div class="p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/60 transition-all" id="auth-reg-terms-wrapper">
+              <label class="flex items-start gap-2.5 cursor-pointer select-none group">
+                <input type="checkbox" id="auth-reg-terms" required class="mt-0.5 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-orange-600 focus:ring-orange-500 cursor-pointer accent-orange-600 shrink-0" onchange="VibeApp.handleTermsCheckboxChange(this.checked)">
+                <span class="text-[11px] leading-snug text-stone-600 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
+                  Tôi đã đọc, hiểu và đồng ý với
+                  <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, false, 'terms')" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">Điều khoản dịch vụ</a>
+                  và
+                  <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, false, 'rules')" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">Quy chế hoạt động</a>.
+                  Tôi xác nhận mình từ đủ 18 tuổi, hoặc nếu dưới 18 tuổi thì đã có sự đồng ý của cha, mẹ hoặc người đại diện theo pháp luật.
+                </span>
+              </label>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-900/60 transition-all" id="auth-reg-privacy-wrapper">
+              <label class="flex items-start gap-2.5 cursor-pointer select-none group">
+                <input type="checkbox" id="auth-reg-privacy" required class="mt-0.5 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-orange-600 focus:ring-orange-500 cursor-pointer accent-orange-600 shrink-0">
+                <span class="text-[11px] leading-snug text-stone-600 dark:text-stone-300 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
+                  Tôi đồng ý để SurvHub xử lý dữ liệu cá nhân của mình, bao gồm dữ liệu cá nhân nhạy cảm nếu tôi tự nguyện cung cấp, theo
+                  <a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, false, 'privacy')" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">Chính sách bảo vệ dữ liệu cá nhân</a>.
+                  Tôi hiểu rằng mình có thể rút lại sự đồng ý bất kỳ lúc nào.
+                </span>
+              </label>
+            </div>
           </div>
 
           <button type="submit" id="auth-submit-btn" class="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
@@ -288,6 +302,189 @@
           </button>
         </form>
       `;
+    }
+  },
+
+  _renderLoginChallenge(response, email, password) {
+    const formBody = document.getElementById('auth-form-body');
+    const errorAlert = document.getElementById('auth-error-alert');
+    if (!formBody) return;
+
+    this._loginChallenge = {
+      challengeId: response.challengeId,
+      maskedEmail: response.maskedEmail || '',
+      verifyEndpoint: response.verifyEndpoint || '/auth/login/verify-otp',
+      resendEndpoint: response.resendEndpoint || '/auth/login/resend-otp',
+      requiresTotp: Boolean(response.requiresTotp),
+      email,
+      password
+    };
+    if (errorAlert) errorAlert.classList.add('hidden');
+
+    const challenge = this._loginChallenge;
+    formBody.innerHTML = `
+      <form onsubmit="VibeApp.verifyLoginOtp(event)" class="space-y-4" novalidate>
+        <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800/70 text-orange-800 dark:text-orange-200 text-xs leading-relaxed" role="status">
+          ${challenge.requiresTotp
+            ? 'Nhập mã 6 số từ ứng dụng xác thực để hoàn tất đăng nhập.'
+            : `Mã xác thực đã được gửi đến <strong>${this._escapeAuthHtml(challenge.maskedEmail || 'email của bạn')}</strong>.`}
+        </div>
+        <div>
+          <label for="auth-login-otp" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+            ${challenge.requiresTotp ? 'Mã authenticator (6 số)' : 'Mã OTP (6 số)'}
+          </label>
+          <input type="text" id="auth-login-otp" inputmode="numeric" autocomplete="one-time-code"
+                 maxlength="6" pattern="[0-9]{6}" required autofocus
+                 aria-describedby="auth-login-otp-help"
+                 placeholder="Nhập 6 chữ số"
+                 class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-center text-lg font-mono font-bold tracking-[0.35em] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
+          <p id="auth-login-otp-help" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5">
+            Mã chỉ gồm 6 chữ số. Không chia sẻ mã này với người khác.
+          </p>
+        </div>
+        <button type="submit" id="auth-login-otp-submit" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4"></i> Xác minh và đăng nhập
+        </button>
+        <div class="flex items-center justify-between gap-3 text-[11px]">
+          <button type="button" id="btn-resend-login-otp" onclick="VibeApp.resendLoginOtp()" class="font-bold text-orange-600 dark:text-orange-500 hover:underline">
+            <span id="login-otp-resend-text">Gửi lại mã</span>
+          </button>
+          <button type="button" onclick="VibeApp.cancelLoginChallenge()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+            Quay lại đăng nhập
+          </button>
+        </div>
+      </form>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    this._startLoginOtpCooldown(Number(response.resendAfter || 60));
+    document.getElementById('auth-login-otp')?.focus();
+  },
+
+  _escapeAuthHtml(value) {
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+  },
+
+  _showLoginChallengeError(message) {
+    const errorAlert = document.getElementById('auth-error-alert');
+    const errorText = document.getElementById('auth-error-text');
+    if (errorAlert && errorText) {
+      errorText.textContent = message;
+      errorAlert.classList.remove('hidden');
+    }
+  },
+
+  _startLoginOtpCooldown(seconds = 60) {
+    if (this._loginOtpTimer) clearInterval(this._loginOtpTimer);
+    this._loginOtpCooldownEndTime = Date.now() + Math.max(0, seconds) * 1000;
+    this._updateLoginOtpCooldown();
+    this._loginOtpTimer = setInterval(() => {
+      this._updateLoginOtpCooldown();
+      if (Date.now() >= this._loginOtpCooldownEndTime) {
+        clearInterval(this._loginOtpTimer);
+        this._loginOtpTimer = null;
+      }
+    }, 1000);
+  },
+
+  _updateLoginOtpCooldown() {
+    const button = document.getElementById('btn-resend-login-otp');
+    const text = document.getElementById('login-otp-resend-text');
+    if (!button || !text) return;
+    const remaining = Math.max(0, Math.ceil((this._loginOtpCooldownEndTime - Date.now()) / 1000));
+    button.disabled = remaining > 0;
+    button.classList.toggle('opacity-50', remaining > 0);
+    button.classList.toggle('cursor-not-allowed', remaining > 0);
+    text.textContent = remaining > 0 ? `Gửi lại mã (${remaining}s)` : 'Gửi lại mã';
+  },
+
+  async resendLoginOtp() {
+    const challenge = this._loginChallenge;
+    if (!challenge || Date.now() < this._loginOtpCooldownEndTime) return;
+    const button = document.getElementById('btn-resend-login-otp');
+    if (button) button.disabled = true;
+    try {
+      const response = await this.api(challenge.resendEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({ challengeId: challenge.challengeId, email: challenge.email })
+      });
+      if (response.challengeId) challenge.challengeId = response.challengeId;
+      if (response.maskedEmail) challenge.maskedEmail = response.maskedEmail;
+      this._startLoginOtpCooldown(Number(response.resendAfter || 60));
+      this._showLoginChallengeError('');
+      document.getElementById('auth-error-alert')?.classList.add('hidden');
+      this.showToast('Mã xác thực mới đã được gửi.', 'success');
+    } catch (error) {
+      this._showLoginChallengeError(error.message || 'Không thể gửi lại mã xác thực. Vui lòng thử lại sau.');
+      if (button) button.disabled = false;
+    }
+  },
+
+  cancelLoginChallenge() {
+    if (this._loginOtpTimer) clearInterval(this._loginOtpTimer);
+    this._loginOtpTimer = null;
+    this._loginChallenge = null;
+    const formBody = document.getElementById('auth-form-body');
+    if (formBody) {
+      formBody.innerHTML = this.getAuthFormHtml('login');
+      if (window.lucide) window.lucide.createIcons();
+    }
+  },
+
+  async verifyLoginOtp(event) {
+    if (event) event.preventDefault();
+    const challenge = this._loginChallenge;
+    const otpInput = document.getElementById('auth-login-otp');
+    const submitButton = document.getElementById('auth-login-otp-submit');
+    const otp = otpInput?.value.trim();
+    if (!challenge || !/^\d{6}$/.test(otp || '')) {
+      this._showLoginChallengeError('Vui lòng nhập đúng mã gồm 6 chữ số.');
+      otpInput?.focus();
+      return;
+    }
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Đang xác minh...';
+    }
+    try {
+      const response = await this.api(challenge.verifyEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({ challengeId: challenge.challengeId, otp, code: otp })
+      });
+      if (!response.success || !response.token) throw new Error(response.message || 'Mã xác thực không hợp lệ.');
+      this._completeLogin(response);
+    } catch (error) {
+      const message = error.message || 'Mã xác thực không hợp lệ.';
+      const errorCode = String(error.code || error.data?.code || error.data?.error || '').toUpperCase();
+      this._showLoginChallengeError(/expired|hết hạn|EXPIRED/i.test(message) || errorCode.includes('EXPIRED')
+        ? 'Mã xác thực đã hết hạn. Vui lòng gửi lại mã.'
+        : /too many|quá nhiều|attempt/i.test(message) || errorCode.includes('TOO_MANY') || errorCode.includes('ATTEMPTS')
+          ? 'Bạn đã nhập sai quá nhiều lần. Vui lòng gửi lại mã hoặc thử lại sau.'
+          : message);
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4"></i> Xác minh và đăng nhập';
+        if (window.lucide) window.lucide.createIcons();
+      }
+      otpInput?.focus();
+    }
+  },
+
+  _completeLogin(response) {
+    this.state.token = response.token;
+    this.state.currentUser = response.user;
+    localStorage.setItem('survhub_token', response.token);
+    localStorage.setItem('survhub_cached_user', JSON.stringify(response.user));
+    localStorage.setItem('vibesurvey_cached_user', JSON.stringify(response.user));
+    this._loginChallenge = null;
+    this.closeModal();
+    this.showToast(`Chào mừng ${response.user.name}! Đăng nhập thành công.`, 'success');
+    this.applyUserInterface();
+    if (this.state.pendingSurveyId) {
+      const pendingId = this.state.pendingSurveyId;
+      this.state.pendingSurveyId = null;
+      setTimeout(() => this.startSurveySession(pendingId), 350);
     }
   },
 
@@ -348,24 +545,12 @@
         body: JSON.stringify({ email, password })
       });
 
-      if (res.success) {
-        this.state.token = res.token;
-        this.state.currentUser = res.user;
-        localStorage.setItem('survhub_token', res.token);
-        localStorage.setItem('survhub_cached_user', JSON.stringify(res.user));
-        localStorage.setItem('vibesurvey_cached_user', JSON.stringify(res.user));
-        this.closeModal();
-        this.showToast(`Chào mừng ${res.user.name}! Đăng nhập thành công.`, 'success');
-        this.applyUserInterface();
-
-        // Tự động chuyển thẳng vào làm bài nếu đến từ Deep-link Email
-        if (this.state.pendingSurveyId) {
-          const pendingId = this.state.pendingSurveyId;
-          this.state.pendingSurveyId = null;
-          setTimeout(() => {
-            this.startSurveySession(pendingId);
-          }, 350);
-        }
+      if ((res.requiresOtp || res.requiresTotp) && res.challengeId) {
+        this._renderLoginChallenge(res, email, password);
+      } else if (res.success && res.token) {
+          this._completeLogin(res);
+      } else {
+        throw new Error(res.message || 'Phản hồi đăng nhập không hợp lệ.');
       }
     } catch (err) {
       if (errorAlert && errorText) {
@@ -514,26 +699,44 @@
       const otpInput = document.getElementById('auth-reg-otp');
       if (otpInput) {
         otpInput.focus();
-        otpInput.classList.add('ring-2', 'ring-red-500', 'border-red-500');
-        setTimeout(() => otpInput.classList.remove('ring-2', 'ring-red-500', 'border-red-500'), 3000);
+        otpInput.classList.add('ring-2', 'ring-orange-500', 'border-orange-500');
+        setTimeout(() => otpInput.classList.remove('ring-2', 'ring-orange-500', 'border-orange-500'), 3000);
       }
       return;
     }
 
     const termsCheckbox = document.getElementById('auth-reg-terms');
+    const privacyCheckbox = document.getElementById('auth-reg-privacy');
+
     if (termsCheckbox && !termsCheckbox.checked) {
       if (errorAlert && errorText) {
-        errorText.textContent = 'Vui lòng đọc và tích chọn đồng ý với Điều khoản dịch vụ & Quy tắc nền tảng SurvHub để tạo tài khoản';
+        errorText.textContent = 'Vui lòng đọc và tích chọn đồng ý với Điều khoản dịch vụ và Quy chế hoạt động để tạo tài khoản';
         errorAlert.classList.remove('hidden');
       }
       const termsWrapper = document.getElementById('auth-reg-terms-wrapper');
       if (termsWrapper) {
-        termsWrapper.classList.add('border-red-500', 'bg-red-50/70', 'dark:bg-red-950/40');
+        termsWrapper.classList.add('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
         setTimeout(() => {
-          if (termsWrapper) termsWrapper.classList.remove('border-red-500', 'bg-red-50/70', 'dark:bg-red-950/40');
+          if (termsWrapper) termsWrapper.classList.remove('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
         }, 3000);
       }
       termsCheckbox.focus();
+      return;
+    }
+
+    if (privacyCheckbox && !privacyCheckbox.checked) {
+      if (errorAlert && errorText) {
+        errorText.textContent = 'Vui lòng tích chọn đồng ý để SurvHub xử lý dữ liệu cá nhân theo Chính sách bảo vệ dữ liệu cá nhân';
+        errorAlert.classList.remove('hidden');
+      }
+      const privacyWrapper = document.getElementById('auth-reg-privacy-wrapper');
+      if (privacyWrapper) {
+        privacyWrapper.classList.add('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
+        setTimeout(() => {
+          if (privacyWrapper) privacyWrapper.classList.remove('border-orange-500', 'bg-orange-50/70', 'dark:bg-orange-950/40');
+        }, 3000);
+      }
+      privacyCheckbox.focus();
       return;
     }
 
@@ -601,9 +804,9 @@
       title: 'Thiết Lập Google OAuth 2.0 Client ID',
       content: `
         <div class="space-y-4 text-xs">
-          <div class="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-stone-200 dark:border-stone-700 rounded-2xl flex items-start gap-2.5">
-            <i data-lucide="info" class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"></i>
-            <div class="leading-relaxed text-amber-900 dark:text-amber-200">
+          <div class="p-3.5 bg-orange-50 dark:bg-orange-950/40 border border-stone-200 dark:border-stone-700 rounded-2xl flex items-start gap-2.5">
+            <i data-lucide="info" class="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5"></i>
+            <div class="leading-relaxed text-orange-900 dark:text-orange-200">
               Để mở <strong>cửa sổ đăng nhập chính thức từ máy chủ Google (accounts.google.com)</strong> như trong ảnh chụp, hệ thống cần mã <code>GOOGLE_CLIENT_ID</code> từ Google Cloud Console.
             </div>
           </div>
@@ -621,7 +824,7 @@
                 Điền 2 đường dẫn sau:
                 <ul class="list-disc list-inside pl-4 mt-1.5 space-y-1 text-[11px] font-mono text-slate-700 dark:text-slate-300">
                   <li>Authorized JavaScript origins: <code class="text-orange-600 dark:text-orange-400">http://localhost:3000</code></li>
-                  <li>Authorized redirect URIs: <code class="text-emerald-600 dark:text-emerald-400">http://localhost:3000/api/v1/auth/google/callback</code></li>
+                  <li>Authorized redirect URIs: <code class="text-orange-600 dark:text-orange-400">http://localhost:3000/api/v1/auth/google/callback</code></li>
                 </ul>
               </li>
             </ol>
@@ -663,7 +866,7 @@
     }
 
     // Chọn mặc định tài khoản Trung Nguyễn Thành giống hệt thiết kế
-    this.switchGoogleAccount('trungdzid3@gmail.com', 'Trung Nguyễn Thành', 'T', 'bg-indigo-600');
+    this.switchGoogleAccount('trungdzid3@gmail.com', 'Trung Nguyễn Thành', 'T', 'bg-zinc-600');
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -718,7 +921,7 @@
     const customName = window.prompt('Nhập họ và tên tài khoản Google:', defaultName) || defaultName;
     const initial = (customName.trim()[0] || 'G').toUpperCase();
 
-    this.switchGoogleAccount(email, customName.trim(), initial, 'bg-cyan-600');
+    this.switchGoogleAccount(email, customName.trim(), initial, 'bg-zinc-600');
   },
 
   async submitGoogleConsent() {
@@ -812,7 +1015,7 @@
     }
   },
 
-  openTermsModal(event, isReadOnly = false) {
+  openTermsModal(event, isReadOnly = false, initialDocId = 'terms') {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -822,124 +1025,93 @@
     const modal = document.getElementById('terms-modal');
     if (!modal) return;
 
+    const policy = window.SURVHUB_POLICY_DOCS;
+    if (!policy || !Array.isArray(policy.docs) || policy.docs.length === 0) {
+      this.showToast('Không thể tải văn bản pháp lý. Vui lòng tải lại trang và thử lại.', 'error');
+      return;
+    }
+
+    const docs = policy.docs;
+    const activeDoc = docs.find(d => d.id === initialDocId) || docs[0];
+    this._termsReadOnly = Boolean(isReadOnly);
+    this._termsActiveDoc = activeDoc.id;
+
+    const tabsHtml = docs.map(doc => {
+      const isActive = doc.id === activeDoc.id;
+      const stateCls = isActive
+        ? 'bg-orange-600 text-white shadow-sm'
+        : 'text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800';
+      return `
+        <button type="button"
+          onclick="VibeApp.openTermsModal(event, ${isReadOnly ? 'true' : 'false'}, '${doc.id}')"
+          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all active:scale-95 ${stateCls}">
+          <i data-lucide="${doc.icon}" class="w-3.5 h-3.5"></i>
+          <span>${doc.label}</span>
+        </button>`;
+    }).join('');
+
+    const sectionsHtml = activeDoc.sections.map(sec => `
+      <section class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
+        <h4 class="flex items-start gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide leading-snug">
+          <i data-lucide="${sec.icon}" class="w-4 h-4 text-orange-600 shrink-0 mt-0.5"></i>
+          <span>${sec.title}</span>
+        </h4>
+        <div class="policy-doc-body text-[11px] text-stone-600 dark:text-stone-400 leading-relaxed">${sec.html}</div>
+      </section>`).join('');
+
     modal.innerHTML = `
-      <div class="bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-stone-200 dark:border-stone-800 transform transition-all relative flex flex-col max-h-[92vh]">
-        
+      <div class="bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl border border-stone-200 dark:border-stone-800 transform transition-all relative flex flex-col max-h-[94vh]">
+
         <!-- Header -->
-        <div class="flex items-start justify-between pb-4 border-b border-stone-200 dark:border-stone-800 flex-shrink-0">
-          <div class="space-y-1">
-            <div class="flex items-center gap-2">
+        <div class="flex items-start justify-between gap-3 pb-4 border-b border-stone-200 dark:border-stone-800 flex-shrink-0">
+          <div class="space-y-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-orange-100 dark:bg-orange-950/70 text-orange-700 dark:text-orange-400">
                 <i data-lucide="shield-check" class="w-3 h-3"></i>
-                Chính Sách Nền Tảng
+                Văn bản pháp lý
               </span>
-              <span class="text-[10px] font-mono font-medium text-stone-400 dark:text-stone-500">v3.2.0</span>
+              <span class="text-[10px] font-mono font-medium text-stone-400 dark:text-stone-500">v${policy.meta.version}</span>
+              <span class="text-[10px] font-medium text-stone-400 dark:text-stone-500">Hiệu lực ${policy.meta.effectiveDate}</span>
             </div>
             <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-              Điều Khoản Dịch Vụ & Quy Tắc Nền Tảng SurvHub
+              ${activeDoc.title}
             </h3>
-            <p class="text-xs text-stone-500 dark:text-stone-400">
-              Quy chuẩn minh bạch cho Người làm bài (Đáp Viên) và Doanh Nghiệp nghiên cứu
+            <p class="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+              ${activeDoc.subtitle}
             </p>
           </div>
-          <button onclick="VibeApp.closeTermsModal()" class="p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors -mr-1 -mt-1">
+          <button onclick="VibeApp.closeTermsModal()" aria-label="Đóng văn bản pháp lý" class="p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors -mr-1 -mt-1 shrink-0">
             <i data-lucide="x" class="w-5 h-5 stroke-[2.2]"></i>
           </button>
         </div>
 
-        <!-- Scrollable Body Content -->
-        <div class="flex-1 overflow-y-auto pr-2 py-4 space-y-4 text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-sans">
-          
-          <!-- Box 1: Quy định tài khoản & Tỷ giá -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="user-check" class="w-4 h-4 text-orange-600"></i>
-              <span>1. Quy Định Sở Hữu Tài Khoản & Định Giá 1:1 VNĐ</span>
-            </div>
-            <ul class="list-disc list-inside space-y-1 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Nguyên tắc 1 tài khoản chính chủ:</strong> Mỗi cá nhân chỉ được sử dụng duy nhất 01 tài khoản gắn liền với 01 email và số điện thoại xác thực. Nghiêm cấm tạo nhiều tài khoản (multi-account) trên cùng 1 thiết bị để trục lợi quà tặng tân thủ hay lượt làm bài.</li>
-              <li><strong>Tỷ giá minh bạch:</strong> Điểm thưởng khảo sát <code>1 Point = 1 VNĐ</code>. Số dư nạp ví Doanh Nghiệp <code>1 Credit = 1 VNĐ</code>. Hệ thống không sử dụng token ảo hoặc đơn vị quy đổi khó hiểu.</li>
-            </ul>
-          </div>
-
-          <!-- Box 2: Quy chuẩn Người làm khảo sát (Respondent & Anti-Fraud) -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="shield-alert" class="w-4 h-4 text-orange-600"></i>
-              <span>2. Tiêu Chuẩn Trả Lời & Hệ Thống Chống Gian Lận (Anti-Fraud)</span>
-            </div>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              SurvHub tích hợp công nghệ chống gian lận đa tầng tự động. Đáp viên đồng ý tuân thủ và chịu chế tài kiểm duyệt:
-            </p>
-            <ul class="list-disc list-inside space-y-1.5 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Bẫy thời gian (Speed Trap):</strong> Bắt buộc dành thời gian tối thiểu hợp lý để đọc hiểu câu hỏi. Các bài làm bấm chọn siêu tốc trong vài giây sẽ bị từ chối công nhận.</li>
-              <li><strong>Bẫy chú ý (Attention Check):</strong> Phải chú ý các câu hỏi kiểm tra ngẫu nhiên (ví dụ: "Hãy chọn đáp án thứ ba"). Trả lời sai sẽ bị hủy kết quả bài làm.</li>
-              <li><strong>Bẫy chọn thẳng hàng (Straight-lining):</strong> Nghiêm cấm chọn một đường liên tục trên các thang đo ma trận mà không phân biệt câu hỏi.</li>
-              <li><strong>Cấm spam tự luận & sử dụng bot:</strong> Nghiêm cấm gõ ký tự rác, sao chép văn bản lặp lại, hoặc sử dụng tiện ích extension, bot script, AI can thiệp tự động làm bài.</li>
-              <li><strong>Điểm uy tín (Trust Score):</strong> Tài khoản khởi điểm 85.0 điểm. Gian lận bị trừ điểm; dưới 60.0 điểm bị tạm dừng đổi thưởng; dưới 40.0 điểm bị khóa tài khoản vĩnh viễn và tịch thu số dư vi phạm.</li>
-            </ul>
-          </div>
-
-          <!-- Box 3: Quy chuẩn Doanh Nghiệp tạo khảo sát & Ký quỹ Escrow -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="layers" class="w-4 h-4 text-orange-600"></i>
-              <span>3. Quy Chuẩn Doanh Nghiệp Tạo Khảo Sát & Ký Quỹ Escrow An Toàn</span>
-            </div>
-            <ul class="list-disc list-inside space-y-1.5 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Ký quỹ Escrow minh bạch:</strong> Khi xuất bản bài khảo sát, ngân sách được khóa an toàn trong quỹ Escrow và chỉ giải ngân cho đáp viên khi câu trả lời vượt qua toàn bộ kiểm duyệt chất lượng.</li>
-              <li><strong>Hoàn tiền 100% khi đóng khảo sát:</strong> Khi bài khảo sát kết thúc hoặc đóng sớm, toàn bộ số tiền mẫu chưa thu thập được sẽ được hoàn lại 100% vào ví Credit của Doanh Nghiệp.</li>
-              <li><strong>Nghiêm cấm nội dung độc hại:</strong> Tuyệt đối cấm tạo khảo sát vi phạm pháp luật Việt Nam, đồi trụy, cờ bạc, lừa đảo đa cấp, hoặc thu thập trái phép mật khẩu ngân hàng, mã OTP, số CCCD. Vi phạm sẽ bị gỡ bài và khóa tài khoản không hoàn tiền.</li>
-              <li><strong>Bảo hành mẫu doanh nghiệp:</strong> Doanh nghiệp (Enterprise) được cam kết bảo hành 1 đổi 1 trong vòng 7 ngày cho các mẫu không đúng phân khúc mục tiêu.</li>
-            </ul>
-          </div>
-
-          <!-- Box 4: Chính sách Đổi thưởng & Nạp rút -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="wallet" class="w-4 h-4 text-orange-600"></i>
-              <span>4. Chính Sách Đổi Thưởng, Nạp Tiền & Lệ Phí Xử Lý</span>
-            </div>
-            <ul class="list-disc list-inside space-y-1 pl-1 text-[11px] text-stone-600 dark:text-stone-400">
-              <li><strong>Đổi thẻ cào điện thoại:</strong> Tối thiểu từ 10.000 VNĐ (Viettel, VinaPhone, MobiFone), phí xử lý 0 VNĐ.</li>
-              <li><strong>Rút tiền ngân hàng / Ví MoMo:</strong> Tối thiểu từ 50.000 VNĐ (phí 2.000 VNĐ); từ 100.000 VNĐ trở lên miễn phí 100%.</li>
-              <li><strong>Nạp tiền Doanh Nghiệp:</strong> Tối thiểu 20.000 VNĐ qua VietQR tự động cộng số dư trong vòng 30 giây.</li>
-              <li><strong>Thời gian giải ngân đổi thưởng:</strong> Kiểm duyệt và chuyển thưởng tự động trong vòng 24 - 48 giờ làm việc.</li>
-            </ul>
-          </div>
-
-          <!-- Box 5: Bảo mật thông tin Luật Bảo Vệ Dữ Liệu Cá Nhân & Nghị định 13 -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="lock" class="w-4 h-4 text-orange-600"></i>
-              <span>5. Bảo Vệ Dữ Liệu Cá Nhân (Luật Bảo Vệ Dữ Liệu Cá Nhân 91/2025/QH15 & Nghị Định 356/2025/NĐ-CP)</span>
-            </div>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              Thông tin nhân khẩu học của bạn (giới tính, khu vực, trường, ngành, độ tuổi) CHỈ được nền tảng sử dụng nội bộ để ghép cặp những khảo sát phù hợp với bạn. Những dữ liệu này KHÔNG BAO GIỜ được chuyển giao cho Doanh Nghiệp hay xuất hiện trong kết quả khảo sát. Doanh Nghiệp chỉ nhận câu trả lời khảo sát dưới dạng thống kê ẩn danh, gắn với mã phiên làm bài.
-            </p>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              Địa chỉ email tài khoản của bạn CHỈ được chia sẻ cho Doanh Nghiệp khi họ bật chế độ thu thập email cho bài khảo sát đó, và bạn sẽ luôn được thông báo rõ ràng ngay trước khi bắt đầu làm. Số điện thoại, tài khoản thanh toán và các dữ liệu nhạy cảm khác không bao giờ được chia sẻ cho Doanh Nghiệp dưới bất kỳ hình thức nào. SurvHub cam kết không bán dữ liệu cá nhân cho bên thứ ba vì bất kỳ mục đích thương mại nào.
-            </p>
-          </div>
-
-          <!-- Box 6: Trọng tài giải quyết khiếu nại -->
-          <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
-            <div class="flex items-center gap-2 text-stone-900 dark:text-white font-extrabold text-xs uppercase tracking-wide">
-              <i data-lucide="scale" class="w-4 h-4 text-orange-600"></i>
-              <span>6. Sổ Cái Giao Dịch & Trọng Tài Giải Quyết Khiếu Nại</span>
-            </div>
-            <p class="text-[11px] text-stone-600 dark:text-stone-400">
-              Hệ thống Sổ cái đối soát giao dịch kép (Double-entry Ledger) và Audit Log máy chủ là căn cứ xác minh tối cao. Mọi khiếu nại được tiếp nhận qua kênh hỗ trợ trực tuyến và xử lý dứt điểm trong vòng 03 ngày làm việc.
-            </p>
-          </div>
-
+        <!-- Tab chọn văn bản -->
+        <div class="flex flex-col sm:flex-row gap-1.5 py-3 flex-shrink-0">
+          ${tabsHtml}
         </div>
 
-        ${isReadOnly ? '' : `
+        <!-- Scrollable Body Content -->
+        <div class="flex-1 overflow-y-auto pr-1.5 py-1 space-y-3">
+          ${sectionsHtml}
+          <div class="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/60">
+            <p class="text-[11px] text-orange-900 dark:text-orange-200 leading-relaxed">
+              <strong>Lưu ý:</strong> Bạn đang đọc phiên bản ${policy.meta.version}, cập nhật ngày ${policy.meta.lastUpdated}. Khi có thay đổi quan trọng, SurvHub thông báo trước ít nhất 07 ngày. Việc tiếp tục sử dụng dịch vụ sau ngày hiệu lực đồng nghĩa bạn chấp nhận văn bản mới.
+            </p>
+          </div>
+        </div>
+
+        ${isReadOnly ? `
+        <!-- Footer Actions (che do chi doc) -->
+        <div class="pt-4 border-t border-stone-200 dark:border-stone-800 flex items-center justify-end gap-2.5 flex-shrink-0">
+          <button type="button" onclick="VibeApp.closeTermsModal()" class="px-5 py-2.5 rounded-xl bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-white text-white dark:text-stone-900 text-xs font-bold transition-all active:scale-95">
+            Đóng
+          </button>
+        </div>
+        ` : `
         <!-- Footer Actions -->
         <div class="pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
-          <p class="text-[11px] text-stone-500 dark:text-stone-400 text-center sm:text-left">
-            Bằng việc bấm xác nhận, bạn cam kết tuân thủ đầy đủ các quy định trên.
+          <p class="text-[11px] text-stone-500 dark:text-stone-400 text-center sm:text-left leading-relaxed">
+            Bằng việc bấm xác nhận, bạn cam kết đã đọc và tuân thủ Điều khoản dịch vụ, Quy chế hoạt động và Chính sách bảo vệ dữ liệu cá nhân.
           </p>
           <div class="flex items-center gap-2.5 w-full sm:w-auto">
             <button type="button" onclick="VibeApp.closeTermsModal()" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition-all active:scale-95">
@@ -947,7 +1119,7 @@
             </button>
             <button type="button" onclick="VibeApp.acceptTermsFromModal()" class="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-1.5">
               <i data-lucide="check" class="w-4 h-4 stroke-[2.5]"></i>
-              <span>Tôi Đồng Ý Điều Khoản</span>
+              <span>Tôi Đồng Ý</span>
             </button>
           </div>
         </div>
@@ -976,14 +1148,27 @@
 
   acceptTermsFromModal() {
     this.haptic('success');
+    const activeDoc = this._termsActiveDoc || 'terms';
     this.closeTermsModal();
+
+    if (activeDoc === 'privacy') {
+      const privacyCheckbox = document.getElementById('auth-reg-privacy');
+      if (privacyCheckbox) {
+        privacyCheckbox.checked = true;
+        this.showToast('Đã xác nhận đồng ý xử lý dữ liệu cá nhân theo Chính sách bảo vệ dữ liệu cá nhân!', 'success');
+      } else {
+        this.showToast('Đã ghi nhận bạn đồng ý với Chính sách bảo vệ dữ liệu cá nhân của SurvHub!', 'success');
+      }
+      return;
+    }
+
     const termsCheckbox = document.getElementById('auth-reg-terms');
     if (termsCheckbox) {
       termsCheckbox.checked = true;
       this.handleTermsCheckboxChange(true);
-      this.showToast('Đã xác nhận đồng ý với Điều khoản dịch vụ & Quy tắc nền tảng!', 'success');
+      this.showToast('Đã xác nhận đồng ý với Điều khoản dịch vụ và Quy chế hoạt động!', 'success');
     } else {
-      this.showToast('Đã ghi nhận bạn đồng ý với Điều khoản & Quy tắc nền tảng SurvHub!', 'success');
+      this.showToast('Đã ghi nhận bạn đồng ý với văn bản pháp lý của SurvHub!', 'success');
     }
   },
 
@@ -1043,10 +1228,10 @@
     // - Khi ĐÃ điểm danh: Bừng sáng ngọn lửa rực rỡ màu cam/đỏ TikTok (lửa tô màu, viền gradient sáng, số cam lửa đậm nét).
     if (hasCheckedIn) {
       // ĐÃ ĐIỂM DANH HÔM NAY: Ngọn lửa TikTok bừng sáng rực rỡ
-      streakBtn.className = 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-orange-400/80 dark:border-orange-500/80 bg-gradient-to-r from-orange-500/10 via-rose-500/10 to-amber-500/10 dark:from-orange-950/40 dark:to-rose-950/40 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)] hover:shadow-[0_0_16px_rgba(249,115,22,0.3)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black';
+      streakBtn.className = 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-orange-400/80 dark:border-orange-500/80 bg-gradient-to-r from-orange-500/10 via-orange-500/10 to-orange-500/10 dark:from-orange-950/40 dark:to-orange-950/40 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)] hover:shadow-[0_0_16px_rgba(249,115,22,0.3)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black';
       if (streakFlame) {
         streakFlame.className = 'relative flex items-center justify-center text-orange-600 dark:text-orange-400';
-        streakFlame.innerHTML = `<i data-lucide="flame" class="w-4 h-4 fill-orange-500 text-rose-500 stroke-orange-600 drop-shadow-xs"></i>`;
+        streakFlame.innerHTML = `<i data-lucide="flame" class="w-4 h-4 fill-orange-500 text-orange-500 stroke-orange-600 drop-shadow-xs"></i>`;
       }
       streakBtn.title = `Đã điểm danh hôm nay! Chuỗi: ${streakCount} ngày liên tiếp`;
     } else {
@@ -1114,13 +1299,13 @@
     const roadmapHtml = (streak.roadmap || []).map(r => {
       // 1. Ngày 7: Mốc Vàng Đặc Biệt (Đặt chip bên trong card, tuyệt đối không bị đè chữ)
       if (r.is_milestone) {
-        let milestoneClasses = 'border-amber-400/80 bg-gradient-to-b from-amber-50/80 to-orange-50/40 dark:from-amber-950/30 dark:to-orange-950/20 text-amber-700 dark:text-amber-400';
-        let iconHtml = '<i data-lucide="crown" class="w-4 h-4 stroke-[2.2] text-amber-600 dark:text-amber-400"></i>';
+        let milestoneClasses = 'border-orange-400/80 bg-gradient-to-b from-orange-50/80 to-orange-50/40 dark:from-orange-950/30 dark:to-orange-950/20 text-orange-700 dark:text-orange-400';
+        let iconHtml = '<i data-lucide="crown" class="w-4 h-4 stroke-[2.2] text-orange-600 dark:text-orange-400"></i>';
         let statusText = 'Mốc Vàng';
 
         if (r.status === 'CLAIMED') {
-          milestoneClasses = 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400';
-          iconHtml = '<i data-lucide="check-circle-2" class="w-4 h-4 stroke-[2.5] text-emerald-600 dark:text-emerald-400"></i>';
+          milestoneClasses = 'border-orange-300 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-950/20 text-orange-700 dark:text-orange-400';
+          iconHtml = '<i data-lucide="check-circle-2" class="w-4 h-4 stroke-[2.5] text-orange-600 dark:text-orange-400"></i>';
           statusText = 'Đã nhận';
         } else if (r.status === 'TODAY') {
           milestoneClasses = 'border-2 border-orange-500 bg-white dark:bg-stone-900 ring-4 ring-orange-500/20 shadow-md text-orange-600 dark:text-orange-400';
@@ -1130,17 +1315,17 @@
 
         return `
           <div class="flex flex-col items-center justify-between p-2 rounded-2xl border ${milestoneClasses} transition-all relative overflow-hidden group">
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60 mb-0.5 whitespace-nowrap">
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-800 dark:text-orange-300 border border-orange-300/60 dark:border-orange-700/60 mb-0.5 whitespace-nowrap">
               Mốc Vàng
             </span>
             <span class="text-[11px] font-bold text-stone-600 dark:text-stone-300">Ngày ${r.day}</span>
             <div class="my-1 flex items-center justify-center">
               ${iconHtml}
             </div>
-            <span class="font-mono font-black text-xs text-amber-700 dark:text-amber-300">
+            <span class="font-mono font-black text-xs text-orange-700 dark:text-orange-300">
               +${r.points}
             </span>
-            <span class="text-[9px] font-bold text-amber-600/80 dark:text-amber-400/80 mt-0.5">${statusText}</span>
+            <span class="text-[9px] font-bold text-orange-600/80 dark:text-orange-400/80 mt-0.5">${statusText}</span>
           </div>
         `;
       }
@@ -1151,8 +1336,8 @@
       let statusText = 'Khóa';
 
       if (r.status === 'CLAIMED') {
-        statusClasses = 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400';
-        iconHtml = '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5] text-emerald-600 dark:text-emerald-400"></i>';
+        statusClasses = 'bg-orange-50/50 dark:bg-orange-950/20 border-orange-200/80 dark:border-orange-800/60 text-orange-700 dark:text-orange-400';
+        iconHtml = '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.5] text-orange-600 dark:text-orange-400"></i>';
         statusText = 'Đã nhận';
       } else if (r.status === 'TODAY') {
         statusClasses = 'bg-white dark:bg-stone-900 border-2 border-orange-600 text-orange-600 dark:text-orange-500 shadow-md ring-4 ring-orange-500/15';
@@ -1166,7 +1351,7 @@
           <div class="my-1.5 flex items-center justify-center">
             ${iconHtml}
           </div>
-          <span class="font-mono font-black text-xs ${r.status === 'TODAY' ? 'text-orange-600 dark:text-orange-400' : (r.status === 'CLAIMED' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-stone-200')}">
+          <span class="font-mono font-black text-xs ${r.status === 'TODAY' ? 'text-orange-600 dark:text-orange-400' : (r.status === 'CLAIMED' ? 'text-orange-700 dark:text-orange-400' : 'text-slate-800 dark:text-stone-200')}">
             +${r.points}
           </span>
           <span class="text-[9px] font-semibold text-stone-400 dark:text-stone-500 mt-0.5">${statusText}</span>
@@ -1223,8 +1408,8 @@
           <div class="p-3 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 text-center">
             <span class="block text-[11px] text-stone-500 dark:text-stone-400 font-medium">Tổng Đã Tích Lũy</span>
             <div class="flex items-center justify-center gap-1 mt-0.5">
-              <i data-lucide="coins" class="w-4 h-4 text-emerald-600"></i>
-              <span class="font-mono font-black text-lg text-emerald-600 dark:text-emerald-400">+${(streak.total_points_earned || 0).toLocaleString('vi-VN')}</span>
+              <i data-lucide="coins" class="w-4 h-4 text-orange-600"></i>
+              <span class="font-mono font-black text-lg text-orange-600 dark:text-orange-400">+${(streak.total_points_earned || 0).toLocaleString('vi-VN')}</span>
             </div>
           </div>
         </div>
@@ -1246,13 +1431,13 @@
         <!-- Checkin Action Button -->
         <div class="pt-0.5">
           ${!streak.has_checked_in_today ? `
-            <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+            <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-700 hover:to-orange-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
               <i data-lucide="zap" class="w-4 h-4 fill-white"></i>
               <span>Điểm Danh Ngay (+${streak.today_reward_points} Điểm)</span>
             </button>
           ` : `
-            <div class="w-full py-3.5 px-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-emerald-200 dark:border-emerald-800/80">
-              <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+            <div class="w-full py-3.5 px-4 rounded-2xl bg-orange-50/70 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border border-orange-200 dark:border-orange-800/80">
+              <i data-lucide="check-circle" class="w-4 h-4 text-orange-600"></i>
               <span>Đã Điểm Danh Hôm Nay (+${streak.today_reward_points} Điểm vào ví)</span>
             </div>
           `}
@@ -1390,7 +1575,7 @@
                    class="w-full text-center text-xl font-mono font-extrabold tracking-[0.3em] py-3 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500">
           </div>
 
-          <div id="otp-error-alert" class="hidden text-xs text-rose-600 font-semibold text-center"></div>
+          <div id="otp-error-alert" class="hidden text-xs text-orange-600 font-semibold text-center"></div>
 
           <button type="submit" id="otp-submit-btn" class="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2">
             <i data-lucide="check" class="w-4 h-4"></i>
@@ -1481,7 +1666,7 @@
               <span class="px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-bold">
                 ${s.category || 'Khảo sát'}
               </span>
-              <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold font-mono">
+              <span class="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 font-bold font-mono">
                 +${(s.reward_points_per_response || 0).toLocaleString()} Điểm (≈ ${(s.reward_points_per_response || 0).toLocaleString()}đ)
               </span>
               <span class="text-slate-500 dark:text-slate-400 font-medium">
@@ -1511,7 +1696,7 @@
                       ${q.options.map(opt => `<div>• ${opt}</div>`).join('')}
                     </div>
                   ` : (q.type === 'RATING_STARS' ? `
-                    <div class="pl-6 text-[11px] text-amber-500 font-medium">★ Đánh giá 1 đến 5 sao</div>
+                    <div class="pl-6 text-[11px] text-orange-500 font-medium">★ Đánh giá 1 đến 5 sao</div>
                   ` : (q.type === 'NUMBER_INPUT' ? `
                     <div class="pl-6 text-[11px] text-slate-400 italic">Nhập số liệu [123]</div>
                   ` : (q.type === 'DATE_INPUT' ? `
@@ -1524,7 +1709,7 @@
             <!-- CTA Banner -->
             <div class="p-4 rounded-2xl bg-orange-600 text-white space-y-2 text-center mt-3">
               <div class="text-xs font-extrabold">Đăng nhập tài khoản để làm khảo sát và nhận ngay +${(s.reward_points_per_response || 0).toLocaleString()} Điểm</div>
-              <p class="text-[11px] text-blue-100">Điểm thưởng có thể quy đổi sang thẻ cào Viettel, Vina, Mobi hoặc rút về tài khoản ngân hàng.</p>
+              <p class="text-[11px] text-zinc-100">Điểm thưởng có thể quy đổi sang thẻ cào Viettel, Vina, Mobi hoặc rút về tài khoản ngân hàng.</p>
               <div class="flex items-center justify-center gap-2 pt-1">
                 <button onclick="VibeApp.closeModal(); VibeApp.openAuthModal('login')" class="px-5 py-2 bg-white text-orange-700 hover:bg-orange-50 dark:bg-stone-800 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95">
                   Đăng Nhập Để Làm Bài
@@ -1648,27 +1833,27 @@
     const themeConfig = {
       success: {
         icon: 'check-circle-2',
-        iconBg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60',
-        progressBar: 'bg-emerald-500',
-        accentBorder: 'border-l-4 border-l-emerald-500'
+        iconBg: 'bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60',
+        progressBar: 'bg-orange-500',
+        accentBorder: 'border-l-4 border-l-orange-500'
       },
       error: {
         icon: 'alert-circle',
-        iconBg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60',
-        progressBar: 'bg-rose-500',
-        accentBorder: 'border-l-4 border-l-rose-500'
+        iconBg: 'bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60',
+        progressBar: 'bg-orange-500',
+        accentBorder: 'border-l-4 border-l-orange-500'
       },
       warning: {
         icon: 'alert-triangle',
-        iconBg: 'bg-stone-100 dark:bg-stone-800 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60',
-        progressBar: 'bg-amber-500',
-        accentBorder: 'border-l-4 border-l-amber-500'
+        iconBg: 'bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/60',
+        progressBar: 'bg-orange-500',
+        accentBorder: 'border-l-4 border-l-orange-500'
       },
       info: {
         icon: 'sparkles',
-        iconBg: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60',
-        progressBar: 'bg-indigo-500',
-        accentBorder: 'border-l-4 border-l-indigo-500'
+        iconBg: 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-600 dark:text-zinc-400 border border-zinc-200/60 dark:border-zinc-800/60',
+        progressBar: 'bg-zinc-500',
+        accentBorder: 'border-l-4 border-l-zinc-500'
       }
     };
 

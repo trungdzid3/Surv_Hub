@@ -74,7 +74,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           
           <!-- THẺ 1: POINT CỦA BẠN (SUNSET ORANGE GRADIENT CARD) -->
-          <div class="rounded-3xl p-6 sm:p-7 text-white flex flex-col justify-between shadow-sm relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 min-h-[260px]">
+          <div class="rounded-3xl p-6 sm:p-7 text-white flex flex-col justify-between shadow-sm relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-500 min-h-[260px]">
             <img src="/assets/3d/wallet_3d_master.svg" class="absolute right-2 sm:right-5 top-2 sm:top-4 w-44 sm:w-52 h-auto object-contain pointer-events-none select-none z-0 opacity-75 dark:opacity-50 drop-shadow-sm" alt="3D Orange Wallet" />
             <!-- Nội dung Thẻ Point -->
             <div class="relative z-10">
@@ -127,7 +127,7 @@
             <!-- Nội dung Thẻ Credit -->
             <div class="relative z-10">
               <div class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center shrink-0">
+                <div class="w-7 h-7 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center shrink-0">
                   ${this.getLucideSvg("coins", "w-4 h-4")}
                 </div>
                 <span class="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider">CREDIT</span>
@@ -235,7 +235,7 @@
                 ${this.getLucideSvg("book-open", "w-3.5 h-3.5 stroke-[2.2]")}
               </div>
               <h3 class="text-sm font-bold text-stone-900 dark:text-white">Sổ cái giao dịch</h3>
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800">
                 ${this.getLucideSvg("check-circle-2", "w-3 h-3 stroke-[2.5]")} Minh bạch
               </span>
             </div>
@@ -259,7 +259,7 @@
                   <tr>
                     <td class="py-3 px-3.5 font-mono text-stone-500">#TXN000001</td>
                     <td class="py-3 px-3.5 font-bold text-stone-900 dark:text-white font-mono text-[11px]">SURVEY_REWARD</td>
-                    <td class="py-3 px-3.5 font-mono font-bold text-emerald-600 dark:text-emerald-400">+50 Point</td>
+                    <td class="py-3 px-3.5 font-mono font-bold text-orange-600 dark:text-orange-400">+50 Point</td>
                     <td class="py-3 px-3.5 font-mono font-bold text-stone-900 dark:text-white">50 Point</td>
                     <td class="py-3 px-3.5 text-stone-500 text-[11px] font-mono">30/10/2026 14:23:17</td>
                   </tr>
@@ -269,7 +269,7 @@
                     <tr class="hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition-colors">
                       <td class="py-3 px-3.5 font-mono text-stone-500">#${t.id || 'TXN'}</td>
                       <td class="py-3 px-3.5 font-bold text-stone-900 dark:text-white font-mono text-[11px]">${t.type || t.tx_type || 'TRANSACTION'}</td>
-                      <td class="py-3 px-3.5 font-mono font-bold ${isPlus ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-900 dark:text-stone-100'}">
+                      <td class="py-3 px-3.5 font-mono font-bold ${isPlus ? 'text-orange-600 dark:text-orange-400' : 'text-stone-900 dark:text-stone-100'}">
                         ${isPlus ? '+' : ''}${Number(t.amount || 0).toLocaleString('vi-VN')} ${t.currency || 'POINT'}
                       </td>
                       <td class="py-3 px-3.5 font-mono font-bold text-stone-700 dark:text-stone-300">${Number(t.balance_after || 0).toLocaleString('vi-VN')}</td>
@@ -367,9 +367,9 @@
     let iconWrapCls = 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300';
     let title = this.escapeHtml(rawDesc);
     let subInfo = `${tx.created_at ? new Date(tx.created_at).toLocaleDateString('vi-VN') : '30/10/2026'} · Mã #${tx.id || 'TXN'}`;
-    let amountCls = isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-700 dark:text-stone-300';
+    let amountCls = isPositive ? 'text-orange-600 dark:text-orange-400' : 'text-stone-700 dark:text-stone-300';
     let statusBadge = `
-      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+      <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
         ${this.getLucideSvg('check', 'w-3 h-3 stroke-[2.5]')} Thành công
       </span>
     `;
@@ -380,61 +380,61 @@
       iconWrapCls = 'bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400';
       title = tx.description || 'Thưởng điểm danh';
       subInfo = `${tx.created_at ? new Date(tx.created_at).toLocaleDateString('vi-VN') : '30/10/2026'} · Điểm danh ngày ${tx.streak_day || 1}`;
-      amountCls = 'text-emerald-600 dark:text-emerald-400';
+      amountCls = 'text-orange-600 dark:text-orange-400';
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
           ${this.getLucideSvg('check', 'w-3 h-3 stroke-[2.5]')} Thành công
         </span>
       `;
     } else if (typeUpper.includes('SWAP') || normDesc.includes('doi credit') || normDesc.includes('doi point') || normDesc.includes('swap') || normDesc.includes('chuyen doi')) {
       iconName = 'refresh-cw';
-      iconWrapCls = 'bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400';
+      iconWrapCls = 'bg-zinc-50 text-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-400';
       title = tx.description || 'Đổi Point sang Credit';
       subInfo = `${tx.created_at ? new Date(tx.created_at).toLocaleDateString('vi-VN') : '28/10/2026'} · Tỷ lệ 1:10`;
-      amountCls = 'text-emerald-600 dark:text-emerald-400';
+      amountCls = 'text-orange-600 dark:text-orange-400';
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-zinc-50 text-zinc-700 dark:bg-zinc-950/40 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800">
           ${this.getLucideSvg('check', 'w-3 h-3 stroke-[2.5]')} Hoàn tất
         </span>
       `;
     } else if (typeUpper.includes('DEPOSIT') || normDesc.includes('nap tien') || normDesc.includes('vietqr') || normDesc.includes('nap credit') || normDesc.includes('topup') || normDesc.includes('quy')) {
       iconName = 'coins';
-      iconWrapCls = 'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400';
+      iconWrapCls = 'bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400';
       title = tx.description || 'Nạp Credit vào quỹ';
       subInfo = `${tx.created_at ? new Date(tx.created_at).toLocaleDateString('vi-VN') : '30/10/2026'} · Chuyển khoản QR`;
-      amountCls = 'text-emerald-600 dark:text-emerald-400';
+      amountCls = 'text-orange-600 dark:text-orange-400';
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
           ${this.getLucideSvg('check', 'w-3 h-3 stroke-[2.5]')} Thành công
         </span>
       `;
     } else if (typeUpper.includes('SURVEY') || normDesc.includes('khao sat') || normDesc.includes('survey')) {
       iconName = 'clipboard-list';
-      iconWrapCls = 'bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400';
+      iconWrapCls = 'bg-zinc-50 text-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-400';
       title = tx.description || 'Thưởng hoàn thành khảo sát';
       subInfo = `${tx.created_at ? new Date(tx.created_at).toLocaleDateString('vi-VN') : '30/10/2026'} · Khảo sát chuẩn`;
-      amountCls = 'text-emerald-600 dark:text-emerald-400';
+      amountCls = 'text-orange-600 dark:text-orange-400';
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
           ${this.getLucideSvg('check', 'w-3 h-3 stroke-[2.5]')} Thành công
         </span>
       `;
     } else if (typeUpper.includes('PAYOUT') || typeUpper.includes('WITHDRAW') || normDesc.includes('rut tien') || normDesc.includes('doi thuong') || normDesc.includes('the cao')) {
       iconName = 'credit-card';
-      iconWrapCls = 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400';
+      iconWrapCls = 'bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400';
       title = tx.description || 'Rút tiền về tài khoản';
       subInfo = `${tx.created_at ? new Date(tx.created_at).toLocaleDateString('vi-VN') : '29/10/2026'} · Đổi thưởng thẻ cào`;
-      amountCls = 'text-red-600 dark:text-red-400';
+      amountCls = 'text-orange-600 dark:text-orange-400';
       const statusUpper = (tx.status || '').toUpperCase();
       if (statusUpper === 'PENDING' || statusUpper === 'PROCESSING') {
         statusBadge = `
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800">
             ${this.getLucideSvg('clock', 'w-3 h-3 stroke-[2.5]')} Chờ xử lý
           </span>
         `;
       } else {
         statusBadge = `
-          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
             ${this.getLucideSvg('check', 'w-3 h-3 stroke-[2.5]')} Thành công
           </span>
         `;
@@ -444,9 +444,9 @@
       iconWrapCls = 'bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400';
       title = tx.description || 'Thưởng khuyến mại';
       subInfo = `${tx.created_at ? new Date(tx.created_at).toLocaleDateString('vi-VN') : '30/10/2026'} · Thưởng nạp quỹ`;
-      amountCls = 'text-emerald-600 dark:text-emerald-400';
+      amountCls = 'text-orange-600 dark:text-orange-400';
       statusBadge = `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
           ${this.getLucideSvg('check', 'w-3 h-3 stroke-[2.5]')} Thành công
         </span>
       `;
@@ -560,7 +560,7 @@
                 <div onclick="${maxPoints >= d.points ? `VibeApp.selectCustomFormOption('payout-points-select', '${d.points}', '${d.label.replace(/'/g, "\\'")}', event); VibeApp.updatePayoutUI()` : ''}"
                      class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold ${maxPoints < d.points ? 'opacity-40 cursor-not-allowed bg-stone-50 dark:bg-stone-800/40 text-stone-400' : 'cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800 text-slate-700 dark:text-slate-200'}">
                   <span>${d.label}</span>
-                  ${maxPoints < d.points ? '<span class="text-[10px] text-red-500 font-bold">(Chưa đủ điểm)</span>' : ''}
+                  ${maxPoints < d.points ? '<span class="text-[10px] text-orange-500 font-bold">(Chưa đủ điểm)</span>' : ''}
                 </div>
               `).join('')}
             </div>
@@ -589,7 +589,7 @@
           </div>
 
           <!-- Thông báo mốc 10k -->
-          <div id="payout-card-only-notice" class="hidden p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 text-[11px] text-orange-600 dark:text-orange-400 font-medium">
+          <div id="payout-card-only-notice" class="hidden p-2.5 bg-orange-50 dark:bg-orange-950/40 rounded-xl border border-orange-200/80 dark:border-orange-800/60 text-[11px] text-orange-600 dark:text-orange-400 font-medium">
             Mốc 10.000đ dành riêng cho thẻ cào điện thoại giúp bạn trải nghiệm đổi thưởng nhanh chóng.
           </div>
 
@@ -651,7 +651,7 @@
             </div>
             <div class="flex justify-between text-slate-600 dark:text-slate-400">
               <span>Phí chuyển khoản:</span>
-              <span id="payout-summary-fee" class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">0đ (Miễn phí)</span>
+              <span id="payout-summary-fee" class="font-mono text-orange-600 dark:text-orange-400 font-bold">0đ (Miễn phí)</span>
             </div>
             <div class="pt-1.5 border-t border-slate-200/60 dark:border-slate-800 flex justify-between font-bold text-slate-900 dark:text-white">
               <span>Thực nhận:</span>
@@ -719,9 +719,9 @@
     if (amountEl) amountEl.textContent = `${vnd.toLocaleString('vi-VN')} VNĐ`;
     if (feeEl) {
       if (fee === 0) {
-        feeEl.innerHTML = '<span class="text-emerald-600 font-bold">0đ (Miễn phí 100%)</span>';
+        feeEl.innerHTML = '<span class="text-orange-600 font-bold">0đ (Miễn phí 100%)</span>';
       } else {
-        feeEl.innerHTML = '<span class="text-amber-600 font-bold">2.000 VNĐ (Phí cổng NAPAS)</span>';
+        feeEl.innerHTML = '<span class="text-orange-600 font-bold">2.000 VNĐ (Phí cổng NAPAS)</span>';
       }
     }
     if (receiveEl) receiveEl.textContent = `${actual.toLocaleString('vi-VN')} VNĐ`;
@@ -786,9 +786,9 @@
             title: 'Cấp Thẻ Cào Thành Công (Auto-Payout)',
             content: `
               <div class="space-y-4 text-left">
-                <div class="p-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 space-y-1">
+                <div class="p-3 bg-orange-50 dark:bg-orange-950/60 rounded-xl border border-orange-200 dark:border-orange-800 text-xs text-orange-800 dark:text-orange-300 space-y-1">
                   <div class="font-bold flex items-center gap-1.5">
-                    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+                    <i data-lucide="check-circle" class="w-4 h-4 text-orange-600"></i>
                     <span>Tự động phê duyệt & cấp mã thẻ tức thì</span>
                   </div>
                   <p class="text-[11px] leading-relaxed">
@@ -829,7 +829,7 @@
                 </div>
 
                 <div class="flex gap-2 pt-1">
-                  <a href="tel:*100*${card.card_code}%23" class="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-center rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5">
+                  <a href="tel:*100*${card.card_code}%23" class="flex-1 py-2.5 px-3 bg-orange-600 hover:bg-orange-700 text-white text-center rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5">
                     <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
                     <span>Nạp Ngay (*100*MÃ#)</span>
                   </a>
@@ -1062,7 +1062,7 @@
             </div>
             <div class="flex justify-between text-slate-600 dark:text-slate-400">
               <span>Thưởng thêm:</span>
-              <span id="deposit-calc-bonus-vnd" class="font-mono font-bold text-emerald-600 dark:text-emerald-400">+60.000 Credit</span>
+              <span id="deposit-calc-bonus-vnd" class="font-mono font-bold text-orange-600 dark:text-orange-400">+60.000 Credit</span>
             </div>
             <div class="pt-1.5 border-t border-slate-200/60 dark:border-slate-800 flex justify-between font-bold text-slate-900 dark:text-white">
               <span>Tổng Credit nhận được:</span>
@@ -1125,7 +1125,7 @@
           <!-- Thanh trạng thái & Bộ đếm -->
           <div class="p-3 bg-orange-50/80 dark:bg-stone-900 rounded-xl border border-orange-200/80 dark:border-stone-800 flex items-center justify-between text-xs">
             <div class="flex items-center gap-2">
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse"></span>
               <span class="font-bold text-stone-900 dark:text-white" id="deposit-status-text">Đang chờ quét mã chuyển khoản...</span>
             </div>
             <div class="font-mono font-bold text-orange-600 dark:text-orange-400 bg-white dark:bg-stone-800 px-2.5 py-1 rounded-lg border border-orange-200 dark:border-stone-700 shadow-xs" id="deposit-countdown-timer">
@@ -1206,7 +1206,7 @@
             <button type="button" onclick="VibeApp.checkDepositStatus('${order.orderCode}', false)" class="flex-1 py-2.5 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
               Kiểm Tra Trạng Thái
             </button>
-            <button type="button" onclick="VibeApp.simulatePaymentSuccess('${order.orderCode}')" class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
+            <button type="button" onclick="VibeApp.simulatePaymentSuccess('${order.orderCode}')" class="py-2.5 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
               Mô Phỏng Thanh Toán (Dev/Test)
             </button>
             <button type="button" onclick="VibeApp.closeModal()" class="py-2.5 px-3 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
@@ -1261,7 +1261,7 @@
             title: 'Nạp Tiền Thành Công',
             content: `
               <div class="space-y-4 text-center py-2">
-                <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/60 rounded-full flex items-center justify-center mx-auto text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                <div class="w-14 h-14 bg-orange-100 dark:bg-orange-950/60 rounded-full flex items-center justify-center mx-auto text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
                   <i data-lucide="check" class="w-7 h-7 stroke-[2.5]"></i>
                 </div>
                 <div>
