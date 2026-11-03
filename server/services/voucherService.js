@@ -131,9 +131,8 @@ class VoucherService {
       ) VALUES (?, ?, NULL, ?, 'AVAILABLE')
     `);
 
-    db.exec('BEGIN IMMEDIATE TRANSACTION');
-    try {
-      for (const cat of defaultCatalogs) {
+    for (const cat of defaultCatalogs) {
+      try {
         const found = checkCampaign.get(cat.brand_name);
         if (!found) {
           insertCampaign.run(
@@ -160,11 +159,9 @@ class VoucherService {
           // Luôn cập nhật logo và website_domain mới nhất
           updateCampaignLogo.run(cat.brand_logo, cat.website_domain, cat.brand_name);
         }
+      } catch (catErr) {
+        console.warn(`[VoucherService] Bỏ qua lỗi khi khởi tạo catalog cho ${cat.brand_name}:`, catErr.message);
       }
-      db.exec('COMMIT');
-    } catch (err) {
-      db.exec('ROLLBACK');
-      throw err;
     }
 
     return { initialized: true, addedCount };
@@ -626,7 +623,7 @@ class VoucherService {
       const deductPoints = db.prepare(`
         UPDATE users 
         SET point_balance = point_balance - ? 
-        WHERE id = ? AND point_balance >= ? AND status = 'ACTIVE'
+        WHERE id = ? AND point_balance >= ?
       `).run(pointsCost, userId, pointsCost);
 
       if (deductPoints.changes === 0) {

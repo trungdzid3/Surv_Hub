@@ -118,6 +118,9 @@ function wrapLibsqlDatabase(rawDb) {
       if (prop === 'prepare') {
         return (sql) => wrapLibsqlStatement(target.prepare(sql));
       }
+      if (prop === 'sync') {
+        return typeof target.sync === 'function' ? target.sync.bind(target) : () => {};
+      }
       const value = target[prop];
       return typeof value === 'function' ? value.bind(target) : value;
     }
@@ -138,12 +141,34 @@ function createTursoDatabase() {
     throw new Error(`Không tải được driver libsql: ${err.message}`);
   }
 
-  const rawDb = new LibsqlDatabase(config.TURSO.DATABASE_URL, {
-    authToken: config.TURSO.AUTH_TOKEN,
-    timeout: config.TURSO.TIMEOUT_MS
-  });
+  const useEmbeddedReplica = config.TURSO.USE_EMBEDDED_REPLICA !== false;
+  let rawDb;
+
+  if (useEmbeddedReplica) {
+    const replicaPath = path.join(dbDir, 'vibesurvey_turso_replica.db');
+    rawDb = new LibsqlDatabase(replicaPath, {
+      syncUrl: config.TURSO.DATABASE_URL,
+      authToken: config.TURSO.AUTH_TOKEN,
+      syncPeriod: config.TURSO.SYNC_PERIOD_SEC,
+      readYourWrites: true
+    });
+  } else {
+    rawDb = new LibsqlDatabase(config.TURSO.DATABASE_URL, {
+      authToken: config.TURSO.AUTH_TOKEN,
+      timeout: config.TURSO.TIMEOUT_MS
+    });
+  }
 
   try {
+    // Với Embedded Replica, đồng bộ trạng thái ban đầu từ Turso cloud về file cục bộ
+    if (useEmbeddedReplica && typeof rawDb.sync === 'function') {
+      try {
+        rawDb.sync();
+      } catch (syncErr) {
+        console.warn('[DB] Cảnh báo đồng bộ ban đầu Turso replica:', syncErr.message);
+      }
+    }
+
     // Kiểm tra thật: đọc dữ liệu + quyền điều khiển transaction đồng bộ mà
     // các repository hiện tại đang dùng (BEGIN IMMEDIATE / COMMIT / ROLLBACK).
     rawDb.prepare('SELECT 1 AS ok').get();
@@ -177,7 +202,7 @@ function createDatabase() {
 
 const { db, engine: dbEngine } = createDatabase();
 // Không log URL/token để tránh lộ thông tin kết nối trong log hệ thống.
-console.log(`[DB] Driver: ${dbEngine}${dbEngine === 'turso' ? ' (remote)' : ` (${config.DB_PATH})`}`);
+console.log(`[DB] Driver: ${dbEngine}${dbEngine === 'turso' ? (config.TURSO.USE_EMBEDDED_REPLICA ? ' (embedded replica)' : ' (remote)') : ` (${config.DB_PATH})`}`);
 
 function initSchema() {
   db.exec(`

@@ -47,7 +47,9 @@ module.exports = {
   TURSO: {
     DATABASE_URL: String(process.env.TURSO_DATABASE_URL || '').trim(),
     AUTH_TOKEN: String(process.env.TURSO_AUTH_TOKEN || '').trim(),
-    TIMEOUT_MS: tursoTimeoutMs
+    TIMEOUT_MS: tursoTimeoutMs,
+    SYNC_PERIOD_SEC: parseInt(process.env.TURSO_SYNC_PERIOD_SEC, 10) || 60,
+    USE_EMBEDDED_REPLICA: process.env.TURSO_EMBEDDED_REPLICA !== 'false'
   },
 
   // Cấu hình Cổng Thanh Toán & VietQR Napas247

@@ -39,6 +39,11 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 - [x] Task B: Modal Dieu khoan mo tu footer van hien nut dong y dang ky -> them che do read-only (an dong "Bang viec bam xac nhan..." + nut [Dong]/[Toi Dong Y Dieu Khoan], chi giu nut X); giu nguyen luong dang ky (link trong checkbox dong 2640 van che do consent) | [Agent: terms-modal-fixer (senior-coder)] | [Locked Files: public/index.html (sua ngay), public/app.js (CHI sua sau khi Task A xong - duoc Lead mo khoa)]
 - [x] Task C: Tich hop nghiem thu: node -c, npm run sync:android, cap nhat PROJECT_CONTEXT.md, commit + push | [Agent: Lead Orchestrator] | [Locked Files: android/, PROJECT_CONTEXT.md]
 
+## SPRINT 04-11-2026: TURSO EMBEDDED REPLICA & VOUCHER DEMO HARDENING
+- [x] Task V1: Idempotent voucher demo seed, loại bỏ transaction monolithic trong initCatalogVouchers, hoàn thiện rollback an toàn và Atomic Conditional Update cho voucherService | [Agent: Subagent-Voucher] | [Skill: security-audit] | [Locked Files: server/services/voucherService.js]
+- [x] Task D1: Triển khai adapter libSQL Embedded Replica trong database.js và cấu hình config/index.js (đồng bộ 2 chiều Turso qua syncUrl/authToken, bảo toàn ACID transaction đồng bộ) | [Agent: Subagent-Database] | [Skill: security-audit] | [Locked Files: server/db/database.js, server/config/index.js]
+- [x] Task Q1: Tích hợp, syntax verification node -c, kiểm thử hồi quy npm test và cập nhật PROJECT_CONTEXT.md | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, task.md]
+
 ## SPRINT 03-11-2026 (BUOI 3): KẾ HOẠCH HẠ TẦNG LƯU TRỮ BỀN VỮNG (PERSISTENT DATA & AVATAR STORAGE)
 
 - [x] Task 1: Bổ sung chi tiết Kế hoạch Lưu trữ Dữ liệu Bền vững (Persistent Storage cho SQLite DB & Avatar/Uploads) vào KE_HOACH_TONG_THE.md và đối chiếu TUONG_LAI_HE_THONG.md | [Agent: Subagent-Planner] | [Skill: writing-guidelines] | [Locked Files: KE_HOACH_TONG_THE.md, TUONG_LAI_HE_THONG.md]
