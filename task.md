@@ -75,3 +75,8 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 ## SPRINT 03-11-2026 (BUOI 3): KẾ HOẠCH HẠ TẦNG LƯU TRỮ BỀN VỮNG (PERSISTENT DATA & AVATAR STORAGE)
 
 - [x] Task 1: Bổ sung chi tiết Kế hoạch Lưu trữ Dữ liệu Bền vững (Persistent Storage cho SQLite DB & Avatar/Uploads) vào KE_HOACH_TONG_THE.md và đối chiếu TUONG_LAI_HE_THONG.md | [Agent: Subagent-Planner] | [Skill: writing-guidelines] | [Locked Files: KE_HOACH_TONG_THE.md, TUONG_LAI_HE_THONG.md]
+
+## SPRINT 04-11-2026: FLOATING ISLAND MOBILE BOTTOM NAVIGATION
+- [ ] Task F1: Tái cấu trúc CSS mobile bottom navigation (`public/styles.css`): chuyển sang Đảo Nổi (Floating Island Dock) bo cong hoàn toàn (`border-radius: 9999px`), frosted glass, bóng đổ nổi khối, nút CTA tròn cam nổi thay vì ô vuông, active indicator bo cong và hiệu ứng chuyển động mượt mà | [Agent: Subagent-FloatingNavStyles] | [Skill: design-taste-frontend, impeccable, hallmark] | [Locked Files: public/styles.css]
+- [ ] Task F2: Tinh chỉnh container và markup mobile bottom shell (`public/index.html`, `public/app.js`): bố cục đảo nổi căn giữa, nâng đệm safe-area và class active mượt mà | [Agent: Subagent-FloatingNavMarkup] | [Skill: design-taste-frontend, hallmark] | [Locked Files: public/index.html, public/app.js]
+- [ ] Task F3: Lead Orchestrator kiểm tra cú pháp, đồng bộ Capacitor Android (`npm run sync:android`), chạy test hồi quy và commit Git | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, task.md]

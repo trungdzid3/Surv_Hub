@@ -1012,6 +1012,17 @@
     if (bonusPctEl) bonusPctEl.textContent = `+${calc.percent}% (${calc.tierName})`;
     if (bonusVndEl) bonusVndEl.textContent = `+${formatMoney(calc.bonusVnd)} Credit`;
     if (totalCreditEl) totalCreditEl.textContent = `${formatMoney(calc.totalCredit)} Credit`;
+
+    // Cập nhật trạng thái active/selected động cho các nút chọn nhanh
+    const presetButtons = document.querySelectorAll('.deposit-preset-btn');
+    presetButtons.forEach(btn => {
+      const presetVal = parseInt(btn.getAttribute('data-preset-amount'), 10);
+      if (presetVal === amount) {
+        btn.className = 'deposit-preset-btn py-2 px-2 border border-orange-500 bg-orange-50/60 dark:bg-stone-800 rounded-xl text-xs text-orange-600 dark:text-orange-400 font-mono font-bold transition-all active:scale-[0.98] ring-1 ring-orange-500/30';
+      } else {
+        btn.className = 'deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]';
+      }
+    });
   },
 
   setDepositPreset(amount) {
@@ -1048,14 +1059,14 @@
           <div>
             <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Chọn nhanh mức nạp có thưởng:</label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button type="button" onclick="VibeApp.setDepositPreset(20000)" class="py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">20K (SV)</button>
-              <button type="button" onclick="VibeApp.setDepositPreset(50000)" class="py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">50K (+1%)</button>
-              <button type="button" onclick="VibeApp.setDepositPreset(100000)" class="py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">100K (+2%)</button>
-              <button type="button" onclick="VibeApp.setDepositPreset(500000)" class="py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">500K (+4%)</button>
-              <button type="button" onclick="VibeApp.setDepositPreset(1000000)" class="py-2 px-2 border border-orange-500 bg-orange-50/50 dark:bg-stone-800 rounded-xl text-xs text-orange-600 dark:text-orange-400 font-mono font-bold transition-all active:scale-[0.98]">1 Tr (+6%)</button>
-              <button type="button" onclick="VibeApp.setDepositPreset(2000000)" class="py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">2 Tr (+8%)</button>
-              <button type="button" onclick="VibeApp.setDepositPreset(5000000)" class="py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">5 Tr (+10%)</button>
-              <button type="button" onclick="VibeApp.setDepositPreset(10000000)" class="py-2 px-2 border border-orange-500/80 bg-orange-50/70 dark:bg-stone-800 rounded-xl text-xs text-orange-600 dark:text-orange-400 font-mono font-bold transition-all active:scale-[0.98]">10 Tr (+12%)</button>
+              <button type="button" data-preset-amount="20000" onclick="VibeApp.setDepositPreset(20000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">20K (SV)</button>
+              <button type="button" data-preset-amount="50000" onclick="VibeApp.setDepositPreset(50000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">50K (+1%)</button>
+              <button type="button" data-preset-amount="100000" onclick="VibeApp.setDepositPreset(100000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">100K (+2%)</button>
+              <button type="button" data-preset-amount="500000" onclick="VibeApp.setDepositPreset(500000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">500K (+4%)</button>
+              <button type="button" data-preset-amount="1000000" onclick="VibeApp.setDepositPreset(1000000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">1 Tr (+6%)</button>
+              <button type="button" data-preset-amount="2000000" onclick="VibeApp.setDepositPreset(2000000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">2 Tr (+8%)</button>
+              <button type="button" data-preset-amount="5000000" onclick="VibeApp.setDepositPreset(5000000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">5 Tr (+10%)</button>
+              <button type="button" data-preset-amount="10000000" onclick="VibeApp.setDepositPreset(10000000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">10 Tr (+12%)</button>
             </div>
           </div>
 
