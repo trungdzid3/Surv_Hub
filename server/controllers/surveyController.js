@@ -1502,6 +1502,13 @@ class SurveyController {
         return res.status(400).json({ success: false, message: 'Khảo sát không tồn tại hoặc không còn nhận câu trả lời' });
       }
 
+      if (survey.creator_id === user.id) {
+        return res.status(403).json({ success: false, message: 'Bạn là người tạo khảo sát này. Vui lòng sử dụng tính năng Xem trước thay vì làm bài chính thức.' });
+      }
+      if (user.role === 'CREATOR') {
+        return res.status(403).json({ success: false, message: 'Tài khoản Người tạo khảo sát / Doanh nghiệp chỉ có quyền Xem trước cấu trúc câu hỏi, không tham gia làm bài nhận thù lao.' });
+      }
+
       if (survey.collected_responses >= survey.target_responses) {
         return res.status(400).json({ success: false, message: 'Khảo sát đã thu thập đủ số lượng mẫu mục tiêu' });
       }
@@ -1642,6 +1649,13 @@ class SurveyController {
       const survey = db.prepare('SELECT * FROM surveys WHERE id = ?').get(id);
       if (!survey) {
         return res.status(404).json({ success: false, message: 'Khảo sát không tồn tại' });
+      }
+
+      if (survey.creator_id === user.id) {
+        return res.status(403).json({ success: false, message: 'Bạn là người tạo khảo sát này. Không thể tự nộp bài nhận thù lao.' });
+      }
+      if (user.role === 'CREATOR') {
+        return res.status(403).json({ success: false, message: 'Tài khoản Người tạo khảo sát / Doanh nghiệp không được nộp bài nhận thù lao.' });
       }
 
       const response = db.prepare(`

@@ -62,6 +62,15 @@
       return;
     }
 
+    const currentUser = this.state.currentUser;
+    const targetSurvey = (this.state.surveys && this.state.surveys.find(s => s.id === surveyId)) || null;
+
+    if (currentUser.role === 'CREATOR' || (targetSurvey && targetSurvey.creator_id === currentUser.id)) {
+      this.showToast('Tài khoản Doanh nghiệp / Người tạo khảo sát chỉ có quyền Xem trước cấu trúc câu hỏi.', 'info');
+      await this.openSurveyPreviewModal(surveyId);
+      return;
+    }
+
     // Kiểm tra xem đã có bài làm dở của khảo sát này trong storage chưa để khôi phục
     const cachedSessionJson = (localStorage.getItem('survhub_active_session') || localStorage.getItem('vibesurvey_active_session'));
     if (cachedSessionJson) {
@@ -147,6 +156,13 @@
 
         this._saveActiveSessionToStorage();
         this.navigate('take-survey', { surveyId });
+      } else {
+        const errMsg = (res && res.message) || 'Không thể bắt đầu khảo sát';
+        this.showToast(errMsg, 'error');
+        if (res.status === 403 || res.statusCode === 403 || errMsg.includes('Doanh nghiệp') || errMsg.includes('chủ sở hữu') || errMsg.includes('người tạo') || errMsg.includes('CREATOR') || errMsg.includes('Xem trước')) {
+          await this.openSurveyPreviewModal(surveyId);
+        }
+        return;
       }
     } catch (err) {
       localStorage.removeItem('survhub_active_session'); localStorage.removeItem('vibesurvey_active_session');
@@ -163,7 +179,11 @@
         await this.navigate('review-survey', { surveyId });
         return;
       }
-      this.showToast(err.message, 'error');
+      const errMsg = (err && err.message) || '';
+      this.showToast(errMsg || 'Đã có lỗi xảy ra khi bắt đầu khảo sát', 'error');
+      if (err.status === 403 || err.statusCode === 403 || (err.data && err.data.code === 403) || errMsg.includes('Doanh nghiệp') || errMsg.includes('chủ sở hữu') || errMsg.includes('người tạo') || errMsg.includes('CREATOR') || errMsg.includes('Xem trước')) {
+        await this.openSurveyPreviewModal(surveyId);
+      }
     }
   },
 

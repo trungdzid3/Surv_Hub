@@ -2003,6 +2003,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
               const targetResponses = s.target_responses || s.targetResponses || 100;
               const pct = Math.min(100, Math.round((currentResponses / targetResponses) * 100));
               const rewardPoints = s.reward_points || s.rewardPoints || 50;
+              const user = this.state.currentUser;
+              const isCreatorOrOwner = user && (user.role === 'CREATOR' || s.creator_id === user.id);
               return `
                 <div class="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-orange-500/50 transition-all">
                   <div class="space-y-2.5">
@@ -2015,7 +2017,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                         +${rewardPoints} Điểm
                       </span>
                     </div>
-                    <h3 class="text-sm font-black text-stone-900 dark:text-white line-clamp-2 leading-snug">
+                    <h3 class="text-sm font-black text-stone-900 dark:text-white line-clamp-2 leading-snug cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors" onclick="${isCreatorOrOwner ? `VibeApp.openSurveyPreviewModal('${s.id}')` : `VibeApp.handleOpenSurveyFromHome('${s.id}')`}">
                       ${s.title}
                     </h3>
                     <p class="text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
@@ -2034,10 +2036,17 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                       </div>
                     </div>
 
+                    ${isCreatorOrOwner ? `
+                    <button onclick="VibeApp.openSurveyPreviewModal('${s.id}')" class="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                      <span>Xem trước</span>
+                    </button>
+                    ` : `
                     <button onclick="VibeApp.handleOpenSurveyFromHome('${s.id}')" class="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-stone-100 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
                       <span>Làm Khảo Sát Ngay</span>
                       <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </button>
+                    `}
                   </div>
                 </div>
               `;
@@ -2125,9 +2134,20 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       this.state.pendingSurveyId = surveyId;
       this.showToast('Vui lòng đăng nhập để bắt đầu làm khảo sát này và nhận điểm thưởng!', 'info');
       await this.openSurveyPreviewModal(surveyId);
-    } else {
-      await this.startSurveySession(surveyId);
+      return;
     }
+
+    const currentUser = this.state.currentUser;
+    const targetSurvey = (this.state.surveys && this.state.surveys.find(s => s.id === surveyId)) || null;
+    const isOwner = targetSurvey && targetSurvey.creator_id === currentUser.id;
+
+    if (currentUser.role === 'CREATOR' || isOwner) {
+      this.showToast('Tài khoản Doanh nghiệp / Người tạo khảo sát chỉ có quyền Xem trước cấu trúc câu hỏi.', 'info');
+      await this.openSurveyPreviewModal(surveyId);
+      return;
+    }
+
+    await this.startSurveySession(surveyId);
   },
 
   // ==================== VIEW 1: BENTO DASHBOARD & KHẢO SÁT ====================
@@ -3014,6 +3034,7 @@ if (totalCount === 0) {
   renderCompactSurveyCard(s, isPinned = false) {
     const user = this.state.currentUser;
     const isCompleted = s.user_response_status === 'VALIDATED';
+    const isCreatorOrOwner = user && (user.role === 'CREATOR' || s.creator_id === user.id);
     const collected = s.collected_responses || 0;
     const target = s.target_responses || 100;
     const progress = Math.min(100, Math.round((collected / target) * 100));
@@ -3071,7 +3092,7 @@ if (totalCount === 0) {
           </div>
 
           <div>
-            <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 min-h-[2.5rem] hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer" onclick="${isCompleted ? `VibeApp.navigate('review-survey', { surveyId: '${s.id}' })` : user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
+            <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 min-h-[2.5rem] hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer" onclick="${isCompleted ? `VibeApp.navigate('review-survey', { surveyId: '${s.id}' })` : isCreatorOrOwner ? `VibeApp.openSurveyPreviewModal('${s.id}')` : user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
               ${this.escapeHtml(cleanTitle)}
             </h4>
             <p class="text-[11px] text-stone-500 dark:text-stone-400 mt-1 line-clamp-1 leading-relaxed">
@@ -3123,6 +3144,11 @@ if (totalCount === 0) {
                   <i data-lucide="file-text" class="w-3.5 h-3.5 stroke-[2]"></i>
                   <span>Xem lại</span>
                 </button>
+              ` : isCreatorOrOwner ? `
+                <button onclick="VibeApp.openSurveyPreviewModal('${s.id}')" class="h-8 px-3 rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition-all shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 cursor-pointer">
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                  <span>Xem trước</span>
+                </button>
               ` : user ? `
                 <button onclick="VibeApp.startSurveySession('${s.id}')" class="h-8 px-3.5 rounded-lg bg-slate-900 hover:bg-orange-600 dark:bg-stone-800 dark:hover:bg-orange-600 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95">
                   <span class="whitespace-nowrap">Làm bài</span>
@@ -3151,6 +3177,7 @@ if (totalCount === 0) {
   renderListSurveyRow(s, isPinned = false) {
     const user = this.state.currentUser;
     const isCompleted = s.user_response_status === 'VALIDATED';
+    const isCreatorOrOwner = user && (user.role === 'CREATOR' || s.creator_id === user.id);
     const collected = s.collected_responses || 0;
     const target = s.target_responses || 100;
     const progress = Math.min(100, Math.round((collected / target) * 100));
@@ -3187,7 +3214,7 @@ if (totalCount === 0) {
             <span class="text-[10px] text-stone-500 dark:text-stone-400">~${minMins} phút • ${questionCount} câu</span>
           </div>
 
-          <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-orange-600 dark:hover:text-orange-400" onclick="${isCompleted ? `VibeApp.navigate('review-survey', { surveyId: '${s.id}' })` : user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
+          <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-orange-600 dark:hover:text-orange-400" onclick="${isCompleted ? `VibeApp.navigate('review-survey', { surveyId: '${s.id}' })` : isCreatorOrOwner ? `VibeApp.openSurveyPreviewModal('${s.id}')` : user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
             ${this.escapeHtml(cleanTitle)}
           </h4>
         </div>
@@ -3216,6 +3243,11 @@ if (totalCount === 0) {
             <button onclick="VibeApp.navigate('review-survey', { surveyId: '${s.id}' })" class="h-8 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs" title="Xem lại câu trả lời của bạn">
               <i data-lucide="file-text" class="w-3.5 h-3.5 stroke-[2]"></i>
               <span>Xem lại</span>
+            </button>
+          ` : isCreatorOrOwner ? `
+            <button onclick="VibeApp.openSurveyPreviewModal('${s.id}')" class="h-8 px-3 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition-all shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 cursor-pointer">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+              <span>Xem trước</span>
             </button>
           ` : user ? `
             <button onclick="VibeApp.startSurveySession('${s.id}')" class="h-8 px-3.5 rounded-xl bg-slate-900 hover:bg-orange-600 dark:bg-stone-800 dark:hover:bg-orange-600 text-white text-xs font-bold transition-all shadow-xs inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95">
