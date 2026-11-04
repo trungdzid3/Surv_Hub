@@ -288,5 +288,15 @@ module.exports = {
   GEMINI_AI: {
     MODEL: process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite',
     KEYS: process.env.GEMINI_API_KEYS ? process.env.GEMINI_API_KEYS.split(',').map(k => k.trim()).filter(Boolean) : []
+  },
+
+  // Cấu hình phát hành ứng dụng di động Android (SurvHub Native APK)
+  APP_RELEASE: {
+    VERSION: process.env.APP_VERSION || '1.0.0',
+    VERSION_CODE: parseInt(process.env.APP_VERSION_CODE || '1', 10),
+    MIN_SUPPORTED_VERSION: process.env.APP_MIN_SUPPORTED_VERSION || '1.0.0',
+    APK_DOWNLOAD_URL: process.env.APP_APK_DOWNLOAD_URL || 'https://github.com/trungdzid3/SurvHub/releases/latest/download/SurvHub.apk',
+    RELEASE_NOTES: process.env.APP_RELEASE_NOTES || 'Bản phát hành chính thức SurvHub cho Android: làm khảo sát, tích lũy điểm thưởng và đổi quà nhanh chóng.',
+    PUBLISHED_AT: '2026-11-04'
   }
 };

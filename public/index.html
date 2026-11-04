@@ -187,6 +187,29 @@
     </div>
   </header>
 
+  <!-- Banner Khuyến Nghị Tải Ứng Dụng Android (Dành riêng cho Trình duyệt Android Web) -->
+  <div id="android-apk-banner" class="hidden w-full bg-gradient-to-r from-stone-900 to-stone-800 text-white border-b border-orange-500/30 px-3 sm:px-4 py-2.5 text-xs transition-all z-30">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="w-7 h-7 rounded-lg bg-orange-600/20 border border-orange-500/40 flex items-center justify-center shrink-0">
+          <i data-lucide="smartphone" class="w-4 h-4 text-orange-500"></i>
+        </span>
+        <p class="font-medium text-stone-200 text-xs">
+          <strong class="text-white">Ứng dụng SurvHub Android:</strong> Trải nghiệm mượt mà, nhận thông báo khảo sát thù lao cao sớm nhất.
+        </p>
+      </div>
+      <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+        <a href="/api/v1/app/download" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Tải APK Android</span>
+        </a>
+        <button type="button" onclick="VibeApp.dismissAndroidApkBanner()" class="p-1.5 text-stone-400 hover:text-white rounded-md hover:bg-stone-700/50 transition-colors" title="Đóng thông báo">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MAIN CONTENT ==================== -->
   <!-- ==================== BANNER CẤP QUYỀN THÔNG BÁO ==================== -->
   <div id="push-permission-banner" class="hidden push-permission-banner push-banner-enter" role="status">
@@ -251,6 +274,10 @@
             <li>Email phản ánh: <a href="mailto:ngthtrung.son@gmail.com" class="hover:text-stone-900 dark:hover:text-white underline">ngthtrung.son@gmail.com</a></li>
             <li>Hợp tác doanh nghiệp: <a href="mailto:linharmykxbnvn@gmail.com" class="hover:text-stone-900 dark:hover:text-white underline">linharmykxbnvn@gmail.com</a></li>
           </ul>
+          <div class="pt-1">
+            <a href="/api/v1/app/download" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs transition-colors"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i><span>Tải SurvHub APK (Android)</span></a>
+            <p class="text-[10px] text-stone-400 dark:text-stone-500 mt-1">Phiên bản 1.0.0 · Cài đặt trực tiếp</p>
+          </div>
         </div>
 
         <!-- Cột 4: Kênh Truyền Thông & Pháp Lý -->
@@ -564,9 +591,9 @@
   <script src="/js/modules/creatorStudio.js?v=4.9.16_form_studio_header"></script>
   <!-- WAVE 7 MODULAR: Mien RESPONDENT (trinh lam bai khao sat phan doan + review TYPEFORM ZEN,
        ho so 5 tab, nhan khau hoc, avatar, xoa du lieu) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/respondent.js?v=4.9.14_security_polish"></script>
+  <script src="/js/modules/respondent.js?v=4.9.18_apk_distribution"></script>
 
   <!-- Application Main Script -->
-  <script src="/app.js?v=4.9.17_swr_cache"></script>
+  <script src="/app.js?v=4.9.18_apk_distribution"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const config = require('../config');
 
 const authController = require('../controllers/authController');
 const surveyController = require('../controllers/surveyController');
@@ -150,5 +151,38 @@ router.get('/forum/posts/:id', optionalAuthenticateToken, (req, res) => forumCon
 router.post('/forum/posts/:id/comments', authenticateToken, (req, res) => forumController.addComment(req, res));
 router.post('/forum/posts/:id/like', authenticateToken, (req, res) => forumController.toggleLike(req, res));
 router.delete('/forum/posts/:id', authenticateToken, (req, res) => forumController.deletePost(req, res));
+
+// === 9. Tuyến Đường Phiên Bản & Tải Về Ứng Dụng (App Release & APK Download) ===
+const handleAppVersion = (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      version: config.APP_RELEASE.VERSION,
+      versionCode: config.APP_RELEASE.VERSION_CODE,
+      minSupportedVersion: config.APP_RELEASE.MIN_SUPPORTED_VERSION,
+      apkDownloadUrl: config.APP_RELEASE.APK_DOWNLOAD_URL,
+      releaseNotes: config.APP_RELEASE.RELEASE_NOTES,
+      publishedAt: config.APP_RELEASE.PUBLISHED_AT
+    }
+  });
+};
+
+router.get('/app/version', handleAppVersion);
+router.get('/app-version', handleAppVersion);
+
+router.get('/app/download', (req, res) => {
+  const downloadUrl = config.APP_RELEASE.APK_DOWNLOAD_URL;
+  if (req.query.json === '1' || req.query.json === 'true') {
+    return res.json({
+      success: true,
+      data: {
+        apkDownloadUrl: downloadUrl,
+        version: config.APP_RELEASE.VERSION,
+        versionCode: config.APP_RELEASE.VERSION_CODE
+      }
+    });
+  }
+  return res.redirect(302, downloadUrl);
+});
 
 module.exports = router;

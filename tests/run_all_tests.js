@@ -164,6 +164,12 @@ const testSuites = [
     name: 'Tầng 25: Timo VietQR & Payment Webhook Suite',
     description: 'Kiểm tra sinh mã VietQR Timo (BIN 963388), tạo đơn SURV, đối soát webhook và nạp test demo',
     file: 'test_timo_vietqr_webhook.js'
+  },
+  {
+    id: 26,
+    name: 'Tầng 26: Android APK Release & In-App Update Suite',
+    description: 'Kiểm tra endpoint phiên bản ứng dụng, hợp đồng dữ liệu và chuyển hướng tải APK',
+    file: 'test_app_version.js'
   }
 ];
 

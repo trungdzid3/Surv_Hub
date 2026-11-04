@@ -966,6 +966,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
           this.checkDeepLinkSurvey();
           this.initPushNotifications();
+          this.initAndroidAppBanner();
           return;
         }
       } catch (e) {
@@ -986,6 +987,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     this.applyGuestInterface();
     this.checkDeepLinkSurvey();
     this.initPushNotifications();
+    this.initAndroidAppBanner();
   },
 
   /**
@@ -3818,6 +3820,126 @@ if (totalCount === 0) {
       navigator.clipboard.writeText(text);
     }
     this.showToast('Đã sao chép mã ưu đãi!', 'success');
+  },
+
+  // ==================== PHÂN PHỐI ỨNG DỤNG ANDROID & CẬP NHẬT PHIÊN BẢN (APK DISTRIBUTION & APP UPDATE) ====================
+  _isAndroidCapacitor() {
+    return Boolean(
+      window.Capacitor &&
+      typeof window.Capacitor.getPlatform === 'function' &&
+      window.Capacitor.getPlatform() === 'android'
+    );
+  },
+
+  initAndroidAppBanner() {
+    const bannerEl = document.getElementById('android-apk-banner');
+    if (!bannerEl) return;
+    const isAndroidBrowser = /Android/i.test(navigator.userAgent) && !this._isAndroidCapacitor();
+    const isDismissed = sessionStorage.getItem('survhub_apk_banner_dismissed') === '1';
+    if (isAndroidBrowser && !isDismissed) {
+      bannerEl.classList.remove('hidden');
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    } else {
+      bannerEl.classList.add('hidden');
+    }
+  },
+
+  dismissAndroidApkBanner() {
+    sessionStorage.setItem('survhub_apk_banner_dismissed', '1');
+    const b = document.getElementById('android-apk-banner');
+    if (b) b.classList.add('hidden');
+  },
+
+  _compareVersions(v1, v2) {
+    const parts1 = String(v1 || '1.0.0').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const parts2 = String(v2 || '1.0.0').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const maxLen = Math.max(parts1.length, parts2.length);
+    for (let i = 0; i < maxLen; i++) {
+      const p1 = parts1[i] || 0;
+      const p2 = parts2[i] || 0;
+      if (p1 > p2) return 1;
+      if (p1 < p2) return -1;
+    }
+    return 0;
+  },
+
+  async checkAppUpdate(manual = false) {
+    try {
+      let currentVersion = '1.0.0';
+      if (window.Capacitor?.Plugins?.App) {
+        try {
+          const info = await window.Capacitor.Plugins.App.getInfo();
+          if (info && info.version) currentVersion = info.version;
+        } catch (e) { }
+      }
+
+      const res = await this.api('/app/version');
+      if (!res || !res.success || !res.data) {
+        if (manual) this.showToast('Không thể kiểm tra bản cập nhật lúc này.', 'error');
+        return;
+      }
+
+      const remoteData = res.data;
+      const remoteVersion = remoteData.version || '1.0.0';
+      const hasUpdate = this._compareVersions(remoteVersion, currentVersion) > 0;
+
+      if (hasUpdate) {
+        this.showAppUpdateModal(remoteData, currentVersion);
+      } else {
+        if (manual) {
+          this.showToast(`Bạn đang sử dụng phiên bản mới nhất (v${currentVersion}).`, 'success');
+        }
+      }
+    } catch (err) {
+      console.warn('Lỗi kiểm tra cập nhật:', err);
+      if (manual) this.showToast('Lỗi kết nối máy chủ kiểm tra cập nhật.', 'error');
+    }
+  },
+
+  showAppUpdateModal(updateData = {}, currentVersion = '1.0.0') {
+    const latestVersion = updateData.version || '1.0.0';
+    const changelog = updateData.changelog || 'Bản cập nhật tối ưu hóa hiệu năng, cải thiện trải nghiệm khảo sát và sửa lỗi bảo mật.';
+    const fileSize = updateData.fileSize ? ` · Dung lượng: ${(updateData.fileSize / (1024 * 1024)).toFixed(1)} MB` : '';
+    const releaseDate = updateData.releaseDate ? ` · Ngày phát hành: ${new Date(updateData.releaseDate).toLocaleDateString('vi-VN')}` : '';
+
+    this.showModal({
+      title: 'Cập Nhật Ứng Dụng SurvHub',
+      maxWidth: 'max-w-md',
+      content: `
+        <div class="space-y-4 text-xs">
+          <div class="p-4 bg-orange-50 dark:bg-orange-950/40 border border-orange-500/30 rounded-2xl flex items-start gap-3">
+            <span class="w-10 h-10 rounded-xl bg-orange-600/20 border border-orange-500/40 flex items-center justify-center shrink-0 text-orange-600 dark:text-orange-400 mt-0.5">
+              <i data-lucide="sparkles" class="w-5 h-5"></i>
+            </span>
+            <div class="space-y-1">
+              <h4 class="font-extrabold text-stone-900 dark:text-white text-sm">Đã có phiên bản mới: <span class="text-orange-600 dark:text-orange-400 font-mono">v${latestVersion}</span></h4>
+              <p class="text-stone-600 dark:text-stone-300">
+                Phiên bản hiện tại của bạn: <span class="font-mono font-bold">v${currentVersion}</span>${fileSize}${releaseDate}
+              </p>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <h5 class="font-bold text-stone-900 dark:text-white uppercase tracking-wider text-[11px]">Nhật ký thay đổi (Changelog)</h5>
+            <div class="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300 leading-relaxed max-h-40 overflow-y-auto whitespace-pre-line">
+              ${this.escapeHtml ? this.escapeHtml(changelog) : changelog}
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end gap-2.5">
+            <button type="button" onclick="VibeApp.closeModal()" class="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 font-bold transition-colors">
+              Để sau
+            </button>
+            <a href="/api/v1/app/download" target="_blank" rel="noopener" onclick="VibeApp.closeModal()" class="px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold inline-flex items-center gap-1.5 shadow-xs transition-colors">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Tải và Cập nhật ngay</span>
+            </a>
+          </div>
+        </div>
+      `
+    });
   },
 
   // ==================== CƠ CHẾ THÔNG BÁO ĐẨY THỜI GIAN THỰC & ANDROID HYBRID: ĐÃ TÁCH RA public/js/modules/pushNotifications.js (WAVE 1 MODULAR) ====================
