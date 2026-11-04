@@ -12,9 +12,9 @@
  *           Notification API (Web), Capacitor LocalNotifications (tuy chon), lucide (global)
  * @exports initPushNotifications, dismissPushBanner, requestPushPermission, syncPushSubscriptionToServer,
  *          startNotificationPolling, pollNotifications, triggerAlertArrival, ringNotificationBell,
- *          updateNotificationBadge, refreshNotificationBadge, showPushPopup, dismissPushPopup,
+ *          updateNotificationBadge, refreshNotificationBadge, getUnreadNotificationCount, showPushPopup, dismissPushPopup,
  *          handlePushAction, toggleNotificationsDropdown, loadNotificationsList, clickNotificationItem,
- *          openAdminBugDetailById, markAllNotificationsAsRead, _formatTimeAgo
+ *          openAdminBugDetailById, markAllNotificationsAsRead, _formatTimeAgo, _renderNotificationsHtml
  */
 
 (function () {
@@ -329,6 +329,10 @@
     if (!badgeEl) return;
 
     const num = parseInt(count, 10) || 0;
+    try {
+      sessionStorage.setItem('survhub_unread_notif_count', String(num));
+    } catch (e) {}
+
     if (num > 0) {
       badgeEl.textContent = num > 99 ? '99+' : String(num);
       badgeEl.classList.remove('hidden');
@@ -340,19 +344,51 @@
   },
 
   /**
-   * Làm mới số đếm thông báo chưa đọc từ server
+   * Lấy số lượng thông báo chưa đọc (SWR: đọc cache sessionStorage và cập nhật ngầm)
    */
-  async refreshNotificationBadge() {
+  async getUnreadNotificationCount() {
     if (!this.state.token) {
       this.updateNotificationBadge(0);
-      return;
+      try { sessionStorage.removeItem('survhub_unread_notif_count'); } catch (e) {}
+      return 0;
     }
+
+    // 1. Đọc cache từ sessionStorage để hiển thị ngay tức thì trên badge chuông (0ms)
+    try {
+      const cachedCount = sessionStorage.getItem('survhub_unread_notif_count');
+      if (cachedCount !== null && cachedCount !== undefined) {
+        const parsed = parseInt(cachedCount, 10) || 0;
+        const badgeEl = document.getElementById('header-notif-badge');
+        if (badgeEl) {
+          if (parsed > 0) {
+            badgeEl.textContent = parsed > 99 ? '99+' : String(parsed);
+            badgeEl.classList.remove('hidden');
+            badgeEl.classList.add('flex');
+          } else {
+            badgeEl.classList.add('hidden');
+            badgeEl.classList.remove('flex');
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 2. Gọi API ngầm ở background để đồng bộ số lượng mới nhất
     try {
       const res = await this.api('/notifications/unread-count');
       if (res && res.success) {
-        this.updateNotificationBadge(res.unreadCount);
+        const count = res.unreadCount || 0;
+        this.updateNotificationBadge(count);
+        return count;
       }
-    } catch (e) { }
+    } catch (e) {}
+    return 0;
+  },
+
+  /**
+   * Làm mới số đếm thông báo chưa đọc từ server
+   */
+  async refreshNotificationBadge() {
+    return this.getUnreadNotificationCount();
   },
 
   /**
@@ -457,7 +493,57 @@
   },
 
   /**
-   * Nạp và hiển thị danh sách thông báo trong dropdown
+   * Helper render HTML danh sách thông báo
+   */
+  _renderNotificationsHtml(notifications) {
+    if (!notifications || notifications.length === 0) {
+      return `
+        <div class="py-8 text-center text-stone-400 dark:text-stone-500 space-y-1">
+          <div class="w-8 h-8 mx-auto rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400">
+            <i data-lucide="bell-off" class="w-4 h-4"></i>
+          </div>
+          <p class="text-xs font-medium">Hiện chưa có thông báo mới</p>
+        </div>
+      `;
+    }
+
+    return notifications.map(n => {
+      const isUnread = n.is_read === 0;
+      const timeAgo = this._formatTimeAgo(n.created_at);
+      const reward = n.reward_points_per_response ? `+${n.reward_points_per_response.toLocaleString('vi-VN')} Điểm` : '';
+
+      return `
+        <div onclick="VibeApp.clickNotificationItem('${n.id}', '${n.survey_id || ''}', '${n.type || ''}', '${this.escapeHtml(n.title)}')" class="p-2.5 rounded-xl hover:bg-stone-50 dark:hover:bg-stone-900 cursor-pointer transition-colors flex items-start gap-2.5 ${isUnread ? 'bg-orange-50/40 dark:bg-orange-950/20' : ''}">
+          <div class="w-7 h-7 rounded-lg ${isUnread ? 'bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'} flex items-center justify-center shrink-0 mt-0.5">
+            <i data-lucide="${isUnread ? 'zap' : 'bell'}" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-xs font-bold text-stone-900 dark:text-white truncate ${isUnread ? 'text-orange-600 dark:text-orange-400 font-extrabold' : ''}">
+                ${this.escapeHtml(n.title)}
+              </span>
+              <span class="text-[10px] text-stone-400 whitespace-nowrap">${timeAgo}</span>
+            </div>
+            <p class="text-[11px] text-stone-600 dark:text-stone-300 line-clamp-2 mt-0.5">
+              ${this.escapeHtml(n.message)}
+            </p>
+            ${reward ? `
+              <div class="mt-1.5 flex items-center gap-1.5">
+                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 rounded border border-emerald-200/60 dark:border-emerald-900/40">
+                  ${reward}
+                </span>
+                <span class="text-[10px] text-orange-600 hover:underline font-bold">Làm khảo sát ngay</span>
+              </div>
+            ` : ''}
+          </div>
+          ${isUnread ? '<span class="w-2 h-2 rounded-full bg-orange-600 mt-2 shrink-0"></span>' : ''}
+        </div>
+      `;
+    }).join('');
+  },
+
+  /**
+   * Nạp và hiển thị danh sách thông báo trong dropdown (SWR Cache)
    */
   async loadNotificationsList() {
     const listEl = document.getElementById('header-notif-list');
@@ -475,62 +561,64 @@
       return;
     }
 
-    listEl.innerHTML = '<div class="py-6 text-center text-stone-400 text-xs">Đang tải thông báo...</div>';
+    // 1. Đọc cache từ memory this._cachedNotifications hoặc sessionStorage
+    let cached = this._cachedNotifications;
+    if (!cached) {
+      try {
+        const raw = sessionStorage.getItem('survhub_notifs_cache');
+        if (raw) cached = JSON.parse(raw);
+      } catch (e) {
+        cached = null;
+      }
+    }
 
+    // 2. Nếu có cache: RENDER NGAY LẬP TỨC (0ms), KHÔNG hiển thị spinner "Đang tải thông báo..."
+    if (cached && Array.isArray(cached)) {
+      this._cachedNotifications = cached;
+      listEl.innerHTML = this._renderNotificationsHtml(cached);
+      if (window.lucide) window.lucide.createIcons();
+    } else {
+      // Nếu chưa có cache (lần đầu tiên): hiển thị skeleton loading nhẹ nhàng
+      listEl.innerHTML = `
+        <div class="space-y-2 p-2">
+          <div class="animate-pulse flex items-start gap-2.5 p-2 rounded-xl bg-stone-50 dark:bg-stone-900/50">
+            <div class="w-7 h-7 rounded-lg bg-stone-200 dark:bg-stone-800 shrink-0"></div>
+            <div class="flex-1 space-y-1.5">
+              <div class="h-3 bg-stone-200 dark:bg-stone-800 rounded w-3/4"></div>
+              <div class="h-2.5 bg-stone-100 dark:bg-stone-800/60 rounded w-1/2"></div>
+            </div>
+          </div>
+          <div class="animate-pulse flex items-start gap-2.5 p-2 rounded-xl bg-stone-50 dark:bg-stone-900/50">
+            <div class="w-7 h-7 rounded-lg bg-stone-200 dark:bg-stone-800 shrink-0"></div>
+            <div class="flex-1 space-y-1.5">
+              <div class="h-3 bg-stone-200 dark:bg-stone-800 rounded w-2/3"></div>
+              <div class="h-2.5 bg-stone-100 dark:bg-stone-800/60 rounded w-1/3"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. Tiếp tục gọi this.api('/notifications') ngầm ở background
     try {
       const res = await this.api('/notifications');
       const notifications = (res && res.notifications) || [];
+      const newJson = JSON.stringify(notifications);
+      const oldJson = JSON.stringify(this._cachedNotifications || []);
 
-      if (notifications.length === 0) {
-        listEl.innerHTML = `
-          <div class="py-8 text-center text-stone-400 dark:text-stone-500 space-y-1">
-            <div class="w-8 h-8 mx-auto rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-400">
-              <i data-lucide="bell-off" class="w-4 h-4"></i>
-            </div>
-            <p class="text-xs font-medium">Hiện chưa có thông báo mới</p>
-          </div>
-        `;
+      // Khi API trả về, so sánh JSON và cập nhật lại DOM nếu có thay đổi, đồng thời lưu cache mới
+      if (newJson !== oldJson || !cached) {
+        this._cachedNotifications = notifications;
+        try {
+          sessionStorage.setItem('survhub_notifs_cache', newJson);
+        } catch (e) {}
+        listEl.innerHTML = this._renderNotificationsHtml(notifications);
         if (window.lucide) window.lucide.createIcons();
-        return;
       }
-
-      listEl.innerHTML = notifications.map(n => {
-        const isUnread = n.is_read === 0;
-        const timeAgo = this._formatTimeAgo(n.created_at);
-        const reward = n.reward_points_per_response ? `+${n.reward_points_per_response.toLocaleString('vi-VN')} Điểm` : '';
-
-        return `
-          <div onclick="VibeApp.clickNotificationItem('${n.id}', '${n.survey_id || ''}', '${n.type || ''}', '${this.escapeHtml(n.title)}')" class="p-2.5 rounded-xl hover:bg-stone-50 dark:hover:bg-stone-900 cursor-pointer transition-colors flex items-start gap-2.5 ${isUnread ? 'bg-orange-50/40 dark:bg-orange-950/20' : ''}">
-            <div class="w-7 h-7 rounded-lg ${isUnread ? 'bg-orange-100 text-orange-600 dark:bg-orange-950/60 dark:text-orange-400' : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400'} flex items-center justify-center shrink-0 mt-0.5">
-              <i data-lucide="${isUnread ? 'zap' : 'bell'}" class="w-3.5 h-3.5"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center justify-between gap-1">
-                <span class="text-xs font-bold text-stone-900 dark:text-white truncate ${isUnread ? 'text-orange-600 dark:text-orange-400 font-extrabold' : ''}">
-                  ${this.escapeHtml(n.title)}
-                </span>
-                <span class="text-[10px] text-stone-400 whitespace-nowrap">${timeAgo}</span>
-              </div>
-              <p class="text-[11px] text-stone-600 dark:text-stone-300 line-clamp-2 mt-0.5">
-                ${this.escapeHtml(n.message)}
-              </p>
-              ${reward ? `
-                <div class="mt-1.5 flex items-center gap-1.5">
-                  <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 rounded border border-emerald-200/60 dark:border-emerald-900/40">
-                    ${reward}
-                  </span>
-                  <span class="text-[10px] text-orange-600 hover:underline font-bold">Làm khảo sát ngay</span>
-                </div>
-              ` : ''}
-            </div>
-            ${isUnread ? '<span class="w-2 h-2 rounded-full bg-orange-600 mt-2 shrink-0"></span>' : ''}
-          </div>
-        `;
-      }).join('');
-
-      if (window.lucide) window.lucide.createIcons();
     } catch (err) {
-      listEl.innerHTML = '<div class="py-6 text-center text-red-500 text-xs">Không thể tải danh sách thông báo</div>';
+      if (!cached) {
+        listEl.innerHTML = '<div class="py-6 text-center text-red-500 text-xs">Không thể tải danh sách thông báo</div>';
+      }
     }
   },
 
@@ -540,6 +628,13 @@
   async clickNotificationItem(notificationId, surveyId, notifType = '', notifTitle = '') {
     try {
       await this.api(`/notifications/${notificationId}/read`, { method: 'PUT' });
+      if (this._cachedNotifications) {
+        const item = this._cachedNotifications.find(n => n.id === notificationId);
+        if (item) item.is_read = 1;
+        try {
+          sessionStorage.setItem('survhub_notifs_cache', JSON.stringify(this._cachedNotifications));
+        } catch (e) {}
+      }
       this.refreshNotificationBadge();
     } catch (e) { }
 
@@ -605,6 +700,13 @@
     try {
       await this.api('/notifications/read-all', { method: 'PUT' });
       this.updateNotificationBadge(0);
+      try {
+        sessionStorage.setItem('survhub_unread_notif_count', '0');
+        if (this._cachedNotifications) {
+          this._cachedNotifications.forEach(n => { n.is_read = 1; });
+          sessionStorage.setItem('survhub_notifs_cache', JSON.stringify(this._cachedNotifications));
+        }
+      } catch (e) {}
       this.loadNotificationsList();
       this.showToast('Đã đánh dấu tất cả thông báo là đã đọc.', 'success');
     } catch (err) {

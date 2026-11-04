@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const zlib = require('zlib');
 const config = require('./config');
 const apiRoutes = require('./routes/api');
 const { createRateLimiter } = require('./middlewares/rateLimit');
@@ -90,9 +91,71 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Phục vụ tài nguyên tĩnh của Frontend
-app.use(express.static(path.join(__dirname, '../public')));
-app.use('/src', express.static(path.join(__dirname, '../src')));
+// Middleware nén Gzip tích hợp bằng module zlib chuẩn Node.js
+app.use((req, res, next) => {
+  const acceptEncoding = req.headers['accept-encoding'] || '';
+  if (!acceptEncoding.includes('gzip')) {
+    return next();
+  }
+
+  const originalSend = res.send.bind(res);
+
+  res.send = function (body) {
+    if (res.headersSent || res.getHeader('Content-Encoding')) {
+      return originalSend(body);
+    }
+
+    if (body !== null && typeof body === 'object' && !Buffer.isBuffer(body)) {
+      return res.json(body);
+    }
+
+    let buffer;
+    if (Buffer.isBuffer(body)) {
+      buffer = body;
+    } else if (typeof body === 'string') {
+      buffer = Buffer.from(body);
+    } else {
+      return originalSend(body);
+    }
+
+    if (buffer.length < 1024) {
+      return originalSend(body);
+    }
+
+    zlib.gzip(buffer, (err, compressed) => {
+      if (err) {
+        return originalSend(buffer);
+      }
+      res.setHeader('Content-Encoding', 'gzip');
+      const existingVary = res.getHeader('Vary');
+      if (existingVary) {
+        res.setHeader('Vary', `${existingVary}, Accept-Encoding`);
+      } else {
+        res.setHeader('Vary', 'Accept-Encoding');
+      }
+      res.removeHeader('Content-Length');
+      originalSend(compressed);
+    });
+  };
+
+  next();
+});
+
+// Phục vụ tài nguyên tĩnh của Frontend với HTTP Cache tối ưu
+const staticOptions = {
+  maxAge: '1h',
+  etag: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    }
+  }
+};
+
+app.use(express.static(path.join(__dirname, '../public'), staticOptions));
+app.use('/src', express.static(path.join(__dirname, '../src'), staticOptions));
 
 // Rate limit tổng cho toàn bộ API v1, sau đó limiter hẹp hơn riêng cho luồng xác thực
 // (mount theo thứ tự: limiter tổng trước, limiter auth hẹp hơn sau, cả 2 đều trước router)
@@ -129,6 +192,7 @@ app.get('/health', (req, res) => {
 
 // SPA Fallback: Trả về index.html cho các route phía Client
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 

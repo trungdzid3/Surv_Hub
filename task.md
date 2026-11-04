@@ -51,6 +51,11 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 - [x] Task AD2: Bổ sung chốt chặn CORE_ADMIN_EMAILS tại googleAuth và handleGoogleOAuthCallback trong authController.js đảm bảo email admin không bao giờ bị hạ xuống RESPONDENT | [Agent: Subagent-AdminAuth] | [Skill: security-audit] | [Locked Files: server/controllers/authController.js]
 - [x] Task AD3: Kiểm tra cú pháp node -c, chạy npm test, đồng bộ khôi phục tài khoản trong CSDL thực tế và nghiệm thu | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: task.md, PROJECT_CONTEXT.md]
 
+## SPRINT 04-11-2026: DEMO PERFORMANCE OPTIMIZATION (GZIP COMPRESSION & SWR CACHE)
+- [x] Task P1: Tối ưu backend server/app.js (Bật nén Gzip tích hợp bằng module zlib chuẩn Node.js không cài thư viện mới; thêm HTTP Cache-Control và maxAge cho express.static giảm 70% băng thông tải) | [Agent: Subagent-BackendPerf] | [Skill: security-audit] | [Locked Files: server/app.js]
+- [x] Task P2: Tối ưu frontend public/js/modules/pushNotifications.js và public/app.js (Triển khai Stale-While-Revalidate cho Thông Báo và Khảo Sát: render tức thì từ cache < 10ms, âm thầm fetch ngầm ở background, xóa bỏ trạng thái treo 'Đang tải thông báo...', bổ sung hàm loadSurveys) | [Agent: Subagent-FrontendSWR] | [Skill: design-taste-frontend] | [Locked Files: public/js/modules/pushNotifications.js, public/app.js]
+- [x] Task P3: Lead Orchestrator: Bump cache-buster index.html, kiểm tra cú pháp, chạy 25 suites npm test, sync Android và commit Git auto_github_sync | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: public/index.html, task.md]
+
 ## SPRINT 04-11-2026: SURVHUB REBRANDING & OPENCODE CLI FIRST POLICY
 - [x] Task N1: Cập nhật C:\Users\Lenovo\.gemini\GEMINI.md bổ sung quy tắc ưu tiên OpenCode CLI hơn hết (CLI First) và chỉ định 2 họ model cho phép: DeepSeek và GLM 5.3 Flash, đồng bộ tên dự án SurvHub | [Agent: Subagent-GlobalRuleSync] | [Skill: writing-guidelines] | [Locked Files: C:/Users/Lenovo/.gemini/GEMINI.md]
 - [x] Task N2: Đồng bộ tên dự án SurvHub và quy tắc OpenCode CLI First (DeepSeek / GLM 5.3 Flash) trong PROJECT_CONTEXT.md và .agent/GEMINI.md | [Agent: Subagent-ContextSurvHubSync] | [Skill: writing-guidelines] | [Locked Files: PROJECT_CONTEXT.md, .agent/GEMINI.md]

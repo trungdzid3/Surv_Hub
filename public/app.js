@@ -343,7 +343,16 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     lengthFilter: 'ALL', // 'ALL' | 'SHORT' (1-3 câu) | 'MEDIUM' (4-7 câu) | 'LONG' (>= 8 câu)
     speedFilter: 'ALL', // 'ALL' | 'FAST_1M' (<= 1p) | 'FAST_3M' (<= 3p)
     rewardTierFilter: 'ALL', // 'ALL' | 'TIER_LOW' (< 150) | 'TIER_MID' (150-299) | 'TIER_HIGH' (>= 300)
-    surveys: [],
+    surveys: (() => {
+      try {
+        const raw = sessionStorage.getItem('survhub_surveys_cache');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {}
+      return [];
+    })(),
     creatorSurveys: [],
     voucherCatalog: [],
     myVouchers: [],
@@ -2174,23 +2183,85 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     this.renderSurveysView(document.getElementById('app-root'), false);
   },
 
-  async renderSurveysView(root, forceFetch = true) {
-    // Luôn fetch mới từ server để bảo đảm 100% đồng bộ với DB thực tế, không dính cache form ảo
+  /**
+   * Nạp danh sách khảo sát theo cơ chế Stale-While-Revalidate (SWR Cache)
+   */
+  async loadSurveys() {
+    // 1. Đọc cache từ memory this.state.surveys hoặc sessionStorage
+    if (!this.state.surveys || this.state.surveys.length === 0) {
+      try {
+        const cachedRaw = sessionStorage.getItem('survhub_surveys_cache');
+        if (cachedRaw) {
+          const parsed = JSON.parse(cachedRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.state.surveys = parsed;
+          }
+        }
+      } catch (e) {
+        // Bỏ qua lỗi đọc cache
+      }
+    }
+
+    // 2. Gọi this.api('/surveys') ngầm để nạp dữ liệu mới nhất
     try {
       const res = await this.api('/surveys');
-      this.state.surveys = res.surveys || [];
+      const latestSurveys = (res && res.surveys) || [];
+      this.state.surveys = latestSurveys;
+      try {
+        sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(latestSurveys));
+      } catch (e) {}
+      return latestSurveys;
     } catch (err) {
       console.warn('Không thể nạp danh sách khảo sát:', err.message);
       if (!this.state.surveys) this.state.surveys = [];
+      return this.state.surveys;
+    }
+  },
+
+  async renderSurveysView(root, forceFetch = true) {
+    if (!root) root = document.getElementById('app-root');
+    if (!root) return;
+
+    // 1. Đọc cache từ memory this.state.surveys hoặc sessionStorage
+    if (!this.state.surveys || this.state.surveys.length === 0) {
+      try {
+        const cachedRaw = sessionStorage.getItem('survhub_surveys_cache');
+        if (cachedRaw) {
+          const parsed = JSON.parse(cachedRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.state.surveys = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    const hasData = Array.isArray(this.state.surveys) && this.state.surveys.length > 0;
+
+    // 2. Nếu chưa có dữ liệu nào (lần đầu tiên, không có cache), bắt buộc fetch từ API
+    if (!hasData && forceFetch) {
+      try {
+        const res = await this.api('/surveys');
+        this.state.surveys = (res && res.surveys) || [];
+        try {
+          sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(this.state.surveys));
+        } catch (e) {}
+      } catch (err) {
+        console.warn('Không thể nạp danh sách khảo sát:', err.message);
+        if (!this.state.surveys) this.state.surveys = [];
+      }
     }
 
     const surveys = this.state.surveys;
     const user = this.state.currentUser;
 
     if (user && (!this.state.streakInfo || forceFetch)) {
-      try {
-        await this.fetchStreakInfo();
-      } catch (err) { }
+      if (!hasData) {
+        try {
+          await this.fetchStreakInfo();
+        } catch (err) { }
+      } else {
+        this.fetchStreakInfo().catch(() => {});
+      }
     }
 
     const curPoints = user ? user.point_balance : 0;
@@ -2668,6 +2739,31 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     `;
 
     if (window.lucide) window.lucide.createIcons();
+
+    // 3. Nếu đã có dữ liệu và forceFetch = true: Revalidate ngầm ở background
+    if (hasData && forceFetch) {
+      this.api('/surveys').then((res) => {
+        const latest = (res && res.surveys) || [];
+        const oldJson = JSON.stringify(this.state.surveys || []);
+        const newJson = JSON.stringify(latest);
+        this.state.surveys = latest;
+        try {
+          sessionStorage.setItem('survhub_surveys_cache', newJson);
+        } catch (e) {}
+
+        // Nếu dữ liệu có thay đổi và người dùng vẫn đang ở tab 'surveys', cập nhật lại danh sách khảo sát
+        if (oldJson !== newJson && this.state.currentTab === 'surveys') {
+          const gridSec = root.querySelector('.surveys-grid-section');
+          if (gridSec) {
+            const { pinnedSurveys: newPinned, normalSurveys: newNormal } = this.processSurveysList(latest);
+            gridSec.innerHTML = this._renderSurveysContentHtml(newPinned, newNormal);
+            if (window.lucide) window.lucide.createIcons();
+          }
+        }
+      }).catch((err) => {
+        console.warn('Lỗi revalidate surveys ngầm:', err.message);
+      });
+    }
   },
 
 
