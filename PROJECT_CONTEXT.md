@@ -49,7 +49,7 @@ c:\Users\Lenovo\Downloads\Linh\
 | `config/index.js` | Secrets + toàn bộ kinh tế | `JWT_SECRET`, `PAYMENT_GATEWAY` (fallback demo an toàn, ưu tiên env), `ECONOMICS` (giá sàn 3 phân khúc, SLA tiers, deposit tiers, take rate), `ANTI_FRAUD` (ngưỡng trust, speed trap) |
 | `routes/api.js` | Định tuyến v1 | `/auth/*`, `/surveys/*`, `/wallet/*`, `/vouchers/*`, `/users/*`, `/forum/*`, `/push/*`, `/admin/*`, `GET /media/:id`, `GET /app/version` & `GET /app/download` (phân phối APK Android & kiểm tra cập nhật in-app) |
 | `controllers/authController.js` | Đăng ký/đăng nhập/OTP/2FA | `sendRegistrationOtp` (~80), `login` + login challenge/OTP (~300), TOTP setup/enable/disable/verify, `sendVerificationOtp` (~540), OTP sinh viên (~1040), Google OAuth, profile/avatar (lưu BLOB Turso `media_storage` bền vững)/enterprise-profile |
-| `controllers/surveyController.js` | Lõi khảo sát (file lớn nhất ~2.4k dòng) | `createSurvey` (~683), `updateSurvey` (~938), `getSurvey` (~600, có cờ `allow_email_collection`), `startSession` (~1400), `submitSurvey` (~1500+: validate + anti-fraud + thưởng), `_stripPrivateProfileFields` (~1505), webhook Sheets 2 luồng (~1823 edit, ~1910 nộp mới), `exportSurveyData` (~2100, CSV/JSON theo cờ email), `uploadImage` (lưu BLOB Turso `media_storage`), `getMedia` (stream ảnh HTTP cache), analytics, close/delete |
+| `controllers/surveyController.js` | Lõi khảo sát (file lớn nhất ~2.4k dòng) | `listSurveys` (subquery `user_response_status`/`points_rewarded` triệt tiêu trùng lặp), `getSurvey` & `startSession` (ORDER BY ưu tiên `VALIDATED` để mở màn hình review chuẩn xác), `createSurvey` (~683), `updateSurvey` (~938), `getSurvey` (~600, có cờ `allow_email_collection`), `startSession` (~1400), `submitSurvey` (~1500+: validate + anti-fraud + thưởng), `_stripPrivateProfileFields` (~1505), webhook Sheets 2 luồng (~1823 edit, ~1910 nộp mới), `exportSurveyData` (~2100, CSV/JSON theo cờ email), `uploadImage` (lưu BLOB Turso `media_storage`), `getMedia` (stream ảnh HTTP cache), analytics, close/delete |
 | `controllers/walletController.js` | Ví & thanh toán | `depositCredit` (admin, test-bypass), `createDepositOrder`, `handlePaymentWebhook` (~317, timing-safe), payouts, swap Point→Credit (+5%), VAT invoices |
 | `controllers/adminController.js` | Quản trị | overview, `searchUsers`, `/execute-command` (gồm `/cleantest`), duyệt payouts, fraud logs, audit logs |
 | `controllers/voucherController.js` / `forumController.js` / `userController.js` / `bugReportController.js` | E-Voucher, diễn đàn, streak/checkin, báo lỗi | — |
@@ -71,12 +71,12 @@ c:\Users\Lenovo\Downloads\Linh\
 Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng frontend — đọc file này trước khi sửa UI).
 | File | Vai trò |
 |---|---|
-| `public/app.js` (~3.7k dòng) | RestrictionEngine, core init/theme/logo/dropdown/state, router `navigate`, home, danh sách khảo sát + bộ lọc, renderNavigation (Mobile Floating Island Dock bo cong viên thuốc `rounded-full`, nút CTA cam tròn nổi bổng, active pill indicator đáy), metrics, tiện ích chung (`_formatFileSize`, `compressImageFile`, `generateValidationPlaceholder`, `getYouTubeEmbedUrl`, `getLucideSvg`, alias `escapeHtml`, `copyText`) |
+| `public/app.js` (~4k dòng) | RestrictionEngine, core init/theme/logo/dropdown/state (`surveyStatusFilter` 3 nấc: Tất cả / Chưa làm / Đã làm), router `navigate`, home, danh sách khảo sát + bộ lọc trạng thái, renderCompactSurveyCard/renderListSurveyRow (badge "Đã làm", nút "Xem lại" mở `review-survey`), renderNavigation (Mobile Floating Island Dock bo cong viên thuốc `rounded-full`, nút CTA cam tròn nổi bổng, active pill indicator đáy), metrics, tiện ích chung (`_formatFileSize`, `compressImageFile`, `generateValidationPlaceholder`, `getYouTubeEmbedUrl`, `getLucideSvg`, alias `escapeHtml`, `copyText`) |
 | `public/js/data/catalogs.js` | `window.VibeData` (Object.freeze): 7 hằng danh mục (tỉnh thành, trường ĐH, categories, voucher catalog); back-compat `window.VIBE_*` |
 | `public/js/data/policyContent.js` | `window.SURVHUB_POLICY_DOCS` (Object.freeze): SSOT nội dung 03 văn bản pháp lý `terms` / `privacy` / `rules` (meta `version` + `effectiveDate`), nạp ngay trước `modalsTerms.js` |
 | `public/js/utils.js` | `window.VibeUtils`: `escapeHtml` canonical, `formatVND`, `refreshIcons` |
 | `modules/creatorStudio.js` (~5.6k) | Studio soạn khảo sát: question builder 12 dạng, Smart Paste, escrow, image picker, forms auth |
-| `modules/respondent.js` (~3.9k) | Runner làm bài phân đoạn + rẽ nhánh + review + hồ sơ 6 tab; hồ sơ có tab Bảo mật với thiết lập/bật/tắt TOTP thủ công (`startTotpSetup` ~3680, `enableTotpAction` ~3750, `disableTotpAction` ~3785, `copyTotpValue` ~3810) và xác thực email sinh viên qua OTP |
+| `modules/respondent.js` (~4k) | Runner làm bài phân đoạn + rẽ nhánh + review TYPEFORM ZEN (`renderReviewSurveyView`), đồng bộ `user_response_status = 'VALIDATED'` sau khi nộp bài; nút "Xem lại" trong bảng khảo sát đã tham gia; hồ sơ 6 tab; hồ sơ có tab Bảo mật với thiết lập/bật/tắt TOTP thủ công (`startTotpSetup` ~3680, `enableTotpAction` ~3750, `disableTotpAction` ~3785, `copyTotpValue` ~3810) và xác thực email sinh viên qua OTP |
 | `modules/adminConsole.js` (~2k) | Admin overview/payouts/fraud + Fast Command Console |
 | `modules/forum.js` (~1.8k) | Diễn đàn + WYSIWYG + đính kèm + share |
 | `modules/modalsTerms.js` (~1.8k) | Auth modal, Google auth, khung hiển thị 03 văn bản pháp lý dạng tab (nội dung đọc từ `policyContent.js`), streak, toast/modal/copy tiện ích |
@@ -134,7 +134,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 
 ### Quy Trình Bàn Giao & Kiểm Tra
 - Trước khi bắt đầu: Đọc tuần tự theo thứ bậc rules ở trên.
-- Kiểm tra toàn vẹn: chạy `npm test` (24 suite, phải 100% PASS).
+- Kiểm tra toàn vẹn: chạy `npm test` (27 suite, phải 100% PASS).
 - Sau khi chỉnh sửa code: `node -c <file>`, nâng cache-buster nếu đụng app.js hoặc module, `npm run sync:android`, cập nhật mục "Việc Đang Mở" trong file này, commit + push (auto_github_sync: true).
 - Giao tiếp tiếng Việt, cấm emoji/icon màu trong mọi đầu ra.
 

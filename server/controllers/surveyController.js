@@ -557,14 +557,15 @@ class SurveyController {
                s.survey_source, s.external_form_url, s.academic_tags_json, s.target_demographics_json,
                s.reward_mode, s.sponsor_campaign_id, s.is_pinned, s.is_featured,
                vc.brand_name AS sponsor_brand_name, vc.brand_logo AS sponsor_brand_logo, vc.title AS sponsor_voucher_title, vc.face_value_vnd AS sponsor_face_value,
-               r.status AS user_response_status, r.points_rewarded,
+               (SELECT r2.status FROM responses r2 WHERE r2.survey_id = s.id AND r2.respondent_id = ? ORDER BY (CASE WHEN r2.status = 'VALIDATED' THEN 0 ELSE 1 END), r2.started_at DESC LIMIT 1) AS user_response_status,
+               (SELECT r2.points_rewarded FROM responses r2 WHERE r2.survey_id = s.id AND r2.respondent_id = ? ORDER BY (CASE WHEN r2.status = 'VALIDATED' THEN 0 ELSE 1 END), r2.started_at DESC LIMIT 1) AS points_rewarded,
+               (SELECT r2.id FROM responses r2 WHERE r2.survey_id = s.id AND r2.respondent_id = ? ORDER BY (CASE WHEN r2.status = 'VALIDATED' THEN 0 ELSE 1 END), r2.started_at DESC LIMIT 1) AS user_response_id,
                (SELECT COUNT(*) FROM questions q WHERE q.survey_id = s.id) AS question_count
         FROM surveys s
-        LEFT JOIN responses r ON r.survey_id = s.id AND r.respondent_id = ?
         LEFT JOIN voucher_campaigns vc ON s.sponsor_campaign_id = vc.id
         WHERE s.status = 'ACTIVE'
         ORDER BY s.created_at DESC
-      `).all(user.id);
+      `).all(user.id, user.id, user.id);
 
       const surveys = rawSurveys.map(s => {
         let academicTags = [];
@@ -638,7 +639,12 @@ class SurveyController {
         let existingResponse = null;
         let userVoucher = null;
         if (user) {
-          existingResponse = db.prepare('SELECT * FROM responses WHERE survey_id = ? AND respondent_id = ?').get(id, user.id);
+          existingResponse = db.prepare(`
+            SELECT * FROM responses 
+            WHERE survey_id = ? AND respondent_id = ? 
+            ORDER BY (CASE WHEN status = 'VALIDATED' THEN 0 ELSE 1 END), started_at DESC 
+            LIMIT 1
+          `).get(id, user.id);
           if (existingResponse) {
             userVoucher = db.prepare(`
               SELECT vc.id, vc.code, vc.claimed_at, c.brand_name, c.brand_logo, c.title, c.instructions, c.expiry_date
@@ -1484,7 +1490,12 @@ class SurveyController {
       }
 
       // Kiểm tra người dùng đã từng làm khảo sát này chưa
-      const existing = db.prepare('SELECT * FROM responses WHERE survey_id = ? AND respondent_id = ?').get(id, user.id);
+      const existing = db.prepare(`
+        SELECT * FROM responses 
+        WHERE survey_id = ? AND respondent_id = ? 
+        ORDER BY (CASE WHEN status = 'VALIDATED' THEN 0 ELSE 1 END), started_at DESC 
+        LIMIT 1
+      `).get(id, user.id);
       if (existing) {
         if (existing.status === 'VALIDATED') {
           if (survey.allow_edit_response === 1) {
@@ -1616,7 +1627,12 @@ class SurveyController {
         return res.status(404).json({ success: false, message: 'Khảo sát không tồn tại' });
       }
 
-      const response = db.prepare('SELECT * FROM responses WHERE survey_id = ? AND respondent_id = ?').get(id, user.id);
+      const response = db.prepare(`
+        SELECT * FROM responses 
+        WHERE survey_id = ? AND respondent_id = ? 
+        ORDER BY (CASE WHEN status = 'IN_PROGRESS' THEN 0 WHEN status = 'VALIDATED' THEN 1 ELSE 2 END), started_at DESC 
+        LIMIT 1
+      `).get(id, user.id);
       if (!response) {
         return res.status(400).json({ success: false, message: 'Không tìm thấy phiên làm bài hợp lệ. Vui lòng bấm làm khảo sát trước.' });
       }

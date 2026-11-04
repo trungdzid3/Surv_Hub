@@ -5588,6 +5588,14 @@
             if (pubRes.freeTrialSurveysAvailable !== undefined) this.state.currentUser.free_trial_surveys_available = pubRes.freeTrialSurveysAvailable;
             if (pubRes.freeQuotaRemaining !== undefined) this.state.currentUser.free_quota_remaining = pubRes.freeQuotaRemaining;
           }
+          // Xóa ngay cache danh sách khảo sát để khảo sát mới tự động xuất hiện trên giao diện
+          try { sessionStorage.removeItem('survhub_surveys_cache'); } catch (e) {}
+          this.api('/surveys').then(sRes => {
+            if (sRes && Array.isArray(sRes.surveys)) {
+              this.state.surveys = sRes.surveys;
+              try { sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(sRes.surveys)); } catch (e) {}
+            }
+          }).catch(() => {});
           this.resetStudioToNew(false);
           this.navigate('creator-surveys');
         } catch (pubErr) {

@@ -336,6 +336,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     mobileStudioActiveTab: 'CANVAS', // 'CANVAS' (Soạn câu hỏi) | 'SIDEBAR' (Cài đặt & ngân sách)
     categoryFilter: 'ALL',
     surveyCategoryFilter: 'ALL',
+    surveyStatusFilter: 'ALL', // 'ALL' | 'UNANSWERED' | 'ANSWERED'
     searchQuery: '',
     hideFinished: true, // Tự động ẩn khảo sát đã đủ 100% mẫu hoặc người dùng đã nhận thưởng
     viewMode: 'grid', // 'grid' (Lưới 4 cột compact) | 'list' (Danh sách 1 dòng siêu gọn)
@@ -967,6 +968,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           this.checkDeepLinkSurvey();
           this.initPushNotifications();
           this.initAndroidAppBanner();
+          this.startSurveysAutoSync();
           return;
         }
       } catch (e) {
@@ -988,6 +990,84 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     this.checkDeepLinkSurvey();
     this.initPushNotifications();
     this.initAndroidAppBanner();
+    this.startSurveysAutoSync();
+  },
+
+  /**
+   * Khởi chạy chu kỳ tự động đồng bộ khảo sát thời gian thực (Background Survey Auto-Sync)
+   * Tự động thêm form mới vào giao diện mà người dùng không cần phải tải lại trang F5
+   */
+  startSurveysAutoSync() {
+    if (this._surveysSyncInterval) {
+      clearInterval(this._surveysSyncInterval);
+    }
+
+    // Chu kỳ thăm dò ngầm mỗi 15 giây
+    this._surveysSyncInterval = setInterval(() => {
+      this.syncSurveysRealtime();
+    }, 15000);
+
+    // Đồng bộ tức thì khi chuyển tab quay lại trình duyệt
+    if (this._surveysVisibilityHandler) {
+      document.removeEventListener('visibilitychange', this._surveysVisibilityHandler);
+    }
+    this._surveysVisibilityHandler = () => {
+      if (!document.hidden) {
+        this.syncSurveysRealtime();
+      }
+    };
+    document.addEventListener('visibilitychange', this._surveysVisibilityHandler);
+  },
+
+  async syncSurveysRealtime() {
+    // Không làm mới khi người dùng đang tập trung làm bài để tránh gián đoạn
+    if (this.state.currentTab === 'take-survey') return;
+
+    try {
+      const res = await this.api('/surveys');
+      const latest = (res && Array.isArray(res.surveys)) ? res.surveys : [];
+      if (latest.length === 0) return;
+
+      const currentList = Array.isArray(this.state.surveys) ? this.state.surveys : [];
+      const currentIds = new Set(currentList.map(s => s.id));
+      const hasNewSurvey = latest.some(s => !currentIds.has(s.id));
+
+      const oldJson = JSON.stringify(currentList);
+      const newJson = JSON.stringify(latest);
+
+      if (oldJson !== newJson) {
+        this.state.surveys = latest;
+        try {
+          sessionStorage.setItem('survhub_surveys_cache', newJson);
+        } catch (e) {}
+
+        // Nếu có form mới xuất hiện và người dùng đang ở cổng khảo sát: Tự động chèn mượt mà vào giao diện
+        if (this.state.currentTab === 'surveys') {
+          const root = document.getElementById('app-root');
+          const gridSec = root ? root.querySelector('.surveys-grid-section') : null;
+          if (gridSec) {
+            const { pinnedSurveys, normalSurveys } = this.processSurveysList(latest);
+            gridSec.innerHTML = this._renderSurveysContentHtml(pinnedSurveys, normalSurveys);
+            if (window.lucide) window.lucide.createIcons();
+
+            if (hasNewSurvey) {
+              this.haptic('light');
+              this.showToast('Vừa có bài khảo sát mới được cập nhật vào danh sách!', 'info');
+            }
+          }
+        } else if (this.state.currentTab === 'home') {
+          if (hasNewSurvey) {
+            const root = document.getElementById('app-root');
+            if (root) {
+              await this.renderHomeView(root);
+              this.showToast('Đã tự động cập nhật bài khảo sát mới trên Trang chủ!', 'info');
+            }
+          }
+        }
+      }
+    } catch (err) {
+      // Bỏ qua lỗi ngầm khi sync
+    }
   },
 
   /**
@@ -2046,7 +2126,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       this.showToast('Vui lòng đăng nhập để bắt đầu làm khảo sát này và nhận điểm thưởng!', 'info');
       await this.openSurveyPreviewModal(surveyId);
     } else {
-      await this.navigate('take-survey', { surveyId });
+      await this.startSurveySession(surveyId);
     }
   },
 
@@ -2274,6 +2354,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     // Lọc & Phân nhóm: Ghim luôn cố định trên đầu, bài thường ở dưới
     const { pinnedSurveys, normalSurveys } = this.processSurveysList(surveys);
+    const allCount = (surveys || []).length;
+    const answeredCount = (surveys || []).filter(s => s.user_response_status === 'VALIDATED').length;
+    const unansweredCount = (surveys || []).filter(s => s.user_response_status !== 'VALIDATED' && (s.collected_responses || 0) < (s.target_responses || 100) && s.status !== 'COMPLETED' && s.status !== 'CLOSED').length;
     const totalAllCount = this.state.categoryFilter === 'ALL'
       ? (pinnedSurveys.length + normalSurveys.length)
       : (this.state.hideFinished ? surveys.filter(s => (s.collected_responses || 0) < (s.target_responses || 100) && s.status !== 'COMPLETED' && s.status !== 'CLOSED').length : surveys.length);
@@ -2627,11 +2710,24 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
           </div>
 
-          <!-- HÀNG 2: SẮP XẾP + HIỆN BÀI ĐÃ LÀM + GRID/LIST SWITCHER -->
+          <!-- HÀNG 2: BỘ LỌC TRẠNG THÁI + LĨNH VỰC + SẮP XẾP + GRID/LIST SWITCHER -->
           <div class="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs">
             
-            <!-- Cụm bên trái: Lĩnh vực & Sắp xếp -->
+            <!-- Cụm bên trái: Tabs Trạng thái + Lĩnh vực + Sắp xếp -->
             <div class="flex flex-wrap items-center gap-2.5">
+              <!-- Segmented Tab Trạng Thái Khảo Sát (Tất cả / Chưa làm / Đã làm) -->
+              <div class="inline-flex items-center p-0.5 rounded-xl bg-stone-100 dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 text-xs font-semibold">
+                <button type="button" onclick="VibeApp.setSurveyStatusFilter('ALL')" class="px-2.5 py-1 rounded-lg transition-all cursor-pointer ${this.state.surveyStatusFilter === 'ALL' ? 'bg-white dark:bg-stone-800 text-slate-900 dark:text-white font-bold shadow-2xs' : 'text-stone-500 hover:text-stone-700 dark:hover:text-stone-300'}">
+                  <span>Tất cả</span> <span class="text-[10px] opacity-75 font-mono">(${allCount})</span>
+                </button>
+                <button type="button" onclick="VibeApp.setSurveyStatusFilter('UNANSWERED')" class="px-2.5 py-1 rounded-lg transition-all cursor-pointer ${this.state.surveyStatusFilter === 'UNANSWERED' ? 'bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-bold shadow-2xs' : 'text-stone-500 hover:text-stone-700 dark:hover:text-stone-300'}">
+                  <span>Chưa làm</span> <span class="text-[10px] opacity-75 font-mono">(${unansweredCount})</span>
+                </button>
+                <button type="button" onclick="VibeApp.setSurveyStatusFilter('ANSWERED')" class="px-2.5 py-1 rounded-lg transition-all cursor-pointer ${this.state.surveyStatusFilter === 'ANSWERED' ? 'bg-emerald-600 text-white font-bold shadow-2xs' : 'text-stone-500 hover:text-stone-700 dark:hover:text-stone-300'}">
+                  <span>Đã làm</span> <span class="text-[10px] opacity-80 font-mono">(${answeredCount})</span>
+                </button>
+              </div>
+
               <!-- Dropdown Lĩnh vực -->
               <div class="flex items-center gap-2">
                 <span class="text-xs text-stone-500 dark:text-stone-400 font-medium">Lĩnh vực:</span>
@@ -2957,7 +3053,12 @@ if (totalCount === 0) {
             </div>
 
             <div>
-              ${isPinned ? `
+              ${isCompleted ? `
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-bold text-[10px]">
+                  <i data-lucide="check-circle-2" class="w-2.5 h-2.5 stroke-[2.5]"></i>
+                  <span>Đã làm</span>
+                </span>
+              ` : isPinned ? `
                 <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-orange-600 text-white font-bold text-[10px]">
                   VIP
                 </span>
@@ -2970,7 +3071,7 @@ if (totalCount === 0) {
           </div>
 
           <div>
-            <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 min-h-[2.5rem] hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer" onclick="${user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
+            <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 min-h-[2.5rem] hover:text-orange-600 dark:hover:text-orange-400 transition-colors cursor-pointer" onclick="${isCompleted ? `VibeApp.navigate('review-survey', { surveyId: '${s.id}' })` : user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
               ${this.escapeHtml(cleanTitle)}
             </h4>
             <p class="text-[11px] text-stone-500 dark:text-stone-400 mt-1 line-clamp-1 leading-relaxed">
@@ -3018,8 +3119,8 @@ if (totalCount === 0) {
 
             <div>
               ${isCompleted ? `
-                <button onclick="VibeApp.navigate('review-survey', { surveyId: '${s.id}' })" class="h-8 px-2.5 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 text-[11px] font-bold flex items-center gap-1 transition-all" title="Xem lại câu trả lời của bạn">
-                  <i data-lucide="check" class="w-3 h-3 stroke-[3] text-emerald-600"></i>
+                <button onclick="VibeApp.navigate('review-survey', { surveyId: '${s.id}' })" class="h-8 px-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs" title="Xem lại câu trả lời của bạn">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5 stroke-[2]"></i>
                   <span>Xem lại</span>
                 </button>
               ` : user ? `
@@ -3066,6 +3167,12 @@ if (totalCount === 0) {
         
         <div class="space-y-1 min-w-0 flex-1">
           <div class="flex items-center gap-1.5 flex-wrap">
+            ${isCompleted ? `
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-bold text-[10px]">
+                <i data-lucide="check-circle-2" class="w-2.5 h-2.5 stroke-[2.5]"></i>
+                <span>Đã làm</span>
+              </span>
+            ` : ''}
             ${isPinned ? `
               <span class="px-1.5 py-0.5 rounded bg-orange-600 text-white font-bold text-[10px] flex items-center">
                 <span>VIP</span>
@@ -3080,7 +3187,7 @@ if (totalCount === 0) {
             <span class="text-[10px] text-stone-500 dark:text-stone-400">~${minMins} phút • ${questionCount} câu</span>
           </div>
 
-          <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-orange-600 dark:hover:text-orange-400" onclick="${user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
+          <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate cursor-pointer hover:text-orange-600 dark:hover:text-orange-400" onclick="${isCompleted ? `VibeApp.navigate('review-survey', { surveyId: '${s.id}' })` : user ? `VibeApp.startSurveySession('${s.id}')` : `VibeApp.openSurveyPreviewModal('${s.id}')`}">
             ${this.escapeHtml(cleanTitle)}
           </h4>
         </div>
@@ -3106,8 +3213,8 @@ if (totalCount === 0) {
           </div>
 
           ${isCompleted ? `
-            <button onclick="VibeApp.navigate('review-survey', { surveyId: '${s.id}' })" class="h-8 px-2.5 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 text-xs font-semibold flex items-center gap-1 transition-all" title="Xem lại câu trả lời của bạn">
-              <i data-lucide="check" class="w-3 h-3 stroke-[3] text-emerald-600"></i>
+            <button onclick="VibeApp.navigate('review-survey', { surveyId: '${s.id}' })" class="h-8 px-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-2xs" title="Xem lại câu trả lời của bạn">
+              <i data-lucide="file-text" class="w-3.5 h-3.5 stroke-[2]"></i>
               <span>Xem lại</span>
             </button>
           ` : user ? `
@@ -3131,10 +3238,12 @@ if (totalCount === 0) {
     let list = [...(surveys || [])];
     const cat = this.state.categoryFilter;
     const catCode = this.state.surveyCategoryFilter;
+    const statusFilter = this.state.surveyStatusFilter || 'ALL';
     const len = this.state.lengthFilter;
     const q = this.state.searchQuery.toLowerCase().trim();
 
-    if (this.state.hideFinished) {
+    // 1. Lọc theo trạng thái bài khảo sát (Tất cả / Chưa làm / Đã làm)
+    if (statusFilter === 'UNANSWERED') {
       list = list.filter(s => {
         const col = s.collected_responses || 0;
         const tar = s.target_responses || 100;
@@ -3143,6 +3252,20 @@ if (totalCount === 0) {
         const isUserDone = s.user_response_status === 'VALIDATED';
         return !isFull && !isClosed && !isUserDone;
       });
+    } else if (statusFilter === 'ANSWERED') {
+      list = list.filter(s => s.user_response_status === 'VALIDATED');
+    } else {
+      // statusFilter === 'ALL'
+      if (this.state.hideFinished) {
+        list = list.filter(s => {
+          const col = s.collected_responses || 0;
+          const tar = s.target_responses || 100;
+          const isFull = col >= tar;
+          const isClosed = s.status === 'COMPLETED' || s.status === 'CLOSED';
+          const isUserDone = s.user_response_status === 'VALIDATED';
+          return !isFull && !isClosed && !isUserDone;
+        });
+      }
     }
 
     if (catCode && catCode !== 'ALL') {
@@ -3221,6 +3344,13 @@ if (totalCount === 0) {
   setCategoryFilter(cat) {
     this.haptic('light');
     this.state.categoryFilter = cat;
+    this.state.surveysCurrentPage = 1;
+    this.renderSurveysView(document.getElementById('app-root'), false);
+  },
+
+  setSurveyStatusFilter(status) {
+    this.haptic('selection');
+    this.state.surveyStatusFilter = status || 'ALL';
     this.state.surveysCurrentPage = 1;
     this.renderSurveysView(document.getElementById('app-root'), false);
   },

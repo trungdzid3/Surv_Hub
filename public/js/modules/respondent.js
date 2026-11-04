@@ -151,8 +151,15 @@
     } catch (err) {
       localStorage.removeItem('survhub_active_session'); localStorage.removeItem('vibesurvey_active_session');
       this.state.activeSession = null;
-      if (err.message && err.message.includes('Bạn đã hoàn thành khảo sát')) {
+      if (err.message && (err.message.includes('hoàn thành') || err.message.includes('nhận thưởng rồi'))) {
         this.showToast('Bạn đã hoàn thành khảo sát này. Đang mở câu trả lời của bạn...', 'info');
+        if (Array.isArray(this.state.surveys)) {
+          const sObj = this.state.surveys.find(item => item.id === surveyId);
+          if (sObj) sObj.user_response_status = 'VALIDATED';
+          try {
+            sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(this.state.surveys));
+          } catch (e) {}
+        }
         await this.navigate('review-survey', { surveyId });
         return;
       }
@@ -2454,6 +2461,23 @@
         }
         this.applyUserInterface();
 
+        // Đồng bộ trạng thái đã làm ngay lập tức vào state và cache khảo sát
+        if (Array.isArray(this.state.surveys)) {
+          const sObj = this.state.surveys.find(item => item.id === surveyId);
+          if (sObj) {
+            sObj.user_response_status = 'VALIDATED';
+            sObj.collected_responses = (sObj.collected_responses || 0) + (isEditing ? 0 : 1);
+          }
+        }
+        try {
+          sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(this.state.surveys || []));
+        } catch (e) {}
+
+        // Tự động tải lại thông tin chuỗi ngày để cập nhật gate hoạt động 7 ngày mở Hộp Quà Cột Mốc
+        if (typeof this.fetchStreakInfo === 'function') {
+          this.fetchStreakInfo();
+        }
+
         if (isEditing || res.is_updated) {
           this.showToast('Cập nhật câu trả lời thành công!', 'success');
           await this.navigate('review-survey', { surveyId });
@@ -3483,26 +3507,33 @@
                       <tr>
                         <th class="py-3.5 px-5">Tên đề tài khảo sát</th>
                         <th class="py-3.5 px-4">Đơn vị / Tác giả</th>
-                        <th class="py-3.5 px-4">Thời gian nạp</th>
-                        <th class="py-3.5 px-4">Thưởng Xu</th>
-                        <th class="py-3.5 px-4">Trạng thái duyệt</th>
+                        <th class="py-3.5 px-4">Thời gian nộp</th>
+                        <th class="py-3.5 px-4">Thưởng Điểm</th>
+                        <th class="py-3.5 px-4">Trạng thái</th>
+                        <th class="py-3.5 px-4 text-right">Hành động</th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-stone-100 dark:divide-stone-800">
                       ${myParticipatedSurveys.map(item => `
                         <tr class="hover:bg-stone-50/50 dark:hover:bg-stone-900/40 transition-colors">
                           <td class="py-3.5 px-5 font-semibold text-stone-900 dark:text-white max-w-xs">
-                            <div class="font-bold text-stone-900 dark:text-white">${item.survey_title || 'Đề tài khảo sát'}</div>
+                            <div onclick="VibeApp.navigate('review-survey', { surveyId: '${item.survey_id}' })" class="font-bold text-stone-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer transition-colors">${this.escapeHtml(item.survey_title || 'Đề tài khảo sát')}</div>
                             <span class="text-stone-400 text-[11px]">Thời gian làm bài: ${item.duration_sec ? Math.round(item.duration_sec / 60) + ' phút' : 'N/A'}</span>
                           </td>
-                          <td class="py-3.5 px-4 text-stone-500">${item.creator_name || item.brand_name || 'Chủ nhiệm đề tài'}</td>
-                          <td class="py-3.5 px-4 text-stone-500">${item.submitted_at ? new Date(item.submitted_at).toLocaleDateString('vi-VN') : 'Mới đây'}</td>
-                          <td class="py-3.5 px-4 font-black font-mono text-orange-600 dark:text-orange-400">+${item.points_rewarded || 0} Xu</td>
+                          <td class="py-3.5 px-4 text-stone-500">${this.escapeHtml(item.creator_name || item.brand_name || 'Chủ nhiệm đề tài')}</td>
+                          <td class="py-3.5 px-4 text-stone-500 font-mono">${item.submitted_at ? new Date(item.submitted_at).toLocaleDateString('vi-VN') : 'Mới đây'}</td>
+                          <td class="py-3.5 px-4 font-black font-mono text-orange-600 dark:text-orange-400">+${(item.points_rewarded || 0).toLocaleString()} Điểm</td>
                           <td class="py-3.5 px-4">
-                            <span class="inline-flex items-center gap-1 ${item.response_status === 'REJECTED' ? 'text-orange-600 bg-orange-50 dark:bg-orange-950/60' : 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/60'} font-bold text-[11px] px-2.5 py-0.5 rounded-full">
+                            <span class="inline-flex items-center gap-1 ${item.response_status === 'REJECTED' ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/60' : 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60'} font-bold text-[11px] px-2.5 py-0.5 rounded-full">
                               <i data-lucide="${item.response_status === 'REJECTED' ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
                               ${item.response_status === 'REJECTED' ? 'Bị từ chối' : 'Đã nghiệm thu'}
                             </span>
+                          </td>
+                          <td class="py-3.5 px-4 text-right">
+                            <button onclick="VibeApp.navigate('review-survey', { surveyId: '${item.survey_id}' })" class="px-2.5 py-1.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-orange-50 dark:hover:bg-orange-950/40 text-stone-700 dark:text-stone-300 hover:text-orange-600 text-xs font-bold transition-all inline-flex items-center gap-1 active:scale-95 shadow-2xs" title="Xem lại câu trả lời">
+                              <i data-lucide="file-text" class="w-3.5 h-3.5 text-orange-600"></i>
+                              <span>Xem lại</span>
+                            </button>
                           </td>
                         </tr>
                       `).join('')}
