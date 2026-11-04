@@ -1,6 +1,6 @@
-# QUY TẮC CỐT LÕI (WORKSPACE RULES) - VIBESURVEY VIBE CODING STUDIO
+# QUY TẮC CỐT LÕI (WORKSPACE RULES) - SURVHUB VIBE CODING STUDIO
 
-Dự Án: Nền tảng Khảo sát Trực tuyến Kiếm Lợi Nhuận VibeSurvey (Web SPA & Android Native Capacitor).
+Dự Án: Nền tảng Khảo sát Trực tuyến Kiếm Lợi Nhuận SurvHub (Web SPA & Android Native Capacitor).
 Tài liệu quy chiếu SSOT:
 - `DESIGN.md` (Nguồn chân lý Giao diện UI/UX)
 - `KE_HOACH_TONG_THE.md` & `TUONG_LAI_HE_THONG.md` (Kinh tế & Kỹ thuật)
@@ -83,6 +83,22 @@ Tài liệu quy chiếu SSOT:
   - **Cấm Xung đột Ghi đè (Zero Race Condition)**: Tuyệt đối **KHÔNG để 2 Subagent cùng chỉnh sửa chung một file tại cùng một thời điểm**. Mỗi Subagent chỉ được toàn quyền thao tác trên các file, module hoặc endpoint độc lập được Lead Orchestrator phân định rõ ràng trong `task.md`.
 - **Phân công & Giám sát**: Agent chính (Lead Orchestrator) lên kế hoạch trong `task.md`, phân quyền danh sách file sở hữu cho từng Subagent (`.zcode/agents/*.md`), điều phối, tích hợp kết quả và tổng hợp báo cáo nghiệm thu; không tự làm hết trong luồng đơn lẻ.
 
+### 5A. Chiến Lược OpenCode CLI First & Quy Chuẩn Model Cho Phép
+- **Định vị CLI Portable**: `D:\AI-CLIs\OpenCode\opencode.exe`.
+- **Nguyên Tắc Ưu Tiên CLI First**:
+  - Ưu tiên sử dụng OpenCode CLI hơn hết cho các tác vụ coding chuyên sâu, kiểm thử, refactor hoặc batch fix độc lập nếu tác vụ đó CLI đảm bảo tính ổn định trong mức hoàn toàn chấp nhận được, dù tốc độ thực thi có thể thua thiệt subagent nội bộ một chút.
+  - Tận dụng thế mạnh của OpenCode CLI: Subprocess độc lập, không làm phình context chính của Lead Orchestrator, chạy bền bỉ ngoài phiên Desktop.
+- **Ràng Buộc Danh Mục Model Cho Phép (Model Whitelist)**:
+  - Chỉ cho phép sử dụng duy nhất **2 họ model** sau khi giao việc qua OpenCode CLI:
+    1. **Họ DeepSeek** (ví dụ: `opencode/deepseek-v4.1-flash-free` hoặc các biến thể DeepSeek chính thức).
+    2. **Họ GLM 5.3 Flash** (ví dụ: `opencode/glm-5.3-flash-free` hoặc các biến thể GLM Flash chính thức).
+  - **Cấm Tuyệt Đối**: Không tự ý chỉ định hoặc chuyển đổi sang các model ngoài 2 họ model nêu trên khi gọi OpenCode CLI.
+- **Cú pháp Lệnh Tự động Chuẩn trên Windows PowerShell**:
+  ```powershell
+  & 'D:\AI-CLIs\OpenCode\opencode.exe' run --model <opencode/deepseek-v4.1-flash-free | opencode/glm-5.3-flash-free> "Nội dung task chi tiết kèm Locked Files"
+  ```
+- **Quy Chuẩn Báo Cáo Ngắn Gọn (Handshake)**: OpenCode worker sau khi hoàn thành task chỉ trả về tóm tắt tối đa 10 dòng (Status, Modified Files, Syntax/QA, Summary), không xả raw log hoặc code thừa vào luồng chính.
+
 ### 6. Chu trình Thực thi Từ Kế hoạch Đến Bàn giao (Plan-to-Execution Workflow)
 - Khi nhận các lệnh thực thi (*"triển khai đi"*, *"tiến hành"*, *"làm đi"*), Agent tuân thủ 4 bước:
   1. **Nạp danh sách**: Đọc `task.md` lấy các việc chưa xong (`[ ]`).
@@ -147,7 +163,7 @@ Tài liệu quy chiếu SSOT:
 - Đảm bảo responsive hoàn hảo từ Mobile (375-393px), Tablet (768-820px) đến Desktop (1024-1920px).
 
 ### 14. Quy chế Tự động hóa Đồng bộ Git & GitHub (Git Auto-Sync Protocol)
-auto_github_sync: true # Dự án đã kết nối GitHub (trungdzid3/VibeSurvey). Tự động commit và push sau mỗi task hoàn tất.
+auto_github_sync: true # Dự án đã kết nối GitHub (trungdzid3/SurvHub). Tự động commit và push sau mỗi task hoàn tất.
 
 ### 15. Quy chế Tự động Cập nhật Sơ đồ Kiến trúc & Nghiệp vụ (Archify Auto-Sync Protocol)
 - Khi hoàn thành mỗi tính năng hoặc thay đổi logic nghiệp vụ cốt lõi (`server/services/`, `server/controllers/`, API contracts): Agent tự động cập nhật sơ đồ tương ứng bằng `archify` (lưu tại `.archify/` hoặc `docs/architecture/`).

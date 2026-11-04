@@ -1,6 +1,6 @@
-# QUY TẮC CỐT LÕI (CORE RULES) - VIBESURVEY VIBE CODING STUDIO
+# QUY TẮC CỐT LÕI (CORE RULES) - SURVHUB VIBE CODING STUDIO
 
-Dự Án: Nền tảng Khảo sát Trực tuyến Kiếm Lợi Nhuận VibeSurvey (Web SPA & Android Native Capacitor).
+Dự Án: Nền tảng Khảo sát Trực tuyến Kiếm Lợi Nhuận SurvHub (Web SPA & Android Native Capacitor).
 Tài liệu quy chiếu SSOT: `DESIGN.md` (Giao diện), `KE_HOACH_TONG_THE.md` & `TUONG_LAI_HE_THONG.md` (Kinh tế & Kỹ thuật), `PROJECT_CONTEXT.md` (Tiến trình).
 
 ---
@@ -54,11 +54,20 @@ Tài liệu quy chiếu SSOT: `DESIGN.md` (Giao diện), `KE_HOACH_TONG_THE.md` 
   - **Cấm Xung đột Ghi đè (Zero Race Condition)**: Tuyệt đối **KHÔNG để 2 Subagent cùng chỉnh sửa chung một file tại cùng một thời điểm**. Mỗi Subagent chỉ được toàn quyền thao tác trên các file, module hoặc endpoint độc lập được Lead Orchestrator phân định rõ ràng trong `task.md`.
 - **Phân công & Giám sát**: Agent chính (Lead Orchestrator) lên kế hoạch trong `task.md`, phân quyền danh sách file sở hữu cho từng Subagent (`.agent/*.md`), điều phối, tích hợp kết quả và tổng hợp báo cáo nghiệm thu; không tự làm hết trong luồng đơn lẻ.
 
-### 6A. Vai trò Bộ não và Định tuyến Thực thi của Lead Orchestrator
-- Lead Orchestrator chỉ đóng vai trò bộ não và điều phối: tự quyết định dùng subagent nội bộ, OpenCode CLI ưu tiên, hoặc subagent bên trong CLI dựa trên loại vấn đề, cùng các ưu nhược điểm của Desktop so với CLI.
-- Ưu tiên OpenCode CLI cho tác vụ coding hoặc test dài, tác vụ cần subprocess, hoặc cần chạy liên tục ngoài phiên Desktop.
-- Dùng subagent nội bộ cho phân tích cô lập, review, truy vết hoặc các nhiệm vụ cần tách context; dùng Antigravity/Desktop cho tương tác UI/browser hoặc khi cần duy trì session.
-- Lead Orchestrator chịu trách nhiệm phân rã task, khóa file, phân phạm vi không trùng lặp, tổng hợp kết quả và kiểm tra cuối cùng; không giao trùng phạm vi cho các agent.
+### 6A. Vai trò Bộ não và Định tuyến Thực thi của Lead Orchestrator (Chiến Lược OpenCode CLI First)
+- Lead Orchestrator đóng vai trò bộ não và điều phối: tự quyết định phân luồng công việc giữa OpenCode CLI, subagent nội bộ hoặc môi trường Desktop dựa trên tính chất tác vụ.
+- **Chiến Lược OpenCode CLI First**:
+  - Ưu tiên sử dụng OpenCode CLI hơn hết cho các tác vụ coding chuyên sâu, test dài, tái cấu trúc mã nguồn hoặc xử lý tác vụ độc lập nếu CLI đảm bảo độ ổn định trong mức hoàn toàn chấp nhận được, dù tốc độ thực thi có thể thua thiệt subagent nội bộ một chút.
+  - Tận dụng tối đa ưu thế tách biệt ngữ cảnh, subprocess độc lập và khả năng chạy bền bỉ ngoài phiên Desktop của OpenCode CLI.
+- **Ràng Buộc Danh Mục Model Cho Phép Trên OpenCode CLI**:
+  - Chỉ cho phép sử dụng duy nhất **2 họ model**:
+    1. **Họ DeepSeek** (ví dụ: `opencode/deepseek-v4.1-flash-free` hoặc các biến thể DeepSeek chính thức).
+    2. **Họ GLM 5.3 Flash** (ví dụ: `opencode/glm-5.3-flash-free` hoặc các biến thể GLM Flash chính thức).
+  - Tuyệt đối không tự ý cấu hình hay chuyển sang các model ngoài 2 họ này cho worker OpenCode CLI.
+- **Phân Định Vai Trò Các Môi Trường Còn Lại**:
+  - Subagent nội bộ: Dành cho phân tích cô lập, review chéo nhanh, truy vết logic tập trung mà không cần tương tác subprocess bên ngoài.
+  - Antigravity / Desktop: Dành cho tương tác UI/browser, kiểm thử trực quan hoặc thao tác cần duy trì session.
+- **Trách Nhiệm Phân Quyền & Bàn Giao**: Lead Orchestrator chịu trách nhiệm phân rã task, khóa file (`Locked Files`), phân phạm vi không trùng lặp, thu nhận báo cáo Handshake ngắn gọn tối đa 10 dòng và kiểm tra cú pháp/QA cuối cùng; không giao trùng phạm vi cho các worker.
 
 ### 7. Chu trình Thực thi Từ Kế hoạch Đến Bàn giao (Plan-to-Execution Workflow)
 - Khi nhận các lệnh thực thi (*"triển khai đi"*, *"tiến hành"*, *"làm đi"*), Agent tuân thủ 4 bước:
@@ -120,7 +129,7 @@ Tài liệu quy chiếu SSOT: `DESIGN.md` (Giao diện), `KE_HOACH_TONG_THE.md` 
 - Đảm bảo responsive hoàn hảo từ Mobile (375-393px), Tablet (768-820px) đến Desktop (1024-1920px).
 
 ### 15. Quy chế Tự động hóa Đồng bộ Git & GitHub (Git Auto-Sync Protocol)
-auto_github_sync: true # Dự án đã kết nối GitHub (trungdzid3/VibeSurvey). Tự động commit và push sau mỗi task hoàn tất.
+auto_github_sync: true # Dự án đã kết nối GitHub (trungdzid3/SurvHub). Tự động commit và push sau mỗi task hoàn tất.
 
 ### 16. Quy chế Tự động Cập nhật Sơ đồ Kiến trúc & Nghiệp vụ (Archify Auto-Sync Protocol)
 - Khi hoàn thành mỗi tính năng hoặc thay đổi logic nghiệp vụ cốt lõi (`server/services/`, `server/controllers/`, API contracts): Agent tự động cập nhật sơ đồ tương ứng bằng `archify` (lưu tại `.archify/` hoặc `docs/architecture/`).

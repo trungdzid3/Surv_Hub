@@ -21,7 +21,7 @@
 > **Bộ 3 Màu Chủ Đạo Bắt Buộc**: **CAM (Accent) - TRẮNG (Light Base) - ĐEN (Dark Base)**.  
 > Tuyệt đối không tự ý thêm các gam màu xanh ngọc (Teal), hổ phách (Amber), tím (Indigo/Violet), xanh neon chói lóa vào giao diện.
 
-### 2.1. Màu Điểm Nhấn Thương Hiệu (Brand Accent: Cam Vibe)
+### 2.1. Màu Điểm Nhấn Thương Hiệu (Brand Accent: Cam SurvHub)
 - **Primary Orange**: `#EA580C` (`orange-600`) - Sử dụng cho CTA chính, điểm thưởng, viền active, thanh tiến độ chính.
 - **Hover / Light Orange**: `#F97316` (`orange-500`) - Hiệu ứng hover nút bấm, highlight tương tác.
 - **Deep / Pressed Orange**: `#C2410C` (`orange-700`) - Trạng thái nhấn (active state), viền đậm.

@@ -1,11 +1,11 @@
-# GEMINI CONTEXT - VIBESURVEY PLATFORM (WEB & ANDROID NATIVE)
+# GEMINI CONTEXT - SURVHUB PLATFORM (WEB & ANDROID NATIVE)
 
 > **Thông Báo Phân Định Thứ Bậc Rules**:
 > Tệp Quy tắc Toàn cục cao nhất (Global Rules SSOT) được lưu tại `C:\Users\Lenovo\.gemini\GEMINI.md` áp dụng bắt buộc cho mọi phiên làm việc của AI Agent.
-> Tệp `.agent/GEMINI.md` này đóng vai trò ngữ cảnh nghiệp vụ chuyên biệt của riêng dự án VibeSurvey (Web SPA & Android Native Capacitor).
+> Tệp `.agent/GEMINI.md` này đóng vai trò ngữ cảnh nghiệp vụ chuyên biệt của riêng dự án SurvHub (Web SPA & Android Native Capacitor).
 
 ## Tổng quan dự án
-Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeSurvey** (Web Responsive & Android Capacitor Native):
+Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **SurvHub** (Web Responsive & Android Capacitor Native):
 1. **Dành cho Người trả lời (Respondent)**: Làm khảo sát nhận điểm thưởng (`1 Point = 1 VNĐ`), quy đổi thẻ cào điện thoại, ngân hàng VietQR/MoMo hoặc E-Voucher thương hiệu ngang giá.
 2. **Dành cho Người tạo khảo sát (Creator / Doanh nghiệp)**: Nạp `Credit` (`1 Credit = 1 VNĐ`, khóa van 1 chiều không rút ra tiền mặt), khóa quỹ ký quỹ (`Escrow`) theo 3 phân khúc rõ ràng (Sinh viên / Cá nhân / Doanh nghiệp) x 3 mức độ dài form (Ngắn / Vừa / Dài), thiết kế bài khảo sát với 12 loại câu hỏi, lọc đối tượng và đồng bộ Google Sheets webhook.
 3. **Mô hình Kinh tế học & Lợi nhuận (Unit Economics)**:
@@ -31,13 +31,17 @@ Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeS
 - `form-parser-specialist`: Phụ trách `server/services/formParserService.js`.
 - `anti-fraud-specialist`: Phụ trách `server/services/antiFraudService.js`.
 
-## Multi-Agent CLI qua OpenCode
+## Multi-Agent CLI qua OpenCode & Nguyên Tắc CLI First
+- **Nguyên tắc CLI First**: Ưu tiên hàng đầu việc sử dụng OpenCode CLI làm AI worker subprocess độc lập bất cứ khi nào CLI đảm bảo xử lý ổn định trong mức chấp nhận được, dù tốc độ phản hồi có thể chậm hơn một chút.
+- **Chỉ định Model cho phép**: Tuyệt đối không tùy tiện dùng model ngoài danh mục. CHỈ ĐƯỢC PHÉP sử dụng 2 họ model sau khi chạy OpenCode CLI:
+  1. Họ model **DeepSeek** (ví dụ: `opencode/deepseek-v4.1-flash-free`).
+  2. Họ model **GLM 5.3 Flash** (`opencode/glm-5.3-flash-free`).
 - **CLI OpenCode portable**: `D:\AI-CLIs\OpenCode\opencode.exe`.
 - **CLI Antigravity portable**: `D:\AI-CLIs\Antigravity\agy.exe`.
 - **Mục đích**: Dùng OpenCode như một worker AI subprocess độc lập để xử lý task được Lead Orchestrator phân công; không tự ý giao việc trùng file cho nhiều worker.
 - **Lệnh tự động chuẩn trên Windows PowerShell**:
   ```powershell
-  & 'D:\AI-CLIs\OpenCode\opencode.exe' run "Nội dung task cụ thể"
+  & 'D:\AI-CLIs\OpenCode\opencode.exe' run --model "opencode/deepseek-v4.1-flash-free" "Nội dung task cụ thể"
   ```
 - **Quy tắc prompt**: Prompt phải nêu rõ mục tiêu, repository, file được khóa, giới hạn không sửa file ngoài phạm vi, yêu cầu kiểm tra và định dạng báo cáo ngắn.
 - **Giao tiếp qua subprocess**: Có thể gọi executable bằng `System.Diagnostics.Process` hoặc Python `subprocess.Popen`, truyền prompt qua `stdin`, đọc `stdout` và `stderr`; phải đặt timeout và xử lý exit code khác `0`.
@@ -50,7 +54,7 @@ Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeS
 
 ## Vai trò Lead Orchestrator và nguyên tắc chọn worker
 - Lead Orchestrator chỉ đóng vai trò bộ não và điều phối: tự quyết định dùng subagent nội bộ, OpenCode CLI ưu tiên, hoặc subagent bên trong CLI dựa trên loại vấn đề, ưu nhược điểm giữa Desktop và CLI, cùng yêu cầu về thời lượng và môi trường thực thi.
-- **Ưu tiên OpenCode CLI** cho coding hoặc test dài, tác vụ cần subprocess, tiến trình độc lập, hoặc khả năng chạy liên tục ngoài phiên tương tác Desktop.
-- **Ưu tiên subagent nội bộ** cho phân tích cô lập, review, truy vết logic, hoặc các nhiệm vụ cần trả về một kết luận tập trung mà không cần tương tác môi trường bên ngoài.
-- **Ưu tiên Antigravity/Desktop** cho tương tác UI/browser, kiểm thử trực quan, thao tác cần session, hoặc các tác vụ phụ thuộc ngữ cảnh giao diện đang mở.
+- **Ưu tiên OpenCode CLI (CLI First)**: Lựa chọn ưu tiên hàng đầu cho coding chuyên sâu, refactor, kiểm thử dài hạn, tác vụ cần subprocess hoặc tiến trình độc lập, miễn là CLI đảm bảo chạy ổn định trong mức chấp nhận được (dù độ trễ có thể cao hơn đôi chút). Bắt buộc chỉ dùng 2 họ model: DeepSeek hoặc GLM 5.3 Flash.
+- **Ưu tiên subagent nội bộ**: Cho phân tích cô lập, review, truy vết logic, hoặc các nhiệm vụ cần trả về một kết luận tập trung mà không cần tương tác môi trường bên ngoài.
+- **Ưu tiên Antigravity/Desktop**: Cho tương tác UI/browser, kiểm thử trực quan, thao tác cần session, hoặc các tác vụ phụ thuộc ngữ cảnh giao diện đang mở.
 - Lead chịu trách nhiệm phân rã task, chốt contract, khóa file theo phạm vi, giao việc không trùng lặp, tổng hợp kết quả, kiểm tra syntax/QA và quyết định tích hợp cuối cùng. Không giao hai worker cùng một phạm vi hoặc cùng sửa một file đồng thời.

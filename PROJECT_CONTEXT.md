@@ -1,9 +1,9 @@
-# PROJECT CONTEXT: NỀN TẢNG KHẢO SÁT & ĐỔI ĐIỂM KIẾM LỢI NHUẬN (VIBESURVEY)
+# PROJECT CONTEXT: NỀN TẢNG KHẢO SÁT & ĐỔI ĐIỂM KIẾM LỢI NHUẬN (SURVHUB)
 
 > **Chính sách bảo trì file này (áp dụng từ 03-11-2026)**: Chỉ lưu giữ MỤC ĐÍCH, KIẾN TRÚC, GOTCHAS, HƯỚNG DẪN BÀN GIAO và CÁC VIỆC ĐANG MỞ. Mọi chi tiết sprint đã hoàn thành không ghi vào đây (git history là nơi lưu lịch sử). Việc nào giải quyết xong (user bảo xong / chuyển vấn đề khác) thì XÓA khỏi mục "Việc Đang Mở" ngay.
 
 ## 1. Mục Đích Cốt Lõi & Mô Hình Kinh Tế
-- **Tên dự án**: **VibeSurvey / SurvHub** (Nền tảng Khảo sát Trực tuyến Kiếm Điểm & Lợi Nhuận). Trạng thái: DEMO, chưa có pháp nhân, chưa kinh doanh.
+- **Tên dự án**: **SurvHub** (Nền tảng Khảo sát Trực tuyến Kiếm Điểm & Lợi Nhuận). Trạng thái: DEMO, chưa có pháp nhân, chưa kinh doanh.
 - **Mô hình thị trường 2 chiều**:
   1. **Respondent**: Làm khảo sát nhận Point (1 Point = 1 VNĐ), quy đổi thẻ cào / VietQR ngân hàng / MoMo / E-Voucher.
   2. **Creator / Doanh nghiệp**: Nạp Credit (1 Credit = 1 VNĐ, khóa van 1 chiều), ký quỹ Escrow theo 3 phân khúc (Sinh viên / Cá nhân / Doanh nghiệp) x độ dài form (Ngắn / Vừa / Dài).
@@ -113,10 +113,18 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 
 ### Thứ Bậc Đọc Rules & Nguồn Chân Lý Bắt Buộc
 - **Cấp 1 (Quy tắc Toàn cục Bắt buộc Cao nhất)**: `C:\Users\Lenovo\.gemini\GEMINI.md` (Global Rules SSOT cho mọi phiên làm việc).
-- **Cấp 2 (Quy tắc Workspace VibeSurvey)**: `AGENTS.md` và `.agent/rules.md`.
+- **Cấp 2 (Quy tắc Workspace SurvHub)**: `AGENTS.md` và `.agent/rules.md`.
 - **Cấp 3 (Nguồn chân lý Thiết kế UI/UX)**: `DESIGN.md`.
 - **Cấp 4 (Ngữ cảnh Tiến trình & Kiến trúc)**: `PROJECT_CONTEXT.md`.
 - **Cấp 5 (Ngữ cảnh Nghiệp vụ Cục bộ)**: `.agent/GEMINI.md`.
+
+### Nguyên Tắc Định Tuyến Worker (CLI First)
+- **Ưu tiên hàng đầu OpenCode CLI**: Luôn ưu tiên dùng OpenCode CLI làm AI worker subprocess để thực thi code, refactor và kiểm thử dài hạn bất cứ khi nào CLI đảm bảo xử lý ổn định trong mức chấp nhận được, dù tốc độ phản hồi có thể chậm hơn một chút.
+- **Chỉ sử dụng 2 họ model cho phép**:
+  1. Họ model **DeepSeek** (ví dụ: `opencode/deepseek-v4.1-flash-free`).
+  2. Họ model **GLM 5.3 Flash** (`opencode/glm-5.3-flash-free`).
+- **Subagent nội bộ**: Dùng cho phân tích cô lập, review nhanh hoặc tổng hợp kết quả khi cần tương tác trực tiếp trong phiên.
+- **Antigravity / Desktop**: Dành riêng cho tương tác UI, kiểm thử giao diện hoặc ngữ cảnh dev tools trực quan.
 
 ### Quy Trình Bàn Giao & Kiểm Tra
 - Trước khi bắt đầu: Đọc tuần tự theo thứ bậc rules ở trên.

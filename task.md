@@ -39,6 +39,19 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 - [x] Task B: Modal Dieu khoan mo tu footer van hien nut dong y dang ky -> them che do read-only (an dong "Bang viec bam xac nhan..." + nut [Dong]/[Toi Dong Y Dieu Khoan], chi giu nut X); giu nguyen luong dang ky (link trong checkbox dong 2640 van che do consent) | [Agent: terms-modal-fixer (senior-coder)] | [Locked Files: public/index.html (sua ngay), public/app.js (CHI sua sau khi Task A xong - duoc Lead mo khoa)]
 - [x] Task C: Tich hop nghiem thu: node -c, npm run sync:android, cap nhat PROJECT_CONTEXT.md, commit + push | [Agent: Lead Orchestrator] | [Locked Files: android/, PROJECT_CONTEXT.md]
 
+## SPRINT 04-11-2026: SURVHUB TIMO VIETQR & WEBHOOK AUTOMATION
+- [ ] Task T1: Xây dựng module vietQrService.js sinh mã VietQR NAPAS247 chuẩn EMVCo TLV + CRC16-CCITT in-process | [Agent: Subagent-VietQrCore] | [Skill: security-audit] | [Locked Files: server/services/vietQrService.js]
+- [ ] Task T2: Cập nhật config Timo (BIN 963388, STK 9021773148754, NGUYEN THANH TRUNG) và nâng cấp ledgerService.js tiền tố SURV, regex webhook và giữ nút nạp test | [Agent: Subagent-LedgerTimo] | [Skill: security-audit] | [Locked Files: server/config/index.js, server/services/ledgerService.js]
+- [ ] Task T3: Đảm bảo giao diện ví wallet-ledger.js hiển thị đúng thông tin Timo, mã SURV, render QR và giữ nguyên nút nạp test mô phỏng | [Agent: Subagent-WalletUI] | [Skill: design-taste-frontend] | [Locked Files: public/js/modules/wallet-ledger.js]
+- [ ] Task T4: Viết bộ kiểm thử hồi quy tests/test_timo_vietqr_webhook.js kiểm tra sinh mã VietQR, tạo đơn SURV, webhook khớp lệnh và nút nạp test | [Agent: Subagent-QA] | [Skill: security-audit] | [Locked Files: tests/test_timo_vietqr_webhook.js]
+- [ ] Task T5: Lead Orchestrator: Syntax verification, npm test 25 tầng, sync Android, cập nhật PROJECT_CONTEXT.md và xuất tài liệu hướng dẫn cấu hình Render/Google Apps Script | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, task.md]
+
+## SPRINT 04-11-2026: SURVHUB REBRANDING & OPENCODE CLI FIRST POLICY
+- [x] Task N1: Cập nhật C:\Users\Lenovo\.gemini\GEMINI.md bổ sung quy tắc ưu tiên OpenCode CLI hơn hết (CLI First) và chỉ định 2 họ model cho phép: DeepSeek và GLM 5.3 Flash, đồng bộ tên dự án SurvHub | [Agent: Subagent-GlobalRuleSync] | [Skill: writing-guidelines] | [Locked Files: C:/Users/Lenovo/.gemini/GEMINI.md]
+- [x] Task N2: Đồng bộ tên dự án SurvHub và quy tắc OpenCode CLI First (DeepSeek / GLM 5.3 Flash) trong PROJECT_CONTEXT.md và .agent/GEMINI.md | [Agent: Subagent-ContextSurvHubSync] | [Skill: writing-guidelines] | [Locked Files: PROJECT_CONTEXT.md, .agent/GEMINI.md]
+- [x] Task N3: Đồng bộ tên dự án SurvHub và quy tắc OpenCode CLI First trong AGENTS.md, .agent/rules.md và DESIGN.md | [Agent: Subagent-WorkspaceSurvHubSync] | [Skill: writing-guidelines] | [Locked Files: AGENTS.md, .agent/rules.md, DESIGN.md]
+- [x] Task N4: Lead Orchestrator tích hợp, rà soát diff, kiểm tra cú pháp và commit GitHub theo auto_github_sync | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: task.md]
+
 ## SPRINT 04-11-2026: GLOBAL & WORKSPACE RULES UNIFICATION
 - [x] Task R1: Đồng bộ các phần bổ sung từ .agent/GEMINI.md lên C:\Users\Lenovo\.gemini\GEMINI.md toàn cục (Multi-Agent CLI qua OpenCode/Antigravity D:\AI-CLIs\, nguyên tắc chọn worker cho Lead Orchestrator, và Major Overhaul Backup Protocol) | [Agent: Subagent-GlobalRuleSync] | [Skill: writing-guidelines] | [Locked Files: C:/Users/Lenovo/.gemini/GEMINI.md]
 - [x] Task R2: Cập nhật PROJECT_CONTEXT.md và tinh chỉnh .agent/GEMINI.md chỉ thị rõ thứ bậc SSOT và các tệp rule mà AI bắt buộc phải đọc | [Agent: Subagent-ContextRuleDoc] | [Skill: writing-guidelines] | [Locked Files: PROJECT_CONTEXT.md, .agent/GEMINI.md]
