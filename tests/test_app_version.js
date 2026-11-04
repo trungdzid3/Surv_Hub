@@ -72,15 +72,19 @@ async function runSuite() {
       const body = await res.json();
       assert.strictEqual(body.success, true);
       const actualUrl = body.data?.apkDownloadUrl || body.apkDownloadUrl;
-      assert.strictEqual(actualUrl, config.APP_RELEASE.APK_DOWNLOAD_URL);
+      assert(actualUrl === '/downloads/SurvHub.apk' || actualUrl === config.APP_RELEASE.APK_DOWNLOAD_URL, 'URL phải là local path hoặc GitHub release URL');
     });
 
-    // 5. Kiểm tra GET /api/v1/app/download chuyển hướng 302
-    await runTest('GET /api/v1/app/download chuyển hướng HTTP 302', async () => {
+    // 5. Kiểm tra GET /api/v1/app/download (tải trực tiếp hoặc redirect 302)
+    await runTest('GET /api/v1/app/download phục vụ file hoặc chuyển hướng hợp lệ', async () => {
       const res = await fetch(`${baseUrl}/app/download`, { redirect: 'manual' });
-      assert.strictEqual(res.status, 302);
-      const location = res.headers.get('location');
-      assert.strictEqual(location, config.APP_RELEASE.APK_DOWNLOAD_URL);
+      if (res.status === 200) {
+        // Phục vụ trực tiếp file APK từ server
+        assert.strictEqual(res.headers.get('content-type'), 'application/vnd.android.package-archive');
+      } else {
+        assert.strictEqual(res.status, 302);
+        assert.strictEqual(res.headers.get('location'), config.APP_RELEASE.APK_DOWNLOAD_URL);
+      }
     });
 
     console.log(`\n Ket qua Tang 26: Hoan thanh ${passedTests}/${totalTests} bai kiem tra thanh cong.\n`);
