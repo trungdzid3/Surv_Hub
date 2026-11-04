@@ -3832,22 +3832,12 @@ if (totalCount === 0) {
   },
 
   initAndroidAppBanner() {
+    // Đã chuyển liên kết tải APK xuống bottom bar footer (chỉ desktop), loại bỏ banner trên mobile
     const bannerEl = document.getElementById('android-apk-banner');
-    if (!bannerEl) return;
-    const isAndroidBrowser = /Android/i.test(navigator.userAgent) && !this._isAndroidCapacitor();
-    const isDismissed = sessionStorage.getItem('survhub_apk_banner_dismissed') === '1';
-    if (isAndroidBrowser && !isDismissed) {
-      bannerEl.classList.remove('hidden');
-      if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
-      }
-    } else {
-      bannerEl.classList.add('hidden');
-    }
+    if (bannerEl) bannerEl.classList.add('hidden');
   },
 
   dismissAndroidApkBanner() {
-    sessionStorage.setItem('survhub_apk_banner_dismissed', '1');
     const b = document.getElementById('android-apk-banner');
     if (b) b.classList.add('hidden');
   },

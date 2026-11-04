@@ -2959,41 +2959,48 @@
             <div id="security-feedback" class="mt-5 min-h-5 text-sm" role="status" aria-live="polite"></div>
           </section>
 
-          <!-- CARD ỨNG DỤNG SURVHUB DI ĐỘNG -->
-          <section class="bg-white dark:bg-[#18181B] rounded-2xl border border-stone-200 dark:border-stone-800 p-5 sm:p-7">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div class="space-y-1.5">
-                <div class="flex items-center gap-2">
-                  <span class="w-8 h-8 rounded-xl bg-orange-600/10 border border-orange-500/30 flex items-center justify-center text-orange-600 dark:text-orange-400 shrink-0">
-                    <i data-lucide="smartphone" class="w-4 h-4"></i>
-                  </span>
-                  <h2 class="text-xl font-black text-stone-900 dark:text-white tracking-tight">Ứng dụng SurvHub Di động</h2>
+          <!-- CARD ỨNG DỤNG SURVHUB & CẬP NHẬT -->
+          <section class="bg-white dark:bg-[#18181B] rounded-2xl border border-stone-200/80 dark:border-stone-800 p-5 sm:p-7 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-orange-500/10 dark:bg-orange-950/40 border border-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 shrink-0">
+                  <i data-lucide="smartphone" class="w-5 h-5"></i>
                 </div>
-                <p class="text-sm leading-6 text-stone-600 dark:text-stone-300 max-w-2xl">
-                  Trải nghiệm nền tảng khảo sát mượt mà trên thiết bị Android, nhận thông báo đẩy tức thì và chống gián đoạn phiên làm việc.
-                </p>
+                <div>
+                  <h2 class="text-lg sm:text-xl font-black text-stone-900 dark:text-white tracking-tight">Ứng Dụng SurvHub & Cập Nhật</h2>
+                  <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400">Quản lý phiên bản ứng dụng và kiểm tra bản phát hành mới nhất</p>
+                </div>
               </div>
-              <span class="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${isAndroidApp ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800' : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700'}">
+              <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold self-start sm:self-auto shrink-0 ${isAndroidApp ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800' : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700'}">
                 <span class="w-2 h-2 rounded-full ${isAndroidApp ? 'bg-orange-600 animate-pulse' : 'bg-stone-400'}"></span>
-                ${isAndroidApp ? 'Đang chạy trên Ứng dụng SurvHub Android Native' : 'Đang truy cập qua Web Browser'}
+                ${isAndroidApp ? `
+                  <i data-lucide="check-circle" class="w-3.5 h-3.5 text-orange-600 dark:text-orange-400"></i>
+                  <span>Ứng dụng Android Native</span>
+                ` : `
+                  <span>Bản Web Trực Tuyến</span>
+                `}
               </span>
             </div>
 
-            <div class="mt-6 pt-5 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div class="text-xs text-stone-500 dark:text-stone-400 space-y-1">
-                <p class="font-bold text-stone-800 dark:text-stone-200">Phiên bản hiện tại: <span class="font-mono text-orange-600 dark:text-orange-400">v1.0.0</span></p>
-                <p>${isAndroidApp ? 'Kiểm tra phiên bản mới từ máy chủ phân phối APK chính thức.' : 'Tải tệp tin APK Android để cài đặt trực tiếp trên điện thoại của bạn.'}</p>
+            <div class="mt-5 pt-5 border-t border-stone-100 dark:border-stone-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-xs text-stone-600 dark:text-stone-400">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-stone-700 dark:text-stone-300">Phiên bản hiện tại:</span>
+                  <span class="px-2.5 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 font-mono font-bold text-orange-600 dark:text-orange-400 text-xs">v1.0.0</span>
+                </div>
+                <span class="hidden sm:inline text-stone-300 dark:text-stone-700">•</span>
+                <span>${isAndroidApp ? 'Kiểm tra phiên bản mới từ máy chủ phân phối APK chính thức.' : 'Tải tệp tin APK Android để cài đặt trực tiếp trên điện thoại của bạn.'}</span>
               </div>
 
               ${isAndroidApp ? `
-                <button type="button" onclick="VibeApp.checkAppUpdate(true)" class="min-h-11 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shadow-xs">
+                <button type="button" onclick="VibeApp.checkAppUpdate(true)" class="w-full sm:w-auto min-h-11 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.98]">
                   <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                  <span>Kiểm tra Bản Cập Nhật Mới</span>
+                  <span>Kiểm tra cập nhật</span>
                 </button>
               ` : `
-                <a href="/api/v1/app/download" target="_blank" rel="noopener" class="min-h-11 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors cursor-pointer shadow-xs">
+                <a href="/api/v1/app/download" target="_blank" rel="noopener" class="w-full sm:w-auto min-h-11 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.98]">
                   <i data-lucide="download" class="w-4 h-4"></i>
-                  <span>Tải Bản Cài Đặt Android .APK</span>
+                  <span>Tải APK Android (v1.0.0)</span>
                 </a>
               `}
             </div>
