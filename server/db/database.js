@@ -491,6 +491,9 @@ function initSchema() {
       max_streak INTEGER DEFAULT 0,
       last_checkin_date TEXT,
       total_points_earned INTEGER DEFAULT 0,
+      streak_freezes_count INTEGER NOT NULL DEFAULT 0,
+      claimed_milestones_json TEXT NOT NULL DEFAULT '[]',
+      last_freeze_used_at TEXT,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -818,8 +821,47 @@ function initSchema() {
     'ALTER TABLE forum_comments ADD COLUMN is_audited INTEGER DEFAULT 0;',
     'CREATE INDEX IF NOT EXISTS idx_forum_posts_audited ON forum_posts(is_audited, is_hidden);',
     'CREATE INDEX IF NOT EXISTS idx_forum_comments_audited ON forum_comments(is_audited, is_hidden);',
-    'CREATE TABLE IF NOT EXISTS media_storage (id TEXT PRIMARY KEY, mime_type TEXT NOT NULL, file_data BLOB NOT NULL, file_size INTEGER NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);'
+    'CREATE TABLE IF NOT EXISTS media_storage (id TEXT PRIMARY KEY, mime_type TEXT NOT NULL, file_data BLOB NOT NULL, file_size INTEGER NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);',
+    // --- Migration Streak Benefits (KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md): 3 cột Vé Cứu Chuỗi + Hộp Quà Cột Mốc ---
+    'ALTER TABLE daily_streaks ADD COLUMN streak_freezes_count INTEGER NOT NULL DEFAULT 0;',
+    'ALTER TABLE daily_streaks ADD COLUMN claimed_milestones_json TEXT NOT NULL DEFAULT \'[]\';',
+    'ALTER TABLE daily_streaks ADD COLUMN last_freeze_used_at TEXT DEFAULT NULL;'
   ];
+
+  // Migration rebuild point_transactions: mở rộng CHECK constraint tx_type thêm 2 loại Streak
+  // (SQLite không ALTER CHECK -> rebuild bảng có GUARD idempotent theo nội dung sqlite_master)
+  try {
+    const existingCheck = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'point_transactions'").get();
+    if (existingCheck && existingCheck.sql && !existingCheck.sql.includes('STREAK_MILESTONE_REWARD')) {
+      db.exec('BEGIN IMMEDIATE TRANSACTION');
+      try {
+        db.exec(`
+          CREATE TABLE point_transactions_streak_v2 (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id),
+            reference_id TEXT,
+            tx_type TEXT NOT NULL CHECK(tx_type IN ('DEPOSIT_CREDIT', 'ESCROW_LOCK', 'ESCROW_REFUND', 'SURVEY_REWARD', 'PAYOUT_DEDUCT', 'PAYOUT_REFUND', 'POINT_TO_CREDIT_SWAP', 'STREAK_MILESTONE_REWARD', 'STREAK_SURVEY_BONUS')),
+            currency TEXT NOT NULL CHECK(currency IN ('VND', 'POINT')),
+            amount REAL NOT NULL,
+            balance_after REAL NOT NULL,
+            description TEXT,
+            metadata_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        db.exec('INSERT INTO point_transactions_streak_v2 (id, user_id, reference_id, tx_type, currency, amount, balance_after, description, metadata_json, created_at) SELECT id, user_id, reference_id, tx_type, currency, amount, balance_after, description, metadata_json, created_at FROM point_transactions;');
+        db.exec('DROP TABLE point_transactions;');
+        db.exec('ALTER TABLE point_transactions_streak_v2 RENAME TO point_transactions;');
+        db.exec('COMMIT');
+        console.log('[DB Migration] point_transactions da duoc rebuild mo rong CHECK tx_type (Streak Benefits).');
+      } catch (rebuildErr) {
+        db.exec('ROLLBACK');
+        throw rebuildErr;
+      }
+    }
+  } catch (checkErr) {
+    console.error('[DB Migration] Loi kiem tra/rebuild point_transactions:', checkErr.message);
+  }
 
   for (const sql of migrations) {
     try {

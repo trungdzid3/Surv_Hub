@@ -170,6 +170,12 @@ const testSuites = [
     name: 'Tầng 26: Android APK Release & In-App Update Suite',
     description: 'Kiểm tra endpoint phiên bản ứng dụng, hợp đồng dữ liệu và chuyển hướng tải APK',
     file: 'test_app_version.js'
+  },
+  {
+    id: 27,
+    name: 'Tầng 27: Streak Benefits Suite (Bonus + Hộp Quà + Vé Cứu Chuỗi)',
+    description: 'Kiểm tra Freeze Engine lazy, claim milestone ACID chống farm, bonus khảo sát 2 dòng sổ cái và trần vé',
+    file: 'test_streak_benefits.js'
   }
 ];
 

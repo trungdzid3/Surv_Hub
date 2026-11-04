@@ -1,7 +1,7 @@
 # KẾ HOẠCH TRIỂN KHAI: HỆ THỐNG ƯU ĐÃI & ĐẶC QUYỀN CHUỖI ĐIỂM DANH TIKTOK STREAK
 **Dự án**: SurvHub Platform (Web SPA & Android Native Capacitor)  
 **Tài liệu tham chiếu**: `DESIGN.md`, `PROJECT_CONTEXT.md`, `public/js/modules/modalsTerms.js`  
-**Trạng thái**: Đã chốt đặc tả nghiệp vụ, sẵn sàng bàn giao cho IDE/Worker triển khai code.
+**Trạng thái**: ĐÃ TRIỂN KHAI XONG (04-11-2026) — npm test 27/27 PASS. Hiệu chỉnh so với bản đặc tả gốc: (1) Hộp Quà Cột Mốc có thêm GATE chống farm (cần >= 1 phản hồi VALIDATED trong 7 ngày gần nhất, cấu hình `MILESTONE_ACTIVITY_GATE_DAYS`); (2) "Ưu tiên duyệt rút 15 phút" mốc 200 ngày CHƯA bật (payout đang duyệt thủ công, không cam kết SLA khi chưa có queue tự động); (3) Bonus chỉ áp khi chuỗi còn sống (điểm danh hôm nay hoặc hôm qua), chặn người bỏ quên chuỗi vẫn hưởng tier cũ; (4) Vé Cứu Chuỗi dùng cơ chế lazy-evaluation tại checkin (gap 2 ngày = 1 vé, gap 3 ngày = 2 vé, gap > 3 = reset), không cần cron job; (5) Danh hiệu/Khung Avatar mốc 100/200 lưu metadata trong sổ cái, hiển thị danh hiệu chính thức chờ module hồ sơ bổ sung.
 
 ---
 
@@ -138,9 +138,9 @@ const totalCreditToUser = baseReward + streakBonusPoints;
 
 ## 7. CHECKLIST NGHIỆM THU CHO WORKER / IDE TIẾP THEO
 
-- [ ] 1. Chạy migration thêm 3 cột vào bảng `daily_streaks` trong `server/database.js`.
-- [ ] 2. Viết hàm kiểm tra và kích hoạt Vé Đóng Băng Tự Động (Auto-Freeze) khi user login/check-in.
-- [ ] 3. Tạo endpoint `POST /users/streak-claim-milestone` với kiểm soát Transaction ACID và Ledger chống nhận trùng.
-- [ ] 4. Bổ sung `bonusPercent` trong luồng cộng điểm hoàn thành khảo sát tại `surveyController.js`.
-- [ ] 5. Cập nhật UI Modal `openStreakModal` hiển thị Vé Cứu Chuỗi và danh sách Hộp Quà Cột Mốc.
-- [ ] 6. Chạy `npm test` (đảm bảo vượt qua 26/26 Suites), chạy `npm run sync:android`, bump cache-buster và commit Git.
+- [x] 1. Chạy migration thêm 3 cột vào bảng `daily_streaks` trong `server/database.js`.
+- [x] 2. Viết hàm kiểm tra và kích hoạt Vé Đóng Băng Tự Động (Auto-Freeze) khi user login/check-in.
+- [x] 3. Tạo endpoint `POST /users/streak-claim-milestone` với kiểm soát Transaction ACID và Ledger chống nhận trùng.
+- [x] 4. Bổ sung `bonusPercent` trong luồng cộng điểm hoàn thành khảo sát tại `surveyController.js`.
+- [x] 5. Cập nhật UI Modal `openStreakModal` hiển thị Vé Cứu Chuỗi và danh sách Hộp Quà Cột Mốc.
+- [x] 6. Chạy `npm test` (đảm bảo vượt qua 26/26 Suites), chạy `npm run sync:android`, bump cache-buster và commit Git.

@@ -55,6 +55,7 @@ router.put('/auth/enterprise-profile', authenticateToken, (req, res) => authCont
 // === Tuyến Đường Điểm Danh Hàng Ngày & Chuỗi Ngày (Daily Streaks Gamification) ===
 router.get('/users/streak-info', authenticateToken, (req, res) => userController.getStreakInfo(req, res));
 router.post('/users/checkin', authenticateToken, (req, res) => userController.checkin(req, res));
+router.post('/users/streak-claim-milestone', authenticateToken, (req, res) => userController.claimMilestone(req, res));
 
 // === Tuyến Đường Thống Kê Nền Tảng Công Khai (Zero Fake Metrics) ===
 router.get('/public/stats', (req, res) => surveyController.getPublicStats(req, res));

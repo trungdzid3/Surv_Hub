@@ -2465,9 +2465,29 @@
               </div>
 
               ${res.pointsEarned > 0 ? `
-                <div class="p-3.5 bg-orange-50/50 dark:bg-stone-800 border border-orange-200/80 dark:border-stone-700 rounded-xl text-xs flex justify-between font-bold text-slate-800 dark:text-slate-200">
-                  <span>Điểm thưởng đã cộng:</span>
-                  <span class="text-orange-600 font-mono text-sm">+${res.pointsEarned.toLocaleString()} Point</span>
+                <div class="p-3.5 bg-orange-50/50 dark:bg-stone-800 border border-orange-200/80 dark:border-stone-700 rounded-xl text-xs space-y-1.5 font-bold text-slate-800 dark:text-slate-200">
+                  ${res.streak_bonus_points > 0 ? `
+                    <div class="flex justify-between">
+                      <span>Thù lao khảo sát:</span>
+                      <span class="text-orange-600 font-mono text-sm">+${(res.base_points_earned || 0).toLocaleString()} Point</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                      <span class="flex items-center gap-1">
+                        <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-500"></i>
+                        <span>Thưởng Chuỗi ${res.streak_tier_name || ''} (+${res.streak_bonus_percent || 0}%):</span>
+                      </span>
+                      <span class="text-orange-600 font-mono text-sm">+${res.streak_bonus_points.toLocaleString()} Point</span>
+                    </div>
+                    <div class="border-t border-orange-200/80 dark:border-stone-700 pt-1.5 flex justify-between">
+                      <span>Tổng nhận được:</span>
+                      <span class="text-orange-600 font-mono text-sm">+${res.pointsEarned.toLocaleString()} Point</span>
+                    </div>
+                  ` : `
+                    <div class="flex justify-between">
+                      <span>Điểm thưởng đã cộng:</span>
+                      <span class="text-orange-600 font-mono text-sm">+${res.pointsEarned.toLocaleString()} Point</span>
+                    </div>
+                  `}
                 </div>
               ` : ''}
 

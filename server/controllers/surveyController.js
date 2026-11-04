@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const db = require('../db/database');
+const config = require('../config');
 const pricingService = require('../services/pricingService');
 const antiFraudService = require('../services/antiFraudService');
 const ledgerService = require('../services/ledgerService');
@@ -1992,12 +1993,46 @@ class SurveyController {
         }
 
         // 2. Trường hợp Khảo sát trả Điểm hoặc Hybrid (Điểm + Voucher)
+
+        // 2a. Thưởng chuỗi điểm danh (Streak Bonus - KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md):
+        // hệ số % theo cấp ngọn lửa, chỉ áp khi chuỗi còn sống (điểm danh hôm nay hoặc hôm qua),
+        // sàn trả từ biên take rate — escrow creator chỉ giảm đúng cost_per_response.
+        let streakBonusPoints = 0;
+        let streakTierName = null;
+        let streakBonusPercent = 0;
+        try {
+          const streakRow = db.prepare('SELECT current_streak, last_checkin_date FROM daily_streaks WHERE user_id = ?').get(user.id);
+          if (streakRow && streakRow.current_streak > 0 && streakRow.last_checkin_date) {
+            const vnToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+            const [sy, sm, sd] = vnToday.split('-').map(Number);
+            const vnYesterdayDate = new Date(Date.UTC(sy, sm - 1, sd, 12, 0, 0));
+            vnYesterdayDate.setUTCDate(vnYesterdayDate.getUTCDate() - 1);
+            const vnYesterday = vnYesterdayDate.toISOString().slice(0, 10);
+
+            const chainAlive = streakRow.last_checkin_date === vnToday || streakRow.last_checkin_date === vnYesterday;
+            if (chainAlive) {
+              const tiers = (config.ECONOMICS.STREAK && config.ECONOMICS.STREAK.BONUS_TIERS) || [];
+              const tier = tiers.find(t => streakRow.current_streak >= t.minDay);
+              if (tier && tier.percent > 0) {
+                streakBonusPercent = tier.percent;
+                streakBonusPoints = Math.floor((survey.reward_points_per_response * tier.percent) / 100);
+                streakTierName = tier.tierName;
+              }
+            }
+          }
+        } catch (streakErr) {
+          // Bonus là phụ thu sàn, lỗi tính toán không được chặn việc trả thưởng gốc
+          console.error('Lỗi tính Streak Bonus:', streakErr.message);
+        }
+
         const rewardResult = ledgerService.rewardSurveyCompletion(
           survey.id,
           user.id,
           response.id,
           survey.reward_points_per_response,
-          survey.cost_per_response
+          survey.cost_per_response,
+          streakBonusPoints,
+          streakTierName
         );
 
         let voucherClaim = null;
@@ -2005,13 +2040,18 @@ class SurveyController {
           voucherClaim = voucherService.claimVoucherForResponse(survey.id, survey.sponsor_campaign_id, user.id, response.id);
         }
 
+        const totalPointsEarned = survey.reward_points_per_response + streakBonusPoints;
         return res.json({
           success: true,
           status: 'VALIDATED',
           message: voucherClaim && voucherClaim.claimed
             ? 'Khảo sát hoàn thành xuất sắc! Bạn đã nhận được điểm thưởng và mã voucher quà tặng.'
             : 'Khảo sát hoàn thành xuất sắc! Bạn đã nhận được điểm thưởng.',
-          pointsEarned: survey.reward_points_per_response,
+          pointsEarned: totalPointsEarned,
+          base_points_earned: survey.reward_points_per_response,
+          streak_bonus_points: streakBonusPoints,
+          streak_bonus_percent: streakBonusPercent,
+          streak_tier_name: streakBonusPoints > 0 ? streakTierName : null,
           qualityScore: evalResult.qualityScore,
           newPointBalance: rewardResult.newPointBalance,
           voucherReward: voucherClaim && voucherClaim.claimed ? voucherClaim.voucher : null

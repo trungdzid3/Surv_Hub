@@ -331,10 +331,14 @@ class LedgerService {
    * Trả điểm thưởng cho Respondent từ quỹ ký quỹ của khảo sát
    * Đảm bảo tính nguyên tử: Chống cộng điểm kép (Double Reward Race Condition),
    * bảo đảm không vượt quá số lượng mẫu mục tiêu (target_responses).
+   * Tham số mở rộng Streak (KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md):
+   * - streakBonusPoints: thưởng thêm % theo cấp ngọn lửa (sàn trả từ biên take rate, escrow KHÔNG đổi)
+   * - streakTierName: tên cấp bậc phục vụ mô tả sổ cái
    */
-  rewardSurveyCompletion(surveyId, respondentId, responseId, pointsReward, costPerResponseVnd) {
+  rewardSurveyCompletion(surveyId, respondentId, responseId, pointsReward, costPerResponseVnd, streakBonusPoints = 0, streakTierName = null) {
     const points = Math.floor(Number(pointsReward));
     const cost = Number(costPerResponseVnd);
+    const bonus = Math.max(0, Math.floor(Number(streakBonusPoints) || 0));
     if (!Number.isFinite(points) || points <= 0) throw new Error('Điểm thưởng không hợp lệ');
     if (!Number.isFinite(cost) || cost < 0) throw new Error('Chi phí mẫu không hợp lệ');
 
@@ -350,10 +354,10 @@ class LedgerService {
 
       // 2. CHỐT CHẶN CHỐNG DOUBLE REWARD: Cập nhật bài làm với điều kiện status != 'VALIDATED' hoặc points_rewarded = 0
       const updateResp = db.prepare(`
-        UPDATE responses 
-        SET status = 'VALIDATED', points_rewarded = ?, submitted_at = CURRENT_TIMESTAMP 
+        UPDATE responses
+        SET status = 'VALIDATED', points_rewarded = ?, submitted_at = CURRENT_TIMESTAMP
         WHERE id = ? AND respondent_id = ? AND (status != 'VALIDATED' OR points_rewarded = 0)
-      `).run(points, responseId, respondentId);
+      `).run(points + bonus, responseId, respondentId);
 
       if (updateResp.changes === 0) {
         throw new Error('Bài làm khảo sát này đã được trả thưởng hoặc đã được xử lý trước đó');
@@ -365,8 +369,8 @@ class LedgerService {
       const newSurveyStatus = newCollected >= survey.target_responses ? 'COMPLETED' : 'ACTIVE';
 
       const updateSurvey = db.prepare(`
-        UPDATE surveys 
-        SET escrow_locked_balance = ?, collected_responses = collected_responses + 1, status = ?, updated_at = CURRENT_TIMESTAMP 
+        UPDATE surveys
+        SET escrow_locked_balance = ?, collected_responses = collected_responses + 1, status = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ? AND collected_responses < target_responses
       `).run(newEscrowBalance, newSurveyStatus, surveyId);
 
@@ -374,12 +378,12 @@ class LedgerService {
         throw new Error('Khảo sát đã đạt đủ số lượng mẫu mục tiêu trong lúc xử lý');
       }
 
-      // 4. Cộng điểm cho người làm khảo sát một cách nguyên tử
+      // 4. Cộng điểm cho người làm khảo sát một cách nguyên tử (gồm thưởng chuỗi)
       const updateUser = db.prepare(`
-        UPDATE users 
-        SET point_balance = point_balance + ?, trust_score = MIN(100.0, trust_score + 0.5) 
+        UPDATE users
+        SET point_balance = point_balance + ?, trust_score = MIN(100.0, trust_score + 0.5)
         WHERE id = ?
-      `).run(points, respondentId);
+      `).run(points + bonus, respondentId);
 
       if (updateUser.changes === 0) {
         throw new Error('Người làm khảo sát không tồn tại');
@@ -388,15 +392,115 @@ class LedgerService {
       const updatedUser = db.prepare('SELECT point_balance FROM users WHERE id = ?').get(respondentId);
       const newPointBalance = updatedUser.point_balance;
 
-      // 5. Ghi log sổ cái kế toán kép
+      // 5. Ghi log sổ cái kế toán kép (2 dòng: thưởng gốc + thưởng chuỗi nếu có)
       const txId = crypto.randomUUID();
+      const balanceAfterBase = newPointBalance - bonus;
       db.prepare(`
         INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
         VALUES (?, ?, ?, 'SURVEY_REWARD', 'POINT', ?, ?, ?)
-      `).run(txId, respondentId, responseId, points, newPointBalance, `Thưởng hoàn thành khảo sát: ${surveyId}`);
+      `).run(txId, respondentId, responseId, points, balanceAfterBase, `Thưởng hoàn thành khảo sát: ${surveyId}`);
+
+      if (bonus > 0) {
+        const txBonusId = crypto.randomUUID();
+        const tierLabel = streakTierName ? ` [${streakTierName}]` : '';
+        db.prepare(`
+          INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
+          VALUES (?, ?, ?, 'STREAK_SURVEY_BONUS', 'POINT', ?, ?, ?)
+        `).run(txBonusId, respondentId, responseId, bonus, newPointBalance, `Thưởng chuỗi điểm danh${tierLabel} cho khảo sát: ${surveyId}`);
+      }
 
       db.exec('COMMIT');
-      return { success: true, newPointBalance, pointsReward: points, surveyStatus: newSurveyStatus };
+      return { success: true, newPointBalance, pointsReward: points, streakBonusPoints: bonus, surveyStatus: newSurveyStatus };
+    } catch (err) {
+      this._safeRollback();
+      throw err;
+    }
+  }
+
+  /**
+   * Nhận Hộp Quà Cột Mốc chuỗi điểm danh (Streak Milestone Reward)
+   * ACID + chống nhận trùng qua claimed_milestones_json + trần Vé Cứu Chuỗi.
+   * milestoneCfg: { points, freezeTickets, badge?, avatarFrame? } từ ECONOMICS.STREAK.MILESTONES
+   */
+  rewardStreakMilestone(userId, milestoneDay, milestoneCfg, maxFreezeTickets = 2) {
+    const milestone = parseInt(milestoneDay, 10);
+    if (!Number.isInteger(milestone) || milestone <= 0) throw new Error('Cột mốc không hợp lệ');
+    const cfg = milestoneCfg || {};
+    const rewardPoints = Math.floor(Number(cfg.points));
+    if (!Number.isFinite(rewardPoints) || rewardPoints <= 0) throw new Error('Cấu hình phần thưởng cột mốc không hợp lệ');
+    const freezeTickets = Math.max(0, Math.floor(Number(cfg.freezeTickets) || 0));
+
+    db.exec('BEGIN IMMEDIATE TRANSACTION');
+    try {
+      const streakRow = db.prepare('SELECT current_streak, streak_freezes_count, claimed_milestones_json FROM daily_streaks WHERE user_id = ?').get(userId);
+      if (!streakRow) throw new Error('Bạn chưa có chuỗi điểm danh nào');
+
+      // Chốt 1: chuỗi hiện tại phải đạt cột mốc
+      if ((streakRow.current_streak || 0) < milestone) {
+        throw new Error(`Chuỗi hiện tại ${streakRow.current_streak} ngày chưa đạt cột mốc ${milestone} ngày`);
+      }
+
+      // Chốt 2: chống nhận trùng (đọc lại trong transaction)
+      let claimed;
+      try {
+        claimed = JSON.parse(streakRow.claimed_milestones_json || '[]');
+      } catch (e) {
+        claimed = [];
+      }
+      if (Array.isArray(claimed) && claimed.includes(milestone)) {
+        throw new Error('Bạn đã nhận Hộp Quà cột mốc này rồi');
+      }
+
+      // Cộng Point
+      const updateUser = db.prepare('UPDATE users SET point_balance = point_balance + ? WHERE id = ?').run(rewardPoints, userId);
+      if (updateUser.changes === 0) throw new Error('Người dùng không tồn tại');
+
+      // Tặng Vé Cứu Chuỗi (không vượt trần)
+      let newFreezeCount = streakRow.streak_freezes_count || 0;
+      if (freezeTickets > 0) {
+        newFreezeCount = Math.min(maxFreezeTickets, newFreezeCount + freezeTickets);
+      }
+
+      const newClaimed = Array.isArray(claimed) ? [...claimed, milestone] : [milestone];
+      db.prepare(`
+        UPDATE daily_streaks
+        SET streak_freezes_count = ?, claimed_milestones_json = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+      `).run(newFreezeCount, JSON.stringify(newClaimed), userId);
+
+      const updatedUser = db.prepare('SELECT point_balance FROM users WHERE id = ?').get(userId);
+      const newPointBalance = updatedUser.point_balance;
+
+      // Ghi sổ cái kép
+      const txId = 'ptx_streak_milestone_' + crypto.randomUUID();
+      db.prepare(`
+        INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description, metadata_json)
+        VALUES (?, ?, ?, 'STREAK_MILESTONE_REWARD', 'POINT', ?, ?, ?, ?)
+      `).run(
+        txId,
+        userId,
+        `streak_milestone_${milestone}`,
+        rewardPoints,
+        newPointBalance,
+        `Hộp Quà Cột Mốc ${milestone} ngày chuỗi điểm danh (+${rewardPoints.toLocaleString('vi-VN')} điểm)`,
+        JSON.stringify({ milestone_day: milestone, freeze_tickets: freezeTickets, badge: cfg.badge || null, avatar_frame: cfg.avatarFrame || null })
+      );
+
+      db.exec('COMMIT');
+      return {
+        success: true,
+        milestone_day: milestone,
+        points_awarded: rewardPoints,
+        freeze_tickets_awarded: Math.max(0, newFreezeCount - (streakRow.streak_freezes_count || 0)),
+        badge: cfg.badge || null,
+        avatar_frame: cfg.avatarFrame || null,
+        new_point_balance: newPointBalance,
+        streak: {
+          current_streak: streakRow.current_streak,
+          streak_freezes_count: newFreezeCount,
+          claimed_milestones: newClaimed
+        }
+      };
     } catch (err) {
       this._safeRollback();
       throw err;

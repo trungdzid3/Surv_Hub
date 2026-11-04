@@ -223,7 +223,27 @@ module.exports = {
     },
     TARGETING_FEE_PER_FILTER_VND: 1000, // Phí lọc sâu nhân khẩu học 1.000đ/phiếu/tiêu chí
     FAST_DELIVERY_SURCHARGE_RATE: 0.25, // Phí gói hỏa tốc hoàn thành trong 6h (+25%)
-    AI_INSIGHTS_REPORT_FEE_VND: 500000 // Gói báo cáo AI Insights & SPSS: 500.000đ/dự án
+    AI_INSIGHTS_REPORT_FEE_VND: 500000, // Gói báo cáo AI Insights & SPSS: 500.000đ/dự án
+
+    // --- HỆ THỐNG ƯU ĐÃI CHUỖI ĐIỂM DANH (KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md) ---
+    STREAK: {
+      // Hệ số thưởng thêm khi hoàn thành khảo sát theo cấp ngọn lửa (bonus trích từ biên take rate của sàn, không đụng escrow creator)
+      BONUS_TIERS: [
+        { minDay: 201, percent: 10, tierLevel: 5, tierName: 'Thần Thoại Hoàng Kim' },
+        { minDay: 101, percent: 8, tierLevel: 4, tierName: 'Băng Hỏa Điện Quang' },
+        { minDay: 51, percent: 5, tierLevel: 3, tierName: 'Hồng Neon Tím TikTok' },
+        { minDay: 11, percent: 3, tierLevel: 2, tierName: 'Lửa Bùng Cháy' },
+        { minDay: 1, percent: 0, tierLevel: 1, tierName: 'Lửa Khởi Động' }
+      ],
+      MAX_FREEZE_TICKETS: 2, // Trần Vé Cứu Chuỗi (Streak Freeze) sở hữu cùng lúc
+      MILESTONES: {
+        10: { points: 1000, freezeTickets: 0, badge: 'Tân Binh Bền Bỉ' },
+        50: { points: 3000, freezeTickets: 1 },
+        100: { points: 10000, freezeTickets: 1, avatarFrame: 'NEON' },
+        200: { points: 25000, freezeTickets: 1, badge: 'Thần Thoại SurvHub' }
+      },
+      MILESTONE_ACTIVITY_GATE_DAYS: 7 // Gate chống farm: cần >= 1 phản hồi VALIDATED trong 7 ngày gần nhất mới được nhận Hộp Quà Cột Mốc
+    }
   },
 
   // Ngưỡng kiểm soát gian lận (Anti-Fraud Thresholds) - KE_HOACH_TONG_THE.md PHẦN IV

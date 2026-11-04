@@ -1529,6 +1529,61 @@
       `;
     }).join('');
 
+    // --- Streak Benefits (KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md) ---
+    const freezeCount = streak.streak_freezes_count || 0;
+    const maxFreezeTickets = streak.max_freeze_tickets || 2;
+    const multiplierPercent = streak.multiplier_percent || 0;
+    const pendingFreeze = streak.pending_freeze_consumption || 0;
+    const gatePassed = streak.milestone_gate_passed === true;
+    const claimedMilestones = Array.isArray(streak.claimed_milestones) ? streak.claimed_milestones : [];
+    const milestonesList = Array.isArray(streak.milestones) ? streak.milestones : [];
+
+    const milestoneCardsHtml = milestonesList.map(m => {
+      const isClaimed = claimedMilestones.includes(m.day);
+      const reachedDay = (streak.current_streak || 0) >= m.day;
+      const perks = [];
+      if (m.points > 0) perks.push(`+${m.points.toLocaleString('vi-VN')} Point`);
+      if (m.freeze_tickets > 0) perks.push(`${m.freeze_tickets} Vé Cứu Chuỗi`);
+      if (m.badge) perks.push(`Huy hiệu "${m.badge}"`);
+      if (m.avatar_frame) perks.push('Khung Avatar Neon');
+
+      let stateBadge = '';
+      let actionHtml = '';
+
+      if (isClaimed) {
+        stateBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-300/70 dark:border-orange-800/70">Đã Nhận</span>';
+      } else if (reachedDay && gatePassed) {
+        stateBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300/70 dark:border-emerald-800/70">Sẵn Sàng</span>';
+        actionHtml = `<button onclick="VibeApp.claimStreakMilestone(${m.day})" data-milestone-btn="${m.day}" class="mt-1.5 w-full py-1.5 px-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-extrabold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer shadow-xs">
+          <i data-lucide="gift" class="w-3 h-3"></i><span>Mở Quà Ngay</span>
+        </button>`;
+      } else if (reachedDay && !gatePassed) {
+        stateBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300/70 dark:border-amber-800/70">Cần Hoạt Động</span>';
+      } else {
+        stateBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700">Còn ${m.day - (streak.current_streak || 0)} Ngày</span>`;
+      }
+
+      const cardBorder = isClaimed
+        ? 'border-orange-300/70 dark:border-orange-800/70 bg-orange-50/50 dark:bg-orange-950/20'
+        : (reachedDay && gatePassed
+          ? 'border-2 border-orange-500 bg-white dark:bg-stone-900 ring-2 ring-orange-500/20 shadow-md'
+          : 'border-stone-200/70 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-900/40');
+
+      return `
+        <div class="p-2.5 rounded-2xl border ${cardBorder} transition-all flex flex-col items-center text-center">
+          <div class="flex items-center gap-1">
+            <i data-lucide="${isClaimed ? 'check-circle-2' : (reachedDay ? 'gift' : 'lock')}" class="w-3.5 h-3.5 ${reachedDay && !isClaimed ? 'text-orange-600' : 'text-stone-400'}"></i>
+            <span class="text-[11px] font-black text-slate-800 dark:text-stone-200 font-mono">${m.day} Ngày</span>
+          </div>
+          <div class="mt-1">${stateBadge}</div>
+          <div class="mt-1 space-y-0.5">
+            ${perks.map(p => `<div class="text-[9px] font-bold text-stone-500 dark:text-stone-400 leading-tight">${p}</div>`).join('')}
+          </div>
+          ${actionHtml}
+        </div>
+      `;
+    }).join('');
+
     card.innerHTML = `
       <div class="relative space-y-5">
         <!-- Close Button -->
@@ -1545,6 +1600,7 @@
             <div class="flex items-center gap-2 flex-wrap">
               <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">Điểm Danh Chuỗi Ngày</h3>
               ${tierInfo.modalBadge}
+              ${freezeCount > 0 ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-300/80 dark:border-cyan-800/80 flex items-center gap-1"><i data-lucide="shield-snowflake" class="w-3 h-3"></i>${freezeCount}/${maxFreezeTickets} Vé Cứu Chuỗi</span>` : ''}
             </div>
             <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">${tierInfo.desc}</p>
           </div>
@@ -1596,6 +1652,40 @@
           </div>
         </div>
 
+        <!-- Đặc quyền hệ số thưởng khảo sát (Streak Bonus) -->
+        <div class="p-3 rounded-2xl border ${multiplierPercent > 0 ? 'border-orange-300/80 dark:border-orange-800/80 bg-gradient-to-r from-orange-50/80 to-amber-50/50 dark:from-orange-950/30 dark:to-amber-950/20' : 'bg-stone-50/70 dark:bg-stone-900/40 border border-stone-200/70 dark:border-stone-800'} flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <i data-lucide="percent" class="w-4 h-4 ${multiplierPercent > 0 ? 'text-orange-600' : 'text-stone-400'}"></i>
+            <span class="text-[11px] font-bold text-slate-800 dark:text-stone-200">Đặc quyền hiện tại</span>
+          </div>
+          <span class="text-[11px] font-extrabold ${multiplierPercent > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-stone-400'}">
+            ${multiplierPercent > 0 ? `Thưởng thêm +${multiplierPercent}% Point trên mọi bài khảo sát` : 'Điểm danh 11 ngày để nhận +3% Point'}
+          </span>
+        </div>
+
+        ${pendingFreeze > 0 ? `
+        <!-- Cảnh báo Vé Cứu Chuỗi sẽ tự kích hoạt -->
+        <div class="p-2.5 rounded-2xl border border-cyan-300/80 dark:border-cyan-800/80 bg-cyan-50/60 dark:bg-cyan-950/30 flex items-start gap-2">
+          <i data-lucide="shield-snowflake" class="w-4 h-4 text-cyan-600 flex-shrink-0 mt-0.5"></i>
+          <span class="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 leading-relaxed">Bạn đã lỡ điểm danh: SurvHub sẽ TỰ ĐỘNG dùng ${pendingFreeze} Vé Cứu Chuỗi khi bạn điểm danh để bảo vệ ngọn lửa chuỗi hiện tại. Điểm danh ngay để kích hoạt bảo vệ!</span>
+        </div>
+        ` : ''}
+
+        <!-- Hộp Quà Cột Mốc (Milestone Gifts) -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs px-0.5">
+            <span class="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <i data-lucide="gift" class="w-3.5 h-3.5 text-orange-600"></i>
+              <span>Hộp Quà Cột Mốc</span>
+            </span>
+            <span class="text-[10px] text-stone-500 dark:text-stone-400">Nhận 1 lần duy nhất / tài khoản</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            ${milestoneCardsHtml}
+          </div>
+          ${!gatePassed ? '<p class="text-[9px] text-stone-400 dark:text-stone-500 px-0.5 leading-relaxed">Lưu ý: Hộp Quà yêu cầu bạn đã hoàn thành ít nhất 1 khảo sát hợp lệ trong 7 ngày gần nhất (chống điểm danh ảo).</p>' : ''}
+        </div>
+
         <!-- 7-Day Visual Roadmap (Lộ trình chuẩn 7 ngày) -->
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs px-0.5">
@@ -1634,7 +1724,10 @@
           <ul class="space-y-0.5 list-disc pl-4 text-[11px]">
             <li>Thang thưởng: Ngày 1 (+50đ), Ngày 2 (+80đ), Ngày 3 (+120đ), Ngày 4 (+160đ), Ngày 5 (+200đ), Ngày 6 (+250đ).</li>
             <li><span class="font-bold text-orange-600 dark:text-orange-400">Ngày 7 (Mốc Vàng)</span>: Thưởng lớn <span class="font-bold font-mono">+500 Point</span> và mở khóa <span class="font-bold">Badge Tích Cực</span>.</li>
-            <li>Duy trì từ Ngày 8 trở đi: Nhận cố định <span class="font-bold font-mono">+200 Point/ngày</span>. Nếu đứt chuỗi 1 ngày, chuỗi quay về Ngày 1.</li>
+            <li>Duy trì từ Ngày 8 trở đi: Nhận cố định <span class="font-bold font-mono">+200 Point/ngày</span>.</li>
+            <li><span class="font-bold text-orange-600 dark:text-orange-400">Thưởng Chuỗi</span>: Chuỗi 11 ngày nhận +3%, 51 ngày +5%, 101 ngày +8%, 201 ngày +10% Point trên mỗi bài khảo sát hoàn thành.</li>
+            <li><span class="font-bold text-orange-600 dark:text-orange-400">Vé Cứu Chuỗi</span>: Tối đa tích 2 vé. Lỡ 1 ngày tự trừ 1 vé, lỡ 2 ngày trừ 2 vé để giữ chuỗi; hết vé hoặc lỡ trên 2 ngày thì chuỗi về Ngày 1.</li>
+            <li><span class="font-bold text-orange-600 dark:text-orange-400">Hộp Quà Cột Mốc</span>: Nhận 1 lần duy nhất tại mốc 10/50/100/200 ngày, yêu cầu hoàn thành ít nhất 1 khảo sát hợp lệ trong 7 ngày gần nhất.</li>
             <li>Thời gian làm mới: <span class="font-bold">00:00 hàng ngày</span> theo giờ Việt Nam (UTC+7).</li>
           </ul>
         </div>
@@ -1706,6 +1799,63 @@
         btn.innerHTML = `
           <i data-lucide="zap" class="w-4 h-4"></i>
           <span>Điểm Danh Ngay</span>
+        `;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+  },
+
+  /**
+   * Nhận Hộp Quà Cột Mốc chuỗi điểm danh (POST /users/streak-claim-milestone)
+   * KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md — backend chặn gate hoạt động (403) và chống nhận trùng (400).
+   */
+  async claimStreakMilestone(milestoneDay) {
+    this.haptic('medium');
+    const btn = document.querySelector(`[data-milestone-btn="${milestoneDay}"]`);
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `
+        <div class="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+        <span>Đang mở quà...</span>
+      `;
+    }
+
+    try {
+      const res = await this.api('/users/streak-claim-milestone', {
+        method: 'POST',
+        body: { milestone_day: milestoneDay }
+      });
+      if (!res || !res.success) {
+        throw new Error((res && res.message) || 'Không thể nhận Hộp Quà');
+      }
+
+      this.haptic('success');
+      this.showToast(res.message, 'success');
+
+      // Cập nhật số dư + nạp lại thông tin chuỗi
+      if (this.state.currentUser && typeof res.new_point_balance === 'number') {
+        this.state.currentUser.point_balance = res.new_point_balance;
+      }
+      const pointsBadgeText = document.getElementById('header-points-text');
+      if (pointsBadgeText && this.state.currentUser) {
+        pointsBadgeText.textContent = `${(this.state.currentUser.point_balance || 0).toLocaleString('vi-VN')} Điểm`;
+      }
+      this.renderUserProfileDropdown();
+      await this.fetchStreakInfo();
+
+      // Re-render modal với trạng thái mới
+      const container = document.getElementById('modal-container');
+      if (container && !container.classList.contains('hidden')) {
+        this.openStreakModal();
+      }
+    } catch (err) {
+      this.haptic('error');
+      this.showToast(err.message || 'Lỗi nhận Hộp Quà Cột Mốc', 'error');
+      // Khôi phục nút nếu modal vẫn hiển thị
+      if (btn && document.querySelector(`[data-milestone-btn="${milestoneDay}"]`)) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <i data-lucide="gift" class="w-3 h-3"></i><span>Mở Quà Ngay</span>
         `;
         if (window.lucide) lucide.createIcons();
       }
