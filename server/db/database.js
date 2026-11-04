@@ -321,7 +321,7 @@ function initSchema() {
       amount_vnd REAL NOT NULL,
       credit_amount REAL NOT NULL,
       bonus_credit_vnd REAL DEFAULT 0.0,
-      status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'COMPLETED', 'EXPIRED', 'CANCELLED')),
+      status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'PENDING_MISMATCH')),
       payment_method TEXT DEFAULT 'VIETQR' CHECK(payment_method IN ('VIETQR', 'MANUAL_BANK')),
       bank_account_info_json TEXT,
       paid_at TEXT,
@@ -589,7 +589,7 @@ function initSchema() {
       amount_vnd REAL NOT NULL,
       credit_amount REAL NOT NULL,
       bonus_credit_vnd REAL DEFAULT 0.0,
-      status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'COMPLETED', 'EXPIRED', 'CANCELLED')),
+      status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'PENDING_MISMATCH')),
       payment_method TEXT DEFAULT 'VIETQR' CHECK(payment_method IN ('VIETQR', 'MANUAL_BANK')),
       bank_account_info_json TEXT,
       paid_at TEXT,
@@ -966,6 +966,40 @@ function initSchema() {
   } catch (err) {
     console.warn('[DB Migration] Nâng cấp bảng forum_posts gặp chú ý:', err.message);
   }
+
+  // Nâng cấp bảng deposit_orders chấp nhận PENDING_MISMATCH
+  try {
+    const depositOrderTableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='deposit_orders'").get();
+    if (depositOrderTableInfo && depositOrderTableInfo.sql && !depositOrderTableInfo.sql.includes('PENDING_MISMATCH')) {
+      db.exec(`
+        PRAGMA foreign_keys = OFF;
+        CREATE TABLE deposit_orders_new (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id),
+          order_code TEXT UNIQUE NOT NULL,
+          amount_vnd REAL NOT NULL,
+          credit_amount REAL NOT NULL,
+          bonus_credit_vnd REAL DEFAULT 0.0,
+          status TEXT DEFAULT 'PENDING' CHECK(status IN ('PENDING', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'PENDING_MISMATCH')),
+          payment_method TEXT DEFAULT 'VIETQR' CHECK(payment_method IN ('VIETQR', 'MANUAL_BANK')),
+          bank_account_info_json TEXT,
+          paid_at TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          expires_at TEXT NOT NULL
+        );
+        INSERT INTO deposit_orders_new SELECT * FROM deposit_orders;
+        DROP TABLE deposit_orders;
+        ALTER TABLE deposit_orders_new RENAME TO deposit_orders;
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_deposit_orders_code ON deposit_orders(order_code);
+        CREATE INDEX IF NOT EXISTS idx_deposit_orders_user ON deposit_orders(user_id);
+        CREATE INDEX IF NOT EXISTS idx_deposit_orders_status ON deposit_orders(status);
+        PRAGMA foreign_keys = ON;
+      `);
+      console.log('[DB Migration] Đã nâng cấp bảng deposit_orders hỗ trợ trạng thái PENDING_MISMATCH.');
+    }
+  } catch (err) {
+    console.warn('[DB Migration] Nâng cấp bảng deposit_orders gặp chú ý:', err.message);
+  }
 }
 
 // Tự động đảm bảo các tài khoản kiểm thử cốt lõi luôn tồn tại và đúng mật khẩu trên mọi môi trường (Local & Render)
@@ -1044,34 +1078,95 @@ function ensureEssentialAccounts() {
 
     for (const u of essentialUsers) {
       const seedPassword = seedPasswordMap[u.email.toLowerCase()];
-      if (!seedPassword) {
-        console.warn(`[DB Bootstrap] Bỏ qua tài khoản ${u.email} — thiếu mật khẩu trong biến môi trường SEED_ACCOUNT_PASSWORDS`);
-        continue;
-      }
       const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(u.email);
-      const hash = bcrypt.hashSync(seedPassword, salt);
-      if (!existing) {
-        const id = crypto.randomUUID();
-        db.prepare(`
-          INSERT INTO users (
-            id, email, password_hash, name, role, 
-            credit_balance, point_balance, fast_track_tickets, 
-            free_trial_surveys_available, is_email_verified, status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(id, u.email, hash, u.name, u.role, u.credit_balance, u.point_balance, u.fast_track_tickets, u.free_trial_surveys_available, u.is_email_verified, u.status);
+
+      if (u.role === 'ADMIN') {
+        const hash = seedPassword
+          ? bcrypt.hashSync(seedPassword, salt)
+          : (!existing ? bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), salt) : null);
+
+        if (!existing) {
+          const id = crypto.randomUUID();
+          db.prepare(`
+            INSERT INTO users (
+              id, email, password_hash, name, role, 
+              is_google_linked, is_email_verified, status,
+              credit_balance, point_balance, fast_track_tickets, 
+              free_trial_surveys_available, account_tier, student_email,
+              is_student_verified, free_quota_remaining
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            id,
+            u.email,
+            hash,
+            u.name,
+            'ADMIN',
+            1,
+            1,
+            'ACTIVE',
+            u.credit_balance || 0,
+            u.point_balance || 0,
+            u.fast_track_tickets || 0,
+            u.free_trial_surveys_available !== undefined ? u.free_trial_surveys_available : 1,
+            u.account_tier || 'PERSONAL',
+            u.student_email || null,
+            u.is_student_verified || 0,
+            25
+          );
+        } else {
+          db.prepare(`
+            UPDATE users 
+            SET role = 'ADMIN',
+                status = 'ACTIVE',
+                is_email_verified = 1,
+                is_google_linked = 1,
+                password_hash = COALESCE(?, password_hash),
+                account_tier = COALESCE(account_tier, ?),
+                student_email = COALESCE(student_email, ?),
+                fast_track_tickets = MAX(COALESCE(fast_track_tickets, 0), ?),
+                credit_balance = MAX(COALESCE(credit_balance, 0), ?),
+                free_trial_surveys_available = COALESCE(free_trial_surveys_available, ?),
+                free_quota_remaining = COALESCE(free_quota_remaining, 25)
+            WHERE id = ?
+          `).run(
+            seedPassword ? hash : null,
+            u.account_tier || 'PERSONAL',
+            u.student_email || null,
+            u.fast_track_tickets || 0,
+            u.credit_balance || 0,
+            u.free_trial_surveys_available !== undefined ? u.free_trial_surveys_available : 1,
+            existing.id
+          );
+        }
       } else {
-        db.prepare(`
-          UPDATE users 
-          SET password_hash = ?, status = 'ACTIVE', is_email_verified = 1,
-              is_student_verified = CASE WHEN student_email LIKE '%.edu.vn%' OR student_email LIKE '%.ac.vn%' THEN 1 ELSE COALESCE(is_student_verified, 0) END,
-              account_tier = COALESCE(account_tier, ?),
-              student_email = COALESCE(student_email, ?),
-              fast_track_tickets = MAX(COALESCE(fast_track_tickets, 0), ?),
-              credit_balance = MAX(COALESCE(credit_balance, 0), ?),
-              free_trial_surveys_available = COALESCE(free_trial_surveys_available, ?),
-              free_quota_remaining = COALESCE(free_quota_remaining, 25)
-          WHERE id = ?
-        `).run(hash, u.fast_track_tickets || 0, u.credit_balance || 0, u.free_trial_surveys_available !== undefined ? u.free_trial_surveys_available : 1, existing.id);
+        if (!seedPassword) {
+          console.warn(`[DB Bootstrap] Bỏ qua tài khoản ${u.email} — thiếu mật khẩu trong biến môi trường SEED_ACCOUNT_PASSWORDS`);
+          continue;
+        }
+        const hash = bcrypt.hashSync(seedPassword, salt);
+        if (!existing) {
+          const id = crypto.randomUUID();
+          db.prepare(`
+            INSERT INTO users (
+              id, email, password_hash, name, role, 
+              credit_balance, point_balance, fast_track_tickets, 
+              free_trial_surveys_available, is_email_verified, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(id, u.email, hash, u.name, u.role, u.credit_balance, u.point_balance, u.fast_track_tickets, u.free_trial_surveys_available, u.is_email_verified, u.status);
+        } else {
+          db.prepare(`
+            UPDATE users 
+            SET password_hash = ?, status = 'ACTIVE', is_email_verified = 1,
+                is_student_verified = CASE WHEN student_email LIKE '%.edu.vn%' OR student_email LIKE '%.ac.vn%' THEN 1 ELSE COALESCE(is_student_verified, 0) END,
+                account_tier = COALESCE(account_tier, ?),
+                student_email = COALESCE(student_email, ?),
+                fast_track_tickets = MAX(COALESCE(fast_track_tickets, 0), ?),
+                credit_balance = MAX(COALESCE(credit_balance, 0), ?),
+                free_trial_surveys_available = COALESCE(free_trial_surveys_available, ?),
+                free_quota_remaining = COALESCE(free_quota_remaining, 25)
+            WHERE id = ?
+          `).run(hash, u.account_tier || 'PERSONAL', u.student_email || null, u.fast_track_tickets || 0, u.credit_balance || 0, u.free_trial_surveys_available !== undefined ? u.free_trial_surveys_available : 1, existing.id);
+        }
       }
     }
     console.log('[DB Bootstrap] Đã tự động đảm bảo các tài khoản quản trị cốt lõi.');

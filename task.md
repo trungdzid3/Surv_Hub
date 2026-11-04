@@ -47,9 +47,9 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 - [x] Task T5: Lead Orchestrator: Syntax verification, npm test 25 tầng (100% PASS), sync Android, cập nhật PROJECT_CONTEXT.md và xuất tài liệu hướng dẫn cấu hình Render/Google Apps Script | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, task.md]
 
 ## SPRINT 04-11-2026: CORE ADMIN AUTONOMOUS BOOTSTRAP & GOOGLE OAUTH ROLE HARDENING
-- [ ] Task AD1: Khắc phục ensureEssentialAccounts trong database.js đảm bảo các tài khoản Admin cốt lõi luôn được tạo/khôi phục role='ADMIN' và is_google_linked=1 kể cả khi vắng mặt SEED_ACCOUNT_PASSWORDS | [Agent: OpenCode-AdminDB] | [Skill: security-audit] | [Locked Files: server/db/database.js]
-- [ ] Task AD2: Bổ sung chốt chặn CORE_ADMIN_EMAILS tại googleAuth và handleGoogleOAuthCallback trong authController.js đảm bảo email admin không bao giờ bị hạ xuống RESPONDENT | [Agent: OpenCode-AdminAuth] | [Skill: security-audit] | [Locked Files: server/controllers/authController.js]
-- [ ] Task AD3: Kiểm tra cú pháp node -c, chạy npm test, đồng bộ khôi phục tài khoản trong CSDL thực tế và nghiệm thu | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: task.md, PROJECT_CONTEXT.md]
+- [x] Task AD1: Khắc phục ensureEssentialAccounts trong database.js đảm bảo các tài khoản Admin cốt lõi luôn được tạo/khôi phục role='ADMIN' và is_google_linked=1 kể cả khi vắng mặt SEED_ACCOUNT_PASSWORDS | [Agent: Subagent-AdminDB] | [Skill: security-audit] | [Locked Files: server/db/database.js]
+- [x] Task AD2: Bổ sung chốt chặn CORE_ADMIN_EMAILS tại googleAuth và handleGoogleOAuthCallback trong authController.js đảm bảo email admin không bao giờ bị hạ xuống RESPONDENT | [Agent: Subagent-AdminAuth] | [Skill: security-audit] | [Locked Files: server/controllers/authController.js]
+- [x] Task AD3: Kiểm tra cú pháp node -c, chạy npm test, đồng bộ khôi phục tài khoản trong CSDL thực tế và nghiệm thu | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: task.md, PROJECT_CONTEXT.md]
 
 ## SPRINT 04-11-2026: SURVHUB REBRANDING & OPENCODE CLI FIRST POLICY
 - [x] Task N1: Cập nhật C:\Users\Lenovo\.gemini\GEMINI.md bổ sung quy tắc ưu tiên OpenCode CLI hơn hết (CLI First) và chỉ định 2 họ model cho phép: DeepSeek và GLM 5.3 Flash, đồng bộ tên dự án SurvHub | [Agent: Subagent-GlobalRuleSync] | [Skill: writing-guidelines] | [Locked Files: C:/Users/Lenovo/.gemini/GEMINI.md]

@@ -7,6 +7,13 @@ const config = require('../config');
 const db = require('../db/database');
 const antiFraudService = require('../services/antiFraudService');
 
+const CORE_ADMIN_EMAILS = [
+  'trungdzid3@gmail.com',
+  'linharmykxbnvn@gmail.com',
+  'admin@survhub.com',
+  'admin@vibesurvey.com'
+];
+
 // Bộ nhớ đệm kiểm soát tần suất gửi OTP đăng ký theo IP (Tối đa 5 lần / 10 phút)
 const registrationIpRateLimiter = new Map();
 // Schema hiện tại chưa có cột đếm lần thử; giữ invariant tối đa 5 lần thử cho mỗi OTP trong process.
@@ -1041,6 +1048,11 @@ class AuthController {
         }
       }
 
+      if (user && CORE_ADMIN_EMAILS.includes(user.email.toLowerCase()) && user.role !== 'ADMIN') {
+        db.prepare("UPDATE users SET role = 'ADMIN', is_google_linked = 1, is_email_verified = 1 WHERE id = ?").run(user.id);
+        user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+      }
+
       // Nếu vẫn chưa có user -> Đăng ký tài khoản mới tự động bằng Google
       if (!user) {
         // Kiểm tra an ninh IP/Thiết bị
@@ -1054,7 +1066,8 @@ class AuthController {
         const randomPass = crypto.randomBytes(16).toString('hex');
         const passwordHash = bcrypt.hashSync(randomPass, 10);
         const displayName = extractedName || extractedEmail.split('@')[0];
-        const assignedRole = ['RESPONDENT', 'CREATOR'].includes(role) ? role : 'RESPONDENT';
+        const isCoreAdmin = CORE_ADMIN_EMAILS.includes(extractedEmail.toLowerCase());
+        const assignedRole = isCoreAdmin ? 'ADMIN' : (['RESPONDENT', 'CREATOR'].includes(role) ? role : 'RESPONDENT');
 
         db.prepare(`
           INSERT INTO users (
@@ -1291,18 +1304,25 @@ class AuthController {
         }
       }
 
+      if (user && CORE_ADMIN_EMAILS.includes(user.email.toLowerCase()) && user.role !== 'ADMIN') {
+        db.prepare("UPDATE users SET role = 'ADMIN', is_google_linked = 1, is_email_verified = 1 WHERE id = ?").run(user.id);
+        user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+      }
+
       if (!user) {
         const userId = crypto.randomUUID();
         const randomPass = crypto.randomBytes(16).toString('hex');
         const passwordHash = bcrypt.hashSync(randomPass, 10);
+        const isCoreAdmin = CORE_ADMIN_EMAILS.includes(email.toLowerCase());
+        const assignedRole = isCoreAdmin ? 'ADMIN' : 'RESPONDENT';
 
         db.prepare(`
           INSERT INTO users (
             id, email, password_hash, name, role, credit_balance, point_balance, 
             trust_score, status, free_trial_surveys_available, is_google_linked, google_id, is_email_verified
           )
-          VALUES (?, ?, ?, ?, 'RESPONDENT', 0.0, 0, 100.0, 'ACTIVE', 1, 1, ?, 1)
-        `).run(userId, email, passwordHash, name, googleId);
+          VALUES (?, ?, ?, ?, ?, 0.0, 0, 100.0, 'ACTIVE', 1, 1, ?, 1)
+        `).run(userId, email, passwordHash, name, assignedRole, googleId);
 
         user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
       }
