@@ -131,3 +131,10 @@ Nguồn đặc tả: `docs/plans/KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md`. Phân tíc
 - Frontend: SF1 hoàn tất — badge Vé Cứu Chuỗi, dòng đặc quyền %, khối Hộp Quà 4 mốc + claimStreakMilestone, cảnh báo pending freeze, quy chế mới; respondent.js tách 2 dòng thưởng (base + streak bonus + tổng). cache-buster 4.9.21_streak_benefits.
 - Kiểm thử: suite tầng 27 tests/test_streak_benefits.js 22 bài PASS; npm test 27/27 Suites 100% PASS (36.4s); npm run sync:android thành công.
 - Tham vấn Argon: 4 lần gọi đều thất bại do bridge (400 no Gemini models -> DNS no such host -> bridge chết -> refusal sai route); cầu chì 3 lần chạm ngưỡng => triển khai theo phân tích kinh tế tự kiểm chứng của Lead (biên take rate thấp nhất 12.5% > bonus tối đa 10% x reward; gate VALIDATED 7 ngày chặn farmer 79k/200 ngày; lazy freeze loại race condition, không cần cron).
+
+## SPRINT 05-11-2026: SỬA LỖI ĐỒNG BỘ SURVEY DRAFT, THÙ LAO VÀ VÍ FINTECH
+### CONTRACT & PHÂN QUYỀN WORKER ĐỘC LẬP
+- [x] Task FIX-1: Sửa mất trắng hàng/cột câu hỏi lưới khi lưu nháp và sửa kẹt trạng thái DRAFT khi xuất bản form từ bản nháp | [Agent: Subagent-Studio] | [Skill: none] | [Locked Files: public/js/modules/creatorStudio.js]
+- [x] Task FIX-2: Đồng bộ thù lao khảo sát theo tier kinh tế học backend và mở quyền xem khảo sát công khai toàn sàn cho CREATOR | [Agent: Subagent-SurveyBackend] | [Skill: none] | [Locked Files: server/controllers/surveyController.js]
+- [x] Task FIX-3: Sửa lỗi modal nạp tiền thành công hiện 0 VNĐ / +0 Credit, đồng bộ mức thưởng nạp 50K (+2% = 51.000 Credit) và thêm cảnh báo demo trong modal VietQR | [Agent: Subagent-WalletLedger] | [Skill: none] | [Locked Files: public/js/modules/wallet-ledger.js]
+- [x] Task FIX-4: Lead Orchestrator: Bump cache-buster index.html, kiểm tra cú pháp, chạy npm test 27 suite, sync Android và cập nhật PROJECT_CONTEXT.md | [Agent: Lead Orchestrator] | [Skill: none] | [Locked Files: public/index.html, PROJECT_CONTEXT.md, task.md]

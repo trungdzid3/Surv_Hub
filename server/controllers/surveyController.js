@@ -516,7 +516,7 @@ class SurveyController {
         return res.json({ success: true, surveys: guestSurveys });
       }
 
-      if (user.role === 'CREATOR' || filter === 'my_surveys' || scope === 'created') {
+      if (filter === 'my_surveys' || scope === 'created') {
         const surveys = db.prepare(`
           SELECT s.*, 
             vc.brand_name AS sponsor_brand_name, vc.brand_logo AS sponsor_brand_logo, vc.title AS sponsor_voucher_title,
@@ -744,6 +744,8 @@ class SurveyController {
         google_sheets_webhook_url = null,
         sponsor_campaign_id = null,
         reward_mode = 'POINTS_ONLY',
+        reward_points_per_response,
+        cost_per_response,
         academic_tags = null,
         target_demographics = null,
         voucher_data = null,
@@ -820,12 +822,27 @@ class SurveyController {
       }
 
       // Tính toán kinh tế học của khảo sát
-      const economics = pricingService.calculateSurveyEconomics(questions, target_responses);
+      const economics = pricingService.calculateSurveyEconomics(questions, validTarget, {
+        tier: package_type,
+        accountTier: user.account_tier,
+        useNewRate: true
+      });
       const minCompletionTimeSec = antiFraudService.calculateMinCompletionTime(questions);
 
       // Nếu là VOUCHER_ONLY (Zero Cash Model): Không tính chi phí VND
-      const costPerResp = reward_mode === 'VOUCHER_ONLY' ? 0 : economics.costPerResponseVnd;
-      const rewardPointsPerResp = reward_mode === 'VOUCHER_ONLY' ? 0 : economics.rewardPointsPerResponse;
+      let costPerResp = 0;
+      let rewardPointsPerResp = 0;
+      if (reward_mode !== 'VOUCHER_ONLY') {
+        const parsedReward = Number(reward_points_per_response);
+        rewardPointsPerResp = (!isNaN(parsedReward) && parsedReward > 0)
+          ? Math.round(parsedReward)
+          : (economics.rewardPointsPerResponse || 0);
+
+        const parsedCost = Number(cost_per_response);
+        costPerResp = (!isNaN(parsedCost) && parsedCost > 0)
+          ? Math.round(parsedCost)
+          : (economics.costPerResponseVnd || 0);
+      }
 
       // Xử lý tạo voucher tài trợ nếu Doanh Nghiệp cung cấp danh sách mã riêng (Zero Cash) hoặc Mua voucher từ kho sàn
       let finalSponsorCampaignId = sponsor_campaign_id;

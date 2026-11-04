@@ -941,19 +941,25 @@
         this.state.createSurveyTab = 'BUILDER';
         this.state.builderQuestions = questions.map((q, idx) => {
           let opts = [];
-          try {
-            opts = q.options_json ? JSON.parse(q.options_json) : [];
-          } catch (e) { opts = []; }
+          if (Array.isArray(q.options)) {
+            opts = q.options;
+          } else if (q.options_json) {
+            try { opts = JSON.parse(q.options_json); } catch (e) { opts = []; }
+          }
 
           let rows = [];
-          try {
-            rows = q.rows_json ? JSON.parse(q.rows_json) : [];
-          } catch (e) { rows = []; }
+          if (Array.isArray(q.rows)) {
+            rows = q.rows;
+          } else if (q.rows_json) {
+            try { rows = JSON.parse(q.rows_json); } catch (e) { rows = []; }
+          }
 
           let cols = [];
-          try {
-            cols = q.columns_json ? JSON.parse(q.columns_json) : [];
-          } catch (e) { cols = []; }
+          if (Array.isArray(q.columns)) {
+            cols = q.columns;
+          } else if (q.columns_json) {
+            try { cols = JSON.parse(q.columns_json); } catch (e) { cols = []; }
+          }
 
           return {
             id: q.id || `q_${idx + 1}`,
@@ -5545,17 +5551,9 @@
         })
       });
 
-      if (isEditing) {
-        this.haptic('success');
-        this.showToast('Cập nhật khảo sát thành công!', 'success');
-        this.resetStudioToNew(false);
-        this.navigate('creator-surveys');
-        return;
-      }
+      const surveyId = isEditing ? this.state.editingSurveyId : createRes?.surveyId;
 
-      if (createRes.success && createRes.surveyId) {
-        const surveyId = createRes.surveyId;
-
+      if (surveyId) {
         // Lưu surveyId vào localStorage
         const storedIds = JSON.parse((localStorage.getItem('survhub_my_surveys') || localStorage.getItem('vibesurvey_my_surveys')) || '[]');
         if (!storedIds.includes(surveyId)) {
@@ -5565,7 +5563,7 @@
 
         if (isDraftOnly) {
           this.haptic('success');
-          this.showToast('Đã lưu bản nháp khảo sát thành công!', 'success');
+          this.showToast(isEditing ? 'Đã cập nhật bản nháp khảo sát thành công!' : 'Đã lưu bản nháp khảo sát thành công!', 'success');
           this.resetStudioToNew(false);
           this.navigate('creator-surveys');
           return;

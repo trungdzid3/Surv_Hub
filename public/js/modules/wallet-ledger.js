@@ -983,8 +983,8 @@
       rate = 0.02;
       tierName = 'Đồng (+2%)';
     } else if (amount >= 50000) {
-      rate = 0.01;
-      tierName = 'Khởi Động (+1%)';
+      rate = 0.02;
+      tierName = 'Sinh viên / Cá nhân (+2%)';
     }
     const bonusVnd = Math.round(amount * rate);
     const totalCredit = amount + bonusVnd;
@@ -1060,7 +1060,7 @@
             <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Chọn nhanh mức nạp có thưởng:</label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button type="button" data-preset-amount="20000" onclick="VibeApp.setDepositPreset(20000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">20K (SV)</button>
-              <button type="button" data-preset-amount="50000" onclick="VibeApp.setDepositPreset(50000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">50K (+1%)</button>
+              <button type="button" data-preset-amount="50000" onclick="VibeApp.setDepositPreset(50000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">50K (+2%)</button>
               <button type="button" data-preset-amount="100000" onclick="VibeApp.setDepositPreset(100000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">100K (+2%)</button>
               <button type="button" data-preset-amount="500000" onclick="VibeApp.setDepositPreset(500000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">500K (+4%)</button>
               <button type="button" data-preset-amount="1000000" onclick="VibeApp.setDepositPreset(1000000)" class="deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]">1 Tr (+6%)</button>
@@ -1229,6 +1229,10 @@
           </div>
 
           <!-- Lưu ý quan trọng -->
+          <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
+            LƯU Ý THỬ NGHIỆM: Đây là bản demo nghiệm thu tính năng. Vui lòng bấm nút <strong>Mô Phỏng Thanh Toán (Dev/Test)</strong> bên dưới để hệ thống tự động duyệt tiền tức thì. Không cần chuyển tiền thật từ ứng dụng ngân hàng.
+          </div>
+
           <div class="p-2 bg-stone-100/90 dark:bg-stone-900/90 rounded-xl border border-stone-200 dark:border-stone-800 text-[10.5px] text-stone-600 dark:text-stone-300 leading-normal">
             Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và nội dung <strong>${order.orderCode}</strong>. Tổng Credit nhận: <strong>${formatMoney(order.creditAmount)} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(order.bonusCreditVnd) + ' Credit thưởng)' : ''}.
           </div>
@@ -1286,9 +1290,12 @@
           if (this._depositPollInterval) clearInterval(this._depositPollInterval);
           if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
 
+          const orderAmountVnd = order.amountVnd !== undefined ? order.amountVnd : (order.amount_vnd !== undefined ? order.amount_vnd : 0);
+          const orderCreditAmount = order.creditAmount !== undefined ? order.creditAmount : (order.credit_amount !== undefined ? order.credit_amount : orderAmountVnd);
+
           this.haptic('success');
           if (this.state.currentUser) {
-            this.state.currentUser.credit_balance = (this.state.currentUser.credit_balance || 0) + (order.creditAmount || order.credit_amount || order.amount_vnd);
+            this.state.currentUser.credit_balance = (this.state.currentUser.credit_balance || 0) + orderCreditAmount;
           }
           this.applyUserInterface();
 
@@ -1308,11 +1315,11 @@
                 <div class="p-3 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-xs space-y-1.5 text-left max-w-sm mx-auto">
                   <div class="flex justify-between text-stone-600 dark:text-stone-400">
                     <span>Số tiền nạp:</span>
-                    <span class="font-mono font-bold text-stone-900 dark:text-white">${formatMoney(order.amount_vnd)} VNĐ</span>
+                    <span class="font-mono font-bold text-stone-900 dark:text-white">${formatMoney(orderAmountVnd)} VNĐ</span>
                   </div>
                   <div class="flex justify-between text-stone-600 dark:text-stone-400">
                     <span>Credit được cộng:</span>
-                    <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">+${formatMoney(order.credit_amount || order.amount_vnd)} Credit</span>
+                    <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">+${formatMoney(orderCreditAmount)} Credit</span>
                   </div>
                 </div>
 
