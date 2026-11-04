@@ -1,25 +1,25 @@
 {
-	"appId": "com.survhub.app",
-	"appName": "SurvHub",
-	"webDir": "public",
-	"bundledWebRuntime": false,
-	"server": {
-		"androidScheme": "https",
-		"cleartext": true
-	},
-	"plugins": {
-		"SplashScreen": {
-			"launchShowDuration": 1500,
-			"backgroundColor": "#EA580C",
-			"showSpinner": false
-		},
-		"Haptics": {
-			"enabled": true
-		},
-		"LocalNotifications": {
-			"smallIcon": "ic_stat_icon_config_sample",
-			"iconColor": "#EA580C",
-			"sound": "beep.wav"
-		}
-	}
+  "appId": "com.survhub.app",
+  "appName": "SurvHub",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#EA580C",
+      "showSpinner": false
+    },
+    "Haptics": {
+      "enabled": true
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#EA580C",
+      "sound": "beep.wav"
+    }
+  }
 }
