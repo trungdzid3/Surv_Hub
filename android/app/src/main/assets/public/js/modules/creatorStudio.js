@@ -2310,34 +2310,35 @@
       <div class="max-w-7xl mx-auto space-y-5 pb-16">
         
         <!-- Top Action Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-200 dark:border-stone-800">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 pb-4 border-b border-stone-200/80 dark:border-stone-800">
           <div>
             <div class="flex items-center gap-2 mb-1">
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-orange-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-stone-700">
-                Google Forms Studio
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-orange-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-stone-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                <span>Form Studio</span>
               </span>
-              <span class="text-xs text-stone-500 dark:text-stone-400">• Bố Cục 2 Cột Độc Lập • 12 Định Dạng Chuẩn</span>
+              <span class="text-xs text-stone-500 dark:text-stone-400">• 12 định dạng</span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">${this.state.editingSurveyId ? 'Chỉnh Sửa Khảo Sát' : 'Thiết Kế Khảo Sát Mới'}</h1>
-            <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-0.5">Soạn thảo trực quan theo chuẩn Google Forms, thanh công cụ linh hoạt, ghim bảng giá và tạm tính ký quỹ Escrow real-time.</p>
+            <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-0.5">Soạn thảo trực quan & tính ký quỹ real-time.</p>
           </div>
 
-          <div class="flex items-center gap-2.5 flex-shrink-0">
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             ${this.state.editingSurveyId ? `
-              <button onclick="VibeApp.resetStudioToNew()" class="py-2.5 px-3.5 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold transition-all active:scale-[0.98] flex items-center gap-1.5" title="Thoát chế độ sửa và tạo khảo sát mới">
+              <button onclick="VibeApp.resetStudioToNew()" class="h-9 px-3 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-all flex items-center gap-1.5" title="Thoát chế độ sửa và tạo khảo sát mới">
                 <i data-lucide="plus-circle" class="w-4 h-4 text-orange-600"></i>
                 <span>Tạo Mới Khác</span>
               </button>
             ` : ''}
-            <button onclick="VibeApp.navigate('creator-surveys')" class="py-2.5 px-4 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold transition-all active:scale-[0.98] flex items-center gap-1.5">
+            <button onclick="VibeApp.navigate('creator-surveys')" class="h-9 px-3 sm:px-3.5 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-all flex items-center gap-1.5">
               <i data-lucide="arrow-left" class="w-4 h-4"></i>
               <span>Khảo Sát Của Tôi</span>
             </button>
-            <button onclick="VibeApp.submitFastCreate(true)" class="py-2.5 px-4 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold transition-all active:scale-[0.98] flex items-center gap-1.5">
+            <button onclick="VibeApp.submitFastCreate(true)" class="h-9 px-3 sm:px-3.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-all flex items-center gap-1.5 shadow-xs">
               <i data-lucide="save" class="w-4 h-4 text-stone-500"></i>
               <span>Lưu Bản Nháp</span>
             </button>
-            <button onclick="VibeApp.submitFastCreate(false)" id="studio-top-publish-btn" class="py-2.5 px-5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold shadow-md transition-all active:scale-[0.98] flex items-center gap-2">
+            <button onclick="VibeApp.submitFastCreate(false)" id="studio-top-publish-btn" class="h-9 px-4 sm:px-4.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold whitespace-nowrap shadow-sm hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center gap-2">
               <i data-lucide="send" class="w-4 h-4"></i>
               <span>${calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản & Ký Quỹ'}</span>
             </button>
@@ -2489,7 +2490,7 @@
                           class="w-full p-4 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-slate-900 dark:text-white text-xs font-mono leading-relaxed focus:ring-1 focus:ring-orange-500 focus:border-orange-500"></textarea>
                 <button type="button" onclick="VibeApp.handleSmartPasteSubmit()" class="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95">
                   <i data-lucide="sparkles" class="w-4 h-4"></i>
-                  <span>Tự Động Nhận Diện & Nạp Vào Google Forms Studio</span>
+                  <span>Tự Động Nhận Diện & Nạp Vào Form Studio</span>
                 </button>
               </div>
             </div>
