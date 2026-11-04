@@ -560,6 +560,15 @@ function initSchema() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY(post_id, user_id)
     );
+
+    -- Bang Luu Tru Da Phuong Tien (Media Storage Engine)
+    CREATE TABLE IF NOT EXISTS media_storage (
+      id TEXT PRIMARY KEY,
+      mime_type TEXT NOT NULL,
+      file_data BLOB NOT NULL,
+      file_size INTEGER NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // Migration v2: Bổ sung các cột mới cho Users, Surveys và Responses
@@ -808,7 +817,8 @@ function initSchema() {
     'ALTER TABLE forum_comments ADD COLUMN is_hidden INTEGER DEFAULT 0;',
     'ALTER TABLE forum_comments ADD COLUMN is_audited INTEGER DEFAULT 0;',
     'CREATE INDEX IF NOT EXISTS idx_forum_posts_audited ON forum_posts(is_audited, is_hidden);',
-    'CREATE INDEX IF NOT EXISTS idx_forum_comments_audited ON forum_comments(is_audited, is_hidden);'
+    'CREATE INDEX IF NOT EXISTS idx_forum_comments_audited ON forum_comments(is_audited, is_hidden);',
+    'CREATE TABLE IF NOT EXISTS media_storage (id TEXT PRIMARY KEY, mime_type TEXT NOT NULL, file_data BLOB NOT NULL, file_size INTEGER NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);'
   ];
 
   for (const sql of migrations) {

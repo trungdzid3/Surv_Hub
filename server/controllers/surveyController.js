@@ -2490,29 +2490,68 @@ class SurveyController {
         return res.status(400).json({ success: false, message: 'Dung lượng tệp vượt quá 10MB (giới hạn tiêu chuẩn Facebook)' });
       }
 
-      // Đảm bảo thư mục public/uploads tồn tại
-      const uploadDir = path.join(__dirname, '../../public/uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      const mediaId = 'med_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
+      const mimeType = ext === 'jpg' ? 'image/jpeg' : (ext === 'png' ? 'image/png' : (ext === 'webp' ? 'image/webp' : 'image/gif'));
+
+      // Chèn nhị phân buffer trực tiếp vào CSDL Turso
+      db.prepare('INSERT INTO media_storage (id, mime_type, file_data, file_size) VALUES (?, ?, ?, ?)').run(mediaId, mimeType, buffer, buffer.length);
+
+      // Giữ ghi một bản sao đĩa vào public/uploads nếu thư mục tồn tại (để tương thích ngược)
+      try {
+        const uploadDir = path.join(__dirname, '../../public/uploads');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        const diskPath = path.join(uploadDir, `${mediaId}.${ext}`);
+        fs.writeFileSync(diskPath, buffer);
+      } catch (e) {
+        console.warn('Lỗi ghi bản sao đĩa uploads:', e.message);
       }
 
-      const prefix = type === 'question' ? 'q' : (type === 'forum' ? 'forum' : 'cover');
-      const filename = `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
-      const filePath = path.join(uploadDir, filename);
-
-      fs.writeFileSync(filePath, buffer);
-
-      const publicUrl = `/uploads/${filename}`;
+      const publicUrl = '/api/v1/media/' + mediaId;
       return res.status(201).json({
         success: true,
         url: publicUrl,
-        filename,
+        filename: mediaId,
         size: buffer.length,
-        message: 'Tải và tối ưu hóa ảnh thành công'
+        message: 'Tải và lưu trữ ảnh bền vững trên Turso Cloud thành công'
       });
     } catch (err) {
       console.error('Lỗi uploadImage:', err);
       return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi xử lý lưu ảnh: ' + err.message });
+    }
+  }
+
+  /**
+   * GET /api/v1/media/:id
+   * Phục vụ hình ảnh trực tiếp từ CSDL media_storage (Turso Cloud) hoặc đĩa dự phòng
+   */
+  getMedia(req, res) {
+    try {
+      let mediaId = req.params.id;
+      if (!mediaId) {
+        return res.status(404).json({ success: false, message: 'Hình ảnh không tồn tại' });
+      }
+      // Nếu mediaId có đuôi mở rộng (ví dụ .png, .jpg, .webp), tách lấy phần tên ID thuần
+      mediaId = mediaId.replace(/\.[a-zA-Z0-9]+$/, '');
+
+      const row = db.prepare('SELECT mime_type, file_data FROM media_storage WHERE id = ?').get(mediaId);
+      if (row && row.file_data) {
+        res.setHeader('Content-Type', row.mime_type || 'image/webp');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.send(row.file_data);
+      }
+
+      // Kiểm tra dự phòng xem tệp có tồn tại trên đĩa không
+      const fallbackPath = path.join(__dirname, '../../public/uploads', req.params.id);
+      if (fs.existsSync(fallbackPath) && fs.statSync(fallbackPath).isFile()) {
+        return res.sendFile(fallbackPath);
+      }
+
+      return res.status(404).json({ success: false, message: 'Hình ảnh không tồn tại' });
+    } catch (err) {
+      console.error('Lỗi getMedia:', err);
+      return res.status(500).json({ success: false, message: 'Lỗi khi tải hình ảnh: ' + err.message });
     }
   }
 

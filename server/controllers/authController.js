@@ -1872,7 +1872,7 @@ class AuthController {
           return res.status(400).json({ success: false, message: 'Định dạng ảnh không hỗ trợ. Vui lòng chọn PNG, JPG, GIF hoặc WebP' });
         }
         buffer = Buffer.from(matches[2], 'base64');
-      } else if (cleanInput.startsWith('http://') || cleanInput.startsWith('https://') || cleanInput.startsWith('/uploads/')) {
+      } else if (cleanInput.startsWith('http://') || cleanInput.startsWith('https://') || cleanInput.startsWith('/uploads/') || cleanInput.startsWith('/api/v1/media/')) {
         db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(cleanInput, user.id);
         const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
         delete updatedUser.password_hash;
@@ -1917,27 +1917,32 @@ class AuthController {
         return res.status(400).json({ success: false, message: 'Dung lượng ảnh tối đa 5MB' });
       }
 
-      const uploadDir = path.join(__dirname, '../../public/uploads/avatars');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
+      const mediaId = 'avatar_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
+      const mimeType = ext === 'jpg' ? 'image/jpeg' : (ext === 'png' ? 'image/png' : (ext === 'webp' ? 'image/webp' : 'image/gif'));
 
-      // Dọn dẹp avatar cũ của người dùng để tránh tích tụ file thừa
+      // Chèn nhị phân buffer trực tiếp vào CSDL Turso (media_storage)
+      db.prepare('INSERT INTO media_storage (id, mime_type, file_data, file_size) VALUES (?, ?, ?, ?)').run(mediaId, mimeType, buffer, buffer.length);
+
+      // Giữ ghi một bản sao đĩa nếu thư mục tồn tại (để tương thích ngược)
       try {
+        const uploadDir = path.join(__dirname, '../../public/uploads/avatars');
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        // Dọn dẹp avatar cũ của người dùng để tránh tích tụ file thừa
         const existingFiles = fs.readdirSync(uploadDir);
         for (const file of existingFiles) {
           if (file.startsWith(`avatar_${user.id}_`)) {
             try { fs.unlinkSync(path.join(uploadDir, file)); } catch (_) {}
           }
         }
+        const fileName = `${mediaId}.${ext}`;
+        const filePath = path.join(uploadDir, fileName);
+        fs.writeFileSync(filePath, buffer);
       } catch (_) {}
 
-      const fileName = `avatar_${user.id}_${Date.now()}.${ext}`;
-      const filePath = path.join(uploadDir, fileName);
-      fs.writeFileSync(filePath, buffer);
-
-      const avatarUrl = `/uploads/avatars/${fileName}`;
-      db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, user.id);
+      const publicUrl = '/api/v1/media/' + mediaId;
+      db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(publicUrl, user.id);
 
       const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
       delete updatedUser.password_hash;
@@ -1950,7 +1955,7 @@ class AuthController {
       return res.json({
         success: true,
         message: 'Cập nhật ảnh đại diện thành công',
-        avatar_url: avatarUrl,
+        avatar_url: publicUrl,
         user: updatedUser
       });
     } catch (err) {
