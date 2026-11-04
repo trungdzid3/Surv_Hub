@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const config = require('../config');
 
 const authController = require('../controllers/authController');
@@ -171,17 +173,26 @@ router.get('/app/version', handleAppVersion);
 router.get('/app-version', handleAppVersion);
 
 router.get('/app/download', (req, res) => {
+  const localApkPath = path.join(__dirname, '../../public/downloads/SurvHub.apk');
+  const hasLocalApk = fs.existsSync(localApkPath);
   const downloadUrl = config.APP_RELEASE.APK_DOWNLOAD_URL;
+
   if (req.query.json === '1' || req.query.json === 'true') {
     return res.json({
       success: true,
       data: {
-        apkDownloadUrl: downloadUrl,
+        apkDownloadUrl: hasLocalApk ? '/downloads/SurvHub.apk' : downloadUrl,
+        isHostedLocally: hasLocalApk,
         version: config.APP_RELEASE.VERSION,
         versionCode: config.APP_RELEASE.VERSION_CODE
       }
     });
   }
+
+  if (hasLocalApk) {
+    return res.download(localApkPath, 'SurvHub.apk');
+  }
+
   return res.redirect(302, downloadUrl);
 });
 

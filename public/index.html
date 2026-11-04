@@ -217,12 +217,12 @@
   </main>
 
   <!-- ==================== FOOTER THÔNG TIN DOANH NGHIỆP & LIÊN HỆ ==================== -->
-  <footer class="w-full border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-[#121214] text-stone-600 dark:text-stone-400 text-xs mt-4 pb-28 md:pb-4 transition-colors">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-7">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-5">
+  <footer class="w-full border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-[#121214] text-stone-600 dark:text-stone-400 text-xs mt-4 pb-16 md:pb-6 transition-colors">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5 md:py-7">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-5">
         
         <!-- Cột 1: Thông tin Doanh Nghiệp -->
-        <div class="space-y-3">
+        <div class="space-y-2.5 md:space-y-3">
           <div class="flex items-center gap-2">
             <img id="footer-brand-logo" src="/logo-light.svg" alt="SurvHub Logo" class="w-7 h-7 rounded-lg object-contain">
             <span class="font-black text-base tracking-tight text-slate-900 dark:text-white">Surv<span class="text-orange-600">Hub</span></span>
@@ -230,12 +230,20 @@
           <p class="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
             Nền tảng nghiên cứu thị trường, khảo sát trực tuyến và phân tích dữ liệu hành vi người tiêu dùng hàng đầu Việt Nam.
           </p>
+          <!-- Nút Tải APK Nổi Bật Dưới Cột 1 (Chỉ hiển thị trên Desktop, tận dụng khoảng trống cân đối với các cột khác) -->
+          <div class="hidden md:block pt-1.5">
+            <a href="/api/v1/app/download" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs transition-colors">
+              <i data-lucide="smartphone" class="w-4 h-4"></i>
+              <span>Tải SurvHub APK (Android)</span>
+            </a>
+            <p class="text-[10px] text-stone-400 dark:text-stone-500 mt-1 font-medium">Phiên bản 1.0.0 · Cài đặt trực tiếp</p>
+          </div>
         </div>
 
         <!-- Cột 2: Trụ sở & Địa chỉ -->
-        <div class="space-y-2.5">
+        <div class="space-y-2 md:space-y-2.5">
           <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Địa chỉ</h4>
-          <div class="space-y-2.5 text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+          <div class="space-y-1.5 md:space-y-2.5 text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
             <div>
               <p class="font-bold text-stone-800 dark:text-stone-200">Địa chỉ chính (Hà Nội):</p>
               <p><a href="https://maps.app.goo.gl/dGL8PMp5K2o9yYz68" target="_blank" rel="noopener" class="hover:text-orange-600 hover:underline transition-colors">Kí túc xá B3, Đại học Bách khoa Hà Nội</a></p>
@@ -244,9 +252,9 @@
         </div>
 
         <!-- Cột 3: Liên hệ & Hỗ trợ -->
-        <div class="space-y-2.5">
+        <div class="space-y-2 md:space-y-2.5">
           <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Hỗ trợ & Liên hệ</h4>
-          <ul class="space-y-2 text-xs text-stone-500 dark:text-stone-400">
+          <ul class="space-y-1.5 md:space-y-2 text-xs text-stone-500 dark:text-stone-400">
             <li><a href="javascript:void(0)" onclick="VibeApp.openBugReportModal()" class="font-bold text-orange-600 dark:text-orange-500 hover:underline flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline"></i><span>Báo lỗi & Đăng tải sự cố</span></a></li>
             <li>Hỗ trợ: <a href="mailto:linharmykxbnvn@gmail.com" class="hover:text-stone-900 dark:hover:text-white underline">linharmykxbnvn@gmail.com</a></li>
             <li>Email phản ánh: <a href="mailto:ngthtrung.son@gmail.com" class="hover:text-stone-900 dark:hover:text-white underline">ngthtrung.son@gmail.com</a></li>
@@ -255,9 +263,9 @@
         </div>
 
         <!-- Cột 4: Kênh Truyền Thông & Pháp Lý -->
-        <div class="space-y-2.5">
+        <div class="space-y-2 md:space-y-2.5">
           <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Pháp lý & Chính sách</h4>
-          <ul class="space-y-2 text-xs text-stone-500 dark:text-stone-400">
+          <ul class="space-y-1.5 md:space-y-2 text-xs text-stone-500 dark:text-stone-400">
             <li><a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, true, 'privacy')" class="hover:text-stone-900 dark:hover:text-white transition-colors">Chính sách bảo mật dữ liệu</a></li>
             <li><a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, true, 'rules')" class="hover:text-stone-900 dark:hover:text-white transition-colors">Quy chế hoạt động & Chống gian lận</a></li>
             <li><a href="javascript:void(0)" onclick="VibeApp.openTermsModal(event, true, 'terms')" class="hover:text-stone-900 dark:hover:text-white transition-colors">Điều khoản dịch vụ & Đổi thưởng</a></li>
@@ -266,16 +274,9 @@
 
       </div>
 
-      <!-- Bottom Bar: Bản quyền, Tải APK & Tiêu chuẩn kỹ thuật -->
-      <div class="pt-3.5 border-t border-stone-200 dark:border-stone-800 flex flex-col md:flex-row items-center justify-between gap-2.5 text-[11px] text-stone-500 dark:text-stone-400">
-        <div class="flex items-center gap-3">
-          <p>© 2026 SurvHub. Giữ toàn bộ bản quyền.</p>
-          <span class="hidden md:inline text-stone-300 dark:text-stone-700">·</span>
-          <a href="/api/v1/app/download" target="_blank" rel="noopener" class="hidden md:inline-flex items-center gap-1.5 hover:text-orange-600 dark:hover:text-orange-400 transition-colors" title="Tải gói cài đặt SurvHub cho Android (.APK)">
-            <i data-lucide="smartphone" class="w-3.5 h-3.5 text-stone-400 dark:text-stone-500"></i>
-            <span>Bản Android (.APK)</span>
-          </a>
-        </div>
+      <!-- Bottom Bar: Bản quyền & Tiêu chuẩn kỹ thuật -->
+      <div class="pt-2.5 md:pt-3.5 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-stone-500 dark:text-stone-400">
+        <p>© 2026 SurvHub. Giữ toàn bộ bản quyền.</p>
         <div class="flex items-center space-x-4">
           <span class="inline-flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-orange-600"></i> Mã hóa SSL 256-bit</span>
           <span class="inline-flex items-center gap-1"><i data-lucide="database" class="w-3.5 h-3.5 text-stone-500"></i> Sổ cái kế toán kép ACID</span>
