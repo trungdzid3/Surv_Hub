@@ -71,7 +71,7 @@ c:\Users\Lenovo\Downloads\Linh\
 Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng frontend — đọc file này trước khi sửa UI).
 | File | Vai trò |
 |---|---|
-| `public/app.js` (~3.7k dòng) | RestrictionEngine, core init/theme/logo/dropdown/state, router `navigate`, home, danh sách khảo sát + bộ lọc, renderNavigation, metrics, tiện ích chung (`_formatFileSize`, `compressImageFile`, `generateValidationPlaceholder`, `getYouTubeEmbedUrl`, `getLucideSvg`, alias `escapeHtml`, `copyText`) |
+| `public/app.js` (~3.7k dòng) | RestrictionEngine, core init/theme/logo/dropdown/state, router `navigate`, home, danh sách khảo sát + bộ lọc, renderNavigation (Mobile Floating Island Dock bo cong viên thuốc `rounded-full`, nút CTA cam tròn nổi bổng, active pill indicator đáy), metrics, tiện ích chung (`_formatFileSize`, `compressImageFile`, `generateValidationPlaceholder`, `getYouTubeEmbedUrl`, `getLucideSvg`, alias `escapeHtml`, `copyText`) |
 | `public/js/data/catalogs.js` | `window.VibeData` (Object.freeze): 7 hằng danh mục (tỉnh thành, trường ĐH, categories, voucher catalog); back-compat `window.VIBE_*` |
 | `public/js/data/policyContent.js` | `window.SURVHUB_POLICY_DOCS` (Object.freeze): SSOT nội dung 03 văn bản pháp lý `terms` / `privacy` / `rules` (meta `version` + `effectiveDate`), nạp ngay trước `modalsTerms.js` |
 | `public/js/utils.js` | `window.VibeUtils`: `escapeHtml` canonical, `formatVND`, `refreshIcons` |

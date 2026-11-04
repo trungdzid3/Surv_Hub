@@ -1611,7 +1611,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
               <button onclick="${clickAction}" 
                       title="${tab.label}" 
                       aria-label="${tab.label}"
-                      class="mobile-nav-action group active:scale-95 transition-transform select-none">
+                      class="mobile-nav-action group active:scale-95 transition-all duration-200 select-none ${isActive ? 'is-active' : ''}">
                 <div class="mobile-nav-action-icon ${isActive ? 'is-active' : ''}">
                   <i data-lucide="${centerIcon}" class="${iconSizeClass}"></i>
                 </div>
@@ -1626,7 +1626,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             <button onclick="${clickAction}" 
                     title="${tab.label}" 
                     aria-label="${tab.label}"
-                    class="mobile-nav-link group transition-colors active:scale-95 ${isActive ? 'is-active' : ''}">
+                    class="mobile-nav-link group active:scale-95 transition-all duration-200 select-none ${isActive ? 'is-active' : ''}">
               <div class="mobile-nav-icon">
                 <i data-lucide="${tab.icon}" class="w-5 h-5 ${isActive ? 'stroke-[2.4]' : 'stroke-[1.9]'}"></i>
               </div>

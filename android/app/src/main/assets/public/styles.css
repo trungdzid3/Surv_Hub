@@ -412,9 +412,9 @@ body::before {
   display: none;
 }
 
-/* Safe area padding cho thiết bị di động */
+/* Safe area padding cho thiết bị di động (đệm khoảng cách an toàn tránh bị Đảo Nổi che khuất) */
 .safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
 }
 @media (min-width: 768px) {
   .safe-bottom {
@@ -422,93 +422,215 @@ body::before {
   }
 }
 
-/* Mobile navigation: flat 68px bar with safe-area support, no floating dock treatment. */
+/* ==================== MOBILE BOTTOM NAVIGATION: FLOATING ISLAND DOCK ==================== */
+/* Khung vỏ ngoài lơ lửng, căn giữa tuyệt đối, không nhận sự kiện click ngoài dock */
 .mobile-bottom-shell {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: #FFFFFF;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex !important;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 12px) 16px;
+  background: transparent !important;
+  pointer-events: none;
 }
+
+/* Đảo Nổi (Floating Island Dock) dạng viên thuốc lơ lửng, kính mờ Frosted Glass */
 .mobile-bottom-nav {
-  min-height: 68px;
+  position: relative;
+  pointer-events: auto;
   width: 100%;
-  padding: 5px 8px;
-  border-top: 1px solid #E7E5E4;
-  background: #FFFFFF;
+  max-width: 420px;
+  min-height: 58px;
+  margin: 0 auto;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(231, 229, 228, 0.85);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
   color: #71717A;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
+
+/* Item Wrapper */
 .mobile-nav-item {
   min-width: 0;
   flex: 1 1 0;
   display: flex;
   justify-content: center;
-  align-items: stretch;
+  align-items: center;
 }
+
+/* Base Nav Link & Action Button */
 .mobile-nav-link,
 .mobile-nav-action {
+  position: relative;
   width: 100%;
   min-width: 0;
-  min-height: 56px;
+  min-height: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   color: #71717A;
   font-size: 10px;
   font-weight: 600;
   line-height: 1.15;
   text-align: center;
   white-space: nowrap;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.mobile-nav-icon,
-.mobile-nav-action-icon {
-  width: 24px;
-  height: 24px;
+
+.mobile-nav-link:active,
+.mobile-nav-action:active {
+  transform: scale(0.92);
+}
+
+/* Icon Container của tab thông thường: bo tròn dạng pill mềm mại */
+.mobile-nav-icon {
+  width: 36px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border-radius: 9999px;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+/* Nút trung tâm Tạo Mới / Action: Bo tròn hoàn hảo (rounded-full), bỏ hẳn ô vuông góc tù */
+.mobile-nav-action-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.38), 0 2px 4px rgba(234, 88, 12, 0.2);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-nav-action:hover .mobile-nav-action-icon {
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.45), 0 2px 6px rgba(234, 88, 12, 0.25);
+}
+
+.mobile-nav-action:active .mobile-nav-action-icon {
+  transform: scale(0.90) rotate(45deg);
+}
+
+.mobile-nav-action-icon.is-active {
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25), 0 4px 16px rgba(234, 88, 12, 0.45);
+}
+
+/* Nhãn hiển thị */
 .mobile-nav-label {
-  max-width: 72px;
+  max-width: 68px;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 9.5px;
+  letter-spacing: -0.01em;
+  transition: color 0.2s ease, font-weight 0.2s ease;
 }
-.mobile-nav-link.is-active,
-.mobile-nav-action {
-  color: #EA580C;
-}
-.mobile-nav-action-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: #EA580C;
-  color: #FFFFFF;
-}
+
 .mobile-nav-action .mobile-nav-label {
   font-weight: 700;
+  color: #EA580C;
 }
-html.dark .mobile-bottom-shell,
-html.dark .mobile-bottom-nav {
-  background: #18181B;
+
+/* Trạng thái Active cho tab thường */
+.mobile-nav-link.is-active {
+  color: #EA580C;
 }
+
+.mobile-nav-link.is-active .mobile-nav-label {
+  font-weight: 700;
+  color: #EA580C;
+}
+
+.mobile-nav-link.is-active .mobile-nav-icon {
+  background: rgba(234, 88, 12, 0.12);
+  color: #EA580C;
+  transform: translateY(-1px) scale(1.05);
+}
+
+/* Vệt pill indicator siêu tinh tế ở đáy */
+.mobile-nav-link.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 3px;
+  border-radius: 9999px;
+  background: #EA580C;
+  box-shadow: 0 1px 3px rgba(234, 88, 12, 0.4);
+}
+
+/* ==================== DARK MODE (OBSIDIAN CHARCOAL GLASS) ==================== */
+html.dark .mobile-bottom-shell {
+  background: transparent !important;
+}
+
 html.dark .mobile-bottom-nav {
-  border-top-color: #2E2E36;
+  background: rgba(28, 28, 32, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 14px 35px -5px rgba(0, 0, 0, 0.5), 0 6px 16px -2px rgba(0, 0, 0, 0.35);
   color: #A1A1AA;
 }
+
 html.dark .mobile-nav-link,
 html.dark .mobile-nav-action {
   color: #A1A1AA;
 }
-html.dark .mobile-nav-link.is-active,
-html.dark .mobile-nav-action {
+
+html.dark .mobile-nav-link.is-active {
   color: #F97316;
 }
-html.dark .mobile-nav-action-icon {
-  background: #EA580C;
-  color: #FFFFFF;
+
+html.dark .mobile-nav-link.is-active .mobile-nav-label {
+  color: #F97316;
 }
+
+html.dark .mobile-nav-link.is-active .mobile-nav-icon {
+  background: rgba(249, 115, 22, 0.18);
+  color: #F97316;
+}
+
+html.dark .mobile-nav-link.is-active::after {
+  background: #F97316;
+  box-shadow: 0 1px 4px rgba(249, 115, 22, 0.6);
+}
+
+html.dark .mobile-nav-action .mobile-nav-label {
+  color: #F97316;
+}
+
+html.dark .mobile-nav-action-icon {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
 @media (min-width: 768px) {
   .mobile-bottom-shell {
-    display: none;
+    display: none !important;
   }
 }
 

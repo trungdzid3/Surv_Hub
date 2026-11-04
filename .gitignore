@@ -21,6 +21,8 @@ Danh Sach Email Sinh Vien*.docx
 # Logs & Temporary files
 public/uploads/*
 !public/uploads/.gitkeep
+android/app/src/main/assets/public/uploads/*
+!android/app/src/main/assets/public/uploads/.gitkeep
 *.log
 *.zip
 *.bak
