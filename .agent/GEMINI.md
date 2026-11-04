@@ -1,5 +1,9 @@
 # GEMINI CONTEXT - VIBESURVEY PLATFORM (WEB & ANDROID NATIVE)
 
+> **Thông Báo Phân Định Thứ Bậc Rules**:
+> Tệp Quy tắc Toàn cục cao nhất (Global Rules SSOT) được lưu tại `C:\Users\Lenovo\.gemini\GEMINI.md` áp dụng bắt buộc cho mọi phiên làm việc của AI Agent.
+> Tệp `.agent/GEMINI.md` này đóng vai trò ngữ cảnh nghiệp vụ chuyên biệt của riêng dự án VibeSurvey (Web SPA & Android Native Capacitor).
+
 ## Tổng quan dự án
 Nền tảng khảo sát trực tuyến kiếm lợi nhuận hai chiều **VibeSurvey** (Web Responsive & Android Capacitor Native):
 1. **Dành cho Người trả lời (Respondent)**: Làm khảo sát nhận điểm thưởng (`1 Point = 1 VNĐ`), quy đổi thẻ cào điện thoại, ngân hàng VietQR/MoMo hoặc E-Voucher thương hiệu ngang giá.

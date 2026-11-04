@@ -110,9 +110,18 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 16. **Turso phải chạy ở chế độ Embedded Replica**: `createTursoDatabase()` mở file `server/db/vibesurvey_turso_replica.db` với `syncUrl` + `syncPeriod` (`TURSO_SYNC_PERIOD_SEC`, mặc định 60s) và `readYourWrites: true`, nên `BEGIN IMMEDIATE … COMMIT` chạy ACID trên file cục bộ rồi mới đồng bộ lên cloud. Tuyệt đối không đặt `TURSO_EMBEDDED_REPLICA=false` trên production: chế độ remote trực tiếp sẽ tái hiện lỗi Hrana `no transaction is active`, khiến lệnh ghi tự commit từng câu (ví dụ `UPDATE users` trong `depositCredit`) rồi `COMMIT` ném lỗi — sai lệch sổ cái. Nhánh replica chưa bật tường minh `PRAGMA foreign_keys = ON` và chưa gọi `db.sync()` khi tắt server.
 
 ## 5. Hướng Dẫn Bàn Giao Cho Phiên Tiếp Theo
-- Trước khi bắt đầu: đọc `PROJECT_CONTEXT.md` này + `DESIGN.md` + `AGENTS.md`.
-- Kiểm tra toàn vẹn: chạy `npm test` (23 tầng, phải 100% PASS).
-- Sau khi chỉnh sửa code: `node -c <file>`, nâng cache-buster nếu đụng app.js, `npm run sync:android`, cập nhật mục "Việc Đang Mở" trong file này, commit + push (auto_github_sync: true).
+
+### Thứ Bậc Đọc Rules & Nguồn Chân Lý Bắt Buộc
+- **Cấp 1 (Quy tắc Toàn cục Bắt buộc Cao nhất)**: `C:\Users\Lenovo\.gemini\GEMINI.md` (Global Rules SSOT cho mọi phiên làm việc).
+- **Cấp 2 (Quy tắc Workspace VibeSurvey)**: `AGENTS.md` và `.agent/rules.md`.
+- **Cấp 3 (Nguồn chân lý Thiết kế UI/UX)**: `DESIGN.md`.
+- **Cấp 4 (Ngữ cảnh Tiến trình & Kiến trúc)**: `PROJECT_CONTEXT.md`.
+- **Cấp 5 (Ngữ cảnh Nghiệp vụ Cục bộ)**: `.agent/GEMINI.md`.
+
+### Quy Trình Bàn Giao & Kiểm Tra
+- Trước khi bắt đầu: Đọc tuần tự theo thứ bậc rules ở trên.
+- Kiểm tra toàn vẹn: chạy `npm test` (24 suite, phải 100% PASS).
+- Sau khi chỉnh sửa code: `node -c <file>`, nâng cache-buster nếu đụng app.js hoặc module, `npm run sync:android`, cập nhật mục "Việc Đang Mở" trong file này, commit + push (auto_github_sync: true).
 - Giao tiếp tiếng Việt, cấm emoji/icon màu trong mọi đầu ra.
 
 ## 6. Thông Tin Liên Hệ Thực Tế (Sản Phẩm Demo — Chưa Kinh Doanh)

@@ -39,6 +39,11 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 - [x] Task B: Modal Dieu khoan mo tu footer van hien nut dong y dang ky -> them che do read-only (an dong "Bang viec bam xac nhan..." + nut [Dong]/[Toi Dong Y Dieu Khoan], chi giu nut X); giu nguyen luong dang ky (link trong checkbox dong 2640 van che do consent) | [Agent: terms-modal-fixer (senior-coder)] | [Locked Files: public/index.html (sua ngay), public/app.js (CHI sua sau khi Task A xong - duoc Lead mo khoa)]
 - [x] Task C: Tich hop nghiem thu: node -c, npm run sync:android, cap nhat PROJECT_CONTEXT.md, commit + push | [Agent: Lead Orchestrator] | [Locked Files: android/, PROJECT_CONTEXT.md]
 
+## SPRINT 04-11-2026: GLOBAL & WORKSPACE RULES UNIFICATION
+- [x] Task R1: Đồng bộ các phần bổ sung từ .agent/GEMINI.md lên C:\Users\Lenovo\.gemini\GEMINI.md toàn cục (Multi-Agent CLI qua OpenCode/Antigravity D:\AI-CLIs\, nguyên tắc chọn worker cho Lead Orchestrator, và Major Overhaul Backup Protocol) | [Agent: Subagent-GlobalRuleSync] | [Skill: writing-guidelines] | [Locked Files: C:/Users/Lenovo/.gemini/GEMINI.md]
+- [x] Task R2: Cập nhật PROJECT_CONTEXT.md và tinh chỉnh .agent/GEMINI.md chỉ thị rõ thứ bậc SSOT và các tệp rule mà AI bắt buộc phải đọc | [Agent: Subagent-ContextRuleDoc] | [Skill: writing-guidelines] | [Locked Files: PROJECT_CONTEXT.md, .agent/GEMINI.md]
+- [x] Task R3: Tích hợp, rà soát diff, kiểm tra cú pháp và commit GitHub theo auto_github_sync | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: task.md]
+
 ## SPRINT 04-11-2026 (BUOI 2): TURSO CLOUD PERSISTENT MEDIA STORAGE (PHƯƠNG ÁN LƯU ẢNH LÊN TURSO)
 - [x] Task M1: Tạo bảng media_storage trong database.js và khai báo route GET /media/:id trong api.js | [Agent: Subagent-MediaDB] | [Skill: security-audit] | [Locked Files: server/db/database.js, server/routes/api.js]
 - [x] Task M2: Tích hợp uploadImage/getMedia trong surveyController.js và uploadAvatar trong authController.js lưu/đọc BLOB trực tiếp từ Turso media_storage | [Agent: Subagent-MediaController] | [Skill: security-audit] | [Locked Files: server/controllers/surveyController.js, server/controllers/authController.js]
