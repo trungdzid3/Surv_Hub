@@ -1492,9 +1492,17 @@ class SurveyController {
             try { existingAnswers = JSON.parse(existing.answers_payload || '{}'); } catch (e) {}
             const dbQuestions = db.prepare('SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC').all(id);
             const screenerResult = this._applyAdaptiveScreener(survey, dbQuestions, user, false);
+            let sponsor = null;
+            if (survey.sponsor_campaign_id) {
+              sponsor = db.prepare(`
+                SELECT id, brand_name, brand_logo, title, face_value_vnd, instructions, expiry_date, remaining_quantity
+                FROM voucher_campaigns WHERE id = ?
+              `).get(survey.sponsor_campaign_id);
+            }
             return res.json({
               success: true,
               is_editing: true,
+              survey: { ...survey, sponsor },
               responseId: existing.id,
               minCompletionTimeSec: 0,
               rewardPoints: 0,
@@ -1530,10 +1538,28 @@ class SurveyController {
       const dbQuestions = db.prepare('SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC').all(id);
       const screenerResult = this._applyAdaptiveScreener(survey, dbQuestions, user, false);
 
+      // Chuẩn bị thông tin khảo sát và nhà tài trợ voucher (nếu có) để client không phải gọi thêm GET /surveys/:id
+      let sponsor = null;
+      if (survey.sponsor_campaign_id) {
+        sponsor = db.prepare(`
+          SELECT id, brand_name, brand_logo, title, face_value_vnd, instructions, expiry_date, remaining_quantity
+          FROM voucher_campaigns WHERE id = ?
+        `).get(survey.sponsor_campaign_id);
+      }
+      const cleanSurvey = {
+        ...survey,
+        sponsor
+      };
+
+      // Tính toán thời gian chuẩn để bảo vệ người dùng không bị bẫy tốc độ oan
+      const tStandard = antiFraudService.calculateStandardTime(dbQuestions);
+      const safeMinTimeSec = Math.max(survey.min_completion_time_sec || 0, Math.ceil(tStandard * 0.60));
+
       return res.json({
         success: true,
         responseId,
-        minCompletionTimeSec: survey.min_completion_time_sec,
+        survey: cleanSurvey,
+        minCompletionTimeSec: safeMinTimeSec,
         rewardPoints: survey.reward_points_per_response,
         allow_email_collection: survey.allow_email_collection === 1,
         auto_screener_bypassed: screenerResult.autoScreenerBypassed,

@@ -93,10 +93,22 @@
     }
 
     try {
+      this.showToast('Đang mở bài khảo sát...', 'info');
       const res = await this.api(`/surveys/${surveyId}/start-session`, { method: 'POST' });
       if (res.success) {
-        const detailRes = await this.api(`/surveys/${surveyId}`);
-        const surveyDetail = detailRes.survey || {};
+        // Tận dụng survey object trả về ngay từ backend start-session để bỏ qua RTT mạng thừa
+        let surveyDetail = res.survey;
+        if (!surveyDetail || !surveyDetail.title) {
+          surveyDetail = (this.state.surveys && this.state.surveys.find(s => s.id === surveyId)) || null;
+        }
+        if (!surveyDetail || !surveyDetail.title) {
+          try {
+            const detailRes = await this.api(`/surveys/${surveyId}`);
+            surveyDetail = detailRes.survey || {};
+          } catch (e) {
+            surveyDetail = {};
+          }
+        }
         const isEditing = res.is_editing === true;
         const hasExistingAnswers = Object.keys(res.existingAnswers || {}).length > 0;
         const shouldStartDirectly = isEditing || hasExistingAnswers;
@@ -288,7 +300,7 @@
       return;
     }
 
-    if (session && (!session.survey || !session.survey.cover_image_url)) {
+    if (session && (!session.survey || !session.survey.title)) {
       try {
         const freshRes = await this.api(`/surveys/${surveyId}`);
         if (freshRes && freshRes.survey) {
@@ -2406,12 +2418,12 @@
       }
     }
 
-    // Nhắc nhở nếu hoàn thành quá nhanh khi nộp bài lần đầu
+    // Nhắc nhở nếu hoàn thành quá nhanh khi nộp bài lần đầu để bảo vệ người dùng không bị bẫy tốc độ
     if (!session.isEditing) {
-      const minSafeDuration = Math.max(5, Math.floor((session.minTimeSec || 15) * 0.7));
+      const minSafeDuration = Math.max(5, session.minTimeSec || 15);
       if (session.durationSec < minSafeDuration) {
         const waitSec = minSafeDuration - session.durationSec;
-        this.showToast(`Bạn hoàn thành khá nhanh! Vui lòng dành thêm ${waitSec} giây rà soát lại để đảm bảo chất lượng phản hồi nhé.`, 'warning');
+        this.showToast(`Bạn hoàn thành khá nhanh! Vui lòng dành thêm ${waitSec} giây rà soát lại để đảm bảo đạt chuẩn 100/100 điểm chất lượng nhé.`, 'warning');
         return;
       }
     }
@@ -2451,6 +2463,8 @@
         const surveyDetail = session.survey || {};
         const allowView = surveyDetail.allow_view_response !== 0;
         const allowEdit = surveyDetail.allow_edit_response === 1;
+        const rawScore = res.qualityScore !== undefined ? res.qualityScore : 1.0;
+        const displayQuality = Math.round(rawScore <= 1.0 ? rawScore * 100 : rawScore);
 
         this.showModal({
           title: 'Hoàn Thành Khảo Sát',
@@ -2461,7 +2475,7 @@
               </div>
               <div>
                 <h4 class="text-base font-bold text-slate-900 dark:text-white">${res.message || 'Cảm ơn bạn đã hoàn thành khảo sát!'}</h4>
-                ${res.qualityScore ? `<p class="text-xs text-slate-500 mt-1">Chất lượng phản hồi: <strong class="text-orange-600 font-bold font-mono">${res.qualityScore}/100</strong></p>` : ''}
+                <p class="text-xs text-slate-500 mt-1">Chất lượng phản hồi: <strong class="text-orange-600 font-bold font-mono">${displayQuality}/100</strong></p>
               </div>
 
               ${res.pointsEarned > 0 ? `

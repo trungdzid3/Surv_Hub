@@ -402,12 +402,13 @@ test('8. Chot chan Bo tro: Bao ve Wi-Fi truong hoc (nhieu tai khoan cung IP hop 
   }
 
   // Lan 1 va Lan 2: Hoat dong binh thuong
-  antiFraudService.trackAndVerifyDeviceIp({ userId: u1, rawIp: '1.2.3.4', deviceFingerprint: cheatDevice, action: 'REGISTER' });
-  antiFraudService.trackAndVerifyDeviceIp({ userId: u2, rawIp: '1.2.3.4', deviceFingerprint: cheatDevice, action: 'REGISTER' });
+  const testIp = '10.88.' + Math.floor(Math.random() * 200 + 1) + '.' + Math.floor(Math.random() * 200 + 1);
+  antiFraudService.trackAndVerifyDeviceIp({ userId: u1, rawIp: testIp, deviceFingerprint: cheatDevice, action: 'REGISTER' });
+  antiFraudService.trackAndVerifyDeviceIp({ userId: u2, rawIp: testIp, deviceFingerprint: cheatDevice, action: 'REGISTER' });
 
   // Lan 3: Cham nguong >= 3 tai khoan tren 1 device_fingerprint -> Phai nem loi Auto-Ban!
   assert.throws(() => {
-    antiFraudService.trackAndVerifyDeviceIp({ userId: u3, rawIp: '1.2.3.4', deviceFingerprint: cheatDevice, action: 'REGISTER' });
+    antiFraudService.trackAndVerifyDeviceIp({ userId: u3, rawIp: testIp, deviceFingerprint: cheatDevice, action: 'REGISTER' });
   }, /Thiết bị của bạn đã bị khóa do phát hiện 3 tài khoản/);
 
   // Kiem tra cac tai khoan nay da bi chuyen sang BANNED trong DB

@@ -967,6 +967,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           this.checkDeepLinkSurvey();
           this.initPushNotifications();
           this.initAndroidAppBanner();
+          this.startSurveysAutoSync();
           return;
         }
       } catch (e) {
@@ -988,6 +989,84 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     this.checkDeepLinkSurvey();
     this.initPushNotifications();
     this.initAndroidAppBanner();
+    this.startSurveysAutoSync();
+  },
+
+  /**
+   * Khởi chạy chu kỳ tự động đồng bộ khảo sát thời gian thực (Background Survey Auto-Sync)
+   * Tự động thêm form mới vào giao diện mà người dùng không cần phải tải lại trang F5
+   */
+  startSurveysAutoSync() {
+    if (this._surveysSyncInterval) {
+      clearInterval(this._surveysSyncInterval);
+    }
+
+    // Chu kỳ thăm dò ngầm mỗi 15 giây
+    this._surveysSyncInterval = setInterval(() => {
+      this.syncSurveysRealtime();
+    }, 15000);
+
+    // Đồng bộ tức thì khi chuyển tab quay lại trình duyệt
+    if (this._surveysVisibilityHandler) {
+      document.removeEventListener('visibilitychange', this._surveysVisibilityHandler);
+    }
+    this._surveysVisibilityHandler = () => {
+      if (!document.hidden) {
+        this.syncSurveysRealtime();
+      }
+    };
+    document.addEventListener('visibilitychange', this._surveysVisibilityHandler);
+  },
+
+  async syncSurveysRealtime() {
+    // Không làm mới khi người dùng đang tập trung làm bài để tránh gián đoạn
+    if (this.state.currentTab === 'take-survey') return;
+
+    try {
+      const res = await this.api('/surveys');
+      const latest = (res && Array.isArray(res.surveys)) ? res.surveys : [];
+      if (latest.length === 0) return;
+
+      const currentList = Array.isArray(this.state.surveys) ? this.state.surveys : [];
+      const currentIds = new Set(currentList.map(s => s.id));
+      const hasNewSurvey = latest.some(s => !currentIds.has(s.id));
+
+      const oldJson = JSON.stringify(currentList);
+      const newJson = JSON.stringify(latest);
+
+      if (oldJson !== newJson) {
+        this.state.surveys = latest;
+        try {
+          sessionStorage.setItem('survhub_surveys_cache', newJson);
+        } catch (e) {}
+
+        // Nếu có form mới xuất hiện và người dùng đang ở cổng khảo sát: Tự động chèn mượt mà vào giao diện
+        if (this.state.currentTab === 'surveys') {
+          const root = document.getElementById('app-root');
+          const gridSec = root ? root.querySelector('.surveys-grid-section') : null;
+          if (gridSec) {
+            const { pinnedSurveys, normalSurveys } = this.processSurveysList(latest);
+            gridSec.innerHTML = this._renderSurveysContentHtml(pinnedSurveys, normalSurveys);
+            if (window.lucide) window.lucide.createIcons();
+
+            if (hasNewSurvey) {
+              this.haptic('light');
+              this.showToast('Vừa có bài khảo sát mới được cập nhật vào danh sách!', 'info');
+            }
+          }
+        } else if (this.state.currentTab === 'home') {
+          if (hasNewSurvey) {
+            const root = document.getElementById('app-root');
+            if (root) {
+              await this.renderHomeView(root);
+              this.showToast('Đã tự động cập nhật bài khảo sát mới trên Trang chủ!', 'info');
+            }
+          }
+        }
+      }
+    } catch (err) {
+      // Bỏ qua lỗi ngầm khi sync
+    }
   },
 
   /**
@@ -2046,7 +2125,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       this.showToast('Vui lòng đăng nhập để bắt đầu làm khảo sát này và nhận điểm thưởng!', 'info');
       await this.openSurveyPreviewModal(surveyId);
     } else {
-      await this.navigate('take-survey', { surveyId });
+      await this.startSurveySession(surveyId);
     }
   },
 
