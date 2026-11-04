@@ -1139,11 +1139,12 @@
 
     this.showModal({
       title: 'Thanh Toán Quét Mã VietQR Napas247',
+      maxWidth: 'max-w-xl sm:max-w-2xl',
       content: `
-        <div class="space-y-4 text-left">
+        <div class="space-y-2.5 text-left">
           
           <!-- Thanh trạng thái & Bộ đếm -->
-          <div class="p-3 bg-orange-50/80 dark:bg-stone-900 rounded-xl border border-orange-200/80 dark:border-stone-800 flex items-center justify-between text-xs">
+          <div class="py-2 px-3 bg-orange-50/80 dark:bg-stone-900 rounded-xl border border-orange-200/80 dark:border-stone-800 flex items-center justify-between text-xs">
             <div class="flex items-center gap-2">
               <span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse"></span>
               <span class="font-bold text-stone-900 dark:text-white" id="deposit-status-text">Đang chờ quét mã chuyển khoản...</span>
@@ -1154,68 +1155,73 @@
           </div>
 
           <!-- Khung QR & Chi tiết chuyển khoản -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
             
             <!-- Cột trái: Mã VietQR động -->
-            <div class="flex flex-col items-center justify-center p-3 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs text-center">
-              <div class="relative w-48 h-48 sm:w-52 sm:h-52 bg-white p-2 rounded-xl border border-stone-100 dark:border-stone-800 flex items-center justify-center overflow-hidden">
+            <div class="sm:col-span-5 flex flex-col items-center justify-center p-2.5 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs text-center">
+              <div class="relative w-36 h-36 sm:w-40 sm:h-40 bg-white p-1.5 rounded-xl border border-stone-100 dark:border-stone-800 flex items-center justify-center overflow-hidden">
                 <img src="${order.qrUrl}" alt="VietQR Napas247" class="w-full h-full object-contain select-none">
                 <!-- Logo SurvHub ở tâm mã QR -->
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div class="w-10 h-10 sm:w-11 sm:h-11 bg-white p-1 rounded-xl shadow-md border border-stone-200/80 flex items-center justify-center">
-                    <img src="/logo-light.svg" alt="SurvHub" class="w-full h-full object-contain rounded-lg">
+                  <div class="w-8 h-8 sm:w-9 sm:h-9 bg-white p-0.5 rounded-lg shadow-md border border-stone-200/80 flex items-center justify-center">
+                    <img src="/logo-light.svg" alt="SurvHub" class="w-full h-full object-contain rounded-md">
                   </div>
                 </div>
               </div>
-              <div class="mt-2 text-[11px] text-stone-500 dark:text-stone-400 font-medium">
-                Mở ứng dụng ngân hàng bất kỳ để quét mã
+              <div class="mt-1.5 text-[10.5px] text-stone-500 dark:text-stone-400 font-medium">
+                Mở ứng dụng ngân hàng để quét mã
               </div>
             </div>
 
             <!-- Cột phải: Thông tin nhận tiền -->
-            <div class="space-y-2 text-xs">
-              <div class="p-2.5 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800">
-                <div class="text-[10px] text-stone-500 dark:text-stone-400">Ngân hàng thụ hưởng:</div>
-                <div class="font-bold text-stone-900 dark:text-white text-xs mt-0.5">${bank.bank_name || 'Ngân hàng số Timo by BVBank'}</div>
+            <div class="sm:col-span-7 space-y-1.5 text-xs">
+              <!-- Ngân hàng & Chủ tài khoản (cùng 1 hàng 2 cột gọn gàng) -->
+              <div class="grid grid-cols-2 gap-1.5">
+                <div class="p-2 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800">
+                  <div class="text-[10px] text-stone-500 dark:text-stone-400 leading-none mb-1">Ngân hàng:</div>
+                  <div class="font-bold text-stone-900 dark:text-white text-xs truncate" title="${bank.bank_name || 'Ngân hàng số Timo by BVBank'}">${bank.bank_name || 'Timo by BVBank'}</div>
+                </div>
+                <div class="p-2 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
+                  <div class="min-w-0 pr-1">
+                    <div class="text-[10px] text-stone-500 dark:text-stone-400 leading-none mb-1">Chủ tài khoản:</div>
+                    <div class="font-bold text-stone-900 dark:text-white text-xs truncate" title="${bank.account_name}">${bank.account_name}</div>
+                  </div>
+                  <button type="button" onclick="VibeApp.copyValue('${bank.account_name}', 'Tên chủ tài khoản')" title="Sao chép tên chủ tài khoản" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
               </div>
 
-              <div class="p-2.5 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
+              <!-- Số tài khoản -->
+              <div class="p-2 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
                 <div>
-                  <div class="text-[10px] text-stone-500 dark:text-stone-400">Số tài khoản:</div>
-                  <div class="font-mono font-bold text-stone-900 dark:text-white text-sm mt-0.5">${bank.account_number}</div>
+                  <div class="text-[10px] text-stone-500 dark:text-stone-400 leading-none mb-1">Số tài khoản:</div>
+                  <div class="font-mono font-bold text-stone-900 dark:text-white text-sm tracking-wide leading-none">${bank.account_number}</div>
                 </div>
-                <button type="button" onclick="VibeApp.copyValue('${bank.account_number}', 'Số tài khoản')" class="px-2.5 py-1.5 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-lg font-bold border border-stone-200 dark:border-stone-700 text-[11px] transition-all">
-                  Sao chép
+                <button type="button" onclick="VibeApp.copyValue('${bank.account_number}', 'Số tài khoản')" title="Sao chép số tài khoản" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
 
-              <div class="p-2.5 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
+              <!-- Số tiền nạp -->
+              <div class="p-2 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
                 <div>
-                  <div class="text-[10px] text-stone-500 dark:text-stone-400">Chủ tài khoản:</div>
-                  <div class="font-bold text-stone-900 dark:text-white text-xs mt-0.5">${bank.account_name}</div>
+                  <div class="text-[10px] text-stone-500 dark:text-stone-400 leading-none mb-1">Số tiền nạp:</div>
+                  <div class="font-mono font-bold text-orange-600 dark:text-orange-400 text-sm leading-none">${formatMoney(order.amountVnd)} VNĐ</div>
                 </div>
-                <button type="button" onclick="VibeApp.copyValue('${bank.account_name}', 'Tên chủ tài khoản')" class="px-2.5 py-1.5 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-lg font-bold border border-stone-200 dark:border-stone-700 text-[11px] transition-all">
-                  Sao chép
+                <button type="button" onclick="VibeApp.copyValue('${order.amountVnd}', 'Số tiền')" title="Sao chép số tiền" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
 
-              <div class="p-2.5 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
+              <!-- Nội dung chuyển khoản (Memo) -->
+              <div class="p-2 bg-orange-50/70 dark:bg-stone-900 rounded-xl border border-orange-200/80 dark:border-stone-800 flex items-center justify-between">
                 <div>
-                  <div class="text-[10px] text-stone-500 dark:text-stone-400">Số tiền nạp:</div>
-                  <div class="font-mono font-bold text-orange-600 dark:text-orange-400 text-sm mt-0.5">${formatMoney(order.amountVnd)} VNĐ</div>
+                  <div class="text-[10px] text-orange-600 dark:text-orange-400 font-bold leading-none mb-1">Nội dung chuyển khoản (Memo):</div>
+                  <div class="font-mono font-black text-stone-900 dark:text-white text-sm tracking-wider leading-none">${order.orderCode}</div>
                 </div>
-                <button type="button" onclick="VibeApp.copyValue('${order.amountVnd}', 'Số tiền')" class="px-2.5 py-1.5 bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-lg font-bold border border-stone-200 dark:border-stone-700 text-[11px] transition-all">
-                  Sao chép
-                </button>
-              </div>
-
-              <div class="p-2.5 bg-orange-50/70 dark:bg-stone-900 rounded-xl border border-orange-200/80 dark:border-stone-800 flex items-center justify-between">
-                <div>
-                  <div class="text-[10px] text-orange-600 dark:text-orange-400 font-bold">Nội dung chuyển khoản (Memo):</div>
-                  <div class="font-mono font-black text-stone-900 dark:text-white text-sm mt-0.5 tracking-wider">${order.orderCode}</div>
-                </div>
-                <button type="button" onclick="VibeApp.copyValue('${order.orderCode}', 'Nội dung chuyển khoản')" class="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-[11px] shadow-xs transition-all">
-                  Sao chép
+                <button type="button" onclick="VibeApp.copyValue('${order.orderCode}', 'Nội dung chuyển khoản')" title="Sao chép nội dung chuyển khoản" class="w-7 h-7 rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-xs">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
             </div>
@@ -1223,19 +1229,19 @@
           </div>
 
           <!-- Lưu ý quan trọng -->
-          <div class="p-2.5 bg-stone-100 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
-            Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và mã nội dung <strong>${order.orderCode}</strong>. Tổng Credit nhận: <strong>${formatMoney(order.creditAmount)} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(order.bonusCreditVnd) + ' Credit thưởng)' : ''}.
+          <div class="p-2 bg-stone-100/90 dark:bg-stone-900/90 rounded-xl border border-stone-200 dark:border-stone-800 text-[10.5px] text-stone-600 dark:text-stone-300 leading-normal">
+            Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và nội dung <strong>${order.orderCode}</strong>. Tổng Credit nhận: <strong>${formatMoney(order.creditAmount)} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(order.bonusCreditVnd) + ' Credit thưởng)' : ''}.
           </div>
 
           <!-- Nút hành động & Giả lập thanh toán -->
-          <div class="flex flex-col sm:flex-row gap-2 pt-1">
-            <button type="button" onclick="VibeApp.checkDepositStatus('${order.orderCode}', false)" class="flex-1 py-2.5 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
+          <div class="flex flex-col sm:flex-row gap-2 pt-0.5">
+            <button type="button" onclick="VibeApp.checkDepositStatus('${order.orderCode}', false)" class="flex-1 py-2 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
               Kiểm Tra Trạng Thái
             </button>
-            <button type="button" onclick="VibeApp.simulatePaymentSuccess('${order.orderCode}')" class="py-2.5 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
+            <button type="button" onclick="VibeApp.simulatePaymentSuccess('${order.orderCode}')" class="py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
               Mô Phỏng Thanh Toán (Dev/Test)
             </button>
-            <button type="button" onclick="VibeApp.closeModal()" class="py-2.5 px-3 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
+            <button type="button" onclick="VibeApp.closeModal()" class="py-2 px-3 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
               Đóng
             </button>
           </div>
@@ -1243,6 +1249,10 @@
         </div>
       `
     });
+
+    if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
 
     // Khoi chay bo dem nguoc 15:00
     this._depositTimerInterval = setInterval(() => {
