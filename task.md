@@ -40,11 +40,11 @@ Kiến trúc đích: app.js còn ~4k dòng (core init, router, home, nav) + data
 - [x] Task C: Tich hop nghiem thu: node -c, npm run sync:android, cap nhat PROJECT_CONTEXT.md, commit + push | [Agent: Lead Orchestrator] | [Locked Files: android/, PROJECT_CONTEXT.md]
 
 ## SPRINT 04-11-2026: SURVHUB TIMO VIETQR & WEBHOOK AUTOMATION
-- [ ] Task T1: Xây dựng module vietQrService.js sinh mã VietQR NAPAS247 chuẩn EMVCo TLV + CRC16-CCITT in-process | [Agent: Subagent-VietQrCore] | [Skill: security-audit] | [Locked Files: server/services/vietQrService.js]
-- [ ] Task T2: Cập nhật config Timo (BIN 963388, STK 9021773148754, NGUYEN THANH TRUNG) và nâng cấp ledgerService.js tiền tố SURV, regex webhook và giữ nút nạp test | [Agent: Subagent-LedgerTimo] | [Skill: security-audit] | [Locked Files: server/config/index.js, server/services/ledgerService.js]
-- [ ] Task T3: Đảm bảo giao diện ví wallet-ledger.js hiển thị đúng thông tin Timo, mã SURV, render QR và giữ nguyên nút nạp test mô phỏng | [Agent: Subagent-WalletUI] | [Skill: design-taste-frontend] | [Locked Files: public/js/modules/wallet-ledger.js]
-- [ ] Task T4: Viết bộ kiểm thử hồi quy tests/test_timo_vietqr_webhook.js kiểm tra sinh mã VietQR, tạo đơn SURV, webhook khớp lệnh và nút nạp test | [Agent: Subagent-QA] | [Skill: security-audit] | [Locked Files: tests/test_timo_vietqr_webhook.js]
-- [ ] Task T5: Lead Orchestrator: Syntax verification, npm test 25 tầng, sync Android, cập nhật PROJECT_CONTEXT.md và xuất tài liệu hướng dẫn cấu hình Render/Google Apps Script | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, task.md]
+- [x] Task T1: Xây dựng module vietQrService.js sinh mã VietQR NAPAS247 chuẩn EMVCo TLV + CRC16-CCITT in-process | [Agent: Subagent-VietQrCore] | [Skill: security-audit] | [Locked Files: server/services/vietQrService.js]
+- [x] Task T2: Cập nhật config Timo (BIN 963388, STK 9021773148754, NGUYEN THANH TRUNG) và nâng cấp ledgerService.js tiền tố SURV, regex webhook và giữ nút nạp test | [Agent: Subagent-LedgerTimo] | [Skill: security-audit] | [Locked Files: server/config/index.js, server/services/ledgerService.js]
+- [x] Task T3: Đảm bảo giao diện ví wallet-ledger.js hiển thị đúng thông tin Timo, mã SURV, nhúng logo SurvHub ở tâm QR, xử lý PENDING_MISMATCH và giữ nguyên nút nạp test mô phỏng | [Agent: Subagent-WalletUI] | [Skill: design-taste-frontend] | [Locked Files: public/js/modules/wallet-ledger.js]
+- [x] Task T4: Viết bộ kiểm thử hồi quy tests/test_timo_vietqr_webhook.js kiểm tra sinh mã VietQR, tạo đơn SURV, webhook khớp lệnh và nút nạp test | [Agent: Subagent-QA] | [Skill: security-audit] | [Locked Files: tests/test_timo_vietqr_webhook.js]
+- [x] Task T5: Lead Orchestrator: Syntax verification, npm test 25 tầng (100% PASS), sync Android, cập nhật PROJECT_CONTEXT.md và xuất tài liệu hướng dẫn cấu hình Render/Google Apps Script | [Agent: Lead Orchestrator] | [Skill: security-audit] | [Locked Files: PROJECT_CONTEXT.md, task.md]
 
 ## SPRINT 04-11-2026: SURVHUB REBRANDING & OPENCODE CLI FIRST POLICY
 - [x] Task N1: Cập nhật C:\Users\Lenovo\.gemini\GEMINI.md bổ sung quy tắc ưu tiên OpenCode CLI hơn hết (CLI First) và chỉ định 2 họ model cho phép: DeepSeek và GLM 5.3 Flash, đồng bộ tên dự án SurvHub | [Agent: Subagent-GlobalRuleSync] | [Skill: writing-guidelines] | [Locked Files: C:/Users/Lenovo/.gemini/GEMINI.md]

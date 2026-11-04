@@ -158,6 +158,12 @@ const testSuites = [
     name: 'Tầng 24: Login OTP-aware & 2FA Regression Suite',
     description: 'Kiểm tra token chỉ cấp sau OTP, giới hạn OTP sai, single-use và expiry challenge',
     file: 'test_auth_2fa.js'
+  },
+  {
+    id: 25,
+    name: 'Tầng 25: Timo VietQR & Payment Webhook Suite',
+    description: 'Kiểm tra sinh mã VietQR Timo (BIN 963388), tạo đơn SURV, đối soát webhook và nạp test demo',
+    file: 'test_timo_vietqr_webhook.js'
   }
 ];
 

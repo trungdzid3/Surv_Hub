@@ -53,7 +53,8 @@ c:\Users\Lenovo\Downloads\Linh\
 | `controllers/walletController.js` | Ví & thanh toán | `depositCredit` (admin, test-bypass), `createDepositOrder`, `handlePaymentWebhook` (~317, timing-safe), payouts, swap Point→Credit (+5%), VAT invoices |
 | `controllers/adminController.js` | Quản trị | overview, `searchUsers`, `/execute-command` (gồm `/cleantest`), duyệt payouts, fraud logs, audit logs |
 | `controllers/voucherController.js` / `forumController.js` / `userController.js` / `bugReportController.js` | E-Voucher, diễn đàn, streak/checkin, báo lỗi | — |
-| `services/ledgerService.js` | Sổ cái kép ACID (1.267 dòng) | `depositCredit`, `createDepositOrder` (~897, VietQR), `completeDepositOrder`, `refundRemainingEscrow` (~408), refund payout từ chối (~724), `handlePaymentWebhook` (~1129, ghép nội dung `/VIBE\d{6}/`) |
+| `services/vietQrService.js` | Sinh & phân tích VietQR (266 dòng) | `calculateCrc16` (CRC16-CCITT chuẩn EMVCo), `formatTlv`, `generatePayload` (Tag 00/01/38/53/54/58/62/63), `generateQrUrl`, `parsePayload` (giải mã 2 chiều), zero-dependency |
+| `services/ledgerService.js` | Sổ cái kép ACID (1.275 dòng) | `depositCredit`, `createDepositOrder` (mã `SURV\d{6}`, nhúng Timo BIN 963388, STK 9021773148754, qrPayload, qrUrl), `completeDepositOrder` (so khớp 100% số tiền, chênh lệch đưa về `PENDING_MISMATCH` bảo vệ số dư), `refundRemainingEscrow`, `handlePaymentWebhook` (regex `/(?:SURV\|VIBE)\d{6}/i`), `simulatePaymentSuccess` (giữ nguyên cho demo) |
 | `services/antiFraudService.js` | 5 chốt chặn (841 dòng) | `evaluateSubmission` (~339: speed/attention/straight-lining/open-text), trust deltas (~283: +2/+0,2/−5/−12, <40 ban), auto-ban device ≥3 & IP ≥5 (~704-784), `trackAndVerifyDeviceIp` |
 | `services/surveyPricingService.js` | Định giá (684 dòng) | Báo giá 3 phân khúc x độ dài, SLA multiplier, thù lao động, phụ phí lọc |
 | `services/formParserService.js` | Parser (4.380 dòng) | Bóc tách Google Forms / MS Forms / Smart Text Paste → 12 dạng câu hỏi |
@@ -87,7 +88,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 `users` (PII: `demographics_json`, OTP cột, trust_score) · `surveys` (+ `allow_email_collection`) · `questions` (logic_json, is_attention_check) · `responses` (`answers_payload`, quality_score) · `point_transactions` (sổ cái kép, 7 loại tx) · `deposit_orders` · `payout_requests` · `fraud_logs` / `device_ip_logs` / `banned_ips` · `registration_otps` · `voucher_campaigns` / `voucher_codes` · `forum_posts` / `forum_comments` / `forum_post_likes` · `notifications` / `push_subscriptions` / `daily_streaks` · `admin_audit_logs` / `bug_reports` / `warranty_claims` / `email_notifications_log` / `vat_invoices`.
 
 ### 3.4 Kiểm thử
-`npm test` = `tests/run_all_tests.js` fork 24 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; tầng 24 = `tests/test_auth_2fa.js` (login token gating, OTP brute-force, single-use, expiry); `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
+`npm test` = `tests/run_all_tests.js` fork 25 suite với `NODE_ENV=test` + `DISABLE_REAL_EMAIL=true`; tầng 24 = `tests/test_auth_2fa.js`; tầng 25 = `tests/test_timo_vietqr_webhook.js` (Timo VietQR BIN 963388, đơn SURV, đối soát tiền và chốt chặn PENDING_MISMATCH); `tests/test_cleanup_helper.js` dọn dữ liệu test 8 hạng mục (chạy qua lệnh admin `/cleantest`).
 - Sơ đồ luồng xác thực email sinh viên: `docs/architecture/student-email-domain-validation.html` (nguồn `.archify/architecture-student-email-domains-*/candidate.json`).
 - Bản đồ code frontend chi tiết: `docs/CODE_MAP.md`.
 

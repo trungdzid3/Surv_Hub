@@ -61,10 +61,11 @@ module.exports = {
 
   // Cấu hình Cổng Thanh Toán & VietQR Napas247
   PAYMENT_GATEWAY: {
-    BANK_ID: process.env.PAYMENT_BANK_ID || 'MB',
-    BANK_NAME: process.env.PAYMENT_BANK_NAME || 'Ngân hàng Quân Đội (MBBank)',
-    ACCOUNT_NUMBER: process.env.PAYMENT_ACCOUNT_NUMBER || '0000000000',
-    ACCOUNT_NAME: process.env.PAYMENT_ACCOUNT_NAME || 'SURVHUB PLATFORM',
+    BANK_ID: process.env.PAYMENT_BANK_ID || 'TIMO',
+    BANK_BIN: process.env.PAYMENT_BANK_BIN || '963388',
+    BANK_NAME: process.env.PAYMENT_BANK_NAME || 'Ngân hàng số Timo by BVBank',
+    ACCOUNT_NUMBER: process.env.PAYMENT_ACCOUNT_NUMBER || '9021773148754',
+    ACCOUNT_NAME: process.env.PAYMENT_ACCOUNT_NAME || 'NGUYEN THANH TRUNG',
     TEMPLATE: process.env.PAYMENT_QR_TEMPLATE || 'compact',
     WEBHOOK_SECRET: configuredWebhookSecret || demoWebhookSecret,
     ORDER_EXPIRE_MINUTES: 15

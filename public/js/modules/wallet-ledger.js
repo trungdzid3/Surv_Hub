@@ -1147,8 +1147,14 @@
             
             <!-- Cột trái: Mã VietQR động -->
             <div class="flex flex-col items-center justify-center p-3 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs text-center">
-              <div class="w-48 h-48 sm:w-52 sm:h-52 bg-white p-2 rounded-xl border border-stone-100 dark:border-stone-800 flex items-center justify-center overflow-hidden">
+              <div class="relative w-48 h-48 sm:w-52 sm:h-52 bg-white p-2 rounded-xl border border-stone-100 dark:border-stone-800 flex items-center justify-center overflow-hidden">
                 <img src="${order.qrUrl}" alt="VietQR Napas247" class="w-full h-full object-contain select-none">
+                <!-- Logo SurvHub ở tâm mã QR -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div class="w-10 h-10 sm:w-11 sm:h-11 bg-white p-1 rounded-xl shadow-md border border-stone-200/80 flex items-center justify-center">
+                    <img src="/logo-light.svg" alt="SurvHub" class="w-full h-full object-contain rounded-lg">
+                  </div>
+                </div>
               </div>
               <div class="mt-2 text-[11px] text-stone-500 dark:text-stone-400 font-medium">
                 Mở ứng dụng ngân hàng bất kỳ để quét mã
@@ -1159,7 +1165,7 @@
             <div class="space-y-2 text-xs">
               <div class="p-2.5 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800">
                 <div class="text-[10px] text-stone-500 dark:text-stone-400">Ngân hàng thụ hưởng:</div>
-                <div class="font-bold text-stone-900 dark:text-white text-xs mt-0.5">${bank.bank_name || 'MBBank (Ngân hàng Quân Đội)'}</div>
+                <div class="font-bold text-stone-900 dark:text-white text-xs mt-0.5">${bank.bank_name || 'Ngân hàng số Timo by BVBank'}</div>
               </div>
 
               <div class="p-2.5 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
@@ -1297,6 +1303,46 @@
               </div>
             `
           });
+          return;
+        } else if (order.status === 'PENDING_MISMATCH') {
+          if (this._depositPollInterval) clearInterval(this._depositPollInterval);
+          if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
+
+          const statusEl = document.getElementById('deposit-status-text');
+          if (statusEl) statusEl.textContent = 'Số tiền chuyển khoản không khớp (Tạm giữ)';
+
+          this.showModal({
+            title: 'Lệch Số Tiền Chuyển Khoản',
+            content: `
+              <div class="space-y-4 text-center py-2">
+                <div class="w-14 h-14 bg-red-100 dark:bg-red-950/60 rounded-full flex items-center justify-center mx-auto text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+                  <i data-lucide="alert-triangle" class="w-7 h-7 stroke-[2.5]"></i>
+                </div>
+                <div>
+                  <h3 class="text-base font-extrabold text-stone-900 dark:text-white">Phát Hiện Lệch Số Tiền</h3>
+                  <p class="text-xs text-stone-600 dark:text-stone-300 mt-2 leading-relaxed">Số tiền chuyển khoản không khớp với số tiền đơn nạp. Đơn hàng đang được tạm giữ để đối soát an toàn. Vui lòng liên hệ Admin qua kênh hỗ trợ.</p>
+                </div>
+
+                <div class="p-3 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-xs space-y-1.5 text-left max-w-sm mx-auto">
+                  <div class="flex justify-between text-stone-600 dark:text-stone-400">
+                    <span>Mã đơn nạp:</span>
+                    <span class="font-mono font-bold text-stone-900 dark:text-white">${orderCode}</span>
+                  </div>
+                  <div class="flex justify-between text-stone-600 dark:text-stone-400">
+                    <span>Trạng thái:</span>
+                    <span class="font-bold text-red-600 dark:text-red-400">Tạm giữ đối soát</span>
+                  </div>
+                </div>
+
+                <div class="pt-2">
+                  <button type="button" onclick="VibeApp.closeModal();" class="w-full py-2.5 bg-stone-900 hover:bg-stone-800 dark:bg-stone-800 dark:hover:bg-stone-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]">
+                    Đã Hiểu & Đóng
+                  </button>
+                </div>
+              </div>
+            `
+          });
+          this.showToast('Số tiền chuyển khoản không khớp với số tiền đơn nạp. Đơn hàng đang được tạm giữ để đối soát an toàn. Vui lòng liên hệ Admin qua kênh hỗ trợ.', 'error');
           return;
         } else if (order.status === 'EXPIRED') {
           if (this._depositPollInterval) clearInterval(this._depositPollInterval);

@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('../db/database');
 const config = require('../config');
+const vietQrService = require('./vietQrService');
 
 class LedgerService {
   /**
@@ -894,12 +895,12 @@ class LedgerService {
     const bonusCreditVnd = bonusInfo.bonusCreditVnd || 0;
     const creditAmount = amount + bonusCreditVnd;
 
-    // Sinh ma don duy nhat: VIBE + 6 chu so ngau nhien
+    // Sinh ma don duy nhat: SURV + 6 chu so ngau nhien
     let orderCode = '';
     let attempts = 0;
     while (attempts < 10) {
       const randNum = Math.floor(100000 + Math.random() * 900000);
-      const candidate = `VIBE${randNum}`;
+      const candidate = `SURV${randNum}`;
       const existing = db.prepare('SELECT id FROM deposit_orders WHERE order_code = ?').get(candidate);
       if (!existing) {
         orderCode = candidate;
@@ -908,14 +909,15 @@ class LedgerService {
       attempts++;
     }
     if (!orderCode) {
-      orderCode = `VIBE${Date.now().toString().slice(-6)}`;
+      orderCode = `SURV${Date.now().toString().slice(-6)}`;
     }
 
     const gatewayConfig = config.PAYMENT_GATEWAY || {
-      BANK_ID: 'MB',
-      BANK_NAME: 'Ngan hang Quan Doi (MBBank)',
-      ACCOUNT_NUMBER: '0335888888',
-      ACCOUNT_NAME: 'SURVHUB PLATFORM',
+      BANK_ID: 'TIMO',
+      BANK_BIN: '963388',
+      BANK_NAME: 'Ngân hàng số Timo by BVBank',
+      ACCOUNT_NUMBER: '9021773148754',
+      ACCOUNT_NAME: 'NGUYEN THANH TRUNG',
       TEMPLATE: 'compact',
       ORDER_EXPIRE_MINUTES: 15
     };
@@ -923,18 +925,41 @@ class LedgerService {
     const expireMinutes = gatewayConfig.ORDER_EXPIRE_MINUTES || 15;
     const expiresAt = new Date(Date.now() + expireMinutes * 60 * 1000).toISOString();
 
-    // URL anh VietQR dong chuan Napas247
-    const encodedAccountName = encodeURIComponent(gatewayConfig.ACCOUNT_NAME || 'SURVHUB PLATFORM');
-    const qrUrl = `https://api.vietqr.io/image/${gatewayConfig.BANK_ID}-${gatewayConfig.ACCOUNT_NUMBER}-${gatewayConfig.TEMPLATE || 'compact'}.jpg?amount=${amount}&addInfo=${orderCode}&accountName=${encodedAccountName}`;
+    const qrPayload = vietQrService.generatePayload({
+      bankBin: gatewayConfig.BANK_BIN || '963388',
+      accountNumber: gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      amount,
+      orderCode,
+      accountName: gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG'
+    });
+
+    const qrUrl = vietQrService.generateQrUrl({
+      bankBin: gatewayConfig.BANK_BIN || '963388',
+      accountNumber: gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      amount,
+      orderCode,
+      accountName: gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG',
+      template: gatewayConfig.TEMPLATE || 'compact'
+    });
 
     const bankAccountInfo = {
-      bank_id: gatewayConfig.BANK_ID,
-      bank_name: gatewayConfig.BANK_NAME,
-      account_number: gatewayConfig.ACCOUNT_NUMBER,
-      account_name: gatewayConfig.ACCOUNT_NAME,
+      bank_id: gatewayConfig.BANK_ID || 'TIMO',
+      bank_bin: gatewayConfig.BANK_BIN || '963388',
+      bankBin: gatewayConfig.BANK_BIN || '963388',
+      bank_name: gatewayConfig.BANK_NAME || 'Ngân hàng số Timo by BVBank',
+      bankName: gatewayConfig.BANK_NAME || 'Ngân hàng số Timo by BVBank',
+      account_number: gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      accountNumber: gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      account_name: gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG',
+      accountName: gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG',
       order_code: orderCode,
+      orderCode,
       amount_vnd: amount,
-      qr_url: qrUrl
+      amountVnd: amount,
+      qr_url: qrUrl,
+      qrUrl,
+      qr_payload: qrPayload,
+      qrPayload
     };
 
     const orderId = 'dep_' + crypto.randomUUID();
@@ -967,6 +992,8 @@ class LedgerService {
       fastTrackTickets: bonusInfo.bonusTickets || 0,
       enterprisePerks,
       qrUrl,
+      qrPayload,
+      bankAccountInfo,
       bankInfo: bankAccountInfo,
       expiresAt,
       expiresInSec: expireMinutes * 60,
@@ -1014,13 +1041,28 @@ class LedgerService {
     }
 
     const gatewayConfig = config.PAYMENT_GATEWAY || {
-      BANK_ID: 'MB',
-      ACCOUNT_NUMBER: '0335888888',
-      ACCOUNT_NAME: 'SURVHUB PLATFORM',
+      BANK_ID: 'TIMO',
+      BANK_BIN: '963388',
+      BANK_NAME: 'Ngân hàng số Timo by BVBank',
+      ACCOUNT_NUMBER: '9021773148754',
+      ACCOUNT_NAME: 'NGUYEN THANH TRUNG',
       TEMPLATE: 'compact'
     };
-    const encodedAccountName = encodeURIComponent(gatewayConfig.ACCOUNT_NAME || 'SURVHUB PLATFORM');
-    const qrUrl = `https://api.vietqr.io/image/${gatewayConfig.BANK_ID}-${gatewayConfig.ACCOUNT_NUMBER}-${gatewayConfig.TEMPLATE || 'compact'}.jpg?amount=${order.amount_vnd}&addInfo=${order.order_code}&accountName=${encodedAccountName}`;
+    const qrUrl = (bankInfo && bankInfo.qr_url) ? bankInfo.qr_url : vietQrService.generateQrUrl({
+      bankBin: (bankInfo && (bankInfo.bank_bin || bankInfo.bankBin)) || gatewayConfig.BANK_BIN || '963388',
+      accountNumber: (bankInfo && (bankInfo.account_number || bankInfo.accountNumber)) || gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      amount: order.amount_vnd,
+      orderCode: order.order_code,
+      accountName: (bankInfo && (bankInfo.account_name || bankInfo.accountName)) || gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG',
+      template: gatewayConfig.TEMPLATE || 'compact'
+    });
+    const qrPayload = (bankInfo && (bankInfo.qr_payload || bankInfo.qrPayload)) ? (bankInfo.qr_payload || bankInfo.qrPayload) : vietQrService.generatePayload({
+      bankBin: (bankInfo && (bankInfo.bank_bin || bankInfo.bankBin)) || gatewayConfig.BANK_BIN || '963388',
+      accountNumber: (bankInfo && (bankInfo.account_number || bankInfo.accountNumber)) || gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      amount: order.amount_vnd,
+      orderCode: order.order_code,
+      accountName: (bankInfo && (bankInfo.account_name || bankInfo.accountName)) || gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG'
+    });
 
     return {
       success: true,
@@ -1032,7 +1074,9 @@ class LedgerService {
       status: order.status,
       paymentMethod: order.payment_method,
       bankInfo,
+      bankAccountInfo: bankInfo,
       qrUrl,
+      qrPayload,
       paidAt: order.paid_at,
       createdAt: order.created_at,
       expiresAt: order.expires_at
@@ -1066,16 +1110,16 @@ class LedgerService {
 
     if (actualAmountPaid !== null && actualAmountPaid !== undefined) {
       const paid = Number(actualAmountPaid);
-      if (paid < order.amount_vnd) {
-        throw new Error(`So tien thuc nhan (${paid.toLocaleString('vi-VN')}d) nho hon so tien don nap (${order.amount_vnd.toLocaleString('vi-VN')}d)`);
+      if (paid !== order.amount_vnd) {
+        db.prepare("UPDATE deposit_orders SET status = 'PENDING_MISMATCH' WHERE id = ?").run(order.id);
+        throw new Error(`So tien thuc nhan (${paid.toLocaleString('vi-VN')}d) khong khop voi so tien don nap (${order.amount_vnd.toLocaleString('vi-VN')}d). Don nap duoc giu trang thai PENDING_MISMATCH de doi soat.`);
       }
     }
-
     // Cap nhat trang thai don nap sang COMPLETED
     const updateRes = db.prepare(`
       UPDATE deposit_orders 
       SET status = 'COMPLETED', paid_at = CURRENT_TIMESTAMP 
-      WHERE id = ? AND status IN ('PENDING', 'EXPIRED')
+      WHERE id = ? AND status IN ('PENDING', 'EXPIRED', 'PENDING_MISMATCH')
     `).run(order.id);
 
     if (updateRes.changes === 0) {
@@ -1170,7 +1214,7 @@ class LedgerService {
       ].filter(Boolean).map(String);
 
       const combinedText = contentList.join(' ');
-      const match = combinedText.match(/VIBE\d{6}/i);
+      const match = combinedText.match(/(?:SURV|VIBE)\d{6}/i);
 
       if (!match) {
         continue;
