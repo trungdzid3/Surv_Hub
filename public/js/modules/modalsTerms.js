@@ -1191,10 +1191,168 @@
   },
 
   /**
-   * Cập nhật hiển thị Widget Streak trên Header
+   * Tính toán Cấp bậc và Phong cách Màu sắc TikTok Streak
+   * - Level 0: Chuỗi = 0 -> Bạc xám tối giản (Inactive)
+   * - Level Risk: Chuỗi >= 1 nhưng Chưa điểm danh hôm nay -> Nguy cơ đứt chuỗi (Than hồng nhấp nháy Amber pulse)
+   * - Level 1: Chuỗi 1 - 2 ngày -> Lửa Hổ Phách Khởi Động (Amber Fire)
+   * - Level 2: Chuỗi 3 - 6 ngày -> Lửa Đỏ Rực Cháy (Crimson Sunset Flame)
+   * - Level 3: Chuỗi 7 - 29 ngày -> Siêu Chuỗi TikTok Neon (Iconic Electric Magenta & Hot Pink Neon)
+   * - Level 4: Chuỗi 30 - 99 ngày -> Lửa Băng Điện Quang (Cyber Ice Cyan & Blue)
+   * - Level 5: Chuỗi 100+ ngày -> Huyền Thoại Hoàng Kim Thạch Anh (Mythic Prismatic Gold & Violet)
    */
+  getStreakTierInfo(streakCount, hasCheckedIn) {
+    const count = Number(streakCount) || 0;
+
+    // 1. Chuỗi = 0: Chưa kích hoạt
+    if (count <= 0) {
+      return {
+        id: 'dormant',
+        level: 0,
+        name: 'Chưa Thắp Lửa',
+        shortBadge: 'Chưa Bật Lửa',
+        desc: 'Điểm danh để bắt đầu chuỗi ngày nhận thưởng',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100/80 dark:bg-stone-800/60 text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 hover:border-stone-300 dark:hover:border-stone-700 transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-bold',
+        flameSvg: '<i data-lucide="flame" class="w-3.5 h-3.5 stroke-[2] text-stone-400 dark:text-stone-500"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-stone-100 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0 shadow-xs',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 stroke-[2.2]"></i>',
+        textClass: 'text-stone-400 dark:text-stone-500',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">Chưa Bật Lửa</span>',
+        bentoBorder: 'border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/60 text-stone-600 dark:text-stone-300',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 text-stone-400"></i>',
+        bentoText: 'text-slate-800 dark:text-stone-200',
+        title: 'Điểm danh hàng ngày (Bấm để nhận 50 điểm)'
+      };
+    }
+
+    // 2. Chuỗi >= 1 nhưng HÔM NAY CHƯA ĐIỂM DANH: Than hồng nhấp nháy, cảnh báo giữ chuỗi
+    if (!hasCheckedIn) {
+      return {
+        id: 'risk',
+        level: -1,
+        name: 'Nguy Cơ Mất Chuỗi',
+        shortBadge: 'Cần Giữ Chuỗi',
+        desc: 'Hôm nay chưa điểm danh, chuỗi có nguy cơ bị reset về 0 lúc 00:00',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-500/90 dark:border-amber-500/90 bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.28)] hover:shadow-[0_0_16px_rgba(245,158,11,0.45)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black animate-pulse',
+        flameSvg: '<i data-lucide="flame" class="w-4 h-4 stroke-[2.4] text-amber-600 dark:text-amber-400 animate-pulse"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-100 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0 shadow-xs animate-pulse',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 stroke-[2.2]"></i>',
+        textClass: 'text-amber-600 dark:text-amber-400 font-black',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 animate-pulse">Cần Giữ Chuỗi</span>',
+        bentoBorder: 'border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 text-amber-600 animate-pulse"></i>',
+        bentoText: 'text-amber-600 dark:text-amber-400',
+        title: `Chuỗi: ${count} ngày (Chưa điểm danh hôm nay - Bấm để giữ chuỗi!)`
+      };
+    }
+
+    // 3. ĐÃ ĐIỂM DANH HÔM NAY - PHÂN CẤP TIKTOK STREAK TIERS:
+
+    // Tier 1: Chuỗi 1 - 2 ngày (Lửa Hổ Phách Khởi Động)
+    if (count <= 2) {
+      return {
+        id: 'amber',
+        level: 1,
+        name: 'Lửa Khởi Động',
+        shortBadge: 'Cấp 1 - Lửa Khởi Động',
+        desc: 'Bước đầu tạo thói quen khảo sát liên tiếp',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-400/90 dark:border-amber-500/90 bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.25)] hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-amber-500 text-amber-500 stroke-amber-600 drop-shadow-xs"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0 shadow-xs',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-amber-500 stroke-amber-600"></i>',
+        textClass: 'text-amber-600 dark:text-amber-400 font-black',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/80">Cấp 1 - Lửa Khởi Động</span>',
+        bentoBorder: 'border-amber-300/80 dark:border-amber-800/80 bg-amber-50/40 dark:bg-amber-950/20',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-amber-500 text-amber-500 stroke-amber-600"></i>',
+        bentoText: 'text-amber-600 dark:text-amber-400',
+        title: `Chuỗi: ${count} ngày (Lửa Khởi Động - Đã điểm danh)`
+      };
+    }
+
+    // Tier 2: Chuỗi 3 - 6 ngày (Lửa Đỏ Rực Cháy - Crimson Sunset)
+    if (count <= 6) {
+      return {
+        id: 'crimson',
+        level: 2,
+        name: 'Lửa Bùng Cháy',
+        shortBadge: 'Cấp 2 - Lửa Bùng Cháy',
+        desc: 'Chuỗi ngày rực lửa, đang tiến sát mốc vàng Ngày 7',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-rose-500/90 dark:border-rose-500/90 bg-gradient-to-r from-orange-500/15 via-red-500/15 to-rose-500/15 dark:from-orange-950/40 dark:via-red-950/40 dark:to-rose-950/40 text-rose-600 dark:text-rose-400 shadow-[0_0_14px_rgba(244,63,94,0.32)] hover:shadow-[0_0_18px_rgba(244,63,94,0.48)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-rose-500 text-rose-500 stroke-rose-600 drop-shadow-xs"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400 flex-shrink-0 shadow-xs',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-rose-500 stroke-rose-600"></i>',
+        textClass: 'text-rose-600 dark:text-rose-400 font-black',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-300/80 dark:border-rose-800/80">Cấp 2 - Lửa Bùng Cháy</span>',
+        bentoBorder: 'border-rose-300/80 dark:border-rose-800/80 bg-rose-50/40 dark:bg-rose-950/20',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-rose-500 text-rose-500 stroke-rose-600"></i>',
+        bentoText: 'text-rose-600 dark:text-rose-400',
+        title: `Chuỗi: ${count} ngày (Lửa Bùng Cháy - Đã điểm danh)`
+      };
+    }
+
+    // Tier 3: Chuỗi 7 - 29 ngày (Siêu Chuỗi TikTok Neon - Iconic Magenta & Hot Pink)
+    if (count <= 29) {
+      return {
+        id: 'neon_tiktok',
+        level: 3,
+        name: 'Siêu Chuỗi TikTok Neon',
+        shortBadge: 'Cấp 3 - Siêu Chuỗi TikTok',
+        desc: 'Hào quang neon rực sáng đặc trưng phong cách TikTok',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-fuchsia-500/90 dark:border-fuchsia-400/90 bg-gradient-to-r from-pink-500/15 via-purple-500/15 to-fuchsia-500/15 dark:from-pink-950/40 dark:via-purple-950/40 dark:to-fuchsia-950/40 text-fuchsia-600 dark:text-fuchsia-300 shadow-[0_0_16px_rgba(217,70,239,0.4)] hover:shadow-[0_0_22px_rgba(217,70,239,0.6)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-fuchsia-500 text-fuchsia-500 stroke-fuchsia-600 drop-shadow-[0_0_6px_rgba(217,70,239,0.6)]"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-fuchsia-50 dark:bg-fuchsia-950/50 border border-fuchsia-200 dark:border-fuchsia-800 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-300 flex-shrink-0 shadow-[0_0_15px_rgba(217,70,239,0.25)]',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-fuchsia-500 stroke-fuchsia-600 drop-shadow-[0_0_6px_rgba(217,70,239,0.6)]"></i>',
+        textClass: 'text-fuchsia-600 dark:text-fuchsia-300 font-black drop-shadow-xs',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-fuchsia-700 dark:text-fuchsia-200 border border-fuchsia-400/70 dark:border-fuchsia-500/70 shadow-[0_0_10px_rgba(217,70,239,0.25)]">Cấp 3 - Siêu Chuỗi TikTok</span>',
+        bentoBorder: 'border-fuchsia-400/70 dark:border-fuchsia-700/80 bg-gradient-to-br from-pink-500/5 via-purple-500/5 to-fuchsia-500/5 dark:from-pink-950/25 dark:to-purple-950/25',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-fuchsia-500 text-fuchsia-500 stroke-fuchsia-600"></i>',
+        bentoText: 'text-fuchsia-600 dark:text-fuchsia-300',
+        title: `Siêu Chuỗi TikTok: ${count} ngày liên tiếp`
+      };
+    }
+
+    // Tier 4: Chuỗi 30 - 99 ngày (Lửa Băng Điện Quang - Cyber Ice Blue & Cyan)
+    if (count <= 99) {
+      return {
+        id: 'cyber_cyan',
+        level: 4,
+        name: 'Băng Hỏa Điện Quang',
+        shortBadge: 'Cấp 4 - Băng Hỏa Điện Quang',
+        desc: 'Đẳng cấp chuyên gia khảo sát, ngọn lửa xanh lam băng giá siêu hiếm',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-cyan-400/90 dark:border-cyan-400/90 bg-gradient-to-r from-cyan-500/15 via-blue-500/15 to-teal-500/15 dark:from-cyan-950/40 dark:via-blue-950/40 dark:to-teal-950/40 text-cyan-600 dark:text-cyan-300 shadow-[0_0_18px_rgba(6,182,212,0.45)] hover:shadow-[0_0_24px_rgba(6,182,212,0.65)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-cyan-400 text-cyan-400 stroke-cyan-600 drop-shadow-[0_0_6px_rgba(6,182,212,0.7)]"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-300 flex-shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.25)]',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-cyan-400 stroke-cyan-600 drop-shadow-[0_0_6px_rgba(6,182,212,0.7)]"></i>',
+        textClass: 'text-cyan-600 dark:text-cyan-300 font-black',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-700 dark:text-cyan-200 border border-cyan-400/70 dark:border-cyan-500/70 shadow-[0_0_12px_rgba(6,182,212,0.3)]">Cấp 4 - Băng Hỏa Điện Quang</span>',
+        bentoBorder: 'border-cyan-400/70 dark:border-cyan-700/80 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 dark:from-cyan-950/25 dark:to-blue-950/25',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-cyan-400 text-cyan-400 stroke-cyan-600"></i>',
+        bentoText: 'text-cyan-600 dark:text-cyan-300',
+        title: `Chuỗi Băng Hỏa Điện Quang: ${count} ngày`
+      };
+    }
+
+    // Tier 5: Chuỗi 100+ ngày (Thần Thoại Hoàng Kim - Mythic Prismatic Gold & Violet)
+    return {
+      id: 'mythic_gold',
+      level: 5,
+      name: 'Thần Thoại Hoàng Kim',
+      shortBadge: 'Cấp 5 - Thần Thoại Hoàng Kim',
+      desc: 'Cột mốc thần thoại 100+ ngày, ngọn lửa vàng thạch anh quý phái nhất sàn',
+      btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-300/95 dark:border-amber-400/95 bg-gradient-to-r from-amber-400/20 via-pink-500/15 to-purple-500/20 dark:from-amber-950/50 dark:via-purple-950/50 dark:to-pink-950/50 text-amber-600 dark:text-amber-300 shadow-[0_0_22px_rgba(245,158,11,0.5)] hover:shadow-[0_0_28px_rgba(245,158,11,0.75)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+      flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-amber-400 text-amber-400 stroke-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"></i>',
+      headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-300 flex-shrink-0 shadow-[0_0_18px_rgba(245,158,11,0.35)]',
+      headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-amber-400 stroke-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"></i>',
+      textClass: 'text-amber-600 dark:text-amber-300 font-black',
+      modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400/25 via-pink-500/20 to-purple-500/25 text-amber-700 dark:text-amber-200 border border-amber-400/90 shadow-[0_0_15px_rgba(245,158,11,0.4)]">Cấp 5 - Thần Thoại Hoàng Kim</span>',
+      bentoBorder: 'border-amber-400/80 dark:border-amber-600 bg-gradient-to-br from-amber-500/10 via-pink-500/5 to-purple-500/10',
+      bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-amber-400 text-amber-400 stroke-amber-500"></i>',
+      bentoText: 'text-amber-600 dark:text-amber-300',
+      title: `Chuỗi Thần Thoại Hoàng Kim: ${count} ngày`
+    };
+  },
+
   /**
-   * Cập nhật hiển thị Widget Streak trên Header (Phong cách TikTok Streak siêu gọn: Ngọn lửa + Số)
+   * Cập nhật hiển thị Widget Streak trên Header (Phong cách TikTok Streak đa tầng màu sắc)
    */
   updateStreakHeaderUI(streak) {
     const streakBtn = document.getElementById('header-streak-btn');
@@ -1223,28 +1381,15 @@
 
     streakText.textContent = streakCount;
 
-    // PHONG CÁCH TIKTOK STREAK:
-    // - Khi CHƯA điểm danh: Màu xám bạc trung tính, ngọn lửa nét mỏng màu xám, số xám, không có chấm đỏ.
-    // - Khi ĐÃ điểm danh: Bừng sáng ngọn lửa rực rỡ màu cam/đỏ TikTok (lửa tô màu, viền gradient sáng, số cam lửa đậm nét).
-    if (hasCheckedIn) {
-      // ĐÃ ĐIỂM DANH HÔM NAY: Ngọn lửa TikTok bừng sáng rực rỡ
-      streakBtn.className = 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-orange-400/80 dark:border-orange-500/80 bg-gradient-to-r from-orange-500/10 via-orange-500/10 to-orange-500/10 dark:from-orange-950/40 dark:to-orange-950/40 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.2)] hover:shadow-[0_0_16px_rgba(249,115,22,0.3)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black';
-      if (streakFlame) {
-        streakFlame.className = 'relative flex items-center justify-center text-orange-600 dark:text-orange-400';
-        streakFlame.innerHTML = `<i data-lucide="flame" class="w-4 h-4 fill-orange-500 text-orange-500 stroke-orange-600 drop-shadow-xs"></i>`;
-      }
-      streakBtn.title = `Đã điểm danh hôm nay! Chuỗi: ${streakCount} ngày liên tiếp`;
-    } else {
-      // CHƯA ĐIỂM DANH: Màu xám trung tính nhẹ nhàng, không gây khó chịu
-      streakBtn.className = 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100/80 dark:bg-stone-800/60 text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 hover:border-stone-300 dark:hover:border-stone-700 transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-bold';
-      if (streakFlame) {
-        streakFlame.className = 'relative flex items-center justify-center text-stone-400 dark:text-stone-500';
-        streakFlame.innerHTML = `<i data-lucide="flame" class="w-3.5 h-3.5 stroke-[2]"></i>`;
-      }
-      streakBtn.title = streakCount > 0 
-        ? `Chuỗi: ${streakCount} ngày (Chưa điểm danh hôm nay - Bấm để giữ chuỗi)`
-        : 'Điểm danh hàng ngày (Bấm để nhận 50 điểm)';
+    // Lấy thông tin Visual Tier theo TikTok Streak
+    const tierInfo = this.getStreakTierInfo(streakCount, hasCheckedIn);
+
+    // Áp dụng class nút, ngọn lửa và title tooltip
+    streakBtn.className = tierInfo.btnClass;
+    if (streakFlame) {
+      streakFlame.innerHTML = tierInfo.flameSvg;
     }
+    streakBtn.title = tierInfo.title;
 
     if (window.lucide) lucide.createIcons();
   },
@@ -1295,6 +1440,8 @@
     };
 
     card.className = 'bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-stone-200/80 dark:border-stone-800 transform transition-all relative max-h-[92vh] overflow-y-auto no-scrollbar';
+
+    const tierInfo = this.getStreakTierInfo(streak.current_streak, streak.has_checked_in_today);
 
     const roadmapHtml = (streak.roadmap || []).map(r => {
       // 1. Ngày 7: Mốc Vàng Đặc Biệt (Đặt chip bên trong card, tuyệt đối không bị đè chữ)
@@ -1359,6 +1506,29 @@
       `;
     }).join('');
 
+    // Danh sách 5 Cấp Bậc Ngọn Lửa TikTok Streak để hiển thị bảng vinh danh
+    const tiersList = [
+      { level: 1, name: 'Khởi Động', range: '1-2 ngày', color: 'text-amber-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-amber-500 text-amber-500"></i>', border: 'border-amber-300 dark:border-amber-700/80 bg-amber-50/40 dark:bg-amber-950/20' },
+      { level: 2, name: 'Bùng Cháy', range: '3-6 ngày', color: 'text-rose-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-rose-500 text-rose-500"></i>', border: 'border-rose-300 dark:border-rose-700/80 bg-rose-50/40 dark:bg-rose-950/20' },
+      { level: 3, name: 'TikTok Neon', range: '7-29 ngày', color: 'text-fuchsia-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-fuchsia-500 text-fuchsia-500"></i>', border: 'border-fuchsia-400 dark:border-fuchsia-700/80 bg-fuchsia-50/40 dark:bg-fuchsia-950/20' },
+      { level: 4, name: 'Băng Hỏa', range: '30-99 ngày', color: 'text-cyan-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-cyan-400 text-cyan-400"></i>', border: 'border-cyan-300 dark:border-cyan-700/80 bg-cyan-50/40 dark:bg-cyan-950/20' },
+      { level: 5, name: 'Hoàng Kim', range: '100+ ngày', color: 'text-amber-400', flame: '<i data-lucide="flame" class="w-3 h-3 fill-amber-400 text-amber-400"></i>', border: 'border-amber-400 dark:border-amber-600/80 bg-amber-50/50 dark:bg-amber-950/30' }
+    ];
+
+    const tiersGuideHtml = tiersList.map(t => {
+      const isCurrent = (tierInfo.level === t.level);
+      return `
+        <div class="flex flex-col items-center justify-between p-1.5 rounded-xl border ${isCurrent ? `${t.border} ring-2 ring-orange-500/30 shadow-xs font-bold` : 'border-stone-200/60 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/40 opacity-70'} text-center transition-all">
+          <div class="flex items-center gap-0.5 my-0.5">
+            ${t.flame}
+            <span class="text-[10px] ${t.color} font-black">${t.name}</span>
+          </div>
+          <span class="text-[9px] text-stone-500 dark:text-stone-400 font-mono">${t.range}</span>
+          ${isCurrent ? '<span class="text-[8px] font-black uppercase text-orange-600 dark:text-orange-400 mt-0.5">Hiện tại</span>' : ''}
+        </div>
+      `;
+    }).join('');
+
     card.innerHTML = `
       <div class="relative space-y-5">
         <!-- Close Button -->
@@ -1368,29 +1538,27 @@
 
         <!-- Header: Minimalist Modern Gamification -->
         <div class="flex items-center gap-3 pr-8">
-          <div class="w-11 h-11 rounded-2xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 flex items-center justify-center text-orange-600 dark:text-orange-400 flex-shrink-0 shadow-xs">
-            <i data-lucide="flame" class="w-6 h-6 stroke-[2.2]"></i>
+          <div class="${tierInfo.headerIconClass}">
+            ${tierInfo.headerIconSvg}
           </div>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">Điểm Danh Chuỗi Ngày</h3>
-              <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-300/60 dark:border-orange-800/60">
-                Streak
-              </span>
+              ${tierInfo.modalBadge}
             </div>
-            <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Duy trì thói quen mỗi ngày để nhận điểm thưởng tăng dần</p>
+            <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">${tierInfo.desc}</p>
           </div>
         </div>
 
         <!-- 3 Bento Stat Cards (Chuẩn UI/UX Pro Max) -->
         <div class="grid grid-cols-3 gap-2 sm:gap-2.5">
-          <!-- Card 1: Chuỗi Hiện Tại -->
-          <div class="p-3 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 text-center">
-            <span class="block text-[11px] text-stone-500 dark:text-stone-400 font-medium">Chuỗi Hiện Tại</span>
-            <div class="flex items-center justify-center gap-1 mt-0.5">
-              <i data-lucide="flame" class="w-4 h-4 text-orange-600 dark:text-orange-500"></i>
-              <span class="font-mono font-black text-lg text-orange-600 dark:text-orange-500">${streak.current_streak}</span>
-              <span class="text-xs font-semibold text-stone-500">ngày</span>
+          <!-- Card 1: Chuỗi Hiện Tại (Phản ánh cấp bậc màu sắc) -->
+          <div class="p-3 rounded-2xl ${tierInfo.bentoBorder} border transition-all text-center">
+            <span class="block text-[11px] font-medium opacity-80">Chuỗi Hiện Tại</span>
+            <div class="flex items-center justify-center gap-1.5 mt-0.5">
+              ${tierInfo.bentoFlame}
+              <span class="font-mono font-black text-lg ${tierInfo.bentoText}">${streak.current_streak}</span>
+              <span class="text-xs font-semibold opacity-75">ngày</span>
             </div>
           </div>
 
@@ -1414,6 +1582,20 @@
           </div>
         </div>
 
+        <!-- Cấp Bậc Ngọn Lửa TikTok Streak (Tier Visual Guide) -->
+        <div class="p-3 rounded-2xl bg-stone-50/70 dark:bg-stone-900/40 border border-stone-200/70 dark:border-stone-800 space-y-2">
+          <div class="flex items-center justify-between text-xs px-0.5">
+            <span class="font-bold text-slate-800 dark:text-stone-200 text-[11px] flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-orange-500"></i>
+              <span>Cấp Bậc Đổi Màu Ngọn Lửa TikTok</span>
+            </span>
+            <span class="text-[10px] text-stone-500 dark:text-stone-400">Càng duy trì lâu, màu càng ngầu</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1.5">
+            ${tiersGuideHtml}
+          </div>
+        </div>
+
         <!-- 7-Day Visual Roadmap (Lộ trình chuẩn 7 ngày) -->
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs px-0.5">
@@ -1431,7 +1613,7 @@
         <!-- Checkin Action Button -->
         <div class="pt-0.5">
           ${!streak.has_checked_in_today ? `
-            <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 hover:from-orange-700 hover:to-orange-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+            <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-rose-500 to-orange-600 hover:from-orange-700 hover:to-rose-600 text-white font-extrabold text-sm shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
               <i data-lucide="zap" class="w-4 h-4 fill-white"></i>
               <span>Điểm Danh Ngay (+${streak.today_reward_points} Điểm)</span>
             </button>
