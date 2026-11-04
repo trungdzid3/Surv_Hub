@@ -1247,7 +1247,7 @@
 
     // 3. ĐÃ ĐIỂM DANH HÔM NAY - PHÂN CẤP TIKTOK STREAK TIERS:
 
-    // Tier 1: Chuỗi 1 - 10 ngày (Lửa Hổ Phách Khởi Động)
+    // Tier 1: Chuỗi 1 - 10 ngày (Lửa Khởi Động Vàng Nhạt Tinh Tế)
     if (count <= 10) {
       return {
         id: 'amber',
@@ -1255,15 +1255,15 @@
         name: 'Lửa Khởi Động',
         shortBadge: 'Cấp 1 - Lửa Khởi Động',
         desc: 'Bước đầu tạo thói quen khảo sát liên tiếp (1 - 10 ngày)',
-        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-400/90 dark:border-amber-500/90 bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.25)] hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
-        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-amber-500 text-amber-500 stroke-amber-600 drop-shadow-xs"></i>',
-        headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0 shadow-xs',
-        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-amber-500 stroke-amber-600"></i>',
-        textClass: 'text-amber-600 dark:text-amber-400 font-black',
-        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/80">Cấp 1 - Lửa Khởi Động</span>',
-        bentoBorder: 'border-amber-300/80 dark:border-amber-800/80 bg-amber-50/40 dark:bg-amber-950/20',
-        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-amber-500 text-amber-500 stroke-amber-600"></i>',
-        bentoText: 'text-amber-600 dark:text-amber-400',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-[#FDE047] bg-[#FEF9C3]/80 dark:bg-[#713F12]/30 text-[#854D0E] dark:text-[#FEF08A] shadow-[0_0_10px_rgba(253,224,71,0.35)] hover:shadow-[0_0_15px_rgba(253,224,71,0.55)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-[#FDE047] text-[#FDE047] stroke-[#CA8A04] drop-shadow-xs"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-[#FEF9C3] dark:bg-[#713F12]/30 border border-[#FDE047] dark:border-[#A16207] flex items-center justify-center text-[#854D0E] dark:text-[#FEF08A] flex-shrink-0 shadow-xs',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-[#FDE047] stroke-[#CA8A04]"></i>',
+        textClass: 'text-[#854D0E] dark:text-[#FEF08A] font-black',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-[#FEF9C3] dark:bg-[#713F12]/50 text-[#854D0E] dark:text-[#FEF08A] border border-[#FDE047] dark:border-[#A16207]">Cấp 1 - Lửa Khởi Động</span>',
+        bentoBorder: 'border-[#FDE047] dark:border-[#A16207] bg-[#FEF9C3]/40 dark:bg-[#713F12]/20',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-[#FDE047] text-[#FDE047] stroke-[#CA8A04]"></i>',
+        bentoText: 'text-[#854D0E] dark:text-[#FEF08A]',
         title: `Chuỗi: ${count} ngày (Lửa Khởi Động - Đã điểm danh)`
       };
     }
@@ -1310,42 +1310,42 @@
       };
     }
 
-    // Tier 4: Chuỗi 101 - 200 ngày (Lửa Băng Điện Quang - Cyber Ice Blue & Cyan)
+    // Tier 4: Chuỗi 101 - 200 ngày (Lửa Băng Điện Quang - Cyber Ice & Fire Song Hỏa)
     if (count <= 200) {
       return {
         id: 'cyber_cyan',
         level: 4,
         name: 'Băng Hỏa Điện Quang',
         shortBadge: 'Cấp 4 - Băng Hỏa Điện Quang',
-        desc: 'Đẳng cấp chuyên gia khảo sát, ngọn lửa xanh lam băng giá siêu hiếm (101 - 200 ngày)',
-        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-cyan-400/90 dark:border-cyan-400/90 bg-gradient-to-r from-cyan-500/15 via-blue-500/15 to-teal-500/15 dark:from-cyan-950/40 dark:via-blue-950/40 dark:to-teal-950/40 text-cyan-600 dark:text-cyan-300 shadow-[0_0_18px_rgba(6,182,212,0.45)] hover:shadow-[0_0_24px_rgba(6,182,212,0.65)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
-        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-cyan-400 text-cyan-400 stroke-cyan-600 drop-shadow-[0_0_6px_rgba(6,182,212,0.7)]"></i>',
-        headerIconClass: 'w-11 h-11 rounded-2xl bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-300 flex-shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.25)]',
-        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-cyan-400 stroke-cyan-600 drop-shadow-[0_0_6px_rgba(6,182,212,0.7)]"></i>',
+        desc: 'Đẳng cấp chuyên gia khảo sát, ngọn lửa song hỏa Băng - Lửa siêu hiếm (101 - 200 ngày)',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-cyan-400/90 dark:border-cyan-400/90 bg-gradient-to-r from-orange-500/15 via-cyan-500/20 to-blue-500/15 dark:from-orange-950/40 dark:via-cyan-950/50 dark:to-blue-950/40 text-cyan-600 dark:text-cyan-300 shadow-[0_0_18px_rgba(6,182,212,0.55)] hover:shadow-[0_0_24px_rgba(6,182,212,0.75)] anim-streak-fire-ice transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+        flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-[#06B6D4] text-[#06B6D4] stroke-[#EA580C] anim-streak-fire-ice drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>',
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-300 anim-streak-fire-ice flex-shrink-0 shadow-[0_0_18px_rgba(6,182,212,0.35)]',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-[#06B6D4] stroke-[#EA580C] anim-streak-fire-ice drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i>',
         textClass: 'text-cyan-600 dark:text-cyan-300 font-black',
-        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-700 dark:text-cyan-200 border border-cyan-400/70 dark:border-cyan-500/70 shadow-[0_0_12px_rgba(6,182,212,0.3)]">Cấp 4 - Băng Hỏa Điện Quang</span>',
-        bentoBorder: 'border-cyan-400/70 dark:border-cyan-700/80 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 dark:from-cyan-950/25 dark:to-blue-950/25',
-        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-cyan-400 text-cyan-400 stroke-cyan-600"></i>',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-orange-500/20 via-cyan-500/20 to-blue-500/20 text-cyan-700 dark:text-cyan-200 border border-cyan-400/70 dark:border-cyan-500/70 shadow-[0_0_12px_rgba(6,182,212,0.4)] anim-streak-fire-ice">Cấp 4 - Băng Hỏa Điện Quang</span>',
+        bentoBorder: 'border-cyan-400/70 dark:border-cyan-700/80 bg-gradient-to-br from-orange-500/5 via-cyan-500/10 to-blue-500/5 dark:from-orange-950/25 dark:via-cyan-950/30 dark:to-blue-950/25',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-[#06B6D4] text-[#06B6D4] stroke-[#EA580C] anim-streak-fire-ice"></i>',
         bentoText: 'text-cyan-600 dark:text-cyan-300',
         title: `Chuỗi Băng Hỏa Điện Quang: ${count} ngày`
       };
     }
 
-    // Tier 5: Chuỗi 201+ ngày (Thần Thoại Hoàng Kim - Mythic Prismatic Gold & Violet)
+    // Tier 5: Chuỗi 201+ ngày (Thần Thoại Hoàng Kim - Cam, Vàng Kim & Ánh Trắng Tinh Khôi)
     return {
       id: 'mythic_gold',
       level: 5,
       name: 'Thần Thoại Hoàng Kim',
       shortBadge: 'Cấp 5 - Thần Thoại Hoàng Kim',
-      desc: 'Cột mốc thần thoại từ 201 ngày trở lên, ngọn lửa vàng thạch anh quý phái nhất sàn',
-      btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-300/95 dark:border-amber-400/95 bg-gradient-to-r from-amber-400/20 via-pink-500/15 to-purple-500/20 dark:from-amber-950/50 dark:via-purple-950/50 dark:to-pink-950/50 text-amber-600 dark:text-amber-300 shadow-[0_0_22px_rgba(245,158,11,0.5)] hover:shadow-[0_0_28px_rgba(245,158,11,0.75)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
-      flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-amber-400 text-amber-400 stroke-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"></i>',
-      headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-300 flex-shrink-0 shadow-[0_0_18px_rgba(245,158,11,0.35)]',
-      headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-amber-400 stroke-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"></i>',
+      desc: 'Cột mốc thần thoại từ 201 ngày trở lên, ngọn lửa hoàng kim lấp lánh 3 sắc quý phái nhất sàn',
+      btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-300/95 dark:border-amber-400/95 bg-gradient-to-r from-amber-400/25 via-orange-500/20 to-white/20 dark:from-amber-950/60 dark:via-orange-950/50 dark:to-amber-900/40 text-amber-600 dark:text-amber-300 shadow-[0_0_24px_rgba(245,158,11,0.6)] hover:shadow-[0_0_30px_rgba(245,158,11,0.85)] anim-streak-mythic-gold transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
+      flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-[#FACC15] text-[#FACC15] stroke-[#EA580C] anim-streak-mythic-gold drop-shadow-[0_0_10px_rgba(250,204,21,0.9)]"></i>',
+      headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-700 flex items-center justify-center text-amber-600 dark:text-amber-300 anim-streak-mythic-gold flex-shrink-0 shadow-[0_0_22px_rgba(245,158,11,0.45)]',
+      headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-[#FACC15] stroke-[#EA580C] anim-streak-mythic-gold drop-shadow-[0_0_10px_rgba(250,204,21,0.9)]"></i>',
       textClass: 'text-amber-600 dark:text-amber-300 font-black',
-      modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400/25 via-pink-500/20 to-purple-500/25 text-amber-700 dark:text-amber-200 border border-amber-400/90 shadow-[0_0_15px_rgba(245,158,11,0.4)]">Cấp 5 - Thần Thoại Hoàng Kim</span>',
-      bentoBorder: 'border-amber-400/80 dark:border-amber-600 bg-gradient-to-br from-amber-500/10 via-pink-500/5 to-purple-500/10',
-      bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-amber-400 text-amber-400 stroke-amber-500"></i>',
+      modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400/30 via-orange-500/20 to-amber-200/30 text-amber-700 dark:text-amber-200 border border-amber-400/90 shadow-[0_0_16px_rgba(245,158,11,0.5)] anim-streak-mythic-gold">Cấp 5 - Thần Thoại Hoàng Kim</span>',
+      bentoBorder: 'border-amber-400/80 dark:border-amber-600 bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-300/10',
+      bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-[#FACC15] text-[#FACC15] stroke-[#EA580C] anim-streak-mythic-gold"></i>',
       bentoText: 'text-amber-600 dark:text-amber-300',
       title: `Chuỗi Thần Thoại Hoàng Kim: ${count} ngày`
     };
@@ -1532,57 +1532,9 @@
     // --- Streak Benefits (KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md) ---
     const freezeCount = streak.streak_freezes_count || 0;
     const maxFreezeTickets = streak.max_freeze_tickets || 2;
-    const multiplierPercent = streak.multiplier_percent || 0;
     const pendingFreeze = streak.pending_freeze_consumption || 0;
     const gatePassed = streak.milestone_gate_passed === true;
-    const claimedMilestones = Array.isArray(streak.claimed_milestones) ? streak.claimed_milestones : [];
-    const milestonesList = Array.isArray(streak.milestones) ? streak.milestones : [];
-
-    const milestoneCardsHtml = milestonesList.map(m => {
-      const isClaimed = claimedMilestones.includes(m.day);
-      const reachedDay = (streak.current_streak || 0) >= m.day;
-      const perks = [];
-      if (m.points > 0) perks.push(`+${m.points.toLocaleString('vi-VN')} Point`);
-      if (m.freeze_tickets > 0) perks.push(`${m.freeze_tickets} Vé Cứu Chuỗi`);
-      if (m.badge) perks.push(`Huy hiệu "${m.badge}"`);
-      if (m.avatar_frame) perks.push('Khung Avatar Neon');
-
-      let stateBadge = '';
-      let actionHtml = '';
-
-      if (isClaimed) {
-        stateBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-300/70 dark:border-orange-800/70">Đã Nhận</span>';
-      } else if (reachedDay && gatePassed) {
-        stateBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300/70 dark:border-emerald-800/70">Sẵn Sàng</span>';
-        actionHtml = `<button onclick="VibeApp.claimStreakMilestone(${m.day})" data-milestone-btn="${m.day}" class="mt-1.5 w-full py-1.5 px-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-extrabold transition-all active:scale-95 flex items-center justify-center gap-1 cursor-pointer shadow-xs">
-          <i data-lucide="gift" class="w-3 h-3"></i><span>Mở Quà Ngay</span>
-        </button>`;
-      } else if (reachedDay && !gatePassed) {
-        stateBadge = '<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300/70 dark:border-amber-800/70">Cần Hoạt Động</span>';
-      } else {
-        stateBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700">Còn ${m.day - (streak.current_streak || 0)} Ngày</span>`;
-      }
-
-      const cardBorder = isClaimed
-        ? 'border-orange-300/70 dark:border-orange-800/70 bg-orange-50/50 dark:bg-orange-950/20'
-        : (reachedDay && gatePassed
-          ? 'border-2 border-orange-500 bg-white dark:bg-stone-900 ring-2 ring-orange-500/20 shadow-md'
-          : 'border-stone-200/70 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-900/40');
-
-      return `
-        <div class="p-2.5 rounded-2xl border ${cardBorder} transition-all flex flex-col items-center text-center">
-          <div class="flex items-center gap-1">
-            <i data-lucide="${isClaimed ? 'check-circle-2' : (reachedDay ? 'gift' : 'lock')}" class="w-3.5 h-3.5 ${reachedDay && !isClaimed ? 'text-orange-600' : 'text-stone-400'}"></i>
-            <span class="text-[11px] font-black text-slate-800 dark:text-stone-200 font-mono">${m.day} Ngày</span>
-          </div>
-          <div class="mt-1">${stateBadge}</div>
-          <div class="mt-1 space-y-0.5">
-            ${perks.map(p => `<div class="text-[9px] font-bold text-stone-500 dark:text-stone-400 leading-tight">${p}</div>`).join('')}
-          </div>
-          ${actionHtml}
-        </div>
-      `;
-    }).join('');
+    const eligibleMilestone = streak.eligible_unclaimed_milestone;
 
     card.innerHTML = `
       <div class="relative space-y-5">
@@ -1592,13 +1544,16 @@
         </button>
 
         <!-- Header: Minimalist Modern Gamification -->
-        <div class="flex items-center gap-3 pr-8">
+        <div class="flex items-center gap-3 pr-12">
           <div class="${tierInfo.headerIconClass}">
             ${tierInfo.headerIconSvg}
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">Điểm Danh Chuỗi Ngày</h3>
+              <button onclick="VibeApp.openStreakRulesModal()" class="w-5 h-5 rounded-full bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 flex items-center justify-center transition-all cursor-pointer font-bold text-xs border border-stone-200 dark:border-stone-700 shadow-xs" title="Quy chế chuỗi điểm danh">
+                ?
+              </button>
               ${tierInfo.modalBadge}
               ${freezeCount > 0 ? `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-300/80 dark:border-cyan-800/80 flex items-center gap-1"><i data-lucide="shield-snowflake" class="w-3 h-3"></i>${freezeCount}/${maxFreezeTickets} Vé Cứu Chuỗi</span>` : ''}
             </div>
@@ -1638,31 +1593,6 @@
           </div>
         </div>
 
-        <!-- Cấp Bậc Ngọn Lửa TikTok Streak (Tier Visual Guide) -->
-        <div class="p-3 rounded-2xl bg-stone-50/70 dark:bg-stone-900/40 border border-stone-200/70 dark:border-stone-800 space-y-2">
-          <div class="flex items-center justify-between text-xs px-0.5">
-            <span class="font-bold text-slate-800 dark:text-stone-200 text-[11px] flex items-center gap-1.5">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-orange-500"></i>
-              <span>Cấp Bậc Đổi Màu Ngọn Lửa TikTok</span>
-            </span>
-            <span class="text-[10px] text-stone-500 dark:text-stone-400">Càng duy trì lâu, màu càng ngầu</span>
-          </div>
-          <div class="grid grid-cols-5 gap-1.5">
-            ${tiersGuideHtml}
-          </div>
-        </div>
-
-        <!-- Đặc quyền hệ số thưởng khảo sát (Streak Bonus) -->
-        <div class="p-3 rounded-2xl border ${multiplierPercent > 0 ? 'border-orange-300/80 dark:border-orange-800/80 bg-gradient-to-r from-orange-50/80 to-amber-50/50 dark:from-orange-950/30 dark:to-amber-950/20' : 'bg-stone-50/70 dark:bg-stone-900/40 border border-stone-200/70 dark:border-stone-800'} flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <i data-lucide="percent" class="w-4 h-4 ${multiplierPercent > 0 ? 'text-orange-600' : 'text-stone-400'}"></i>
-            <span class="text-[11px] font-bold text-slate-800 dark:text-stone-200">Đặc quyền hiện tại</span>
-          </div>
-          <span class="text-[11px] font-extrabold ${multiplierPercent > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-stone-400'}">
-            ${multiplierPercent > 0 ? `Thưởng thêm +${multiplierPercent}% Point trên mọi bài khảo sát` : 'Điểm danh 11 ngày để nhận +3% Point'}
-          </span>
-        </div>
-
         ${pendingFreeze > 0 ? `
         <!-- Cảnh báo Vé Cứu Chuỗi sẽ tự kích hoạt -->
         <div class="p-2.5 rounded-2xl border border-cyan-300/80 dark:border-cyan-800/80 bg-cyan-50/60 dark:bg-cyan-950/30 flex items-start gap-2">
@@ -1671,20 +1601,23 @@
         </div>
         ` : ''}
 
-        <!-- Hộp Quà Cột Mốc (Milestone Gifts) -->
-        <div class="space-y-2">
-          <div class="flex items-center justify-between text-xs px-0.5">
-            <span class="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <i data-lucide="gift" class="w-3.5 h-3.5 text-orange-600"></i>
-              <span>Hộp Quà Cột Mốc</span>
-            </span>
-            <span class="text-[10px] text-stone-500 dark:text-stone-400">Nhận 1 lần duy nhất / tài khoản</span>
+        ${eligibleMilestone && gatePassed ? `
+        <!-- Banner thông báo có Quà Cột Mốc sẵn sàng mở -->
+        <div class="p-3 rounded-2xl border border-orange-300 dark:border-orange-800 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 dark:from-orange-950/40 dark:via-amber-950/30 dark:to-orange-950/40 flex items-center justify-between gap-3 shadow-xs">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+              <i data-lucide="gift" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-black text-slate-900 dark:text-white truncate">Hộp Quà Cột Mốc ${eligibleMilestone.day} Ngày!</div>
+              <div class="text-[10px] text-stone-500 dark:text-stone-400 truncate">+${(eligibleMilestone.points || 0).toLocaleString('vi-VN')} Point & đặc quyền mới</div>
+            </div>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            ${milestoneCardsHtml}
-          </div>
-          ${!gatePassed ? '<p class="text-[9px] text-stone-400 dark:text-stone-500 px-0.5 leading-relaxed">Lưu ý: Hộp Quà yêu cầu bạn đã hoàn thành ít nhất 1 khảo sát hợp lệ trong 7 ngày gần nhất (chống điểm danh ảo).</p>' : ''}
+          <button onclick="VibeApp.openMilestoneCelebrationPopup(${eligibleMilestone.day})" class="py-2 px-3.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold flex-shrink-0 transition-all active:scale-95 cursor-pointer shadow-xs">
+            Mở Quà
+          </button>
         </div>
+        ` : ''}
 
         <!-- 7-Day Visual Roadmap (Lộ trình chuẩn 7 ngày) -->
         <div class="space-y-2">
@@ -1701,7 +1634,7 @@
         </div>
 
         <!-- Checkin Action Button -->
-        <div class="pt-0.5">
+        <div class="pt-1">
           ${!streak.has_checked_in_today ? `
             <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-rose-500 to-orange-600 hover:from-orange-700 hover:to-rose-600 text-white font-extrabold text-sm shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
               <i data-lucide="zap" class="w-4 h-4 fill-white"></i>
@@ -1714,22 +1647,169 @@
             </div>
           `}
         </div>
+      </div>
+    `;
 
-        <!-- Rules & Guidelines (Tip Card gọn gàng) -->
-        <div class="p-3.5 bg-stone-50/70 dark:bg-stone-900/40 rounded-2xl border border-stone-200/70 dark:border-stone-800 text-[11px] text-stone-500 dark:text-stone-400 space-y-1.5 leading-relaxed">
-          <div class="font-bold text-slate-800 dark:text-stone-200 text-xs flex items-center gap-1.5">
-            <i data-lucide="info" class="w-3.5 h-3.5 text-stone-400"></i>
-            <span>Quy chế chuỗi điểm danh:</span>
+    container.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  },
+
+  /**
+   * Modal Quy Chế Chuỗi Điểm Danh (Mở khi bấm nút "?" cạnh tiêu đề Điểm Danh)
+   */
+  openStreakRulesModal() {
+    this.haptic('light');
+    const container = document.getElementById('modal-container');
+    const card = document.getElementById('modal-card');
+    if (!container || !card) return;
+
+    card.className = 'bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-stone-200/80 dark:border-stone-800 transform transition-all relative max-h-[90vh] overflow-y-auto no-scrollbar';
+
+    card.innerHTML = `
+      <div class="relative space-y-4">
+        <!-- Close Button -->
+        <button onclick="VibeApp.openStreakModal()" class="absolute -top-1.5 -right-1.5 p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer" title="Quay lại">
+          <i data-lucide="arrow-left" class="w-4 h-4 stroke-[2.2]"></i>
+        </button>
+
+        <!-- Header -->
+        <div class="flex items-center gap-3 pr-8">
+          <div class="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800 flex items-center justify-center text-orange-600 dark:text-orange-400 flex-shrink-0">
+            <i data-lucide="help-circle" class="w-5 h-5"></i>
           </div>
-          <ul class="space-y-0.5 list-disc pl-4 text-[11px]">
-            <li>Thang thưởng: Ngày 1 (+50đ), Ngày 2 (+80đ), Ngày 3 (+120đ), Ngày 4 (+160đ), Ngày 5 (+200đ), Ngày 6 (+250đ).</li>
-            <li><span class="font-bold text-orange-600 dark:text-orange-400">Ngày 7 (Mốc Vàng)</span>: Thưởng lớn <span class="font-bold font-mono">+500 Point</span> và mở khóa <span class="font-bold">Badge Tích Cực</span>.</li>
-            <li>Duy trì từ Ngày 8 trở đi: Nhận cố định <span class="font-bold font-mono">+200 Point/ngày</span>.</li>
-            <li><span class="font-bold text-orange-600 dark:text-orange-400">Thưởng Chuỗi</span>: Chuỗi 11 ngày nhận +3%, 51 ngày +5%, 101 ngày +8%, 201 ngày +10% Point trên mỗi bài khảo sát hoàn thành.</li>
-            <li><span class="font-bold text-orange-600 dark:text-orange-400">Vé Cứu Chuỗi</span>: Tối đa tích 2 vé. Lỡ 1 ngày tự trừ 1 vé, lỡ 2 ngày trừ 2 vé để giữ chuỗi; hết vé hoặc lỡ trên 2 ngày thì chuỗi về Ngày 1.</li>
-            <li><span class="font-bold text-orange-600 dark:text-orange-400">Hộp Quà Cột Mốc</span>: Nhận 1 lần duy nhất tại mốc 10/50/100/200 ngày, yêu cầu hoàn thành ít nhất 1 khảo sát hợp lệ trong 7 ngày gần nhất.</li>
-            <li>Thời gian làm mới: <span class="font-bold">00:00 hàng ngày</span> theo giờ Việt Nam (UTC+7).</li>
-          </ul>
+          <div>
+            <h3 class="text-base font-black text-slate-900 dark:text-white tracking-tight">Quy Chế Chuỗi Điểm Danh</h3>
+            <p class="text-xs text-stone-500 dark:text-stone-400">Chính sách thưởng và bảo lưu chuỗi SurvHub</p>
+          </div>
+        </div>
+
+        <!-- Section 1: Thang Thưởng 7 Ngày -->
+        <div class="p-3.5 bg-stone-50 dark:bg-stone-900/50 rounded-2xl border border-stone-200/70 dark:border-stone-800 space-y-2">
+          <div class="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-stone-200">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-orange-600"></i>
+            <span>Thang Thưởng 7 Ngày Liên Tiếp</span>
+          </div>
+          <div class="text-[11px] text-stone-600 dark:text-stone-400 space-y-1 leading-relaxed">
+            <div>• Ngày 1 (+50đ) → Ngày 2 (+80đ) → Ngày 3 (+120đ) → Ngày 4 (+160đ) → Ngày 5 (+200đ) → Ngày 6 (+250đ).</div>
+            <div>• <strong class="text-orange-600 dark:text-orange-400">Ngày 7 (Mốc Vàng)</strong>: Thưởng lớn <strong class="font-mono">+500 Point</strong> và mở khóa Badge Tích Cực.</div>
+            <div>• Duy trì từ Ngày 8 trở đi: Nhận cố định <strong class="font-mono text-orange-600 dark:text-orange-400">+200 Point/ngày</strong>.</div>
+          </div>
+        </div>
+
+        <!-- Section 2: Đặc Quyền Thưởng Thêm Khảo Sát -->
+        <div class="p-3.5 bg-stone-50 dark:bg-stone-900/50 rounded-2xl border border-stone-200/70 dark:border-stone-800 space-y-2">
+          <div class="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-stone-200">
+            <i data-lucide="percent" class="w-3.5 h-3.5 text-orange-600"></i>
+            <span>Đặc Quyền Nhân Thưởng Khảo Sát</span>
+          </div>
+          <div class="text-[11px] text-stone-600 dark:text-stone-400 space-y-1 leading-relaxed">
+            <div>• <strong class="text-slate-800 dark:text-stone-200">Chuỗi 11 - 50 ngày</strong>: Thưởng thêm <strong class="text-orange-600 dark:text-orange-400 font-mono">+3% Point</strong> trên mọi khảo sát.</div>
+            <div>• <strong class="text-slate-800 dark:text-stone-200">Chuỗi 51 - 100 ngày</strong>: Thưởng thêm <strong class="text-orange-600 dark:text-orange-400 font-mono">+5% Point</strong> trên mọi khảo sát.</div>
+            <div>• <strong class="text-slate-800 dark:text-stone-200">Chuỗi 101 - 200 ngày</strong>: Thưởng thêm <strong class="text-orange-600 dark:text-orange-400 font-mono">+8% Point</strong> trên mọi khảo sát.</div>
+            <div>• <strong class="text-slate-800 dark:text-stone-200">Chuỗi 201+ ngày</strong>: Thưởng thêm <strong class="text-orange-600 dark:text-orange-400 font-mono">+10% Point</strong> trên mọi khảo sát.</div>
+          </div>
+        </div>
+
+        <!-- Section 3: Cơ Chế Vé Cứu Chuỗi & Hộp Quà -->
+        <div class="p-3.5 bg-stone-50 dark:bg-stone-900/50 rounded-2xl border border-stone-200/70 dark:border-stone-800 space-y-2">
+          <div class="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-stone-200">
+            <i data-lucide="shield-snowflake" class="w-3.5 h-3.5 text-cyan-600"></i>
+            <span>Vé Cứu Chuỗi & Hộp Quà Cột Mốc</span>
+          </div>
+          <div class="text-[11px] text-stone-600 dark:text-stone-400 space-y-1 leading-relaxed">
+            <div>• <strong class="text-cyan-700 dark:text-cyan-300">Vé Cứu Chuỗi</strong>: Tối đa tích 2 vé. Khi bạn lỡ 1-2 ngày, hệ thống sẽ tự động dùng vé để giữ nguyên chuỗi cho bạn khi bạn điểm danh trở lại.</div>
+            <div>• <strong class="text-orange-600 dark:text-orange-400">Hộp Quà Cột Mốc</strong>: Nhận thưởng 1 lần duy nhất tại mốc 10, 50, 100, 200 ngày. Cần hoàn thành ít nhất 1 khảo sát trong 7 ngày gần nhất để mở khóa.</div>
+            <div>• Làm mới lượt điểm danh: <strong class="text-slate-800 dark:text-stone-200">00:00 hàng ngày</strong> (giờ Việt Nam UTC+7).</div>
+          </div>
+        </div>
+
+        <!-- Back Button -->
+        <button onclick="VibeApp.openStreakModal()" class="w-full py-3 px-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs transition-all active:scale-[0.98] cursor-pointer shadow-xs">
+          Đã Hiểu & Quay Lại
+        </button>
+      </div>
+    `;
+
+    container.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  },
+
+  /**
+   * Popup Chúc Mừng Mở Khóa Cột Mốc & Nhận Quà Hoành Tráng
+   */
+  openMilestoneCelebrationPopup(milestoneDay, milestoneData) {
+    this.haptic('success');
+    const streak = this.state.streakInfo || {};
+    const milestones = Array.isArray(streak.milestones) ? streak.milestones : [];
+    const m = milestoneData || milestones.find(item => item.day === Number(milestoneDay)) || { day: milestoneDay, points: 1000, freeze_tickets: 1 };
+
+    const perks = [];
+    if (m.points > 0) perks.push({ icon: 'coins', label: `+${m.points.toLocaleString('vi-VN')} Point`, desc: 'Cộng trực tiếp vào ví người điền' });
+    if (m.freeze_tickets > 0) perks.push({ icon: 'shield-snowflake', label: `+${m.freeze_tickets} Vé Cứu Chuỗi`, desc: 'Tự động bảo vệ chuỗi khi lỡ ngày' });
+    if (m.badge) perks.push({ icon: 'award', label: `Huy hiệu "${m.badge}"`, desc: 'Đính kèm trên hồ sơ cá nhân' });
+    if (m.avatar_frame) perks.push({ icon: 'sparkles', label: 'Khung Avatar Neon Độc Bản', desc: 'Hiệu ứng hào quang trang trí' });
+
+    // Đặc quyền % tương ứng theo mốc
+    let perkPercent = '3%';
+    if (m.day >= 200) perkPercent = '10%';
+    else if (m.day >= 100) perkPercent = '8%';
+    else if (m.day >= 50) perkPercent = '5%';
+
+    perks.push({ icon: 'percent', label: `Mở Khóa Đặc Quyền +${perkPercent} Point`, desc: 'Thưởng thêm trên mọi bài khảo sát hoàn thành' });
+
+    const container = document.getElementById('modal-container');
+    const card = document.getElementById('modal-card');
+    if (!container || !card) return;
+
+    card.className = 'bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-stone-200/80 dark:border-stone-800 transform transition-all relative overflow-hidden text-center';
+
+    card.innerHTML = `
+      <div class="relative space-y-4">
+        <!-- Close Button -->
+        <button onclick="VibeApp.openStreakModal()" class="absolute -top-1.5 -right-1.5 p-2 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer" title="Đóng">
+          <i data-lucide="x" class="w-4 h-4 stroke-[2.2]"></i>
+        </button>
+
+        <!-- Big Celebration Icon -->
+        <div class="flex justify-center pt-2">
+          <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-orange-600 via-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30 anim-streak-mythic-gold">
+            <i data-lucide="gift" class="w-8 h-8 stroke-[2.2]"></i>
+          </div>
+        </div>
+
+        <div>
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-300/80 dark:border-orange-800/80">
+            Cột Mốc ${m.day} Ngày Hoàn Tất
+          </span>
+          <h3 class="text-lg font-black text-slate-900 dark:text-white tracking-tight mt-2">
+            MỞ KHÓA HỘP QUÀ CỘT MỐC!
+          </h3>
+          <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+            Chúc mừng bạn đã bền bỉ duy trì ngọn lửa chuỗi ${m.day} ngày liên tiếp
+          </p>
+        </div>
+
+        <!-- Perks List -->
+        <div class="space-y-2 text-left pt-1">
+          ${perks.map(p => `
+            <div class="p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="${p.icon}" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="text-xs font-black text-slate-900 dark:text-white truncate">${p.label}</div>
+                <div class="text-[10px] text-stone-500 dark:text-stone-400 truncate">${p.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Action Button -->
+        <div class="pt-2">
+          <button onclick="VibeApp.claimStreakMilestone(${m.day})" data-milestone-btn="${m.day}" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-rose-500 to-orange-600 hover:from-orange-700 hover:to-rose-600 text-white font-extrabold text-sm shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Mở Quà & Nhận Thưởng Ngay</span>
+          </button>
         </div>
       </div>
     `;
@@ -1784,6 +1864,13 @@
       const container = document.getElementById('modal-container');
       if (container && !container.classList.contains('hidden')) {
         this.openStreakModal();
+      }
+
+      // Nếu vừa đạt mốc mở khóa Hộp Quà & Đặc Quyền mới, tự động bật popup vinh danh
+      if (res.streak && res.streak.eligible_unclaimed_milestone && res.streak.milestone_gate_passed) {
+        setTimeout(() => {
+          this.openMilestoneCelebrationPopup(res.streak.eligible_unclaimed_milestone.day, res.streak.eligible_unclaimed_milestone);
+        }, 450);
       }
 
       // Nếu đang ở màn hình surveys, re-render lại để cập nhật card streak và số dư
