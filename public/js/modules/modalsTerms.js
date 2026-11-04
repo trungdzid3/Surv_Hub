@@ -1247,14 +1247,14 @@
 
     // 3. ĐÃ ĐIỂM DANH HÔM NAY - PHÂN CẤP TIKTOK STREAK TIERS:
 
-    // Tier 1: Chuỗi 1 - 2 ngày (Lửa Hổ Phách Khởi Động)
-    if (count <= 2) {
+    // Tier 1: Chuỗi 1 - 10 ngày (Lửa Hổ Phách Khởi Động)
+    if (count <= 10) {
       return {
         id: 'amber',
         level: 1,
         name: 'Lửa Khởi Động',
         shortBadge: 'Cấp 1 - Lửa Khởi Động',
-        desc: 'Bước đầu tạo thói quen khảo sát liên tiếp',
+        desc: 'Bước đầu tạo thói quen khảo sát liên tiếp (1 - 10 ngày)',
         btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-400/90 dark:border-amber-500/90 bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.25)] hover:shadow-[0_0_15px_rgba(245,158,11,0.4)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
         flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-amber-500 text-amber-500 stroke-amber-600 drop-shadow-xs"></i>',
         headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0 shadow-xs',
@@ -1268,14 +1268,14 @@
       };
     }
 
-    // Tier 2: Chuỗi 3 - 6 ngày (Lửa Đỏ Rực Cháy - Crimson Sunset)
-    if (count <= 6) {
+    // Tier 2: Chuỗi 11 - 50 ngày (Lửa Đỏ Rực Cháy - Crimson Sunset)
+    if (count <= 50) {
       return {
         id: 'crimson',
         level: 2,
         name: 'Lửa Bùng Cháy',
         shortBadge: 'Cấp 2 - Lửa Bùng Cháy',
-        desc: 'Chuỗi ngày rực lửa, đang tiến sát mốc vàng Ngày 7',
+        desc: 'Chuỗi ngày rực lửa bền bỉ (11 - 50 ngày)',
         btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-rose-500/90 dark:border-rose-500/90 bg-gradient-to-r from-orange-500/15 via-red-500/15 to-rose-500/15 dark:from-orange-950/40 dark:via-red-950/40 dark:to-rose-950/40 text-rose-600 dark:text-rose-400 shadow-[0_0_14px_rgba(244,63,94,0.32)] hover:shadow-[0_0_18px_rgba(244,63,94,0.48)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
         flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-rose-500 text-rose-500 stroke-rose-600 drop-shadow-xs"></i>',
         headerIconClass: 'w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-600 dark:text-rose-400 flex-shrink-0 shadow-xs',
@@ -1289,35 +1289,35 @@
       };
     }
 
-    // Tier 3: Chuỗi 7 - 29 ngày (Siêu Chuỗi TikTok Neon - Iconic Magenta & Hot Pink)
-    if (count <= 29) {
+    // Tier 3: Chuỗi 51 - 100 ngày (Siêu Chuỗi TikTok Neon Tím Hồng - Iconic Magenta & Hot Pink)
+    if (count <= 100) {
       return {
         id: 'neon_tiktok',
         level: 3,
-        name: 'Siêu Chuỗi TikTok Neon',
-        shortBadge: 'Cấp 3 - Siêu Chuỗi TikTok',
-        desc: 'Hào quang neon rực sáng đặc trưng phong cách TikTok',
+        name: 'Hồng Neon Tím TikTok',
+        shortBadge: 'Cấp 3 - Hồng Neon Tím',
+        desc: 'Hào quang neon rực sáng đặc trưng phong cách TikTok (51 - 100 ngày)',
         btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-fuchsia-500/90 dark:border-fuchsia-400/90 bg-gradient-to-r from-pink-500/15 via-purple-500/15 to-fuchsia-500/15 dark:from-pink-950/40 dark:via-purple-950/40 dark:to-fuchsia-950/40 text-fuchsia-600 dark:text-fuchsia-300 shadow-[0_0_16px_rgba(217,70,239,0.4)] hover:shadow-[0_0_22px_rgba(217,70,239,0.6)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
         flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-fuchsia-500 text-fuchsia-500 stroke-fuchsia-600 drop-shadow-[0_0_6px_rgba(217,70,239,0.6)]"></i>',
         headerIconClass: 'w-11 h-11 rounded-2xl bg-fuchsia-50 dark:bg-fuchsia-950/50 border border-fuchsia-200 dark:border-fuchsia-800 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-300 flex-shrink-0 shadow-[0_0_15px_rgba(217,70,239,0.25)]',
         headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 fill-fuchsia-500 stroke-fuchsia-600 drop-shadow-[0_0_6px_rgba(217,70,239,0.6)]"></i>',
         textClass: 'text-fuchsia-600 dark:text-fuchsia-300 font-black drop-shadow-xs',
-        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-fuchsia-700 dark:text-fuchsia-200 border border-fuchsia-400/70 dark:border-fuchsia-500/70 shadow-[0_0_10px_rgba(217,70,239,0.25)]">Cấp 3 - Siêu Chuỗi TikTok</span>',
+        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-fuchsia-700 dark:text-fuchsia-200 border border-fuchsia-400/70 dark:border-fuchsia-500/70 shadow-[0_0_10px_rgba(217,70,239,0.25)]">Cấp 3 - Hồng Neon Tím</span>',
         bentoBorder: 'border-fuchsia-400/70 dark:border-fuchsia-700/80 bg-gradient-to-br from-pink-500/5 via-purple-500/5 to-fuchsia-500/5 dark:from-pink-950/25 dark:to-purple-950/25',
         bentoFlame: '<i data-lucide="flame" class="w-4 h-4 fill-fuchsia-500 text-fuchsia-500 stroke-fuchsia-600"></i>',
         bentoText: 'text-fuchsia-600 dark:text-fuchsia-300',
-        title: `Siêu Chuỗi TikTok: ${count} ngày liên tiếp`
+        title: `Hồng Neon Tím TikTok: ${count} ngày liên tiếp`
       };
     }
 
-    // Tier 4: Chuỗi 30 - 99 ngày (Lửa Băng Điện Quang - Cyber Ice Blue & Cyan)
-    if (count <= 99) {
+    // Tier 4: Chuỗi 101 - 200 ngày (Lửa Băng Điện Quang - Cyber Ice Blue & Cyan)
+    if (count <= 200) {
       return {
         id: 'cyber_cyan',
         level: 4,
         name: 'Băng Hỏa Điện Quang',
         shortBadge: 'Cấp 4 - Băng Hỏa Điện Quang',
-        desc: 'Đẳng cấp chuyên gia khảo sát, ngọn lửa xanh lam băng giá siêu hiếm',
+        desc: 'Đẳng cấp chuyên gia khảo sát, ngọn lửa xanh lam băng giá siêu hiếm (101 - 200 ngày)',
         btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-cyan-400/90 dark:border-cyan-400/90 bg-gradient-to-r from-cyan-500/15 via-blue-500/15 to-teal-500/15 dark:from-cyan-950/40 dark:via-blue-950/40 dark:to-teal-950/40 text-cyan-600 dark:text-cyan-300 shadow-[0_0_18px_rgba(6,182,212,0.45)] hover:shadow-[0_0_24px_rgba(6,182,212,0.65)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
         flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-cyan-400 text-cyan-400 stroke-cyan-600 drop-shadow-[0_0_6px_rgba(6,182,212,0.7)]"></i>',
         headerIconClass: 'w-11 h-11 rounded-2xl bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 flex items-center justify-center text-cyan-600 dark:text-cyan-300 flex-shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.25)]',
@@ -1331,13 +1331,13 @@
       };
     }
 
-    // Tier 5: Chuỗi 100+ ngày (Thần Thoại Hoàng Kim - Mythic Prismatic Gold & Violet)
+    // Tier 5: Chuỗi 201+ ngày (Thần Thoại Hoàng Kim - Mythic Prismatic Gold & Violet)
     return {
       id: 'mythic_gold',
       level: 5,
       name: 'Thần Thoại Hoàng Kim',
       shortBadge: 'Cấp 5 - Thần Thoại Hoàng Kim',
-      desc: 'Cột mốc thần thoại 100+ ngày, ngọn lửa vàng thạch anh quý phái nhất sàn',
+      desc: 'Cột mốc thần thoại từ 201 ngày trở lên, ngọn lửa vàng thạch anh quý phái nhất sàn',
       btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-300/95 dark:border-amber-400/95 bg-gradient-to-r from-amber-400/20 via-pink-500/15 to-purple-500/20 dark:from-amber-950/50 dark:via-purple-950/50 dark:to-pink-950/50 text-amber-600 dark:text-amber-300 shadow-[0_0_22px_rgba(245,158,11,0.5)] hover:shadow-[0_0_28px_rgba(245,158,11,0.75)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black',
       flameSvg: '<i data-lucide="flame" class="w-4 h-4 fill-amber-400 text-amber-400 stroke-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]"></i>',
       headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-600 dark:text-amber-300 flex-shrink-0 shadow-[0_0_18px_rgba(245,158,11,0.35)]',
@@ -1508,11 +1508,11 @@
 
     // Danh sách 5 Cấp Bậc Ngọn Lửa TikTok Streak để hiển thị bảng vinh danh
     const tiersList = [
-      { level: 1, name: 'Khởi Động', range: '1-2 ngày', color: 'text-amber-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-amber-500 text-amber-500"></i>', border: 'border-amber-300 dark:border-amber-700/80 bg-amber-50/40 dark:bg-amber-950/20' },
-      { level: 2, name: 'Bùng Cháy', range: '3-6 ngày', color: 'text-rose-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-rose-500 text-rose-500"></i>', border: 'border-rose-300 dark:border-rose-700/80 bg-rose-50/40 dark:bg-rose-950/20' },
-      { level: 3, name: 'TikTok Neon', range: '7-29 ngày', color: 'text-fuchsia-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-fuchsia-500 text-fuchsia-500"></i>', border: 'border-fuchsia-400 dark:border-fuchsia-700/80 bg-fuchsia-50/40 dark:bg-fuchsia-950/20' },
-      { level: 4, name: 'Băng Hỏa', range: '30-99 ngày', color: 'text-cyan-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-cyan-400 text-cyan-400"></i>', border: 'border-cyan-300 dark:border-cyan-700/80 bg-cyan-50/40 dark:bg-cyan-950/20' },
-      { level: 5, name: 'Hoàng Kim', range: '100+ ngày', color: 'text-amber-400', flame: '<i data-lucide="flame" class="w-3 h-3 fill-amber-400 text-amber-400"></i>', border: 'border-amber-400 dark:border-amber-600/80 bg-amber-50/50 dark:bg-amber-950/30' }
+      { level: 1, name: 'Khởi Động', range: '1-10 ngày', color: 'text-amber-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-amber-500 text-amber-500"></i>', border: 'border-amber-300 dark:border-amber-700/80 bg-amber-50/40 dark:bg-amber-950/20' },
+      { level: 2, name: 'Bùng Cháy', range: '11-50 ngày', color: 'text-rose-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-rose-500 text-rose-500"></i>', border: 'border-rose-300 dark:border-rose-700/80 bg-rose-50/40 dark:bg-rose-950/20' },
+      { level: 3, name: 'TikTok Neon', range: '51-100 ngày', color: 'text-fuchsia-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-fuchsia-500 text-fuchsia-500"></i>', border: 'border-fuchsia-400 dark:border-fuchsia-700/80 bg-fuchsia-50/40 dark:bg-fuchsia-950/20' },
+      { level: 4, name: 'Băng Hỏa', range: '101-200 ngày', color: 'text-cyan-500', flame: '<i data-lucide="flame" class="w-3 h-3 fill-cyan-400 text-cyan-400"></i>', border: 'border-cyan-300 dark:border-cyan-700/80 bg-cyan-50/40 dark:bg-cyan-950/20' },
+      { level: 5, name: 'Hoàng Kim', range: '201+ ngày', color: 'text-amber-400', flame: '<i data-lucide="flame" class="w-3 h-3 fill-amber-400 text-amber-400"></i>', border: 'border-amber-400 dark:border-amber-600/80 bg-amber-50/50 dark:bg-amber-950/30' }
     ];
 
     const tiersGuideHtml = tiersList.map(t => {
