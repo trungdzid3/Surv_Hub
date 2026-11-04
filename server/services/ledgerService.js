@@ -1242,9 +1242,8 @@ class LedgerService {
    * Mo phong thanh toan thanh cong trong moi truong dev/staging
    */
   simulatePaymentSuccess(orderCode, userId = null) {
-    const isProduction = config.NODE_ENV === 'production' || process.env.NODE_ENV === 'production';
-    if (isProduction) {
-      throw new Error('Tính năng mô phỏng chỉ khả dụng trong môi trường thử nghiệm');
+    if (process.env.DISABLE_PAYMENT_SIMULATION === 'true') {
+      throw new Error('Tính năng mô phỏng thanh toán hiện đang tạm khóa');
     }
 
     const cleanCode = String(orderCode).trim().toUpperCase();

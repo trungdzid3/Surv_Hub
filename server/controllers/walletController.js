@@ -414,11 +414,10 @@ class WalletController {
 
   simulatePaymentSuccess(req, res) {
     try {
-      const isProduction = config.NODE_ENV === 'production' || process.env.NODE_ENV === 'production';
-      if (isProduction) {
+      if (process.env.DISABLE_PAYMENT_SIMULATION === 'true') {
         return res.status(403).json({
           success: false,
-          message: 'Tính năng mô phỏng chỉ khả dụng trong môi trường thử nghiệm'
+          message: 'Tính năng mô phỏng thanh toán hiện đang tạm khóa'
         });
       }
 
