@@ -469,16 +469,24 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
   },
 
   // ==================== QUẢN LÝ GIAO DIỆN SÁNG / TỐI (THEME) ====================
+  _applyThemeScheme(isDark) {
+    document.documentElement.classList.toggle('dark', Boolean(isDark));
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    if (colorSchemeMeta) {
+      colorSchemeMeta.setAttribute('content', isDark ? 'dark' : 'light');
+    }
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      themeColorMeta.setAttribute('content', isDark ? '#121214' : '#FFFFFF');
+    }
+  },
+
   initTheme() {
     const saved = localStorage.getItem('survhub_theme') || localStorage.getItem('vibesurvey_theme');
     // Mặc định luôn là LIGHT MODE theo yêu cầu, chỉ bật dark khi người dùng đã chủ động chọn 'dark'
     const isDark = saved === 'dark';
 
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    this._applyThemeScheme(isDark);
     this.updateThemeIcon(isDark);
     this.updateThemeLogos(isDark);
   },
@@ -486,7 +494,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
   toggleTheme(event) {
     this.haptic('light');
 
-    const isDark = document.documentElement.classList.toggle('dark');
+    const isDark = !document.documentElement.classList.contains('dark');
+    this._applyThemeScheme(isDark);
     localStorage.setItem('survhub_theme', isDark ? 'dark' : 'light');
     this.updateThemeIcon(isDark);
     this.updateThemeLogos(isDark);
@@ -500,7 +509,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       const moon = btn.querySelector('.theme-icon-moon');
       if (!sun || !moon) {
         btn.innerHTML = `
-          <span class="theme-icon-sun absolute inset-0 flex items-center justify-center text-amber-500">
+          <span class="theme-icon-sun absolute inset-0 flex items-center justify-center text-orange-500">
             <i data-lucide="sun" class="w-4 h-4 stroke-[2.2]"></i>
           </span>
           <span class="theme-icon-moon absolute inset-0 flex items-center justify-center text-stone-600 dark:text-stone-300">
@@ -818,7 +827,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         }
 
         // 2. Phím Enter chuyển câu hỏi
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
           // Không kích hoạt nếu đang mở modal hoặc dropdown
           const hasOpenModal = document.querySelector('.modal-backdrop, [id$="-modal"]:not(.hidden)');
           const hasOpenDropdown = document.querySelector('.custom-dropdown-menu:not(.hidden)');
@@ -1634,6 +1643,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         const isActive = (tab.id === 'admin-overview' && adminSubTabs.includes(this.state.currentTab)) || (this.state.currentTab === tab.id);
         return `
           <button onclick="VibeApp.navigate('${tab.id}')" 
+                  ${isActive ? 'aria-current="page"' : ''}
                   class="nav-link whitespace-nowrap ${isActive ? 'active' : ''}">
             <i data-lucide="${tab.icon}" class="w-3.5 h-3.5 stroke-[2.2] flex-shrink-0"></i>
             <span class="whitespace-nowrap">${tab.label}</span>
@@ -1702,6 +1712,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
               <button onclick="${clickAction}" 
                       title="${tab.label}" 
                       aria-label="${tab.label}"
+                      ${isActive ? 'aria-current="page"' : ''}
                       class="mobile-nav-action group active:scale-95 transition-all duration-200 select-none ${isActive ? 'is-active' : ''}">
                 <div class="mobile-nav-action-icon ${isActive ? 'is-active' : ''}">
                   <i data-lucide="${centerIcon}" class="${iconSizeClass}"></i>
@@ -1717,6 +1728,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             <button onclick="${clickAction}" 
                     title="${tab.label}" 
                     aria-label="${tab.label}"
+                    ${isActive ? 'aria-current="page"' : ''}
                     class="mobile-nav-link group active:scale-95 transition-all duration-200 select-none ${isActive ? 'is-active' : ''}">
               <div class="mobile-nav-icon">
                 <i data-lucide="${tab.icon}" class="w-5 h-5 ${isActive ? 'stroke-[2.4]' : 'stroke-[1.9]'}"></i>
@@ -1738,6 +1750,29 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     if (tabId !== 'take-survey') {
       localStorage.setItem('survhub_current_tab', tabId);
     }
+    const pageTitleMap = {
+      home: 'Trang Chủ — SurvHub',
+      surveys: 'Cổng Khảo Sát — SurvHub',
+      forum: 'Diễn Đàn — SurvHub',
+      'create-survey': 'Tạo Khảo Sát — SurvHub',
+      'creator-surveys': 'Khảo Sát Của Tôi — SurvHub',
+      'my-surveys': 'Khảo Sát Của Tôi — SurvHub',
+      'voucher-market': 'Chợ Voucher — SurvHub',
+      'my-vouchers': 'Voucher Của Tôi — SurvHub',
+      wallet: 'Ví & Thanh Toán — SurvHub',
+      profile: 'Hồ Sơ Cá Nhân — SurvHub',
+      'take-survey': 'Thực Hiện Khảo Sát — SurvHub',
+      'review-survey': 'Xem Lại Khảo Sát — SurvHub',
+      analytics: 'Phân Tích Khảo Sát — SurvHub',
+      'admin-overview': 'Quản Trị Hệ Thống — SurvHub',
+      'admin-payouts': 'Quản Trị Thanh Toán — SurvHub',
+      'admin-fraud': 'Quản Trị Chống Gian Lận — SurvHub',
+      'admin-bugs': 'Quản Trị Báo Lỗi — SurvHub',
+      'admin-bug-reports': 'Quản Trị Báo Lỗi — SurvHub',
+      'admin-audit': 'Nhật Ký Kiểm Toán — SurvHub',
+      'admin-audit-logs': 'Nhật Ký Kiểm Toán — SurvHub'
+    };
+    document.title = pageTitleMap[tabId] || 'SurvHub — Nền Tảng Khảo Sát Trực Tuyến';
     this.renderNavigation();
 
     const root = document.getElementById('app-root');
@@ -1745,7 +1780,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     root.innerHTML = `
       <div class="py-20 flex flex-col items-center justify-center text-slate-400 space-y-2">
-        <div class="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-blue-600"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-orange-600"></div>
         <p class="text-xs text-slate-400 font-medium">Đang tải...</p>
       </div>
     `;

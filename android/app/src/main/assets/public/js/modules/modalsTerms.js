@@ -144,23 +144,23 @@
       return `
         <form onsubmit="VibeApp.handleLoginSubmit(event)" class="space-y-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Email tài khoản</label>
+            <label for="auth-email" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Email tài khoản</label>
             <div class="relative">
               <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-              <input type="email" id="auth-email" required placeholder="nhap-email@gmail.com" 
+              <input type="email" id="auth-email" name="email" autocomplete="username" spellcheck="false" required placeholder="nhap-email@gmail.com" 
                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
             </div>
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Mật khẩu</label>
+              <label for="auth-password" class="text-xs font-bold text-slate-700 dark:text-slate-300">Mật khẩu</label>
             </div>
             <div class="relative">
               <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-              <input type="password" id="auth-password" required placeholder="Nhập mật khẩu của bạn" 
+              <input type="password" id="auth-password" name="password" autocomplete="current-password" required placeholder="Nhập mật khẩu của bạn" 
                      class="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
-              <button type="button" onclick="VibeApp.togglePasswordVisibility('auth-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button type="button" onclick="VibeApp.togglePasswordVisibility('auth-password', this)" aria-label="Hiển thị mật khẩu" aria-pressed="false" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
             </div>
@@ -190,30 +190,30 @@
             <!-- Cột 1: Thông tin cơ bản -->
             <div class="space-y-3">
               <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Họ và Tên</label>
+                <label for="auth-reg-name" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Họ và Tên</label>
                 <div class="relative">
                   <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                  <input type="text" id="auth-reg-name" required placeholder="Nguyễn Văn A" 
+                  <input type="text" id="auth-reg-name" name="name" autocomplete="name" required placeholder="Nguyễn Văn A" 
                          class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                <label for="auth-reg-email" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email</label>
                 <div class="relative">
                   <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                  <input type="email" id="auth-reg-email" required placeholder="nhap-email@gmail.com" 
+                  <input type="email" id="auth-reg-email" name="email" autocomplete="username" spellcheck="false" required placeholder="nhap-email@gmail.com" 
                          class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
                 </div>
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Mật khẩu</label>
+                <label for="auth-reg-password" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Mật khẩu</label>
                 <div class="relative">
                   <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                  <input type="password" id="auth-reg-password" required minlength="6" placeholder="Tối thiểu 6 ký tự" 
+                  <input type="password" id="auth-reg-password" name="new-password" autocomplete="new-password" required minlength="6" placeholder="Tối thiểu 6 ký tự" 
                          class="w-full pl-10 pr-10 py-2 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
-                  <button type="button" onclick="VibeApp.togglePasswordVisibility('auth-reg-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <button type="button" onclick="VibeApp.togglePasswordVisibility('auth-reg-password', this)" aria-label="Hiển thị mật khẩu" aria-pressed="false" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     <i data-lucide="eye" class="w-4 h-4"></i>
                   </button>
                 </div>
@@ -225,7 +225,7 @@
               <!-- Mã xác thực Email OTP (Gửi qua Brevo) -->
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Xác thực Email (OTP 6 số)</label>
+                  <label for="auth-reg-otp" class="block text-xs font-bold text-slate-700 dark:text-slate-300">Xác thực Email (OTP 6 số)</label>
                   <button type="button" id="btn-send-reg-otp" onclick="VibeApp.sendRegistrationOtp()" class="text-[11px] font-bold text-orange-600 dark:text-orange-500 hover:underline flex items-center gap-1">
                     <i data-lucide="send" class="w-3 h-3"></i>
                     <span id="reg-otp-btn-text">Gửi mã</span>
@@ -233,7 +233,7 @@
                 </div>
                 <div class="relative">
                   <i data-lucide="shield-check" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
-                  <input type="text" id="auth-reg-otp" required maxlength="6" pattern="[0-9]{6}" placeholder="Nhập mã OTP 6 số bắt buộc..." 
+                  <input type="text" id="auth-reg-otp" name="otp" inputmode="numeric" autocomplete="one-time-code" required maxlength="6" pattern="[0-9]{6}" placeholder="Nhập mã OTP 6 số bắt buộc..." 
                          class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-mono font-bold tracking-widest text-slate-900 dark:text-white placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all">
                 </div>
                 <p class="text-[10px] text-slate-400 mt-1">Bấm <strong>"Gửi mã"</strong> để nhận mã OTP qua hòm thư.</p>
@@ -512,10 +512,16 @@
     if (window.lucide) window.lucide.createIcons();
   },
 
-  togglePasswordVisibility(inputId) {
+  togglePasswordVisibility(inputId, btnEl) {
     const el = document.getElementById(inputId);
     if (!el) return;
     el.type = el.type === 'password' ? 'text' : 'password';
+    const isVisible = el.type === 'text';
+    const btn = btnEl || (el.parentElement ? el.parentElement.querySelector('button[onclick*="togglePasswordVisibility"]') : null);
+    if (btn) {
+      btn.setAttribute('aria-pressed', isVisible ? 'true' : 'false');
+      btn.setAttribute('aria-label', isVisible ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu');
+    }
   },
 
   async handleLoginSubmit(event) {

@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#121214">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('survhub_theme') || localStorage.getItem('vibesurvey_theme');
+        var isDark = saved ? saved === 'dark' : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        var csMeta = document.querySelector('meta[name="color-scheme"]');
+        if (csMeta) csMeta.content = isDark ? 'dark' : 'light';
+      } catch (e) {}
+    })();
+  </script>
   <meta name="description" content="SurvHub - Nền tảng Khảo sát Trực tuyến & Phân tích Dữ liệu Học Thuật Hàng Đầu">
   <title>SurvHub</title>
 
@@ -77,9 +89,10 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="/styles.css?v=4.9.26_audit_hardening">
+  <link rel="stylesheet" href="/styles.css?v=4.9.27_mwg_ui">
 </head>
 <body class="bg-[#FFF8F5] dark:bg-[#121214] text-slate-800 dark:text-stone-100 min-h-[100svh] overflow-x-clip flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased safe-bottom">
+  <a href="#main-content" class="visually-hidden">Bỏ qua điều hướng chính</a>
   <!-- ==================== STITCH AMBIENT ATMOSPHERIC GLOWS ==================== -->
   <div class="pointer-events-none fixed -top-40 left-1/2 -translate-x-1/2 w-[850px] h-[550px] bg-gradient-to-tr from-[#EA580C]/10 via-[#F97316]/10 to-transparent rounded-full blur-3xl opacity-70 -z-10 dark:opacity-0 transition-opacity"></div>
   <div class="pointer-events-none fixed top-1/3 -right-32 w-[480px] h-[480px] bg-orange-400/10 rounded-full blur-3xl opacity-60 -z-10 dark:opacity-0 transition-opacity"></div>
@@ -101,7 +114,7 @@
           </div>
 
           <!-- Desktop Nav Links (Scribbr Style - Phẳng, không khung hộp) -->
-          <nav id="desktop-nav" class="hidden md:flex items-center gap-5 lg:gap-7 flex-shrink-0"></nav>
+          <nav id="desktop-nav" aria-label="Điều hướng chính trên máy tính" class="hidden md:flex items-center gap-5 lg:gap-7 flex-shrink-0"></nav>
         </div>
 
         <!-- Right: Theme Switcher & User Actions (Điểm, vé, nút tạo khảo sát đã được tinh giản vào menu) -->
@@ -207,7 +220,7 @@
     </div>
   </div>
 
-  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
+  <main id="main-content" tabindex="-1" class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
     <div id="app-root">
       <div class="flex flex-col items-center justify-center py-20 space-y-3">
         <div class="animate-spin rounded-full h-8 w-8 border-2 border-stone-300 dark:border-stone-700 border-t-orange-600"></div>
@@ -255,7 +268,7 @@
         <div class="space-y-2 md:space-y-2.5">
           <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Hỗ trợ & Liên hệ</h4>
           <ul class="space-y-1.5 md:space-y-2 text-xs text-stone-500 dark:text-stone-400">
-            <li><a href="javascript:void(0)" onclick="VibeApp.openBugReportModal()" class="font-bold text-orange-600 dark:text-orange-500 hover:underline flex items-center gap-1.5"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline"></i><span>Báo lỗi & Đăng tải sự cố</span></a></li>
+            <li><a href="javascript:void(0)" onclick="VibeApp.openBugReportModal()" class="font-bold text-orange-600 dark:text-orange-500 hover:underline flex items-center gap-1.5"><i data-lucide="bug" class="w-3.5 h-3.5 inline"></i><span>Báo lỗi & Đăng tải sự cố</span></a></li>
             <li>Hỗ trợ: <a href="mailto:linharmykxbnvn@gmail.com" class="hover:text-stone-900 dark:hover:text-white underline">linharmykxbnvn@gmail.com</a></li>
             <li>Email phản ánh: <a href="mailto:ngthtrung.son@gmail.com" class="hover:text-stone-900 dark:hover:text-white underline">ngthtrung.son@gmail.com</a></li>
             <li>Hợp tác doanh nghiệp: <a href="mailto:linharmykxbnvn@gmail.com" class="hover:text-stone-900 dark:hover:text-white underline">linharmykxbnvn@gmail.com</a></li>
@@ -287,35 +300,35 @@
 
   <!-- ==================== MOBILE BOTTOM NAV ==================== -->
   <div class="mobile-bottom-shell md:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none flex justify-center px-3 sm:px-4 pb-3 sm:pb-4">
-    <nav id="mobile-bottom-nav" class="mobile-bottom-nav pointer-events-auto flex items-center justify-around w-full max-w-[420px]">
+    <nav id="mobile-bottom-nav" aria-label="Điều hướng chính trên di động" class="mobile-bottom-nav pointer-events-auto flex items-center justify-around w-full max-w-[420px]">
       <!-- Render theo vai trò -->
     </nav>
   </div>
 
   <!-- ==================== REALTIME PUSH NOTIFICATION POPUP CONTAINER ==================== -->
-  <div id="push-popup-container" class="fixed top-20 right-4 z-50 pointer-events-none flex flex-col items-end gap-3 max-w-sm w-full"></div>
+  <div id="push-popup-container" role="region" aria-label="Thông báo đẩy" aria-live="polite" class="fixed top-20 right-4 z-50 pointer-events-none flex flex-col items-end gap-3 max-w-sm w-full"></div>
 
   <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
-  <div id="toast-container"></div>
+  <div id="toast-container" role="region" aria-label="Thông báo hệ thống" aria-live="polite"></div>
 
   <!-- ==================== MODAL CONTAINER ==================== -->
-  <div id="modal-container" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex items-center justify-center p-4 sm:p-6 md:p-8">
+  <div id="modal-container" role="dialog" aria-modal="true" aria-label="Hộp thoại hệ thống" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex items-center justify-center p-4 sm:p-6 md:p-8">
     <div id="modal-card" class="bg-white dark:bg-[#18181B] text-slate-800 dark:text-stone-100 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 dark:border-stone-800 transform transition-all relative my-auto max-h-[92vh] flex flex-col">
       <!-- Modal Content Rendered Dynamically -->
     </div>
   </div>
 
   <!-- ==================== IMAGE PICKER & WEBP COMPRESSION MODAL ==================== -->
-  <div id="image-picker-modal" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex items-center justify-center p-3 sm:p-4">
+  <div id="image-picker-modal" role="dialog" aria-modal="true" aria-label="Chọn và nén hình ảnh" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex items-center justify-center p-3 sm:p-4">
   </div>
 
   <!-- ==================== TERMS & PLATFORM RULES MODAL ==================== -->
-  <div id="terms-modal" class="hidden fixed inset-0 z-[70] overflow-y-auto modal-backdrop flex items-center justify-center p-3 sm:p-4">
+  <div id="terms-modal" role="dialog" aria-modal="true" aria-label="Điều khoản và quy chế nền tảng" class="hidden fixed inset-0 z-[70] overflow-y-auto modal-backdrop flex items-center justify-center p-3 sm:p-4">
     <!-- Rendered dynamically via VibeApp.openTermsModal() -->
   </div>
 
   <!-- ==================== GOOGLE OAUTH CONSENT DIALOG (CHUẨN GOOGLE ACCOUNT) ==================== -->
-  <div id="google-oauth-modal" class="hidden fixed inset-0 z-[100] overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 transition-all duration-200">
+  <div id="google-oauth-modal" role="dialog" aria-modal="true" aria-label="Xác thực tài khoản Google" class="hidden fixed inset-0 z-[100] overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 transition-all duration-200">
     <div class="max-w-4xl w-full">
       <!-- Card Google OAuth -->
       <div class="bg-[#131314] text-[#e3e3e3] rounded-[28px] border border-[#303030] shadow-2xl overflow-hidden p-7 sm:p-12 relative font-sans">
@@ -470,20 +483,20 @@
   <!-- ==================== FLOATING BUG REPORT TRIGGER ==================== -->
   <div class="fixed bottom-20 md:bottom-6 right-3 sm:right-4 md:right-6 z-40">
     <button onclick="VibeApp.openBugReportModal()" class="w-10 h-10 md:w-auto md:h-auto p-0 md:px-3.5 md:py-2 bg-white/95 dark:bg-[#1C1C20]/95 hover:border-orange-500 dark:hover:border-orange-500 border border-stone-200/90 dark:border-[#2E2E36] rounded-full shadow-lg dark:shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-md text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-orange-600 dark:hover:text-orange-400 transition-all active:scale-95 flex items-center justify-center md:gap-2 group cursor-pointer" title="Báo lỗi hoặc góp ý cho SurvHub" aria-label="Báo lỗi hoặc góp ý">
-      <i data-lucide="alert-triangle" class="w-4 h-4 text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform"></i>
+      <i data-lucide="bug" class="w-4 h-4 text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform"></i>
       <span class="hidden md:inline font-bold">Báo Lỗi</span>
     </button>
   </div>
 
   <!-- ==================== MODAL BÁO CÁO SỰ CỐ & ĐĂNG TẢI LỖI ==================== -->
-  <div id="bug-report-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
+  <div id="bug-report-modal" role="dialog" aria-modal="true" aria-label="Báo cáo sự cố và góp ý" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
     <div class="bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-all animate-fadeIn">
       
       <!-- Modal Header -->
       <div class="p-4 sm:p-5 border-b border-stone-100 dark:border-[#2E2E36] flex items-center justify-between shrink-0 bg-white dark:bg-[#1C1C20]">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-xl bg-orange-600/10 dark:bg-orange-500/15 text-orange-600 dark:text-orange-500 border border-orange-500/30 flex items-center justify-center shrink-0">
-            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <i data-lucide="bug" class="w-4 h-4"></i>
           </div>
           <div>
             <h3 class="font-extrabold text-sm sm:text-base text-stone-900 dark:text-white">Báo Cáo Sự Cố & Góp Ý</h3>
@@ -517,14 +530,14 @@
   </div>
 
   <!-- ==================== MODAL CHI TIẾT BÁO LỖI DÀNH CHO ADMIN ==================== -->
-  <div id="admin-bug-detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
+  <div id="admin-bug-detail-modal" role="dialog" aria-modal="true" aria-label="Chi tiết báo cáo sự cố" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
     <div id="admin-bug-detail-content" class="bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-all">
       <!-- Render động qua VibeApp.renderAdminBugDetail() -->
     </div>
   </div>
 
   <!-- ==================== MODAL XEM ẢNH TRỰC TIẾP (IN-APP IMAGE LIGHTBOX) ==================== -->
-  <div id="image-lightbox-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn" onclick="if(event.target === this) VibeApp.closeImageLightbox()">
+  <div id="image-lightbox-modal" role="dialog" aria-modal="true" aria-label="Xem ảnh phóng to" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn" onclick="if(event.target === this) VibeApp.closeImageLightbox()">
     <div class="relative max-w-5xl max-h-[90vh] w-full flex flex-col items-center">
       <!-- Top Actions -->
       <div class="w-full flex items-center justify-between pb-3 text-white">
@@ -551,31 +564,31 @@
 
   <!-- Frontend Modular Architecture SSOT -->
   <!-- WAVE 1 MODULAR: Du lieu danh muc + Utils dung chung nap truoc tat ca module -->
-  <script src="/js/data/catalogs.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/utils.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/modules/customDropdown.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/modules/lightboxViewer.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/modules/bugReportModule.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/modules/adminAnalyticsModule.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/modules/voucherMarket.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/modules/pushNotifications.js?v=4.9.26_audit_hardening"></script>
+  <script src="/js/data/catalogs.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/utils.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/customDropdown.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/lightboxViewer.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/bugReportModule.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/adminAnalyticsModule.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/voucherMarket.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/pushNotifications.js?v=4.9.27_mwg_ui"></script>
   <!-- WAVE 2 MODULAR: Mieng vi tien & so cai ledger (VIEW 5) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/wallet-ledger.js?v=4.9.26_audit_hardening"></script>
+  <script src="/js/modules/wallet-ledger.js?v=4.9.27_mwg_ui"></script>
   <!-- WAVE 3 MODULAR: Phan he quan tri (VIEW 8-10 + Admin Fast Command Console + SubNav quan tri) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/adminConsole.js?v=4.9.26_audit_hardening"></script>
+  <script src="/js/modules/adminConsole.js?v=4.9.27_mwg_ui"></script>
   <!-- WAVE 4 MODULAR: Phan he dien dan thao luan (COMMUNITY BOARD) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/forum.js?v=4.9.26_audit_hardening"></script>
+  <script src="/js/modules/forum.js?v=4.9.27_mwg_ui"></script>
   <!-- WAVE 5 MODULAR: Auth Modal + Dieu khoan + Tien ich modal dung chung (showToast/showModal/closeModal/copyValue) tach tu app.js, nap truoc app.js -->
-  <script src="/js/data/policyContent.js?v=4.9.26_audit_hardening"></script>
-  <script src="/js/modules/modalsTerms.js?v=4.9.26_audit_hardening"></script>
+  <script src="/js/data/policyContent.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/modalsTerms.js?v=4.9.27_mwg_ui"></script>
   <!-- WAVE 6 MODULAR: Creator Studio (trang tao khao sat 2 cot: sidebar, bo loc doi tuong, image picker,
        Forms sync, kinh te ky quy, question builder, Smart Paste) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/creatorStudio.js?v=4.9.26_audit_hardening"></script>
+  <script src="/js/modules/creatorStudio.js?v=4.9.27_mwg_ui"></script>
   <!-- WAVE 7 MODULAR: Mien RESPONDENT (trinh lam bai khao sat phan doan + review TYPEFORM ZEN,
        ho so 5 tab, nhan khau hoc, avatar, xoa du lieu) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/respondent.js?v=4.9.26_audit_hardening"></script>
+  <script src="/js/modules/respondent.js?v=4.9.27_mwg_ui"></script>
 
   <!-- Application Main Script -->
-  <script src="/app.js?v=4.9.26_audit_hardening"></script>
+  <script src="/app.js?v=4.9.27_mwg_ui"></script>
 </body>
 </html>

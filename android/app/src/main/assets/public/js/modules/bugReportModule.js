@@ -194,7 +194,7 @@
 
           <!-- 3. Tiêu đề sự cố -->
           <div class="space-y-1">
-            <label class="block text-xs font-bold text-stone-700 dark:text-stone-200">
+            <label for="bug-report-title" class="block text-xs font-bold text-stone-700 dark:text-stone-200">
               Tiêu đề sự cố ngắn gọn <span class="text-orange-500">*</span>
             </label>
             <input type="text" id="bug-report-title" value="${safeTitle}"
@@ -205,7 +205,7 @@
 
           <!-- 4. Mô tả chi tiết -->
           <div class="space-y-1">
-            <label class="block text-xs font-bold text-stone-700 dark:text-stone-200">
+            <label for="bug-report-desc" class="block text-xs font-bold text-stone-700 dark:text-stone-200">
               Mô tả chi tiết & các bước tái hiện lỗi <span class="text-orange-500">*</span>
             </label>
             <textarea id="bug-report-desc" rows="3"
@@ -779,7 +779,7 @@
             <div class="relative flex-1 sm:max-w-xs">
               <input type="text" placeholder="Tìm theo tiêu đề, người gửi..." 
                      value="${escape(this._adminBugState.q || '')}"
-                     onkeydown="if(event.key==='Enter') VibeApp.setAdminBugFilter('q', this.value)"
+                     onkeydown="if(event.key==='Enter' && !event.isComposing && event.keyCode!==229) VibeApp.setAdminBugFilter('q', this.value)"
                      class="w-full px-3 py-2 pl-8 rounded-xl border border-stone-200 dark:border-[#33333D] bg-stone-50 dark:bg-[#161619] text-xs focus:border-orange-600 focus:outline-none">
               <i data-lucide="search" class="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5"></i>
             </div>

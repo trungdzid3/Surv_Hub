@@ -193,6 +193,8 @@
 }
 
 :root {
+  color-scheme: light dark;
+  accent-color: #EA580C;
   /* Tối giản màu sắc: Trắng - Đen - Điểm nhấn Cam (Scribbr Style) */
   --bg-page: #FAFAFA;
   --bg-card: #FFFFFF;
@@ -234,6 +236,50 @@ html.dark {
 
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   --card-shadow-hover: 0 12px 28px rgba(0, 0, 0, 0.6);
+}
+
+:root:has(> head > meta[name="color-scheme"][content="dark"]),
+html.dark {
+  color-scheme: dark;
+}
+
+:root:has(> head > meta[name="color-scheme"][content="light"]),
+html:not(.dark) {
+  color-scheme: light;
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.visually-hidden:focus-visible {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 99999;
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  background-color: #EA580C;
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 10px 25px rgba(234, 88, 12, 0.35);
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+p, li {
+  text-wrap: pretty;
 }
 
 html, body, *, *::before, *::after, input, button, textarea, select, code, pre {
@@ -404,6 +450,7 @@ button.font-semibold,
   font-weight: 800 !important;
   font-style: normal !important;
   letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Ambient Radial Glow Lighting */
@@ -867,6 +914,17 @@ html.dark .likert-clean-btn.selected {
   background-color: rgba(11, 15, 25, 0.7);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-backdrop,
+#modal-card,
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 /* ==================== TOAST NOTIFICATION SYSTEM (UI-UX-PRO-MAX) ==================== */
@@ -1347,48 +1405,64 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   cursor: pointer;
   user-select: none;
 }
-.custom-checkbox-input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.custom-checkbox-box {
-  width: 1.125rem;
-  height: 1.125rem;
+
+input[type="checkbox"].custom-checkbox-input {
+  --checkbox-size: 1.125rem;
+  --checkbox-icon-size: 0.75rem;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  display: inline-grid;
+  place-content: center;
+  width: var(--checkbox-size);
+  height: var(--checkbox-size);
+  flex-shrink: 0;
+  margin: 0;
   border-radius: 0.375rem;
   border: 1.5px solid #D4D4D8;
-  background-color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #FFFFFF;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-html.dark .custom-checkbox-box {
+
+html.dark input[type="checkbox"].custom-checkbox-input {
   border-color: #3F3F46;
   background-color: #18181B;
 }
-.custom-checkbox-input:checked + .custom-checkbox-box {
+
+input[type="checkbox"].custom-checkbox-input::before {
+  content: "";
+  width: var(--checkbox-icon-size);
+  height: var(--checkbox-icon-size);
+  transform: scale(0);
+  transition: transform 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #FFFFFF;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+input[type="checkbox"].custom-checkbox-input:checked {
   background-color: #EA580C;
   border-color: #EA580C;
   box-shadow: 0 2px 6px rgba(234, 88, 12, 0.2);
 }
-.custom-checkbox-icon {
-  width: 0.75rem;
-  height: 0.75rem;
-  color: #ffffff;
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.custom-checkbox-input:checked + .custom-checkbox-box .custom-checkbox-icon {
-  opacity: 1;
+
+input[type="checkbox"].custom-checkbox-input:checked::before {
   transform: scale(1);
 }
-.custom-checkbox-wrapper:hover .custom-checkbox-box {
+
+input[type="checkbox"].custom-checkbox-input:hover {
   border-color: #F97316;
+}
+
+input[type="checkbox"].custom-checkbox-input:focus-visible {
+  outline: 2px solid #EA580C;
+  outline-offset: 2px;
+}
+
+.custom-checkbox-box,
+.custom-checkbox-icon {
+  display: none !important;
 }
 
 /* Cho phép bento-card hiển thị dropdown popover không bị cắt */
