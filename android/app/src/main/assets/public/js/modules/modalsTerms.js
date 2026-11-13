@@ -116,7 +116,7 @@
     // Chuyển đổi độ rộng modal tương ứng với số lượng trường
     if (card) {
       const cardMaxWidth = tab === 'register' ? 'max-w-2xl' : 'max-w-lg';
-      card.className = `bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100 rounded-3xl ${cardMaxWidth} w-full p-6 sm:p-7 shadow-2xl border border-slate-100 dark:border-slate-800 transform transition-all relative max-h-[92vh] overflow-y-auto`;
+      card.className = `bg-white dark:bg-[#1C1C20] text-slate-800 dark:text-slate-100 rounded-3xl ${cardMaxWidth} w-full p-6 sm:p-7 shadow-2xl border border-slate-100 dark:border-stone-800 transform transition-all relative max-h-[92vh] overflow-y-auto`;
     }
 
     const activeTabCls = 'flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-white dark:bg-stone-800 text-orange-600 dark:text-orange-500 shadow-xs border border-stone-200 dark:border-stone-700';
@@ -173,7 +173,7 @@
 
           <div class="relative my-4">
             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200 dark:border-slate-700"></div></div>
-            <div class="relative flex justify-center text-[11px]"><span class="px-2 bg-white dark:bg-[#131B2E] text-slate-400">hoặc</span></div>
+            <div class="relative flex justify-center text-[11px]"><span class="px-2 bg-white dark:bg-[#1C1C20] text-slate-400">hoặc</span></div>
           </div>
 
           <button type="button" onclick="VibeApp.loginWithGoogleQuick()" class="w-full py-2.5 border border-slate-200/90 dark:border-slate-700/90 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 transition-all flex items-center justify-center gap-2">
@@ -1551,7 +1551,7 @@
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">Điểm Danh Chuỗi Ngày</h3>
-              <button onclick="VibeApp.openStreakRulesModal()" class="w-5 h-5 rounded-full bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 flex items-center justify-center transition-all cursor-pointer font-bold text-xs border border-stone-200 dark:border-stone-700 shadow-xs" title="Quy chế chuỗi điểm danh">
+              <button type="button" onclick="VibeApp.openStreakRulesModal()" class="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 flex items-center justify-center transition-all cursor-pointer font-bold text-xs border border-stone-200 dark:border-stone-700 shadow-xs" title="Quy chế chuỗi điểm danh" aria-label="Quy chế chuỗi điểm danh">
                 ?
               </button>
               ${tierInfo.modalBadge}
@@ -2115,7 +2115,7 @@
                       ${q.options.map(opt => `<div>• ${opt}</div>`).join('')}
                     </div>
                   ` : (q.type === 'RATING_STARS' ? `
-                    <div class="pl-6 text-[11px] text-orange-500 font-medium">★ Đánh giá 1 đến 5 sao</div>
+                    <div class="pl-6 text-[11px] text-orange-500 font-medium flex items-center gap-1"><i data-lucide="star" class="w-3.5 h-3.5 fill-current"></i><span>Đánh giá 1 đến 5 sao</span></div>
                   ` : (q.type === 'NUMBER_INPUT' ? `
                     <div class="pl-6 text-[11px] text-slate-400 italic">Nhập số liệu [123]</div>
                   ` : (q.type === 'DATE_INPUT' ? `

@@ -176,8 +176,26 @@ class LogoCrawlerService {
       return true;
     }
 
+    // Kiểm tra IPv4-mapped IPv6 (ví dụ ::ffff:127.0.0.1 hoặc ::ffff:7f00:1)
+    let ipv4Candidate = cleanHost;
+    if (cleanHost.startsWith('::ffff:')) {
+      const mapped = cleanHost.slice(7);
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(mapped)) {
+        ipv4Candidate = mapped;
+      } else {
+        const hexParts = mapped.split(':');
+        if (hexParts.length === 2 && /^[0-9a-f]{1,4}$/i.test(hexParts[0]) && /^[0-9a-f]{1,4}$/i.test(hexParts[1])) {
+          const hi = parseInt(hexParts[0], 16);
+          const lo = parseInt(hexParts[1], 16);
+          ipv4Candidate = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+        } else {
+          return true;
+        }
+      }
+    }
+
     const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-    const match = cleanHost.match(ipv4Regex);
+    const match = ipv4Candidate.match(ipv4Regex);
     if (match) {
       const a = parseInt(match[1], 10);
       const b = parseInt(match[2], 10);

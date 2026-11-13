@@ -233,17 +233,17 @@
                       ${this.getBrandLogoHtml(v.brand_name, v.website_domain, v.brand_logo)}
                     </div>
                     <div>
-                      <span class="font-extrabold text-slate-900">${v.brand_name || 'Voucher Quà'}</span>
+                      <span class="font-extrabold text-slate-900">${this.escapeHtml(v.brand_name || 'Voucher Quà')}</span>
                       <span class="block text-[10px] text-slate-400 font-mono">E-Voucher Chính Hãng</span>
                     </div>
                   </div>
                   <span class="text-orange-700 bg-orange-50 px-2 py-0.5 rounded-md font-bold text-[11px] border border-orange-200/60">Khả dụng</span>
                 </div>
-                <h3 class="text-sm font-extrabold text-slate-900">${v.title}</h3>
+                <h3 class="text-sm font-extrabold text-slate-900">${this.escapeHtml(v.title)}</h3>
                 
                 <div class="p-3 bg-slate-50 rounded-xl font-mono text-xs font-bold text-slate-900 flex justify-between items-center border border-slate-200/60">
-                  <span class="tracking-wider select-all">${v.code}</span>
-                  <button onclick="VibeApp.copyText('${v.code}')" class="text-orange-600 text-xs font-bold hover:underline">Sao chép</button>
+                  <span class="tracking-wider select-all">${this.escapeHtml(v.code)}</span>
+                  <button type="button" data-copy-code="${this.escapeHtml(v.code)}" onclick="VibeApp.copyText(this.dataset.copyCode)" class="text-orange-600 text-xs font-bold hover:underline">Sao chép</button>
                 </div>
                 
                 <div class="text-[11px] text-slate-400 font-medium">

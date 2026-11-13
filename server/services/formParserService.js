@@ -1381,12 +1381,7 @@ class FormParserService {
           .replace(/,\s*([}\]])/g, '$1');
         return JSON.parse(jsonStr);
       } catch (e2) {
-        try {
-          const fn = new Function(`return (${str});`);
-          return fn();
-        } catch (e3) {
-          return null;
-        }
+        return null;
       }
     }
   }

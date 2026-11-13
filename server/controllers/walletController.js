@@ -369,7 +369,8 @@ class WalletController {
         payload.description,
         payload.order_code
       ].filter(Boolean).map(String);
-      const match = contentList.join(' ').match(/VIBE\d{6}/i);
+      // Trích xuất mã đơn hàng dạng SURVxxxxxx hoặc VIBExxxxxx trong nội dung chuyển khoản
+      const match = contentList.join(' ').match(/(?:SURV|VIBE)\d{6}/i);
       if (!match) {
         continue;
       }

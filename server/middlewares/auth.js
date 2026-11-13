@@ -28,7 +28,13 @@ function isBlockedUser(user) {
 function sanitizeUser(user) {
   delete user.password_hash;
   delete user.email_otp;
+  delete user.email_otp_expires_at;
   delete user.student_otp;
+  delete user.student_otp_expires_at;
+  delete user.totp_secret_encrypted;
+  delete user.totp_pending_secret_encrypted;
+  delete user.google_forms_access_token;
+  delete user.google_forms_refresh_token;
   return user;
 }
 

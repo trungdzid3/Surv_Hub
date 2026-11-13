@@ -423,7 +423,7 @@ class ForumController {
             return res.status(400).json({ success: false, message: 'Ảnh đính kèm không được chứa liên kết ngoài trái phép.' });
           }
           // Chỉ chấp nhận ảnh tải lên trực tiếp trong hệ thống
-          if (!imgUrl.startsWith('/uploads/') && !imgUrl.startsWith('data:image/')) {
+          if (!imgUrl.startsWith('/uploads/') && !imgUrl.startsWith('/api/v1/media/') && !imgUrl.startsWith('data:image/')) {
             return res.status(400).json({ success: false, message: 'Ảnh đính kèm phải được tải lên trực tiếp trên hệ thống SurvHub.' });
           }
         }
@@ -679,7 +679,7 @@ class ForumController {
                COUNT(r.id) as completed_forms,
                COALESCE(SUM(r.points_rewarded), 0) as total_points
         FROM users u
-        LEFT JOIN responses r ON r.respondent_id = u.id AND r.status = 'COMPLETED'
+        LEFT JOIN responses r ON r.respondent_id = u.id AND r.status = 'VALIDATED'
         WHERE u.role != 'ADMIN'
         GROUP BY u.id
         ORDER BY completed_forms DESC, total_points DESC

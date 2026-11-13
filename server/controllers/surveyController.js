@@ -833,15 +833,9 @@ class SurveyController {
       let costPerResp = 0;
       let rewardPointsPerResp = 0;
       if (reward_mode !== 'VOUCHER_ONLY') {
-        const parsedReward = Number(reward_points_per_response);
-        rewardPointsPerResp = (!isNaN(parsedReward) && parsedReward > 0)
-          ? Math.round(parsedReward)
-          : (economics.rewardPointsPerResponse || 0);
-
-        const parsedCost = Number(cost_per_response);
-        costPerResp = (!isNaN(parsedCost) && parsedCost > 0)
-          ? Math.round(parsedCost)
-          : (economics.costPerResponseVnd || 0);
+        // Luôn khóa theo công thức kinh tế học tính toán từ phía máy chủ, không cho phép client tự ghi đè giá/thù lao
+        rewardPointsPerResp = economics.rewardPointsPerResponse || 0;
+        costPerResp = economics.costPerResponseVnd || 0;
       }
 
       // Xử lý tạo voucher tài trợ nếu Doanh Nghiệp cung cấp danh sách mã riêng (Zero Cash) hoặc Mua voucher từ kho sàn
@@ -1094,13 +1088,23 @@ class SurveyController {
       }
 
       if (req.body.target_responses !== undefined) {
+        if (survey.status !== 'DRAFT') {
+          return res.status(400).json({ success: false, message: 'Không thể thay đổi số lượng mẫu mục tiêu sau khi khảo sát đã xuất bản ký quỹ' });
+        }
+        const nextTarget = Math.max(1, parseInt(req.body.target_responses, 10) || survey.target_responses);
+        const existingQs = db.prepare('SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC').all(id);
+        const qListForCalc = Array.isArray(req.body.questions) && req.body.questions.length > 0 ? req.body.questions : existingQs;
+        const recalculated = pricingService.calculateSurveyEconomics(qListForCalc, nextTarget, {
+          tier: survey.package_type || 'PERSONAL',
+          accountTier: user.account_tier,
+          useNewRate: true
+        });
         updates.push('target_responses = ?');
-        params.push(Math.max(1, parseInt(req.body.target_responses, 10)));
-      }
-
-      if (req.body.reward_points_per_response !== undefined) {
-        updates.push('reward_points_per_response = ?');
-        params.push(Math.max(1, parseInt(req.body.reward_points_per_response, 10)));
+        params.push(nextTarget);
+        if (survey.reward_mode !== 'VOUCHER_ONLY') {
+          updates.push('cost_per_response = ?', 'reward_points_per_response = ?');
+          params.push(recalculated.costPerResponseVnd || survey.cost_per_response, recalculated.rewardPointsPerResponse || survey.reward_points_per_response);
+        }
       }
 
       if (req.body.allow_edit_response !== undefined) {
@@ -1113,10 +1117,14 @@ class SurveyController {
         params.push(req.body.allow_view_response ? 1 : 0);
       }
 
-      // Quyền riêng tư: cho phép creator bật/tắt chế độ thu thập email đáp viên khi sửa khảo sát
+      // Quyền riêng tư: chỉ cho phép bật thu thập email trước khi có dữ liệu phản hồi
       if (req.body.allow_email_collection !== undefined) {
+        const nextAllowEmail = (req.body.allow_email_collection === true || req.body.allow_email_collection === 1 || req.body.allow_email_collection === '1') ? 1 : 0;
+        if (nextAllowEmail === 1 && survey.allow_email_collection !== 1 && (survey.collected_responses || 0) > 0) {
+          return res.status(400).json({ success: false, message: 'Không thể bật thu thập email sau khi đã có đáp viên nộp bài mà chưa có sự đồng ý' });
+        }
         updates.push('allow_email_collection = ?');
-        params.push((req.body.allow_email_collection === true || req.body.allow_email_collection === 1 || req.body.allow_email_collection === '1') ? 1 : 0);
+        params.push(nextAllowEmail);
       }
 
       // Cập nhật câu hỏi nếu được cung cấp
@@ -2036,20 +2044,22 @@ class SurveyController {
             WHERE id = ? AND (status != 'VALIDATED' OR points_rewarded = 0)
           `).run(response.id);
 
-          const newCollected = survey.collected_responses + 1;
-          const newSurveyStatus = newCollected >= survey.target_responses ? 'COMPLETED' : 'ACTIVE';
-          const completedAtSql = newSurveyStatus === 'COMPLETED' ? ', completed_at = CURRENT_TIMESTAMP' : '';
-          db.prepare(`
-            UPDATE surveys 
-            SET collected_responses = collected_responses + 1, status = ?, updated_at = CURRENT_TIMESTAMP ${completedAtSql}
-            WHERE id = ?
-          `).run(newSurveyStatus, survey.id);
-
-          antiFraudService.updateUserTrustScore(user.id, 'VALIDATED');
-
           let voucherClaim = null;
-          if (survey.sponsor_campaign_id) {
-            voucherClaim = voucherService.claimVoucherForResponse(survey.id, survey.sponsor_campaign_id, user.id, response.id);
+          if (!isEditing) {
+            const newCollected = survey.collected_responses + 1;
+            const newSurveyStatus = newCollected >= survey.target_responses ? 'COMPLETED' : 'ACTIVE';
+            const completedAtSql = newSurveyStatus === 'COMPLETED' ? ', completed_at = CURRENT_TIMESTAMP' : '';
+            db.prepare(`
+              UPDATE surveys 
+              SET collected_responses = collected_responses + 1, status = ?, updated_at = CURRENT_TIMESTAMP ${completedAtSql}
+              WHERE id = ?
+            `).run(newSurveyStatus, survey.id);
+
+            antiFraudService.updateUserTrustScore(user.id, 'VALIDATED');
+
+            if (survey.sponsor_campaign_id) {
+              voucherClaim = voucherService.claimVoucherForResponse(survey.id, survey.sponsor_campaign_id, user.id, response.id);
+            }
           }
 
           const curUser = db.prepare('SELECT point_balance FROM users WHERE id = ?').get(user.id);
@@ -2057,7 +2067,9 @@ class SurveyController {
           return res.json({
             success: true,
             status: 'VALIDATED',
-            message: 'Khảo sát hoàn thành xuất sắc! Bạn đã nhận được mã voucher quà tặng.',
+            message: isEditing
+              ? 'Đã cập nhật câu trả lời khảo sát thành công!'
+              : 'Khảo sát hoàn thành xuất sắc! Bạn đã nhận được mã voucher quà tặng.',
             pointsEarned: 0,
             qualityScore: evalResult.qualityScore,
             newPointBalance: curUser ? curUser.point_balance : 0,
@@ -2655,8 +2667,9 @@ class SurveyController {
         return res.send(row.file_data);
       }
 
-      // Kiểm tra dự phòng xem tệp có tồn tại trên đĩa không
-      const fallbackPath = path.join(__dirname, '../../public/uploads', req.params.id);
+      // Kiểm tra dự phòng xem tệp có tồn tại trên đĩa không (khóa basename chống path traversal)
+      const safeFileName = path.basename(String(req.params.id));
+      const fallbackPath = path.join(__dirname, '../../public/uploads', safeFileName);
       if (fs.existsSync(fallbackPath) && fs.statSync(fallbackPath).isFile()) {
         return res.sendFile(fallbackPath);
       }
@@ -2751,6 +2764,14 @@ class SurveyController {
         response = { id: responseId };
       } else if (response.status === 'VALIDATED') {
         return res.status(400).json({ success: false, message: 'Bạn đã hoàn thành khảo sát này rồi' });
+      } else if (response.status === 'SCREENED_OUT') {
+        return res.json({
+          success: true,
+          message: 'Bạn đã được ghi nhận không thuộc đối tượng của khảo sát này trước đó.',
+          consolationPoints: 0,
+          trustScoreBonus: 0,
+          screened_out: true
+        });
       } else {
         db.prepare(`
           UPDATE responses SET status = 'SCREENED_OUT', submitted_at = CURRENT_TIMESTAMP, points_rewarded = 0 WHERE id = ?
@@ -2874,7 +2895,7 @@ class SurveyController {
             db.prepare(`
               INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
               VALUES (?, ?, ?, 'PIN_SURVEY_FEE', 'VND', ?, ?, ?)
-            `).run(txId, user.id, id, PIN_FEE, u.credit_balance - PIN_FEE, `Phí ghim khảo sát lên vị trí VIP đầu trang: ${survey.title}`);
+            `).run(txId, user.id, id, -PIN_FEE, u.credit_balance - PIN_FEE, `Phí ghim khảo sát lên vị trí VIP đầu trang: ${survey.title}`);
           }
         }
 
@@ -2957,7 +2978,14 @@ class SurveyController {
         return res.status(403).json({ success: false, message: 'Bạn không có quyền thực hiện bảo hành cho bài khảo sát này' });
       }
 
-      // 3. Khảo sát phải thuộc phân khúc Doanh nghiệp
+      // 3. Khảo sát chưa bị đóng vĩnh viễn và phải thuộc phân khúc Doanh nghiệp
+      if (survey.status === 'CLOSED') {
+        return res.status(400).json({
+          success: false,
+          message: 'Khảo sát này đã được đóng và quyết toán ký quỹ trước đó, không thể mở lại bảo hành.'
+        });
+      }
+
       const isEnterprise = survey.package_type === 'ENTERPRISE' || 
                            survey.pricing_tier === 'ENTERPRISE' || 
                            user.account_tier === 'ENTERPRISE' || 
@@ -2976,18 +3004,25 @@ class SurveyController {
       const finishTime = new Date(finishTimeStr).getTime();
       const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-      if (Date.now() - finishTime > SEVEN_DAYS_MS) {
+      if (!Number.isFinite(finishTime) || Date.now() - finishTime > SEVEN_DAYS_MS) {
         return res.status(400).json({
           success: false,
           message: 'Đã quá thời hạn 07 ngày bảo hành kể từ khi hoàn thành/thu mẫu khảo sát này'
         });
       }
 
-      // 5. Kiểm tra danh sách response_ids
+      // 5. Kiểm tra danh sách response_ids (chặn mảng rỗng hoặc trùng lặp ID)
       if (!response_ids || !Array.isArray(response_ids) || response_ids.length === 0) {
         return res.status(400).json({
           success: false,
           message: 'Vui lòng cung cấp danh sách mã phản hồi lỗi cần đổi (response_ids)'
+        });
+      }
+      const uniqueResponseIds = [...new Set(response_ids.map(String))];
+      if (uniqueResponseIds.length !== response_ids.length) {
+        return res.status(400).json({
+          success: false,
+          message: 'Danh sách mã phản hồi bảo hành chứa phần tử trùng lặp'
         });
       }
 

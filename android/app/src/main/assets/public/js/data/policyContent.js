@@ -348,7 +348,7 @@
             html: `
               <p>SurvHub tôn trọng và bảo vệ quyền riêng tư của người dùng. Chính sách này giải thích cách SurvHub thu thập, sử dụng, lưu trữ, chia sẻ và bảo vệ dữ liệu cá nhân khi bạn sử dụng website, ứng dụng di động và các dịch vụ liên quan.</p>
               <p>Chính sách áp dụng cho tất cả người dùng, bao gồm Đáp viên, Nhà tạo khảo sát, người truy cập diễn đàn và người gửi yêu cầu hỗ trợ. Chính sách không áp dụng cho dữ liệu do bên thứ ba xử lý theo chính sách riêng của họ.</p>
-              <p>Bằng việc tích chọn đồng ý hoặc tiếp tục sử dụng dịch vụ, bạn xác nhận đã đọc và hiểu Chính sách này. Đối với người chưa thành niên, sự đồng ý phải được thực hiện theo Mục 8.</p>
+              <p>Bằng việc chủ động tích chọn ô đồng ý riêng biệt (không dùng ô tích sẵn, không gộp vào điều khoản chung và không suy đoán từ sự im lặng) khi sử dụng dịch vụ, bạn xác nhận đã đọc, hiểu rõ và đồng ý với Chính sách này theo Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15. Đối với người chưa thành niên, sự đồng ý phải được thực hiện theo Mục 7.</p>
             `
           },
           {
@@ -441,8 +441,8 @@
               <ul>
                 <li>Sự đồng ý phải tự nguyện, rõ ràng, cụ thể theo từng mục đích và được thể hiện bằng hành động tích chọn, không dùng ô tích sẵn, không gộp vào điều khoản dịch vụ và không dùng im lặng hoặc không phản hồi làm căn cứ đồng ý.</li>
                 <li>Khi đăng ký, bạn được yêu cầu đồng ý riêng với: (i) Điều khoản dịch vụ và Quy chế hoạt động; (ii) Chính sách bảo vệ dữ liệu cá nhân và việc xử lý dữ liệu nhạy cảm (nếu có).</li>
-                <li>SurvHub ghi nhận phiên bản văn bản, thời điểm đồng ý và phương thức đồng ý để có thể kiểm chứng khi cần. Bạn có quyền yêu cầu cung cấp thông tin về phạm vi đồng ý của mình.</li>
-                <li>Bạn có quyền rút lại sự đồng ý bất kỳ lúc nào bằng văn bản hoặc hình thức điện tử qua kênh liên hệ tại Mục 20. Việc rút đồng ý không làm mất hiệu lực của việc xử lý đã thực hiện trước đó nhưng SurvHub sẽ dừng xử lý cho mục đích tương ứng, trừ khi pháp luật yêu cầu tiếp tục lưu trữ.</li>
+                <li>SurvHub ghi nhận phiên bản văn bản, thời điểm đồng ý, địa chỉ IP và phương thức đồng ý vào nhật ký đồng ý (<code>consent_logs</code>) để có thể kiểm chứng khi cần. Bạn có thể tự trích xuất bản sao dữ liệu cá nhân (bao gồm lịch sử đồng ý) trực tiếp tại mục <strong>Hồ sơ -&gt; Bảo mật &amp; Quyền dữ liệu</strong> hoặc yêu cầu cung cấp qua kênh hỗ trợ.</li>
+                <li>Bạn có quyền rút lại sự đồng ý bất kỳ lúc nào trực tiếp tại mục <strong>Hồ sơ -&gt; Bảo mật &amp; Quyền dữ liệu</strong> (tính năng Rút đồng ý &amp; Xóa tài khoản) hoặc bằng văn bản, hình thức điện tử qua kênh liên hệ tại Mục 19. Việc rút đồng ý không làm mất hiệu lực của việc xử lý đã thực hiện trước đó nhưng SurvHub sẽ dừng xử lý cho mục đích tương ứng, trừ khi pháp luật yêu cầu tiếp tục lưu trữ.</li>
                 <li>Bạn có thể từ chối hoặc tắt thông báo đẩy, email tiếp thị mà vẫn sử dụng được các chức năng chính của Nền tảng.</li>
               </ul>
             `
@@ -480,10 +480,11 @@
                   <tbody>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Brevo</td><td class="py-1.5 pr-3">Gửi email xác thực OTP và thông báo hệ thống</td><td class="py-1.5">Email, họ tên, nội dung thông báo</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Google Gemini API</td><td class="py-1.5 pr-3">Kiểm duyệt nội dung diễn đàn</td><td class="py-1.5">Tiêu đề và nội dung bài đăng, bình luận</td></tr>
-                    <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Oracle Cloud</td><td class="py-1.5 pr-3">Lưu trữ máy chủ và cơ sở dữ liệu</td><td class="py-1.5">Toàn bộ dữ liệu vận hành</td></tr>
+                    <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Turso / libSQL Cloud</td><td class="py-1.5 pr-3">Lưu trữ và đồng bộ cơ sở dữ liệu đám mây</td><td class="py-1.5">Dữ liệu tài khoản, khảo sát, nhật ký đồng ý và giao dịch</td></tr>
+                    <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Oracle Cloud</td><td class="py-1.5 pr-3">Lưu trữ máy chủ ứng dụng và tệp sao lưu</td><td class="py-1.5">Toàn bộ dữ liệu vận hành</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Cloudflare</td><td class="py-1.5 pr-3">CDN, bảo mật và đường truyền</td><td class="py-1.5">Địa chỉ IP, dữ liệu kỹ thuật</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Google Sheets</td><td class="py-1.5 pr-3">Đồng bộ kết quả khảo sát khi Nhà tạo khảo sát bật webhook</td><td class="py-1.5">Dữ liệu cấp phản hồi đã loại bỏ hồ sơ cá nhân</td></tr>
-                    <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Đối tác thanh toán</td><td class="py-1.5 pr-3">Nạp Credit, chuyển thưởng, phát hành thẻ cào</td><td class="py-1.5">Thông tin giao dịch và tài khoản nhận tiền</td></tr>
+                    <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3">Đối tác thanh toán (VietQR / Ngân hàng / MoMo)</td><td class="py-1.5 pr-3">Nạp Credit, chuyển thưởng, phát hành thẻ cào (ở chế độ Demo, hệ thống dùng cơ chế mô phỏng thanh toán nội bộ, không phát sinh giao dịch tiền thật)</td><td class="py-1.5">Thông tin giao dịch và tài khoản nhận tiền</td></tr>
                     <tr><td class="py-1.5 pr-3">Cơ quan nhà nước có thẩm quyền</td><td class="py-1.5 pr-3">Tuân thủ yêu cầu hợp pháp</td><td class="py-1.5">Dữ liệu theo đúng phạm vi yêu cầu</td></tr>
                   </tbody>
                 </table>
@@ -495,12 +496,12 @@
             title: '9. Chuyển dữ liệu xuyên biên giới',
             icon: 'globe',
             html: `
-              <p>Một số nhà cung cấp dịch vụ của SurvHub có hệ thống đặt ngoài lãnh thổ Việt Nam (Oracle Cloud, Cloudflare, Brevo, Google Gemini). Theo Điều 20 Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15, việc chuyển dữ liệu ra nước ngoài hoặc sử dụng nền tảng nước ngoài để xử lý dữ liệu được xem là chuyển dữ liệu xuyên biên giới.</p>
+              <p>Một số nhà cung cấp dịch vụ của SurvHub có hệ thống đặt ngoài lãnh thổ Việt Nam (Turso / libSQL Cloud, Oracle Cloud, Cloudflare, Brevo, Google Gemini). Theo Điều 20 Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định số 356/2025/NĐ-CP, việc chuyển dữ liệu ra nước ngoài hoặc sử dụng nền tảng nước ngoài để xử lý dữ liệu được xem là chuyển dữ liệu xuyên biên giới.</p>
               <ul>
                 <li>SurvHub xác định phạm vi, mục đích và loại dữ liệu chuyển giao; chỉ chuyển dữ liệu cần thiết cho việc vận hành, gửi email, kiểm duyệt nội dung và lưu trữ.</li>
                 <li>SurvHub áp dụng biện pháp bảo vệ theo Điều 20 Luật số 91/2025/QH15, ký kết hoặc áp dụng điều khoản ràng buộc với bên nhận và yêu cầu bên nhận bảo mật dữ liệu.</li>
                 <li>Trường hợp thuộc diện phải lập hồ sơ đánh giá tác động chuyển dữ liệu xuyên biên giới, SurvHub lập hồ sơ theo Mẫu 09 ban hành kèm Nghị định số 356/2025/NĐ-CP và gửi cơ quan chuyên trách trong thời hạn 60 ngày kể từ lần chuyển đầu tiên.</li>
-                <li>SurvHub theo dõi các trường hợp được miễn trừ theo Điều 20 khoản 6 Luật số 91/2025/QH15 và Điều 39 Luật số 91/2025/QH15 (hộ kinh doanh, doanh nghiệp siêu nhỏ, doanh nghiệp nhỏ và khởi nghiệp sáng tạo trong thời hạn luật định).</li>
+                <li>SurvHub theo dõi các trường hợp được miễn trừ hoặc chuyển tiếp theo khoản 6 Điều 20, Điều 38 (miễn trừ một phần cho hộ kinh doanh, doanh nghiệp siêu nhỏ; hoãn 05 năm cho doanh nghiệp nhỏ và khởi nghiệp sáng tạo nếu đủ điều kiện) và Điều 39 Luật số 91/2025/QH15 cùng hướng dẫn tại Nghị định số 356/2025/NĐ-CP.</li>
                 <li>Bạn có quyền yêu cầu cung cấp thông tin về biện pháp bảo vệ áp dụng cho việc chuyển dữ liệu xuyên biên giới.</li>
               </ul>
             `

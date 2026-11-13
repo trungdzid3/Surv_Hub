@@ -367,7 +367,7 @@
                   <i data-lucide="info" class="w-3.5 h-3.5"></i>
                   <span>Tốc độ hoàn thành ước tính</span>
                 </span>
-                <button type="button" onclick="VibeApp.toggleSpeedExplainModal(false)" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xs px-1 font-bold">✕</button>
+                <button type="button" onclick="VibeApp.toggleSpeedExplainModal(false)" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-1 rounded-md transition-colors" aria-label="Đóng giải thích tốc độ ước tính"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
               </div>
               <div class="space-y-1.5 text-stone-600 dark:text-stone-300">
                 <div class="flex items-start gap-1.5">
@@ -480,7 +480,7 @@
                   <i data-lucide="info" class="w-3.5 h-3.5"></i>
                   <span>Cơ chế phân bổ ngân sách tăng thêm</span>
                 </span>
-                <button type="button" onclick="VibeApp.toggleBoostExplainModal(false)" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xs px-1 font-bold">✕</button>
+                <button type="button" onclick="VibeApp.toggleBoostExplainModal(false)" aria-label="Đóng giải thích ngân sách tăng thêm" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xs px-1 font-bold"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
               </div>
               <div class="space-y-1.5 text-stone-600 dark:text-stone-300">
                 <div class="flex items-start gap-1.5">

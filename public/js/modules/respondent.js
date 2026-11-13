@@ -217,6 +217,25 @@
     this.haptic('medium');
     const session = this.state.activeSession;
     if (!session) return;
+
+    if (session.survey && session.survey.allow_email_collection === true) {
+      const consentCheckbox = document.getElementById('consent-share-email-checkbox');
+      if (!consentCheckbox || !consentCheckbox.checked) {
+        this.showToast('Vui lòng tích chọn xác nhận đồng ý chia sẻ địa chỉ email cho đơn vị tổ chức khảo sát trước khi bắt đầu.', 'warning');
+        if (consentCheckbox) consentCheckbox.focus();
+        return;
+      }
+      this.api('/users/me/consent', {
+        method: 'POST',
+        body: JSON.stringify({
+          purpose: 'SURVEY_EMAIL_SHARING',
+          policy_version: '2026.11',
+          consented: true,
+          survey_id: session.surveyId
+        })
+      }).catch(() => {});
+    }
+
     session.hasStartedQuiz = true;
     this.state.surveyRunner = {
       visited_sections: new Set()
@@ -427,11 +446,13 @@
               ` : ''}
 
               ${s.allow_email_collection === true ? `
-                <!-- Thông báo quyền riêng tư: khảo sát bật chế độ thu thập email đáp viên -->
-                <div class="flex items-start gap-2 text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-                  <i data-lucide="mail" class="w-3.5 h-3.5 shrink-0 mt-0.5"></i>
-                  <span>Khảo sát này sẽ chia sẻ địa chỉ email tài khoản của bạn cho doanh nghiệp sau khi hoàn thành.</span>
-                </div>
+                <!-- Checkbox đồng ý tường minh chia sẻ email theo Luật BVDLCN 91/2025/QH15 -->
+                <label for="consent-share-email-checkbox" class="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 flex items-start gap-3 cursor-pointer hover:border-orange-500/60 transition-colors">
+                  <input id="consent-share-email-checkbox" type="checkbox" class="mt-0.5 w-4 h-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 shrink-0 cursor-pointer">
+                  <span class="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
+                    Tôi đồng ý để SurvHub chia sẻ địa chỉ email tài khoản của tôi cho đơn vị tổ chức khảo sát sau khi hoàn thành bài làm (theo Luật Bảo vệ Dữ liệu Cá nhân 91/2025/QH15).
+                  </span>
+                </label>
               ` : ''}
 
               <!-- Lưu ý làm bài trung thực & Tiêu chuẩn chất lượng -->
@@ -3083,6 +3104,33 @@
               `}
             </div>
           </section>
+
+          <!-- CARD QUYỀN DỮ LIỆU CÁ NHÂN (LUẬT BVDLCN 91/2025/QH15) -->
+          <section class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center shrink-0">
+                  <i data-lucide="file-lock-2" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-orange-600 block">Điều 20 &amp; Điều 39</span>
+                  <h3 class="text-base sm:text-lg font-extrabold text-stone-900 dark:text-white tracking-tight">Quyền Dữ Liệu Cá Nhân (Luật BVDLCN 91/2025/QH15)</h3>
+                  <p class="text-xs text-stone-500 dark:text-stone-400">Trích xuất bản sao dữ liệu cá nhân hoặc rút lại sự đồng ý xử lý dữ liệu và đóng tài khoản.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-stone-100 dark:border-stone-800/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button type="button" onclick="VibeApp.exportMyPersonalDataAction()" class="flex-1 min-h-11 px-5 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-stone-100 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98]">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Tải Bản Sao Dữ Liệu (JSON)</span>
+              </button>
+              <button type="button" onclick="VibeApp.withdrawConsentAction()" class="flex-1 min-h-11 px-5 py-2.5 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-700 dark:text-red-400 text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98]">
+                <i data-lucide="user-x" class="w-4 h-4"></i>
+                <span>Rút Đồng Ý &amp; Đóng Tài Khoản</span>
+              </button>
+            </div>
+          </section>
         </div>
 
         <!-- PHÂN HỆ 1: HỒ SƠ & UY TÍN (GỘP BENTO ĐÁNH GIÁ VÀ FORM NHÂN KHẨU HỌC LIỀN MẠCH) -->
@@ -4270,6 +4318,134 @@
       }
     } catch (err) {
       this.showToast('Lỗi xóa khảo sát: ' + err.message, 'error');
+    }
+  },
+
+  async exportMyPersonalDataAction() {
+    this.haptic('light');
+    try {
+      const res = await this.api('/users/me/export-data');
+      if (!res || !res.success) {
+        throw new Error((res && res.message) || 'Không thể trích xuất dữ liệu cá nhân');
+      }
+      const userId = (this.state.currentUser && this.state.currentUser.id) ? this.state.currentUser.id : 'me';
+      const jsonStr = JSON.stringify(res, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `survhub_personal_data_${userId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      this.haptic('success');
+      this.showToast('Đã tải xuống bản sao dữ liệu cá nhân (JSON).', 'success');
+    } catch (err) {
+      this.showToast('Lỗi trích xuất dữ liệu: ' + err.message, 'error');
+    }
+  },
+
+  async withdrawConsentAction() {
+    this.haptic('warning');
+    const user = this.state.currentUser || {};
+    const pointBalance = Number(user.point_balance || 0);
+    const creditBalance = Number(user.credit_balance || 0);
+    if (pointBalance > 0 || creditBalance > 0) {
+      const proceedWithBalance = confirm(
+        `Tài khoản của bạn vẫn còn số dư (${pointBalance.toLocaleString('vi-VN')} Point / ${creditBalance.toLocaleString('vi-VN')} Credit).\n` +
+        'Nếu rút lại sự đồng ý ngay bây giờ, tài khoản sẽ bị ẩn danh hóa và khóa truy cập. Bạn có chắc chắn muốn tiếp tục không?'
+      );
+      if (!proceedWithBalance) return;
+    }
+
+    const reason = prompt('Vui lòng nhập lý do rút lại sự đồng ý xử lý dữ liệu (tùy chọn):', 'Không còn nhu cầu sử dụng dịch vụ');
+    if (reason === null) return;
+
+    const finalConfirm = confirm('Xác nhận lần cuối: Toàn bộ hồ sơ cá nhân sẽ được ẩn danh hóa và đăng xuất ngay lập tức theo Luật BVDLCN 91/2025/QH15?');
+    if (!finalConfirm) return;
+
+    try {
+      const res = await this.api('/users/me/withdraw-consent', {
+        method: 'POST',
+        body: JSON.stringify({ reason: String(reason || '').trim() })
+      });
+      if (!res || !res.success) {
+        throw new Error((res && res.message) || 'Không thể thực hiện rút lại sự đồng ý');
+      }
+      this.haptic('success');
+      this.showToast(res.message || 'Đã rút lại sự đồng ý và ẩn danh hóa tài khoản.', 'success');
+      if (typeof this.logout === 'function') {
+        this.logout();
+      }
+    } catch (err) {
+      this.showToast('Lỗi rút lại đồng ý: ' + err.message, 'error');
+    }
+  },
+
+  async saveEnterpriseLevelAction(level) {
+    this.haptic('light');
+    const targetLevel = Number(level) === 2 ? 2 : 1;
+    let payload = { level: targetLevel };
+
+    if (targetLevel === 1) {
+      const brandName = (document.getElementById('ent-brand-name')?.value || '').trim();
+      const industry = (document.getElementById('ent-industry')?.value || '').trim();
+      const websiteUrl = (document.getElementById('ent-website')?.value || '').trim();
+      const contactPhone = (document.getElementById('ent-phone')?.value || '').trim();
+      if (!brandName) {
+        this.showToast('Vui lòng nhập Tên thương hiệu / Công ty.', 'error');
+        return;
+      }
+      payload = {
+        level: 1,
+        brand_name: brandName,
+        industry,
+        website_url: websiteUrl,
+        contact_phone: contactPhone
+      };
+    } else {
+      const legalName = (document.getElementById('ent-legal-name')?.value || '').trim();
+      const taxId = (document.getElementById('ent-tax-id')?.value || '').trim();
+      const address = (document.getElementById('ent-address')?.value || '').trim();
+      const invoiceEmail = (document.getElementById('ent-invoice-email')?.value || '').trim();
+      if (!legalName || !taxId || !address || !invoiceEmail) {
+        this.showToast('Vui lòng nhập đầy đủ Tên pháp nhân, Mã số thuế, Địa chỉ trụ sở và Email nhận hóa đơn.', 'error');
+        return;
+      }
+      payload = {
+        level: 2,
+        company_legal_name: legalName,
+        tax_id: taxId,
+        headquarters_address: address,
+        invoice_email: invoiceEmail
+      };
+    }
+
+    try {
+      const res = await this.api('/auth/enterprise/profile', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      if (!res || !res.success) {
+        throw new Error((res && res.message) || 'Không thể lưu thông tin doanh nghiệp');
+      }
+      if (res.user) {
+        this.state.currentUser = { ...(this.state.currentUser || {}), ...res.user };
+        try {
+          localStorage.setItem('survhub_cached_user', JSON.stringify(this.state.currentUser));
+        } catch (_) {}
+      }
+      this.haptic('success');
+      this.showToast(res.message || `Đã lưu hồ sơ doanh nghiệp Cấp độ ${targetLevel} thành công!`, 'success');
+      const root = document.getElementById('app-root');
+      if (root) {
+        await this.renderProfileView(root);
+      }
+      if (typeof this.renderNavigation === 'function') this.renderNavigation();
+      if (typeof this.renderUserProfileDropdown === 'function') this.renderUserProfileDropdown();
+    } catch (err) {
+      this.showToast('Lỗi cập nhật hồ sơ doanh nghiệp: ' + err.message, 'error');
     }
   },
 

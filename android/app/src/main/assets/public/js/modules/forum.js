@@ -777,7 +777,7 @@
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
             <div class="w-9 h-9 rounded-xl overflow-hidden bg-stone-900 text-white dark:bg-stone-700 flex items-center justify-center font-bold text-xs shrink-0">
-              ${post.author && post.author.avatar_url ? `<img src="${post.author.avatar_url}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${firstLetter}';">` : firstLetter}
+              ${post.author && post.author.avatar_url ? `<img src="${this.escapeHtml(post.author.avatar_url)}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${this.escapeHtml(firstLetter)}';">` : this.escapeHtml(firstLetter)}
             </div>
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
@@ -1728,7 +1728,7 @@
             return `
               <div class="p-2.5 rounded-xl bg-white dark:bg-[#1C1C20] border border-stone-200/70 dark:border-stone-800 flex items-start gap-2.5 text-xs">
                 <div class="w-7 h-7 rounded-lg overflow-hidden bg-stone-800 text-white flex items-center justify-center font-bold text-[11px] shrink-0">
-                  ${c.author && c.author.avatar_url ? `<img src="${c.author.avatar_url}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${letter}';">` : letter}
+                  ${c.author && c.author.avatar_url ? `<img src="${this.escapeHtml(c.author.avatar_url)}" alt="Avatar" class="w-full h-full object-cover" onerror="this.onerror=null;this.parentElement.textContent='${this.escapeHtml(letter)}';">` : this.escapeHtml(letter)}
                 </div>
                 <div class="flex-1 min-w-0 space-y-0.5">
                   <div class="flex items-center justify-between">

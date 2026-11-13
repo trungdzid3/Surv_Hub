@@ -1,6 +1,6 @@
 # Báo cáo Rà soát Pháp lý Việt Nam — SurvHub / VibeSurvey
 
-**Ngày audit:** 03/11/2026
+**Ngày audit:** 03/11/2026 (Cập nhật tái kiểm tra & nghiệm thu khắc phục: 13/11/2026)
 **Phạm vi:** Toàn bộ source code tại `C:\Users\Lenovo\Downloads\Linh` (web SPA `public/`, backend `server/`, app Android `android/`)
 **Trạng thái dự án:** Demo, chưa công khai, chưa có pháp nhân (theo ngữ cảnh chủ dự án)
 
@@ -16,7 +16,32 @@ Quy ước mức độ (thay cho ký hiệu màu của skill theo quy tắc work
 
 ---
 
-## Tong quan
+## Cap nhat trang thai khac phuc (13/11/2026)
+
+Các hạng mục `[CAN-XU-LY-NGAY]` và `[CAI-THIEN]` trọng yếu trong mã nguồn đã được xử lý:
+
+1. **Văn bản pháp lý độc lập & cập nhật luật mới (`[DAT]`)**: `public/js/data/policyContent.js` tách 3 văn bản độc lập (`terms`, `privacy`, `rules`), dẫn chiếu Luật 91/2025/QH15, NĐ 356/2025/NĐ-CP, NĐ 330/2026/NĐ-CP, Luật 122/2025/QH15, Luật 19/2023/QH15, Luật 20/2023/QH15; loại bỏ cụm từ coi việc tiếp tục sử dụng là đồng ý (`policyContent.js:351`), sửa dẫn chiếu Mục 19 (`policyContent.js:445`), bổ sung **Turso / libSQL Cloud** và cơ chế mô phỏng thanh toán Demo (`policyContent.js:481-488`), chuẩn hóa Điều 20, Điều 38 & Điều 39 Luật 91/2025/QH15 (`policyContent.js:503`), bổ sung hướng dẫn tự xuất dữ liệu & rút đồng ý tại `Hồ sơ -> Bảo mật & Quyền dữ liệu`.
+2. **Tách checkbox đồng ý & ghi nhận `consent_logs` (`[DAT]`)**:
+   - Đăng ký tài khoản (`public/js/modules/modalsTerms.js:273-297`) tách riêng `#auth-reg-terms` và `#auth-reg-privacy` (mặc định không tích sẵn).
+   - Bảng `consent_logs` (`server/db/database.js:454-468`) và API `POST /api/v1/users/me/consent` (`server/routes/api.js:61`, `server/controllers/userController.js:447`) ghi nhận phiên bản văn bản, thời điểm, IP, user-agent và mục đích đồng ý.
+   - Chia sẻ email cho nhà tạo khảo sát (`public/js/modules/respondent.js` khối `allow_email_collection`): thay thông báo tĩnh bằng checkbox đồng ý tường minh (`#consent-share-email-checkbox`, mặc định không tích).
+3. **Quyền chủ thể dữ liệu: Xuất dữ liệu, Rút lại đồng ý & Xóa tài khoản (`[DAT]`)**:
+   - Bổ sung `GET /api/v1/users/me/export-data` và `POST /api/v1/users/me/withdraw-consent` (`server/routes/api.js:62-63`, `server/controllers/userController.js:490-575`) cùng UI nút bấm tại `#profile-tab-security` (`public/js/modules/respondent.js`).
+4. **Ẩn danh dữ liệu khảo sát & Bảo mật (`[DAT]`)**:
+   - `_stripPrivateProfileFields` (`server/controllers/surveyController.js:1617-1628`) loại bỏ `__profile_*` khỏi export JSON/CSV và webhook Google Sheets; email chỉ xuất khi bật `allow_email_collection`.
+   - Loại bỏ backdoor mật khẩu, bỏ mật khẩu admin hardcode, bắt buộc `JWT_SECRET`/`PAYMENT_WEBHOOK_SECRET` trên production, hash OTP HMAC-SHA256, thu hẹp CORS whitelist và bật rate-limit (`server/app.js`, `server/config/index.js`, `server/controllers/authController.js`).
+5. **Minh bạch AI & Quyền khiếu nại 15 ngày (`[DAT]`)**:
+   - `server/services/forumSentinelService.js:285, 375` đã gửi thông báo cho tác giả khi MicroSentinel ẩn bài/bình luận kèm hướng dẫn quyền gửi khiếu nại xem xét lại trong vòng 15 ngày.
+6. **Điều khoản "tịch thu số dư" & hoàn tiền (`[DAT]`)**: Đã bỏ tịch thu số dư hợp lệ, quy định tạm giữ đối soát và quyền giải trình 15 ngày (`policyContent.js:193-194, 204, 238`).
+
+**Các mục còn lại thuộc giai đoạn Go-Live (thủ tục pháp nhân & vận hành — `[CAI-THIEN]`):**
+- Thành lập pháp nhân/hộ kinh doanh, công bố tên chủ sở hữu/MST/SĐT ở footer và thông báo/đăng ký nền tảng TMĐT (web + ứng dụng APK) với Bộ Công Thương (Điều 11, 14, 15, 41 Luật 122/2025/QH15).
+- Lập hồ sơ đánh giá tác động chuyển dữ liệu xuyên biên giới trong 60 ngày (Điều 20 Luật 91/2025/QH15; Turso, Brevo, Gemini, Google Sheets, Oracle Cloud, Cloudflare); xem xét miễn trừ DPIA/nhân sự BVDL theo Điều 38 Luật 91/2025/QH15.
+- Hoàn thiện lưu nhật ký hệ thống tập trung >= 12 tháng (Điều 16, 20 NĐ 333/2026/NĐ-CP), quy trình gỡ nội dung 24h/06h (Luật 116/2025/QH15), quy trình báo cáo sự cố 72h (Điều 23 Luật 91/2025/QH15), tắt `usesCleartextTraffic="true"` trước khi build release APK, và tham vấn luật sư trước khi thu/chi tiền thật.
+
+---
+
+## Tong quan (Ket qua audit goc 03/11/2026)
 
 | Lĩnh vực | Cần xử lý ngay | Nên cải thiện | Đạt |
 |---|---|---|---|

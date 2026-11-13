@@ -2,7 +2,7 @@ const antiFraudService = require('../services/antiFraudService');
 
 function checkIpBannedMiddleware(req, res, next) {
   try {
-    const rawIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+    const rawIp = req.ip || (req.socket && req.socket.remoteAddress) || '';
     const isBanned = antiFraudService.checkIpBanned(rawIp);
     if (isBanned) {
       return res.status(403).json({

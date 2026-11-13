@@ -209,8 +209,9 @@ app.use((err, req, res, next) => {
 const forumSentinelService = require('./services/forumSentinelService');
 
 if (require.main === module) {
+  const db = require('./db/database');
   const PORT = config.PORT;
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`[MAY CHU] SurvHub Server dang chay tai: http://localhost:${PORT}`);
     console.log(`[THIET BI] Hybrid Mobile App san sang qua Capacitor Android`);
@@ -220,6 +221,25 @@ if (require.main === module) {
     // Khoi dong tien trinh quet ngam dinh ky dien dan (1 gio / lan)
     forumSentinelService.startPeriodicScan(3600000);
   });
+
+  let isShuttingDown = false;
+  const gracefulShutdown = async (signal) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`[SHUTDOWN] Đang đóng máy chủ an toàn (${signal})...`);
+    server.close(async () => {
+      try {
+        if (typeof db.sync === 'function') await db.sync();
+      } catch (syncErr) {
+        console.warn('[SHUTDOWN] Cảnh báo đồng bộ DB:', syncErr.message);
+      }
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 5000).unref();
+  };
+
+  process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.once('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
 module.exports = app;

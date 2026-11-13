@@ -48,9 +48,27 @@ class WebhookService {
       return true;
     }
 
+    // Kiểm tra IPv4-mapped IPv6 (ví dụ ::ffff:127.0.0.1 hoặc ::ffff:7f00:1)
+    let ipv4Candidate = cleanHost;
+    if (cleanHost.startsWith('::ffff:')) {
+      const mapped = cleanHost.slice(7);
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(mapped)) {
+        ipv4Candidate = mapped;
+      } else {
+        const hexParts = mapped.split(':');
+        if (hexParts.length === 2 && /^[0-9a-f]{1,4}$/i.test(hexParts[0]) && /^[0-9a-f]{1,4}$/i.test(hexParts[1])) {
+          const hi = parseInt(hexParts[0], 16);
+          const lo = parseInt(hexParts[1], 16);
+          ipv4Candidate = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+        } else {
+          return true;
+        }
+      }
+    }
+
     // IPv4 check
     const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-    const match = cleanHost.match(ipv4Regex);
+    const match = ipv4Candidate.match(ipv4Regex);
     if (match) {
       const a = parseInt(match[1], 10);
       const b = parseInt(match[2], 10);
@@ -198,22 +216,51 @@ class WebhookService {
       }
 
       const postBody = JSON.stringify(payload);
-      
-      // Node.js 18+ native fetch với timeout 10s và theo dõi redirect (Google Apps Script trả về 302 redirect)
-      const response = await fetch(webhookUrl.trim(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'SurvHub-Webhook-Engine/1.0'
-        },
-        body: postBody,
-        redirect: 'follow',
-        signal: AbortSignal.timeout(10000)
-      });
+      let currentUrl = webhookUrl.trim();
+      let method = 'POST';
+      let bodyToSend = postBody;
+      let response = null;
 
-      if (!response.ok) {
-        console.warn(`[WebhookSync] Webhook nhận HTTP ${response.status} từ ${webhookUrl}`);
-        return { success: false, status: response.status, message: `HTTP ${response.status}` };
+      // Tự kiểm soát redirect (tối đa 3 hop) và xác thực lại SSRF cho mỗi URL đích
+      for (let hop = 0; hop <= 3; hop++) {
+        const hopSafe = await this.isSafeUrlAsync(currentUrl);
+        if (!hopSafe) {
+          console.warn(`[WebhookSync] Từ chối redirect sang URL không an toàn (SSRF): ${currentUrl}`);
+          return { success: false, message: 'URL webhook redirect khong an toan (SSRF)' };
+        }
+
+        const headers = { 'User-Agent': 'SurvHub-Webhook-Engine/1.0' };
+        if (method === 'POST') {
+          headers['Content-Type'] = 'application/json';
+        }
+
+        response = await fetch(currentUrl, {
+          method,
+          headers,
+          body: method === 'POST' ? bodyToSend : undefined,
+          redirect: 'manual',
+          signal: AbortSignal.timeout(10000)
+        });
+
+        if (response.status >= 300 && response.status < 400) {
+          const location = response.headers.get('location');
+          if (!location || hop === 3) {
+            return { success: false, status: response.status, message: 'Quá nhiều chuyển hướng Webhook' };
+          }
+          currentUrl = new URL(location, currentUrl).toString();
+          if (response.status === 301 || response.status === 302 || response.status === 303) {
+            method = 'GET';
+            bodyToSend = undefined;
+          }
+          continue;
+        }
+        break;
+      }
+
+      if (!response || !response.ok) {
+        const statusCode = response ? response.status : 0;
+        console.warn(`[WebhookSync] Webhook nhận HTTP ${statusCode} từ ${webhookUrl}`);
+        return { success: false, status: statusCode, message: `HTTP ${statusCode}` };
       }
 
       return { success: true, status: response.status };

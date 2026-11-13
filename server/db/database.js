@@ -169,6 +169,7 @@ function createTursoDatabase() {
       }
     }
 
+    rawDb.exec('PRAGMA foreign_keys = ON;');
     // Kiểm tra thật: đọc dữ liệu + quyền điều khiển transaction đồng bộ mà
     // các repository hiện tại đang dùng (BEGIN IMMEDIATE / COMMIT / ROLLBACK).
     rawDb.prepare('SELECT 1 AS ok').get();
@@ -448,6 +449,23 @@ function initSchema() {
 
     CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id);
     CREATE INDEX IF NOT EXISTS idx_push_subs_endpoint ON push_subscriptions(endpoint);
+
+    -- Bảng nhật ký đồng ý xử lý dữ liệu cá nhân (Luật BVDLCN 91/2025/QH15)
+    CREATE TABLE IF NOT EXISTS consent_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      purpose TEXT NOT NULL,
+      policy_version TEXT NOT NULL,
+      consented INTEGER NOT NULL DEFAULT 1,
+      ip_address TEXT,
+      user_agent TEXT,
+      survey_id TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      withdrawn_at DATETIME DEFAULT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_consent_logs_user ON consent_logs(user_id);
 
     -- Bảng Yêu cầu Xuất Hóa Đơn Điện Tử VAT Doanh Nghiệp (Full VAT Support)
     CREATE TABLE IF NOT EXISTS vat_invoices (

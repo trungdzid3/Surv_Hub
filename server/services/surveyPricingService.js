@@ -400,9 +400,12 @@ class SurveyPricingService {
     // 7. Toan hoc chong lo san khi dung luot mien phi
     let rewardPointsPerResponse = respondentReward;
     if (freeResponsesApplied > 0) {
-      const minTakeRate = tier === 'STUDENT' ? 0.10 : 0.25;
+      const minTakeRate = tier === 'STUDENT' ? 0.10 : (tier === 'ENTERPRISE' ? 0.33 : 0.25);
       const rewardFund = Math.floor(surveyEscrowVnd * (1 - minTakeRate));
-      rewardPointsPerResponse = Math.max(1, Math.floor(rewardFund / sampleCount));
+      const pointRate = config.ECONOMICS.POINT_TO_VND_RATE || 1;
+      rewardPointsPerResponse = rewardFund >= pointRate * sampleCount
+        ? Math.floor(rewardFund / (sampleCount * pointRate))
+        : 0;
     }
 
     const rewardValueVnd = rewardPointsPerResponse * (config.ECONOMICS.POINT_TO_VND_RATE || 1);

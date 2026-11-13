@@ -789,9 +789,9 @@
                       <tr>
                         <!-- Cột 1: Người yêu cầu -->
                         <td class="p-3">
-                          <div class="font-bold text-slate-900 dark:text-white">${p.user_name}</div>
-                          <div class="text-[11px] font-mono text-slate-500">${p.user_email}</div>
-                          <div class="text-[10px] font-mono text-slate-400">ID: ${p.id.slice(0, 10)}...</div>
+                          <div class="font-bold text-slate-900 dark:text-white">${this.escapeHtml(p.user_name)}</div>
+                          <div class="text-[11px] font-mono text-slate-500">${this.escapeHtml(p.user_email)}</div>
+                          <div class="text-[10px] font-mono text-slate-400">ID: ${this.escapeHtml(p.id.slice(0, 10))}...</div>
                         </td>
 
                         <!-- Cột 2: Điểm uy tín -->
@@ -811,7 +811,7 @@
                         <td class="p-3">
                           <div>${statusBadge}</div>
                           <div class="font-mono text-[11px] text-slate-500 mt-1">${new Date(p.created_at).toLocaleString('vi-VN')}</div>
-                          ${p.admin_note ? `<div class="text-[10px] text-slate-400 italic mt-0.5">Ghi chú: ${p.admin_note}</div>` : ''}
+                          ${p.admin_note ? `<div class="text-[10px] text-slate-400 italic mt-0.5">Ghi chú: ${this.escapeHtml(p.admin_note)}</div>` : ''}
                         </td>
 
                         <!-- Cột 6: Thao tác -->
@@ -1144,20 +1144,20 @@
                       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
                         <div class="space-y-1">
                           <div class="flex items-center gap-2">
-                            <span class="font-bold text-sm text-slate-900 dark:text-white">${u.name}</span>
+                            <span class="font-bold text-sm text-slate-900 dark:text-white">${this.escapeHtml(u.name)}</span>
                             ${statusBadge}
                             ${trustBadge}
-                            <span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded text-[10px]">${u.role}</span>
-                            ${u.account_tier ? `<span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 font-bold rounded text-[10px]">${u.account_tier}</span>` : ''}
+                            <span class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded text-[10px]">${this.escapeHtml(u.role)}</span>
+                            ${u.account_tier ? `<span class="px-2 py-0.5 bg-zinc-100 dark:bg-zinc-950 text-zinc-700 dark:text-zinc-300 font-bold rounded text-[10px]">${this.escapeHtml(u.account_tier)}</span>` : ''}
                           </div>
                           <div class="text-xs font-mono text-slate-500 flex flex-wrap gap-x-4">
-                            <span>Email: <strong class="text-slate-700 dark:text-slate-300">${u.email}</strong></span>
-                            ${u.google_id ? `<span>Google ID: <strong class="text-slate-700 dark:text-slate-300">${u.google_id}</strong></span>` : ''}
+                            <span>Email: <strong class="text-slate-700 dark:text-slate-300">${this.escapeHtml(u.email)}</strong></span>
+                            ${u.google_id ? `<span>Google ID: <strong class="text-slate-700 dark:text-slate-300">${this.escapeHtml(u.google_id)}</strong></span>` : ''}
                             <span>Số dư điểm: <strong class="text-slate-700 dark:text-slate-300">${(u.point_balance || 0).toLocaleString()} pts</strong></span>
                           </div>
                           ${(isBanned || isSuspended) ? `
                             <div class="text-xs text-orange-600 dark:text-orange-400 font-bold pt-1">
-                              Lý do khóa: ${u.ban_reason || 'Vi phạm chính sách an ninh / Điểm uy tín quá thấp'}
+                              Lý do khóa: ${this.escapeHtml(u.ban_reason || 'Vi phạm chính sách an ninh / Điểm uy tín quá thấp')}
                               ${u.banned_at ? ` | Thời điểm: ${new Date(u.banned_at).toLocaleString('vi-VN')}` : ''}
                             </div>
                           ` : ''}
@@ -1230,8 +1230,8 @@
           return `
                                     <tr>
                                       <td class="p-2.5">
-                                        <div class="font-bold text-slate-800 dark:text-slate-200">${r.survey_title}</div>
-                                        <div class="text-[10px] text-slate-400 font-mono">ID: ${r.survey_id.slice(0, 10)}... | ${r.survey_category || 'Khảo sát'}</div>
+                                        <div class="font-bold text-slate-800 dark:text-slate-200">${this.escapeHtml(r.survey_title)}</div>
+                                        <div class="text-[10px] text-slate-400 font-mono">ID: ${this.escapeHtml(r.survey_id.slice(0, 10))}... | ${this.escapeHtml(r.survey_category || 'Khảo sát')}</div>
                                       </td>
                                       <td class="p-2.5 font-mono text-slate-500">
                                         <div>${r.submitted_at ? new Date(r.submitted_at).toLocaleString('vi-VN') : new Date(r.started_at).toLocaleString('vi-VN')}</div>
@@ -1837,7 +1837,7 @@
               } else if (this.state.currentTab === 'surveys') {
                 await this.renderSurveysView(root);
               } else if (this.state.currentTab === 'my-surveys' || this.state.currentTab === 'created-surveys') {
-                await this.renderMySurveysView(root);
+                await this.renderCreatorSurveysView(root);
               } else if (this.state.currentTab === 'wallet' || this.state.currentTab === 'profile') {
                 await this.renderProfileView(root);
               } else if (this.state.currentTab === 'forum') {

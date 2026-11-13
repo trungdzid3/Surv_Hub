@@ -30,13 +30,26 @@ class VoucherService {
   initCatalogVouchers() {
     const defaultCatalogs = [
       {
+        id: 'cat_grab_10k',
+        brand_name: 'Grab',
+        brand_logo: '/assets/logos/grab.png',
+        website_domain: 'grab.com',
+        title: 'Mã Giảm 10K GrabFood / GrabBike',
+        face_value_vnd: 10000,
+        points_cost: 10000,
+        total_quantity: 30,
+        instructions: 'Áp dụng cho mọi chuyến đi GrabCar/GrabBike hoặc đơn đặt đồ ăn GrabFood trên toàn quốc.',
+        expiry_date: '2026-12-31',
+        prefix: 'GRAB10K'
+      },
+      {
         id: 'cat_shopee_50k',
         brand_name: 'Shopee',
         brand_logo: '/assets/logos/shopee.svg',
         website_domain: 'shopee.vn',
         title: 'Voucher Shopee 50K đơn từ 0đ',
         face_value_vnd: 50000,
-        points_cost: 5000,
+        points_cost: 50000,
         total_quantity: 30,
         instructions: 'Nhập mã tại bước thanh toán trên Shopee App hoặc Website. Áp dụng cho mọi ngành hàng.',
         expiry_date: '2026-12-31',
@@ -49,7 +62,7 @@ class VoucherService {
         website_domain: 'grab.com',
         title: 'Mã Giảm 30K GrabFood / GrabBike',
         face_value_vnd: 30000,
-        points_cost: 3000,
+        points_cost: 30000,
         total_quantity: 30,
         instructions: 'Áp dụng cho mọi chuyến đi GrabCar/GrabBike hoặc đơn đặt đồ ăn GrabFood trên toàn quốc.',
         expiry_date: '2026-12-31',
@@ -62,7 +75,7 @@ class VoucherService {
         website_domain: 'highlandscoffee.com.vn',
         title: 'Voucher Highlands Coffee 50K',
         face_value_vnd: 50000,
-        points_cost: 5000,
+        points_cost: 50000,
         total_quantity: 30,
         instructions: 'Đưa mã vạch hoặc đọc mã số cho nhân viên thu ngân tại quầy khi thanh toán.',
         expiry_date: '2026-12-31',
@@ -75,7 +88,7 @@ class VoucherService {
         website_domain: 'phuclong.com.vn',
         title: 'Giảm 30K Trà Sữa Phúc Long Tea & Coffee',
         face_value_vnd: 30000,
-        points_cost: 3000,
+        points_cost: 30000,
         total_quantity: 30,
         instructions: 'Áp dụng tại tất cả cửa hàng Phúc Long trên toàn quốc hoặc đặt hàng qua hotline/app.',
         expiry_date: '2026-12-31',
@@ -88,7 +101,7 @@ class VoucherService {
         website_domain: 'cgv.vn',
         title: 'Vé Xem Phim CGV 100K 2D',
         face_value_vnd: 100000,
-        points_cost: 10000,
+        points_cost: 100000,
         total_quantity: 20,
         instructions: 'Đổi vé trên ứng dụng CGV Cinemas hoặc đưa mã cho nhân viên bán vé tại rạp.',
         expiry_date: '2026-12-31',
@@ -101,7 +114,7 @@ class VoucherService {
         website_domain: 'starbucks.vn',
         title: 'E-Voucher Starbucks 100K',
         face_value_vnd: 100000,
-        points_cost: 10000,
+        points_cost: 100000,
         total_quantity: 20,
         instructions: 'Xuất trình mã e-voucher khi thanh toán tại mọi chi nhánh Starbucks Coffee tại Việt Nam.',
         expiry_date: '2026-12-31',
@@ -110,7 +123,7 @@ class VoucherService {
     ];
 
     let addedCount = 0;
-    const checkCampaign = db.prepare("SELECT id FROM voucher_campaigns WHERE voucher_type = 'PLATFORM_CATALOG' AND brand_name = ?");
+    const checkCampaign = db.prepare("SELECT id FROM voucher_campaigns WHERE voucher_type = 'PLATFORM_CATALOG' AND id = ?");
     const insertCampaign = db.prepare(`
       INSERT INTO voucher_campaigns (
         id, issuer_id, voucher_type, brand_name, brand_logo, website_domain, title, 
@@ -119,10 +132,10 @@ class VoucherService {
       ) VALUES (?, NULL, 'PLATFORM_CATALOG', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const updateCampaignLogo = db.prepare(`
+    const updateCampaignCatalog = db.prepare(`
       UPDATE voucher_campaigns 
-      SET brand_logo = ?, website_domain = ? 
-      WHERE voucher_type = 'PLATFORM_CATALOG' AND brand_name = ?
+      SET brand_logo = ?, website_domain = ?, points_cost = ?, face_value_vnd = ?
+      WHERE voucher_type = 'PLATFORM_CATALOG' AND id = ?
     `);
 
     const insertCode = db.prepare(`
@@ -133,7 +146,7 @@ class VoucherService {
 
     for (const cat of defaultCatalogs) {
       try {
-        const found = checkCampaign.get(cat.brand_name);
+        const found = checkCampaign.get(cat.id);
         if (!found) {
           insertCampaign.run(
             cat.id,
@@ -156,8 +169,8 @@ class VoucherService {
           }
           addedCount++;
         } else {
-          // Luôn cập nhật logo và website_domain mới nhất
-          updateCampaignLogo.run(cat.brand_logo, cat.website_domain, cat.brand_name);
+          // Đồng bộ logo, website_domain và tỷ giá quy đổi 1 Point = 1 VNĐ mới nhất
+          updateCampaignCatalog.run(cat.brand_logo, cat.website_domain, cat.points_cost, cat.face_value_vnd, cat.id);
         }
       } catch (catErr) {
         console.warn(`[VoucherService] Bỏ qua lỗi khi khởi tạo catalog cho ${cat.brand_name}:`, catErr.message);

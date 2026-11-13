@@ -2170,3 +2170,14 @@ html.dark .vibe-switch.active:hover,
 .anim-streak-mythic-gold {
   animation: streakMythicGoldPulse 2s ease-in-out infinite;
 }
+
+/* ==================== ACCESSIBILITY FOCUS-VISIBLE RING (DESIGN.md) ==================== */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #ea580c;
+  outline-offset: 2px;
+}

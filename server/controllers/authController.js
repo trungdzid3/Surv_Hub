@@ -318,12 +318,12 @@ class AuthController {
       const cleanEmail = email.toLowerCase().trim();
       const cleanName = name.trim();
 
-      // Nếu tạo tài khoản thường bằng email (không qua Google), kiểm tra mã xác thực OTP
-      const googleId = (google_id && typeof google_id === 'string') ? google_id.trim() : null;
-      let isEmailVerified = 0;
-
       // Chỉ cho phép bỏ qua OTP đăng ký trong môi trường kiểm thử tự động (NODE_ENV === 'test')
       const isTestEnv = process.env.NODE_ENV === 'test';
+
+      // Không cho phép client tự gửi google_id qua /register ngoài test suite để qua mặt xác thực OTP email
+      const googleId = (isTestEnv && google_id && typeof google_id === 'string') ? google_id.trim() : null;
+      let isEmailVerified = 0;
 
       if (googleId) {
         isEmailVerified = 1;
@@ -429,6 +429,19 @@ class AuthController {
 
       // Ghi nhận nhật ký IP liên kết với User mới tạo
       antiFraudService.trackAndVerifyDeviceIp({ userId, rawIp, deviceFingerprint, action: 'REGISTER' });
+
+      // Ghi nhận nhật ký đồng ý xử lý dữ liệu cá nhân khi đăng ký (Luật BVDLCN 91/2025/QH15)
+      try {
+        db.prepare(`
+          INSERT INTO consent_logs (id, user_id, purpose, policy_version, consented, ip_address, user_agent)
+          VALUES (?, ?, 'PLATFORM_TERMS_AND_PRIVACY', '2026.11', 1, ?, ?)
+        `).run(
+          crypto.randomUUID(),
+          userId,
+          rawIp || null,
+          String(req.headers['user-agent'] || '').slice(0, 255)
+        );
+      } catch (_) {}
 
       const token = jwt.sign(
         { id: userId, email: email.toLowerCase().trim(), role },
@@ -569,6 +582,9 @@ class AuthController {
       if (!challenge || challenge.consumed_at || challenge.expires_at <= Date.now()) {
         return res.status(401).json({ success: false, message: 'Mã xác thực đã hết hạn hoặc không còn hiệu lực' });
       }
+      if (challenge.status === 'BANNED' || challenge.status === 'SUSPENDED') {
+        return res.status(403).json({ success: false, message: 'Tài khoản của bạn đã bị khóa hoặc tạm đình chỉ' });
+      }
       if (challenge.attempts >= 5) {
         db.prepare('UPDATE login_challenges SET consumed_at = ? WHERE id = ?').run(Date.now(), challengeId);
         return res.status(429).json({ success: false, message: 'Challenge đã bị vô hiệu hóa do quá nhiều lần thử' });
@@ -605,8 +621,14 @@ class AuthController {
       );
       const freshUser = db.prepare('SELECT * FROM users WHERE id = ?').get(challenge.user_id);
       delete freshUser.password_hash;
+      delete freshUser.email_otp;
+      delete freshUser.email_otp_expires_at;
+      delete freshUser.student_otp;
+      delete freshUser.student_otp_expires_at;
       delete freshUser.totp_secret_encrypted;
       delete freshUser.totp_pending_secret_encrypted;
+      delete freshUser.google_forms_access_token;
+      delete freshUser.google_forms_refresh_token;
       return res.json({ success: true, message: 'Đăng nhập thành công', token, user: freshUser });
     } catch (err) {
       console.error('Lỗi verifyLoginOtp:', err);
@@ -676,7 +698,13 @@ class AuthController {
     const freshUser = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id) || req.user;
     delete freshUser.password_hash;
     delete freshUser.email_otp;
+    delete freshUser.email_otp_expires_at;
     delete freshUser.student_otp;
+    delete freshUser.student_otp_expires_at;
+    delete freshUser.totp_secret_encrypted;
+    delete freshUser.totp_pending_secret_encrypted;
+    delete freshUser.google_forms_access_token;
+    delete freshUser.google_forms_refresh_token;
 
     // Tự động kiểm tra thời hạn gói Sinh Viên: nếu hết hạn thì tự động về gói Thường (PERSONAL)
     if (freshUser.account_tier === 'STUDENT' || freshUser.is_student_verified === 1) {
@@ -998,10 +1026,16 @@ class AuthController {
               });
             }
             const tokenInfo = await verifyRes.json();
-            if (!tokenInfo || !tokenInfo.sub || !tokenInfo.email) {
+            if (!tokenInfo || !tokenInfo.sub || !tokenInfo.email || String(tokenInfo.email_verified) !== 'true') {
               return res.status(401).json({
                 success: false,
-                message: 'Thông tin định danh từ Google token không hợp lệ hoặc thiếu email'
+                message: 'Thông tin định danh từ Google token không hợp lệ hoặc email chưa được Google xác minh'
+              });
+            }
+            if (config.GOOGLE.CLIENT_ID && tokenInfo.aud !== config.GOOGLE.CLIENT_ID) {
+              return res.status(401).json({
+                success: false,
+                message: 'Google ID token không khớp Client ID của hệ thống'
               });
             }
             extractedGoogleId = String(tokenInfo.sub).trim();
@@ -1125,6 +1159,40 @@ class AuthController {
     }
   }
 
+  // Helper ký state OAuth2 bằng HMAC-SHA256 để chống giả mạo state / CSRF
+  _signOAuthState(payloadObj) {
+    const encoded = Buffer.from(JSON.stringify(payloadObj), 'utf8').toString('base64url');
+    const sig = crypto.createHmac('sha256', config.JWT_SECRET).update(encoded).digest('hex');
+    return encodeURIComponent(`${encoded}.${sig}`);
+  }
+
+  _verifyOAuthState(stateParam) {
+    if (!stateParam || typeof stateParam !== 'string') return null;
+    try {
+      const raw = decodeURIComponent(stateParam);
+      const dotIdx = raw.lastIndexOf('.');
+      if (dotIdx > 0) {
+        const encoded = raw.slice(0, dotIdx);
+        const sig = raw.slice(dotIdx + 1);
+        const expected = crypto.createHmac('sha256', config.JWT_SECRET).update(encoded).digest('hex');
+        const sigBuf = Buffer.from(sig, 'utf8');
+        const expBuf = Buffer.from(expected, 'utf8');
+        if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+          return null;
+        }
+        const parsed = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
+        // Kiểm tra state không quá 15 phút
+        if (parsed && parsed.ts && (Date.now() - Number(parsed.ts)) > 15 * 60 * 1000) {
+          return null;
+        }
+        return parsed;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Helper xác định callback URL động (tự động tương thích cả Render lẫn Localhost)
   getGoogleCallbackUrl(req) {
     if (process.env.GOOGLE_CALLBACK_URL) {
@@ -1146,7 +1214,7 @@ class AuthController {
     const userId = req.user ? req.user.id : (req.query.userId || '');
     const redirectUri = encodeURIComponent(callbackUrl);
     const scope = encodeURIComponent('openid email profile https://www.googleapis.com/auth/forms.body.readonly https://www.googleapis.com/auth/drive.readonly');
-    const state = encodeURIComponent(JSON.stringify({ mode: 'FORMS_SYNC', userId, callbackUrl, ts: Date.now() }));
+    const state = this._signOAuthState({ mode: 'FORMS_SYNC', userId, callbackUrl, ts: Date.now() });
 
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent%20select_account&state=${state}`;
 
@@ -1203,7 +1271,7 @@ class AuthController {
     const mode = req.query.mode || 'login';
     const redirectUri = encodeURIComponent(callbackUrl);
     const scope = encodeURIComponent('openid email profile');
-    const state = encodeURIComponent(JSON.stringify({ mode, callbackUrl, ts: Date.now() }));
+    const state = this._signOAuthState({ mode, callbackUrl, ts: Date.now() });
 
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent%20select_account&state=${state}`;
 
@@ -1221,13 +1289,16 @@ class AuthController {
         return res.redirect('/?error=missing_google_code');
       }
 
-      // Xác định lại redirect_uri đã dùng khi yêu cầu ủy quyền
+      // Xác thực chữ ký HMAC state OAuth chống CSRF / giả mạo state
+      const parsedState = this._verifyOAuthState(state);
+      if (state && !parsedState) {
+        return res.redirect(`/?error=${encodeURIComponent('Phiên ủy quyền Google (state) không hợp lệ hoặc đã hết hạn')}`);
+      }
+
+      // Xác định lại redirect_uri đã dùng khi yêu cầu ủy quyền (chỉ dùng callbackUrl đã ký HMAC)
       let callbackUrl = this.getGoogleCallbackUrl(req);
-      if (state) {
-        try {
-          const parsedState = JSON.parse(decodeURIComponent(state));
-          if (parsedState.callbackUrl) callbackUrl = parsedState.callbackUrl;
-        } catch (_) {}
+      if (parsedState && parsedState.callbackUrl) {
+        callbackUrl = parsedState.callbackUrl;
       }
 
       // Đổi mã code lấy tokens từ Google
@@ -1255,14 +1326,7 @@ class AuthController {
       });
       const googleUser = await userInfoResponse.json();
 
-      // Kiểm tra nếu đây là luồng kết nối quyền Google Forms (FORMS_SYNC)
-      let parsedState = null;
-      if (state) {
-        try {
-          parsedState = JSON.parse(decodeURIComponent(state));
-        } catch (_) {}
-      }
-
+      // Sử dụng parsedState đã xác thực HMAC ở trên (nếu là luồng kết nối quyền Google Forms)
       if (parsedState && parsedState.mode === 'FORMS_SYNC') {
         let targetUser = null;
         if (parsedState.userId) {
@@ -1325,6 +1389,10 @@ class AuthController {
         `).run(userId, email, passwordHash, name, assignedRole, googleId);
 
         user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+      }
+
+      if (user && (user.status === 'BANNED' || user.status === 'SUSPENDED')) {
+        return res.redirect(`/?error=${encodeURIComponent('Tài khoản của bạn đã bị khóa hoặc tạm đình chỉ truy cập')}`);
       }
 
       const sessionToken = jwt.sign(
@@ -1538,7 +1606,13 @@ class AuthController {
       const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
       delete updatedUser.password_hash;
       delete updatedUser.email_otp;
+      delete updatedUser.email_otp_expires_at;
       delete updatedUser.student_otp;
+      delete updatedUser.student_otp_expires_at;
+      delete updatedUser.totp_secret_encrypted;
+      delete updatedUser.totp_pending_secret_encrypted;
+      delete updatedUser.google_forms_access_token;
+      delete updatedUser.google_forms_refresh_token;
 
       return res.json({
         success: true,
@@ -1696,7 +1770,13 @@ class AuthController {
       const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
       delete updatedUser.password_hash;
       delete updatedUser.email_otp;
+      delete updatedUser.email_otp_expires_at;
       delete updatedUser.student_otp;
+      delete updatedUser.student_otp_expires_at;
+      delete updatedUser.totp_secret_encrypted;
+      delete updatedUser.totp_pending_secret_encrypted;
+      delete updatedUser.google_forms_access_token;
+      delete updatedUser.google_forms_refresh_token;
 
       return res.json({
         success: true,
@@ -1846,7 +1926,13 @@ class AuthController {
       const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
       delete updatedUser.password_hash;
       delete updatedUser.email_otp;
+      delete updatedUser.email_otp_expires_at;
       delete updatedUser.student_otp;
+      delete updatedUser.student_otp_expires_at;
+      delete updatedUser.totp_secret_encrypted;
+      delete updatedUser.totp_pending_secret_encrypted;
+      delete updatedUser.google_forms_access_token;
+      delete updatedUser.google_forms_refresh_token;
 
       return res.json({
         success: true,
@@ -1967,7 +2053,13 @@ class AuthController {
       const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
       delete updatedUser.password_hash;
       delete updatedUser.email_otp;
+      delete updatedUser.email_otp_expires_at;
       delete updatedUser.student_otp;
+      delete updatedUser.student_otp_expires_at;
+      delete updatedUser.totp_secret_encrypted;
+      delete updatedUser.totp_pending_secret_encrypted;
+      delete updatedUser.google_forms_access_token;
+      delete updatedUser.google_forms_refresh_token;
       if (updatedUser.demographics_json) {
         try { updatedUser.demographics = JSON.parse(updatedUser.demographics_json); } catch (e) {}
       }

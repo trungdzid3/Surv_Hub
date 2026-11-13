@@ -60,12 +60,14 @@ class AdminController {
       `).get();
       const escrowLockedBalance = escrowRow.escrow_locked_balance || 0;
 
-      // c. Tổng tiền đã chi trả thưởng cho đáp viên (1 Point = 10 VND)
+      const pointToVndRate = config.ECONOMICS.POINT_TO_VND_RATE || 1;
+
+      // c. Tổng tiền đã chi trả thưởng cho đáp viên (theo POINT_TO_VND_RATE hiện hành: 1 Point = 1 VND)
       const respondentEarnedRow = db.prepare(`
-        SELECT COALESCE(SUM(points_rewarded * 10), 0) AS total_respondent_earned_vnd
+        SELECT COALESCE(SUM(points_rewarded * ?), 0) AS total_respondent_earned_vnd
         FROM responses
         WHERE status = 'VALIDATED'
-      `).get();
+      `).get(pointToVndRate);
       const totalRespondentEarnedVnd = respondentEarnedRow.total_respondent_earned_vnd || 0;
 
       // d. Doanh thu Creator chi trả cho các mẫu hoàn thành hợp lệ
@@ -92,7 +94,7 @@ class AdminController {
         WHERE role != 'ADMIN'
       `).get();
       const circulatingPointLiability = pointLiabilityRow.circulating_point_liability || 0;
-      const circulatingPointLiabilityVnd = circulatingPointLiability * (config.ECONOMICS.POINT_TO_VND_RATE || 10);
+      const circulatingPointLiabilityVnd = circulatingPointLiability * (config.ECONOMICS.POINT_TO_VND_RATE || 1);
 
       // f. Tổng số tiền rút đang chờ duyệt (Pending Payouts VND)
       const pendingPayoutVnd = payoutStats.pending_payout_vnd || 0;

@@ -842,7 +842,7 @@
                     <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
                     <span>Nạp Ngay (*100*MÃ#)</span>
                   </a>
-                  <button type="button" onclick="VibeApp.closeModal(); VibeApp.navigateTo('wallet');" class="py-2.5 px-4 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold transition-all">
+                  <button type="button" onclick="VibeApp.closeModal(); VibeApp.navigate('wallet');" class="py-2.5 px-4 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold transition-all">
                     Đóng
                   </button>
                 </div>
@@ -1324,7 +1324,7 @@
                 </div>
 
                 <div class="pt-2">
-                  <button type="button" onclick="VibeApp.closeModal(); VibeApp.navigateTo('wallet');" class="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]">
+                  <button type="button" onclick="VibeApp.closeModal(); VibeApp.navigate('wallet');" class="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]">
                     Xem Số Dư Ví & Tiếp Tục
                   </button>
                 </div>

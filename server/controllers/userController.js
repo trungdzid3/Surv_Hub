@@ -293,7 +293,7 @@ class UserController {
       // 2. Cập nhật bảng daily_streaks nguyên tử (giữ nguyên claimed_milestones_json qua UPDATE path)
       const currentMax = streakRow ? streakRow.max_streak : 0;
       const newMax = Math.max(currentMax, newStreak);
-      const newFreezeCount = Math.max(0, currentFreezeCount - freezeUsed);
+      const newFreezeCount = Math.max(0, currentFreezeCount);
 
       db.prepare(`
         INSERT INTO daily_streaks (user_id, current_streak, max_streak, last_checkin_date, total_points_earned, streak_freezes_count, updated_at)
@@ -440,6 +440,169 @@ class UserController {
         success: false,
         message: err.message || 'Lỗi nhận Hộp Quà Cột Mốc'
       });
+    }
+  }
+
+  /**
+   * POST /api/v1/users/me/consent
+   * Ghi nhận đồng ý / rút đồng ý xử lý dữ liệu cá nhân (Luật BVDLCN 91/2025/QH15)
+   */
+  recordConsent(req, res) {
+    try {
+      const userId = req.user.id;
+      const { purpose, policy_version = '2026.11', consented = true, survey_id = null } = req.body || {};
+
+      if (!purpose || typeof purpose !== 'string' || !purpose.trim()) {
+        return res.status(400).json({ success: false, message: 'Vui lòng cung cấp mục đích xử lý dữ liệu (purpose)' });
+      }
+
+      const cleanPurpose = purpose.trim().slice(0, 120);
+      const consentFlag = consented ? 1 : 0;
+      const consentId = crypto.randomUUID();
+
+      db.prepare(`
+        INSERT INTO consent_logs (id, user_id, purpose, policy_version, consented, ip_address, user_agent, survey_id, withdrawn_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        consentId,
+        userId,
+        cleanPurpose,
+        String(policy_version || '2026.11').slice(0, 32),
+        consentFlag,
+        req.ip || null,
+        String(req.headers['user-agent'] || '').slice(0, 255),
+        survey_id ? String(survey_id).slice(0, 100) : null,
+        consentFlag === 0 ? new Date().toISOString() : null
+      );
+
+      return res.json({
+        success: true,
+        consentId,
+        message: consentFlag ? 'Đã ghi nhận đồng ý xử lý dữ liệu cá nhân' : 'Đã ghi nhận rút lại đồng ý'
+      });
+    } catch (err) {
+      console.error('Lỗi recordConsent:', err);
+      return res.status(500).json({ success: false, message: 'Lỗi ghi nhận đồng ý dữ liệu: ' + err.message });
+    }
+  }
+
+  /**
+   * GET /api/v1/users/me/export-data
+   * Xuất toàn bộ dữ liệu cá nhân của người dùng dưới dạng JSON (Quyền truy cập & sao chép dữ liệu)
+   */
+  exportPersonalData(req, res) {
+    try {
+      const userId = req.user.id;
+      const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+      if (!userRow) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản' });
+      }
+
+      delete userRow.password_hash;
+      delete userRow.email_otp;
+      delete userRow.email_otp_expires_at;
+      delete userRow.student_otp;
+      delete userRow.student_otp_expires_at;
+      delete userRow.totp_secret_encrypted;
+      delete userRow.totp_pending_secret_encrypted;
+      delete userRow.google_forms_access_token;
+      delete userRow.google_forms_refresh_token;
+
+      let demographics = null;
+      if (userRow.demographics_json) {
+        try { demographics = JSON.parse(userRow.demographics_json); } catch (_) {}
+      }
+
+      const consentLogs = db.prepare('SELECT id, purpose, policy_version, consented, survey_id, created_at, withdrawn_at FROM consent_logs WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+      const responses = db.prepare('SELECT id, survey_id, status, points_rewarded, quality_score, started_at, submitted_at FROM responses WHERE respondent_id = ? ORDER BY started_at DESC').all(userId);
+      const transactions = db.prepare('SELECT id, reference_id, tx_type, currency, amount, balance_after, description, created_at FROM point_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 200').all(userId);
+      const payouts = db.prepare('SELECT id, amount_vnd, fee_vnd, net_amount_vnd, method, status, created_at FROM payouts WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+      const streak = db.prepare('SELECT current_streak, max_streak, last_checkin_date, total_points_earned, streak_freezes_count FROM daily_streaks WHERE user_id = ?').get(userId) || null;
+
+      res.setHeader('Content-Disposition', 'attachment; filename="survhub-personal-data.json"');
+      return res.json({
+        success: true,
+        exported_at: new Date().toISOString(),
+        law_reference: 'Luật Bảo vệ Dữ liệu Cá nhân 91/2025/QH15',
+        profile: { ...userRow, demographics },
+        consent_logs: consentLogs,
+        responses,
+        transactions,
+        payouts,
+        daily_streak: streak
+      });
+    } catch (err) {
+      console.error('Lỗi exportPersonalData:', err);
+      return res.status(500).json({ success: false, message: 'Lỗi xuất dữ liệu cá nhân: ' + err.message });
+    }
+  }
+
+  /**
+   * POST /api/v1/users/me/withdraw-consent
+   * Rút lại sự đồng ý, ẩn danh hóa hồ sơ cá nhân và khóa truy cập phiên hiện tại
+   */
+  withdrawConsentAndDeleteAccount(req, res) {
+    try {
+      const userId = req.user.id;
+      const userRow = db.prepare('SELECT id, role, status FROM users WHERE id = ?').get(userId);
+      if (!userRow) {
+        return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản' });
+      }
+      if (userRow.role === 'ADMIN') {
+        return res.status(403).json({ success: false, message: 'Tài khoản quản trị viên không thể tự hủy trực tuyến qua API này' });
+      }
+
+      const nowIso = new Date().toISOString();
+      const anonEmail = `withdrawn_${userId.slice(0, 12)}_${Date.now()}@anonymized.survhub.local`;
+
+      db.exec('BEGIN IMMEDIATE TRANSACTION');
+      try {
+        db.prepare(`
+          UPDATE consent_logs
+          SET withdrawn_at = COALESCE(withdrawn_at, ?)
+          WHERE user_id = ?
+        `).run(nowIso, userId);
+
+        db.prepare(`
+          INSERT INTO consent_logs (id, user_id, purpose, policy_version, consented, ip_address, user_agent, withdrawn_at)
+          VALUES (?, ?, 'WITHDRAW_ALL_PERSONAL_DATA', '2026.11', 0, ?, ?, ?)
+        `).run(crypto.randomUUID(), userId, req.ip || null, String(req.headers['user-agent'] || '').slice(0, 255), nowIso);
+
+        db.prepare(`
+          UPDATE users
+          SET email = ?,
+              name = 'Người dùng đã rút đồng ý',
+              demographics_json = NULL,
+              avatar_url = NULL,
+              google_id = NULL,
+              is_google_linked = 0,
+              google_forms_access_token = NULL,
+              google_forms_refresh_token = NULL,
+              google_forms_email = NULL,
+              enterprise_name = NULL,
+              enterprise_tax_code = NULL,
+              enterprise_address = NULL,
+              enterprise_email = NULL,
+              status = 'BANNED',
+              banned_at = ?
+          WHERE id = ?
+        `).run(anonEmail, nowIso, userId);
+
+        db.prepare("DELETE FROM push_subscriptions WHERE user_id = ?").run(userId);
+        db.exec('COMMIT');
+      } catch (innerErr) {
+        try { db.exec('ROLLBACK'); } catch (_) {}
+        throw innerErr;
+      }
+
+      return res.json({
+        success: true,
+        withdrawn: true,
+        message: 'Đã tiếp nhận yêu cầu rút lại sự đồng ý, ẩn danh hóa dữ liệu cá nhân và chấm dứt phiên đăng nhập theo Luật Bảo vệ Dữ liệu Cá nhân 91/2025/QH15.'
+      });
+    } catch (err) {
+      console.error('Lỗi withdrawConsentAndDeleteAccount:', err);
+      return res.status(500).json({ success: false, message: 'Lỗi xử lý rút lại đồng ý: ' + err.message });
     }
   }
 }

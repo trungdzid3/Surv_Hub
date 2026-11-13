@@ -647,11 +647,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   getProgressBarColor(pct) {
     const p = Math.round(Number(pct) || 0);
-    if (p < 20) return '#94a3b8'; // Xám (< 20%)
-    if (p < 40) return '#10b981'; // Xanh lá (20% - 39%)
-    if (p < 70) return '#2563eb'; // Xanh nước biển (40% - 69%)
-    if (p < 90) return '#f59e0b'; // Vàng (70% - 89%)
-    return '#f43f5e';            // Đỏ (>= 90%)
+    if (p < 20) return '#a8a29e'; // Xám Stone (< 20%)
+    if (p < 40) return '#fdba74'; // Cam nhạt (20% - 39%)
+    if (p < 70) return '#fb923c'; // Cam vừa (40% - 69%)
+    if (p < 90) return '#f97316'; // Cam đậm (70% - 89%)
+    return '#ea580c';            // Cam rực (>= 90%)
   },
 
   getProgressBarStyle(pct) {
@@ -662,11 +662,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   getProgressColorClass(pct) {
     const p = Math.round(Number(pct) || 0);
-    if (p < 20) return 'bg-slate-400 dark:bg-slate-500';
-    if (p < 40) return 'bg-emerald-500';
-    if (p < 70) return 'bg-orange-600';
-    if (p < 90) return 'bg-amber-500';
-    return 'bg-rose-500';
+    if (p < 20) return 'bg-stone-400 dark:bg-stone-500';
+    if (p < 40) return 'bg-orange-300';
+    if (p < 70) return 'bg-orange-400';
+    if (p < 90) return 'bg-orange-500';
+    return 'bg-orange-600';
   },
 
 
@@ -1294,18 +1294,18 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       <div class="p-3 border-b border-stone-100 dark:border-stone-800">
         <div class="flex items-center gap-2.5">
           ${user.avatar_url ? `
-            <img src="${user.avatar_url}" alt="${user.name}" class="w-9 h-9 rounded-xl object-cover shadow-xs shrink-0 border border-stone-200 dark:border-stone-700" onerror="this.onerror=null;this.outerHTML='<div class=\\'w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0\\'>${firstLetter}</div>';">
+            <img src="${this.escapeHtml(user.avatar_url)}" alt="${this.escapeHtml(user.name)}" class="w-9 h-9 rounded-xl object-cover shadow-xs shrink-0 border border-stone-200 dark:border-stone-700" onerror="this.onerror=null;this.outerHTML='<div class=\\'w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0\\'>${this.escapeHtml(firstLetter)}</div>';">
           ` : `
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-              ${firstLetter}
+              ${this.escapeHtml(firstLetter)}
             </div>
           `}
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-1.5">
-              <div class="font-bold text-xs text-stone-900 dark:text-stone-100 truncate">${user.name}</div>
+              <div class="font-bold text-xs text-stone-900 dark:text-stone-100 truncate">${this.escapeHtml(user.name)}</div>
               ${roleBadge}
             </div>
-            <div class="text-[11px] text-stone-500 dark:text-stone-400 truncate mt-0.5">${user.email}</div>
+            <div class="text-[11px] text-stone-500 dark:text-stone-400 truncate mt-0.5">${this.escapeHtml(user.email)}</div>
           </div>
         </div>
       </div>
@@ -2010,7 +2010,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                   <div class="space-y-2.5">
                     <div class="flex items-center justify-between text-[11px]">
                       <span class="px-2 py-0.5 rounded-md font-bold bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
-                        ${s.category || 'Nghiên cứu Học thuật'}
+                        ${this.escapeHtml(s.category || 'Nghiên cứu Học thuật')}
                       </span>
                       <span class="font-mono font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1">
                         <i data-lucide="coins" class="w-3.5 h-3.5"></i>
@@ -2018,10 +2018,10 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                       </span>
                     </div>
                     <h3 class="text-sm font-black text-stone-900 dark:text-white line-clamp-2 leading-snug cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors" onclick="${isCreatorOrOwner ? `VibeApp.openSurveyPreviewModal('${s.id}')` : `VibeApp.handleOpenSurveyFromHome('${s.id}')`}">
-                      ${s.title}
+                      ${this.escapeHtml(s.title)}
                     </h3>
                     <p class="text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
-                      ${s.description || 'Khảo sát phục vụ nghiên cứu khoa học và khóa luận tốt nghiệp thực tế.'}
+                      ${this.escapeHtml(s.description || 'Khảo sát phục vụ nghiên cứu khoa học và khóa luận tốt nghiệp thực tế.')}
                     </p>
                   </div>
 
@@ -3040,7 +3040,7 @@ if (totalCount === 0) {
     const progress = Math.min(100, Math.round((collected / target) * 100));
     const remainingSlots = Math.max(0, target - collected);
     const isNearFull = progress >= 60 && remainingSlots > 0;
-    const cleanTitle = (s.title || '').replace(/📌/g, '').trim();
+    const cleanTitle = (s.title || '').replace(/\u{1F4CC}/gu, '').trim();
 
     let sourceText = 'Nội Bộ';
     let sourceIcon = 'file-text';
@@ -3105,7 +3105,7 @@ if (totalCount === 0) {
             ${hasVoucher ? `
               <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 text-[10px] font-semibold truncate max-w-full">
                 <i data-lucide="gift" class="w-3 h-3 text-orange-600 shrink-0"></i>
-                <span class="truncate">${voucherText}</span>
+                <span class="truncate">${this.escapeHtml(voucherText)}</span>
               </div>
             ` : ''}
           </div>
@@ -3183,7 +3183,7 @@ if (totalCount === 0) {
     const progress = Math.min(100, Math.round((collected / target) * 100));
     const remainingSlots = Math.max(0, target - collected);
     const isNearFull = progress >= 60 && remainingSlots > 0;
-    const cleanTitle = (s.title || '').replace(/📌/g, '').trim();
+    const cleanTitle = (s.title || '').replace(/\u{1F4CC}/gu, '').trim();
 
     const questionCount = s.question_count || 1;
     const minMins = Math.max(1, Math.ceil((s.min_completion_time_sec || 30) / 60));
@@ -3689,7 +3689,7 @@ if (totalCount === 0) {
 
       // Nếu đang ở màn hình sửa khảo sát đó, reset và về creator-surveys
       if (this.state.editingSurveyId === surveyId) {
-        this.resetCreateSurveyForm();
+        if (typeof this.resetStudioToNew === 'function') this.resetStudioToNew();
         this.navigate('creator-surveys');
       } else {
         // Tải lại danh sách khảo sát của tôi
@@ -3702,6 +3702,45 @@ if (totalCount === 0) {
         btn.innerHTML = `<i data-lucide="trash-2" class="w-3.5 h-3.5"></i><span>Xác Nhận Xóa</span>`;
         if (window.lucide) window.lucide.createIcons();
       }
+    }
+  },
+
+  async pinSurveyAction(surveyId, surveyTitle) {
+    if (!surveyId) return;
+    const titleLabel = surveyTitle ? `"${surveyTitle}"` : 'khảo sát này';
+    if (!confirm(`Ghim ${titleLabel} lên vị trí VIP đầu trang? (Dùng 1 Vé ghim ưu tiên nếu có, hoặc trừ 50.000đ Credit).`)) return;
+    try {
+      const res = await this.api(`/surveys/${surveyId}/pin`, { method: 'POST' });
+      if (res && res.success) {
+        if (this.state.currentUser) {
+          if (res.credit_balance !== undefined) this.state.currentUser.credit_balance = res.credit_balance;
+          if (res.fast_track_tickets !== undefined) this.state.currentUser.fast_track_tickets = res.fast_track_tickets;
+        }
+        this.showToast(res.message || 'Đã ghim khảo sát lên vị trí VIP đầu trang!', 'success');
+        const root = document.getElementById('app-root');
+        if (root && typeof this.renderCreatorSurveysView === 'function') {
+          await this.renderCreatorSurveysView(root);
+        }
+        this.renderNavigation();
+      }
+    } catch (err) {
+      this.showToast('Lỗi ghim khảo sát: ' + err.message, 'error');
+    }
+  },
+
+  async unpinSurveyAction(surveyId) {
+    if (!surveyId) return;
+    try {
+      const res = await this.api(`/surveys/${surveyId}/unpin`, { method: 'POST' });
+      if (res && res.success) {
+        this.showToast(res.message || 'Đã gỡ ghim khảo sát thành công!', 'success');
+        const root = document.getElementById('app-root');
+        if (root && typeof this.renderCreatorSurveysView === 'function') {
+          await this.renderCreatorSurveysView(root);
+        }
+      }
+    } catch (err) {
+      this.showToast('Lỗi gỡ ghim khảo sát: ' + err.message, 'error');
     }
   },
 

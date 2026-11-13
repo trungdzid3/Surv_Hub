@@ -57,6 +57,11 @@ router.get('/users/streak-info', authenticateToken, (req, res) => userController
 router.post('/users/checkin', authenticateToken, (req, res) => userController.checkin(req, res));
 router.post('/users/streak-claim-milestone', authenticateToken, (req, res) => userController.claimMilestone(req, res));
 
+// === Tuyến Đường Quyền Dữ Liệu Cá Nhân (Luật BVDLCN 91/2025/QH15) ===
+router.post('/users/me/consent', authenticateToken, (req, res) => userController.recordConsent(req, res));
+router.get('/users/me/export-data', authenticateToken, (req, res) => userController.exportPersonalData(req, res));
+router.post('/users/me/withdraw-consent', authenticateToken, (req, res) => userController.withdrawConsentAndDeleteAccount(req, res));
+
 // === Tuyến Đường Thống Kê Nền Tảng Công Khai (Zero Fake Metrics) ===
 router.get('/public/stats', (req, res) => surveyController.getPublicStats(req, res));
 router.get('/stats', (req, res) => surveyController.getPublicStats(req, res));

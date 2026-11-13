@@ -273,6 +273,17 @@ class ForumSentinelService {
               post.id,
               details
             );
+
+            db.prepare(`
+              INSERT INTO notifications (
+                id, user_id, survey_id, type, title, message, channel
+              ) VALUES (?, ?, NULL, 'SENTINEL_MODERATION', ?, ?, 'IN_APP')
+            `).run(
+              crypto.randomUUID(),
+              post.user_id,
+              'Bài viết diễn đàn đã bị ẩn bởi kiểm duyệt tự động',
+              `Hệ thống kiểm duyệt tự động (MicroSentinel) đã ẩn bài viết của bạn do phát hiện dấu hiệu chứa liên kết ngoài hoặc nội dung không phù hợp (-10 điểm uy tín). Nếu cho rằng đây là nhầm lẫn, bạn có quyền gửi khiếu nại xem xét lại trong vòng 15 ngày qua mục Báo lỗi & Hỗ trợ.`
+            );
           } catch (e) {
             // An toàn bỏ qua lỗi log nếu bảng chưa sẵn sàng
           }
@@ -351,6 +362,17 @@ class ForumSentinelService {
               'FORUM_COMMENT',
               comment.id,
               JSON.stringify({ f: result.flag, p: comment.post_id })
+            );
+
+            db.prepare(`
+              INSERT INTO notifications (
+                id, user_id, survey_id, type, title, message, channel
+              ) VALUES (?, ?, NULL, 'SENTINEL_MODERATION', ?, ?, 'IN_APP')
+            `).run(
+              crypto.randomUUID(),
+              comment.user_id,
+              'Bình luận diễn đàn đã bị ẩn bởi kiểm duyệt tự động',
+              `Hệ thống kiểm duyệt tự động (MicroSentinel) đã ẩn bình luận của bạn do phát hiện dấu hiệu chứa liên kết ngoài (-10 điểm uy tín). Nếu cho rằng đây là nhầm lẫn, bạn có quyền gửi khiếu nại xem xét lại trong vòng 15 ngày qua mục Báo lỗi & Hỗ trợ.`
             );
           } catch (e) {}
         } else {

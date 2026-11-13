@@ -524,7 +524,7 @@ class LedgerService {
         return { success: true, refundedAmount: 0 };
       }
 
-      // Nếu khảo sát là gói dùng thử miễn phí do sàn tài trợ: thu hồi về sàn, không hoàn tiền mặt
+      // Nếu khảo sát có dùng lượt dùng thử miễn phí: hoàn phần Credit thật mà Creator đã đóng (nếu có) và thu hồi phần sàn tài trợ
       if (survey.is_free_trial === 1) {
         const updateSurvey = db.prepare(`
           UPDATE surveys 
@@ -534,6 +534,19 @@ class LedgerService {
 
         if (updateSurvey.changes === 0) {
           throw new Error('Quỹ ký quỹ đã thay đổi hoặc khảo sát đã bị đóng');
+        }
+
+        // Xác định số Credit thật mà Creator đã tự chi trả cho các lượt vượt mức miễn phí
+        const paidRow = db.prepare(`
+          SELECT COALESCE(SUM(-amount), 0) AS total_paid
+          FROM point_transactions
+          WHERE reference_id = ? AND user_id = ? AND tx_type = 'ESCROW_LOCK' AND amount < 0
+        `).get(surveyId, creatorId);
+        const totalPaidLocked = paidRow ? Math.max(0, Number(paidRow.total_paid || 0)) : 0;
+        const userPaidRefund = Math.min(refundAmount, totalPaidLocked);
+
+        if (userPaidRefund > 0) {
+          db.prepare('UPDATE users SET credit_balance = credit_balance + ? WHERE id = ?').run(userPaidRefund, creatorId);
         }
 
         // Khôi phục lượt free nếu CHƯA có bất kỳ ai làm (collected_responses == 0) theo TUONG_LAI_HE_THONG.md
@@ -551,14 +564,23 @@ class LedgerService {
         const txId = crypto.randomUUID();
         db.prepare(`
           INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
-          VALUES (?, ?, ?, 'ESCROW_REFUND', 'VND', 0, ?, ?)
-        `).run(txId, creatorId, surveyId, updatedUser.credit_balance, `Thu hồi ngân sách tài trợ dùng thử của sàn cho khảo sát: ${surveyId}`);
+          VALUES (?, ?, ?, 'ESCROW_REFUND', 'VND', ?, ?, ?)
+        `).run(
+          txId,
+          creatorId,
+          surveyId,
+          userPaidRefund,
+          updatedUser.credit_balance,
+          userPaidRefund > 0
+            ? `Hoàn ${userPaidRefund.toLocaleString('vi-VN')} đ quỹ tự đóng & thu hồi phần tài trợ dùng thử cho khảo sát: ${surveyId}`
+            : `Thu hồi ngân sách tài trợ dùng thử của sàn cho khảo sát: ${surveyId}`
+        );
 
         db.exec('COMMIT');
         return { 
           success: true, 
           isFreeTrial: true, 
-          refundedAmount: 0, 
+          refundedAmount: userPaidRefund, 
           newCreditBalance: updatedUser.credit_balance,
           freeQuotaRemaining: updatedUser.free_quota_remaining,
           freeTrialSurveysAvailable: updatedUser.free_trial_surveys_available
