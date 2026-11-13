@@ -772,6 +772,41 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       this.closeAllCustomDropdowns();
     });
 
+    // Đồng bộ trạng thái đóng cho native <dialog class="vibe-dialog"> (Esc / closedby="any")
+    document.querySelectorAll('dialog.vibe-dialog').forEach((dialogEl) => {
+      dialogEl.addEventListener('close', () => {
+        dialogEl.classList.add('hidden');
+        if (dialogEl.id === 'modal-container' && typeof this.closeModal === 'function') {
+          this.closeModal();
+        }
+      });
+    });
+
+    // Polyfill light-dismiss cho dialog[closedby="any"] trên trình duyệt chưa hỗ trợ closedBy
+    if (typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
+      let pointerDownTarget = null;
+      document.addEventListener('pointerdown', (e) => {
+        const dialog = e.target;
+        if (dialog && dialog.tagName === 'DIALOG' && dialog.hasAttribute('closedby') && dialog.getAttribute('closedby') === 'any' && dialog.open) {
+          const rect = dialog.getBoundingClientRect();
+          const outside = e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom;
+          pointerDownTarget = outside ? dialog : null;
+        } else {
+          pointerDownTarget = null;
+        }
+      });
+      document.addEventListener('pointerup', (e) => {
+        if (pointerDownTarget && e.target === pointerDownTarget && pointerDownTarget.open) {
+          const rect = pointerDownTarget.getBoundingClientRect();
+          const outside = e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom;
+          if (outside) {
+            pointerDownTarget.close();
+          }
+        }
+        pointerDownTarget = null;
+      });
+    }
+
     // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       // Đóng Lightbox ảnh hoặc Modal khi nhấn Escape
@@ -781,13 +816,17 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           return;
         }
         const lb = document.getElementById('image-lightbox-modal');
-        if (lb && !lb.classList.contains('hidden')) {
+        if (lb && (lb.open || !lb.classList.contains('hidden'))) {
           this.closeImageLightbox();
           return;
         }
         const bugModal = document.getElementById('admin-bug-detail-modal');
-        if (bugModal && !bugModal.classList.contains('hidden')) {
-          bugModal.classList.add('hidden');
+        if (bugModal && (bugModal.open || !bugModal.classList.contains('hidden'))) {
+          if (typeof this.closeDialog === 'function') {
+            this.closeDialog(bugModal);
+          } else {
+            bugModal.classList.add('hidden');
+          }
           return;
         }
       }
@@ -829,7 +868,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         // 2. Phím Enter chuyển câu hỏi
         if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) {
           // Không kích hoạt nếu đang mở modal hoặc dropdown
-          const hasOpenModal = document.querySelector('.modal-backdrop, [id$="-modal"]:not(.hidden)');
+          const hasOpenModal = document.querySelector('dialog[open], .modal-backdrop:not(.hidden), [id$="-modal"]:not(.hidden)');
           const hasOpenDropdown = document.querySelector('.custom-dropdown-menu:not(.hidden)');
           if (hasOpenModal || hasOpenDropdown) return;
 
@@ -858,7 +897,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
           const isText = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
           if (!isText || (e.target.selectionStart === e.target.value.length && e.key === 'ArrowRight')) {
-            const hasOpenModal = document.querySelector('.modal-backdrop, [id$="-modal"]:not(.hidden)');
+            const hasOpenModal = document.querySelector('dialog[open], .modal-backdrop:not(.hidden), [id$="-modal"]:not(.hidden)');
             const hasOpenDropdown = document.querySelector('.custom-dropdown-menu:not(.hidden)');
             if (!hasOpenModal && !hasOpenDropdown) {
               e.preventDefault();
@@ -870,7 +909,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
           const isText = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
           if (!isText || (e.target.selectionStart === 0 && e.key === 'ArrowLeft')) {
-            const hasOpenModal = document.querySelector('.modal-backdrop, [id$="-modal"]:not(.hidden)');
+            const hasOpenModal = document.querySelector('dialog[open], .modal-backdrop:not(.hidden), [id$="-modal"]:not(.hidden)');
             const hasOpenDropdown = document.querySelector('.custom-dropdown-menu:not(.hidden)');
             if (!hasOpenModal && !hasOpenDropdown) {
               e.preventDefault();

@@ -44,6 +44,27 @@
   window.VibeApp = window.VibeApp || {};
 
   const ModalsTermsModule = {
+  // ==================== NATIVE DIALOG HELPERS ====================
+  openDialog(el) {
+    if (!el) return;
+    el.classList.remove('hidden');
+    if (typeof el.showModal === 'function' && !el.open) {
+      try {
+        el.showModal();
+      } catch (e) {}
+    }
+  },
+
+  closeDialog(el) {
+    if (!el) return;
+    if (typeof el.close === 'function' && el.open) {
+      try {
+        el.close();
+      } catch (e) {}
+    }
+    el.classList.add('hidden');
+  },
+
   // ==================== AUTHENTICATION MODAL ====================
   openAuthModal(initialTab = 'login') {
     this.haptic('light');
@@ -98,7 +119,7 @@
       </div>
     `;
 
-    container.classList.remove('hidden');
+    this.openDialog(container);
     if (window.lucide) window.lucide.createIcons();
   },
 
@@ -874,16 +895,14 @@
     // Chọn mặc định tài khoản Trung Nguyễn Thành giống hệt thiết kế
     this.switchGoogleAccount('trungdzid3@gmail.com', 'Trung Nguyễn Thành', 'T', 'bg-zinc-600');
 
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    this.openDialog(modal);
   },
 
   closeGoogleAuthModal() {
     this.haptic('light');
     const modal = document.getElementById('google-oauth-modal');
-    if (modal) modal.classList.add('hidden');
+    this.closeDialog(modal);
     document.getElementById('google-dropdown-menu')?.classList.add('hidden');
-    document.body.style.overflow = '';
   },
 
   toggleGoogleDropdown() {
@@ -1134,22 +1153,14 @@
       </div>
     `;
 
-    modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    this.openDialog(modal);
     if (window.lucide) window.lucide.createIcons();
   },
 
   closeTermsModal() {
     this.haptic('light');
     const modal = document.getElementById('terms-modal');
-    if (modal) modal.classList.add('hidden');
-    const modalContainer = document.getElementById('modal-container');
-    const googleModal = document.getElementById('google-oauth-modal');
-    const hasOtherModal = (modalContainer && !modalContainer.classList.contains('hidden')) ||
-      (googleModal && !googleModal.classList.contains('hidden'));
-    if (!hasOtherModal) {
-      document.body.style.overflow = '';
-    }
+    this.closeDialog(modal);
   },
 
   acceptTermsFromModal() {
@@ -1424,7 +1435,7 @@
         <div class="animate-spin rounded-full h-8 w-8 border-2 border-stone-300 dark:border-stone-700 border-t-orange-600 mx-auto mb-3"></div>
         <p class="text-xs text-stone-500 dark:text-stone-400">Đang tải thông tin chuỗi ngày...</p>
       `;
-      container.classList.remove('hidden');
+      this.openDialog(container);
       await this.fetchStreakInfo();
     }
 
@@ -1656,7 +1667,7 @@
       </div>
     `;
 
-    container.classList.remove('hidden');
+    this.openDialog(container);
     if (window.lucide) lucide.createIcons();
   },
 
@@ -1736,7 +1747,7 @@
       </div>
     `;
 
-    container.classList.remove('hidden');
+    this.openDialog(container);
     if (window.lucide) lucide.createIcons();
   },
 
@@ -1820,7 +1831,7 @@
       </div>
     `;
 
-    container.classList.remove('hidden');
+    this.openDialog(container);
     if (window.lucide) lucide.createIcons();
   },
 
@@ -1868,7 +1879,7 @@
 
       // Nếu đang mở Modal, re-render modal với trạng thái mới
       const container = document.getElementById('modal-container');
-      if (container && !container.classList.contains('hidden')) {
+      if (container && (container.open || !container.classList.contains('hidden'))) {
         this.openStreakModal();
       }
 
@@ -1938,7 +1949,7 @@
 
       // Re-render modal với trạng thái mới
       const container = document.getElementById('modal-container');
-      if (container && !container.classList.contains('hidden')) {
+      if (container && (container.open || !container.classList.contains('hidden'))) {
         this.openStreakModal();
       }
     } catch (err) {
@@ -2298,7 +2309,7 @@
         <h4 class="text-xs font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug">${title}</h4>
         <p class="text-[11.5px] text-slate-600 dark:text-slate-300 leading-relaxed mt-0.5 break-words">${description}</p>
       </div>
-      <button type="button" class="toast-close-btn p-1 -mr-1 -mt-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors flex-shrink-0" title="Đóng thông báo">
+      <button type="button" class="toast-close-btn p-1 -mr-1 -mt-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors flex-shrink-0" title="Đóng thông báo" aria-label="Đóng thông báo">
         <i data-lucide="x" class="w-3.5 h-3.5 stroke-[2.2]"></i>
       </button>
       <div class="toast-progress-bar ${cfg.progressBar}" style="animation-duration: ${durationMs}ms;"></div>
@@ -2308,8 +2319,15 @@
     const dismiss = () => {
       toast.style.opacity = '0';
       toast.style.transform = 'translateY(12px) scale(0.95)';
-      toast.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-      setTimeout(() => toast.remove(), 200);
+      toast.style.transition = 'opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+      setTimeout(() => {
+        toast.remove();
+        if (container.children.length === 0 && typeof container.hidePopover === 'function' && container.matches(':popover-open')) {
+          try {
+            container.hidePopover();
+          } catch (e) {}
+        }
+      }, 200);
     };
 
     if (closeBtn) closeBtn.onclick = dismiss;
@@ -2318,6 +2336,11 @@
     toast.onmouseenter = () => clearTimeout(dismissTimer);
     toast.onmouseleave = () => { dismissTimer = setTimeout(dismiss, 1400); };
 
+    if (typeof container.showPopover === 'function' && !container.matches(':popover-open')) {
+      try {
+        container.showPopover();
+      } catch (e) {}
+    }
     container.appendChild(toast);
     if (window.lucide) window.lucide.createIcons();
     this.haptic(type === 'error' ? 'warning' : type === 'success' ? 'success' : 'light');
@@ -2340,7 +2363,7 @@
       <div class="overflow-y-auto pr-1 flex-1">${content}</div>
     `;
 
-    container.classList.remove('hidden');
+    this.openDialog(container);
     if (window.lucide) window.lucide.createIcons();
   },
 
@@ -2355,7 +2378,7 @@
     }
     const container = document.getElementById('modal-container');
     const card = document.getElementById('modal-card');
-    if (container) container.classList.add('hidden');
+    this.closeDialog(container);
     if (card) {
       card.className = "bg-white dark:bg-[#18181B] text-slate-800 dark:text-stone-100 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 dark:border-stone-800 transform transition-all relative my-auto max-h-[92vh] flex flex-col";
     }

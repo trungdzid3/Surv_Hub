@@ -555,7 +555,7 @@ body::before {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 /* Nút trung tâm Tạo Mới / Action: Bo tròn hoàn hảo (rounded-full), bỏ hẳn ô vuông góc tù */
@@ -569,7 +569,7 @@ body::before {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 14px rgba(234, 88, 12, 0.38), 0 2px 4px rgba(234, 88, 12, 0.2);
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .mobile-nav-action:hover .mobile-nav-action-icon {
@@ -925,6 +925,57 @@ dialog:modal {
 dialog::backdrop {
   overflow: hidden;
   overscroll-behavior: contain;
+}
+
+dialog.vibe-dialog {
+  margin: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  max-width: min(100vw - 1.5rem, 64rem);
+  max-height: calc(100dvh - 1.5rem);
+  overflow: visible;
+}
+
+dialog.vibe-dialog[open] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+dialog.vibe-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog.vibe-dialog::backdrop {
+  background: rgba(9, 9, 11, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+#google-oauth-modal::backdrop,
+#image-lightbox-modal::backdrop {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+[popover]#toast-container {
+  margin: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  position: fixed;
+  inset: auto 1.25rem 1.25rem auto;
+  overflow: visible;
+  max-width: calc(100vw - 2rem);
+}
+
+[popover]:is(:popover-open, .\:popover-open) {
+  display: flex;
 }
 
 /* ==================== TOAST NOTIFICATION SYSTEM (UI-UX-PRO-MAX) ==================== */

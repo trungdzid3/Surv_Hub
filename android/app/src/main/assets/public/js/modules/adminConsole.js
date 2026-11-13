@@ -1661,7 +1661,7 @@
     let input = targetInputId ? document.getElementById(targetInputId) : null;
     if (!input) {
       const modalContainer = document.getElementById('modal-container');
-      const isModalOpen = modalContainer && !modalContainer.classList.contains('hidden');
+      const isModalOpen = modalContainer && (modalContainer.open || !modalContainer.classList.contains('hidden'));
       input = isModalOpen
         ? (document.getElementById('modalAdminConsoleInput') || document.getElementById('adminConsoleInput'))
         : (document.getElementById('adminConsoleInput') || document.getElementById('modalAdminConsoleInput'));
@@ -1732,7 +1732,7 @@
 
       if (!input) {
         const modalContainer = document.getElementById('modal-container');
-        const isModalOpen = modalContainer && !modalContainer.classList.contains('hidden');
+        const isModalOpen = modalContainer && (modalContainer.open || !modalContainer.classList.contains('hidden'));
         if (isModalOpen) {
           input = document.getElementById('modalAdminConsoleInput') || document.getElementById('adminConsoleInput');
         } else {
@@ -1954,7 +1954,7 @@
       </div>
     `;
 
-    container.classList.remove('hidden');
+    this.openDialog(container);
     if (window.lucide) window.lucide.createIcons();
     this.renderAdminConsoleLogs(document.getElementById('modalAdminConsoleOutput'));
     const input = document.getElementById('modalAdminConsoleInput');

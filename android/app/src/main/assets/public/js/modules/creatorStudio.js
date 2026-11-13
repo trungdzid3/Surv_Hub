@@ -1302,7 +1302,7 @@
 
     this.renderImagePickerModal();
     const modalEl = document.getElementById('image-picker-modal');
-    if (modalEl) modalEl.classList.remove('hidden');
+    if (modalEl) VibeApp.openDialog(modalEl);
     if (window.lucide) window.lucide.createIcons();
   },
 
@@ -1311,7 +1311,7 @@
       this.state.imagePicker.isOpen = false;
     }
     const modalEl = document.getElementById('image-picker-modal');
-    if (modalEl) modalEl.classList.add('hidden');
+    if (modalEl) VibeApp.closeDialog(modalEl);
   },
 
   switchImagePickerTab(tab) {

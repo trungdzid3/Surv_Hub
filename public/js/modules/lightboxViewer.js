@@ -23,7 +23,7 @@
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           const modal = document.getElementById('image-lightbox-modal');
-          if (modal && !modal.classList.contains('hidden')) {
+          if (modal && (modal.open || !modal.classList.contains('hidden'))) {
             this.closeImageLightbox();
           }
         }
@@ -57,8 +57,7 @@
         linkEl.href = url;
       }
 
-      modal.classList.remove('hidden');
-      document.body.classList.add('overflow-hidden');
+      VibeApp.openDialog(modal);
 
       if (window.lucide) {
         window.lucide.createIcons();
@@ -71,13 +70,7 @@
     closeImageLightbox() {
       const modal = document.getElementById('image-lightbox-modal');
       if (modal) {
-        modal.classList.add('hidden');
-      }
-
-      // Kiem tra neu khong con modal nao khac dang mo thi mo lai cuon trang
-      const anyOtherModalOpen = document.querySelector('.fixed.inset-0:not(.hidden)');
-      if (!anyOtherModalOpen) {
-        document.body.classList.remove('overflow-hidden');
+        VibeApp.closeDialog(modal);
       }
 
       // Xoa src anh de giai phong bo nho trinh duyet

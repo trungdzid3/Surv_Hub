@@ -46,8 +46,7 @@
 
       const modal = document.getElementById('bug-report-modal');
       if (modal) {
-        modal.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
+        VibeApp.openDialog(modal);
       }
 
       // Dang ky su kien dan anh tu clipboard (Ctrl + V)
@@ -84,8 +83,7 @@
       }
       const modal = document.getElementById('bug-report-modal');
       if (modal) {
-        modal.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
+        VibeApp.closeDialog(modal);
       }
     },
 
@@ -934,7 +932,7 @@
               ${escape(bug.title)}
             </h3>
           </div>
-          <button onclick="document.getElementById('admin-bug-detail-modal').classList.add('hidden')" class="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 flex items-center justify-center">
+          <button onclick="VibeApp.closeDialog(document.getElementById('admin-bug-detail-modal'))" class="w-8 h-8 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-400 flex items-center justify-center">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
@@ -1040,7 +1038,7 @@
             Xóa Tin Rác
           </button>
           <div class="flex items-center gap-2">
-            <button type="button" onclick="document.getElementById('admin-bug-detail-modal').classList.add('hidden')" class="px-4 py-2 rounded-xl border border-stone-200 dark:border-[#33333D] hover:bg-stone-100 text-stone-700 dark:text-stone-300 text-xs font-bold">
+            <button type="button" onclick="VibeApp.closeDialog(document.getElementById('admin-bug-detail-modal'))" class="px-4 py-2 rounded-xl border border-stone-200 dark:border-[#33333D] hover:bg-stone-100 text-stone-700 dark:text-stone-300 text-xs font-bold">
               Đóng
             </button>
             <button type="button" onclick="VibeApp.saveAdminBugStatus('${bug.id}')" class="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-extrabold shadow-md transition-all active:scale-95 flex items-center gap-1.5">
@@ -1051,7 +1049,7 @@
         </div>
       `;
 
-      modal.classList.remove('hidden');
+      VibeApp.openDialog(modal);
       if (window.lucide) window.lucide.createIcons();
     },
 
@@ -1099,7 +1097,7 @@
         if (!res.success) throw new Error(res.message || 'Lỗi cập nhật');
 
         this.showToast('Đã cập nhật trạng thái sự cố và gửi thông báo thành công!', 'success');
-        document.getElementById('admin-bug-detail-modal').classList.add('hidden');
+        VibeApp.closeDialog(document.getElementById('admin-bug-detail-modal'));
         this.renderAdminBugReportsView(document.getElementById('app-root'));
       } catch (err) {
         this.showToast('Lỗi: ' + err.message, 'error');
@@ -1114,7 +1112,7 @@
         });
         if (!res.success) throw new Error(res.message || 'Lỗi khi xóa');
         this.showToast('Đã xóa bản ghi báo lỗi thành công', 'success');
-        document.getElementById('admin-bug-detail-modal').classList.add('hidden');
+        VibeApp.closeDialog(document.getElementById('admin-bug-detail-modal'));
         this.renderAdminBugReportsView(document.getElementById('app-root'));
       } catch (err) {
         this.showToast('Lỗi: ' + err.message, 'error');

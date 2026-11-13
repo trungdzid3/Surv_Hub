@@ -89,7 +89,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="/styles.css?v=4.9.27_mwg_ui">
+  <link rel="stylesheet" href="/styles.css?v=4.9.28_mwg_dialog">
 </head>
 <body class="bg-[#FFF8F5] dark:bg-[#121214] text-slate-800 dark:text-stone-100 min-h-[100svh] overflow-x-clip flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased safe-bottom">
   <a href="#main-content" class="visually-hidden">Bỏ qua điều hướng chính</a>
@@ -309,26 +309,26 @@
   <div id="push-popup-container" role="region" aria-label="Thông báo đẩy" aria-live="polite" class="fixed top-20 right-4 z-50 pointer-events-none flex flex-col items-end gap-3 max-w-sm w-full"></div>
 
   <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
-  <div id="toast-container" role="region" aria-label="Thông báo hệ thống" aria-live="polite"></div>
+  <div id="toast-container" popover="manual" role="region" aria-label="Thông báo hệ thống" aria-live="polite"></div>
 
   <!-- ==================== MODAL CONTAINER ==================== -->
-  <div id="modal-container" role="dialog" aria-modal="true" aria-label="Hộp thoại hệ thống" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex items-center justify-center p-4 sm:p-6 md:p-8">
+  <dialog id="modal-container" closedby="any" aria-label="Hộp thoại hệ thống" class="vibe-dialog w-full p-4 sm:p-6 md:p-8">
     <div id="modal-card" class="bg-white dark:bg-[#18181B] text-slate-800 dark:text-stone-100 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-stone-200 dark:border-stone-800 transform transition-all relative my-auto max-h-[92vh] flex flex-col">
       <!-- Modal Content Rendered Dynamically -->
     </div>
-  </div>
+  </dialog>
 
   <!-- ==================== IMAGE PICKER & WEBP COMPRESSION MODAL ==================== -->
-  <div id="image-picker-modal" role="dialog" aria-modal="true" aria-label="Chọn và nén hình ảnh" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex items-center justify-center p-3 sm:p-4">
-  </div>
+  <dialog id="image-picker-modal" closedby="any" aria-label="Chọn và nén hình ảnh" class="vibe-dialog w-full p-3 sm:p-4">
+  </dialog>
 
   <!-- ==================== TERMS & PLATFORM RULES MODAL ==================== -->
-  <div id="terms-modal" role="dialog" aria-modal="true" aria-label="Điều khoản và quy chế nền tảng" class="hidden fixed inset-0 z-[70] overflow-y-auto modal-backdrop flex items-center justify-center p-3 sm:p-4">
+  <dialog id="terms-modal" closedby="any" aria-label="Điều khoản và quy chế nền tảng" class="vibe-dialog w-full p-3 sm:p-4">
     <!-- Rendered dynamically via VibeApp.openTermsModal() -->
-  </div>
+  </dialog>
 
   <!-- ==================== GOOGLE OAUTH CONSENT DIALOG (CHUẨN GOOGLE ACCOUNT) ==================== -->
-  <div id="google-oauth-modal" role="dialog" aria-modal="true" aria-label="Xác thực tài khoản Google" class="hidden fixed inset-0 z-[100] overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 transition-all duration-200">
+  <dialog id="google-oauth-modal" closedby="any" aria-label="Xác thực tài khoản Google" class="vibe-dialog w-full p-3 sm:p-6">
     <div class="max-w-4xl w-full">
       <!-- Card Google OAuth -->
       <div class="bg-[#131314] text-[#e3e3e3] rounded-[28px] border border-[#303030] shadow-2xl overflow-hidden p-7 sm:p-12 relative font-sans">
@@ -478,7 +478,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </dialog>
 
   <!-- ==================== FLOATING BUG REPORT TRIGGER ==================== -->
   <div class="fixed bottom-20 md:bottom-6 right-3 sm:right-4 md:right-6 z-40">
@@ -489,7 +489,7 @@
   </div>
 
   <!-- ==================== MODAL BÁO CÁO SỰ CỐ & ĐĂNG TẢI LỖI ==================== -->
-  <div id="bug-report-modal" role="dialog" aria-modal="true" aria-label="Báo cáo sự cố và góp ý" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
+  <dialog id="bug-report-modal" closedby="any" aria-label="Báo cáo sự cố và góp ý" class="vibe-dialog w-full p-3 sm:p-4">
     <div class="bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-all animate-fadeIn">
       
       <!-- Modal Header -->
@@ -527,17 +527,17 @@
       </div>
 
     </div>
-  </div>
+  </dialog>
 
   <!-- ==================== MODAL CHI TIẾT BÁO LỖI DÀNH CHO ADMIN ==================== -->
-  <div id="admin-bug-detail-modal" role="dialog" aria-modal="true" aria-label="Chi tiết báo cáo sự cố" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm">
+  <dialog id="admin-bug-detail-modal" closedby="any" aria-label="Chi tiết báo cáo sự cố" class="vibe-dialog w-full p-3 sm:p-4">
     <div id="admin-bug-detail-content" class="bg-white dark:bg-[#1C1C20] border border-stone-200 dark:border-[#2E2E36] rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-all">
       <!-- Render động qua VibeApp.renderAdminBugDetail() -->
     </div>
-  </div>
+  </dialog>
 
   <!-- ==================== MODAL XEM ẢNH TRỰC TIẾP (IN-APP IMAGE LIGHTBOX) ==================== -->
-  <div id="image-lightbox-modal" role="dialog" aria-modal="true" aria-label="Xem ảnh phóng to" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fadeIn" onclick="if(event.target === this) VibeApp.closeImageLightbox()">
+  <dialog id="image-lightbox-modal" closedby="any" aria-label="Xem ảnh phóng to" class="vibe-dialog w-full p-3 sm:p-6 animate-fadeIn">
     <div class="relative max-w-5xl max-h-[90vh] w-full flex flex-col items-center">
       <!-- Top Actions -->
       <div class="w-full flex items-center justify-between pb-3 text-white">
@@ -560,35 +560,35 @@
         <img id="image-lightbox-img" src="" alt="Ảnh phóng to" class="max-w-full max-h-[78vh] object-contain select-none">
       </div>
     </div>
-  </div>
+  </dialog>
 
   <!-- Frontend Modular Architecture SSOT -->
   <!-- WAVE 1 MODULAR: Du lieu danh muc + Utils dung chung nap truoc tat ca module -->
-  <script src="/js/data/catalogs.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/utils.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/modules/customDropdown.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/modules/lightboxViewer.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/modules/bugReportModule.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/modules/adminAnalyticsModule.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/modules/voucherMarket.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/modules/pushNotifications.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/data/catalogs.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/utils.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/modules/customDropdown.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/modules/lightboxViewer.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/modules/bugReportModule.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/modules/adminAnalyticsModule.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/modules/voucherMarket.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/modules/pushNotifications.js?v=4.9.28_mwg_dialog"></script>
   <!-- WAVE 2 MODULAR: Mieng vi tien & so cai ledger (VIEW 5) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/wallet-ledger.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/wallet-ledger.js?v=4.9.28_mwg_dialog"></script>
   <!-- WAVE 3 MODULAR: Phan he quan tri (VIEW 8-10 + Admin Fast Command Console + SubNav quan tri) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/adminConsole.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/adminConsole.js?v=4.9.28_mwg_dialog"></script>
   <!-- WAVE 4 MODULAR: Phan he dien dan thao luan (COMMUNITY BOARD) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/forum.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/forum.js?v=4.9.28_mwg_dialog"></script>
   <!-- WAVE 5 MODULAR: Auth Modal + Dieu khoan + Tien ich modal dung chung (showToast/showModal/closeModal/copyValue) tach tu app.js, nap truoc app.js -->
-  <script src="/js/data/policyContent.js?v=4.9.27_mwg_ui"></script>
-  <script src="/js/modules/modalsTerms.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/data/policyContent.js?v=4.9.28_mwg_dialog"></script>
+  <script src="/js/modules/modalsTerms.js?v=4.9.28_mwg_dialog"></script>
   <!-- WAVE 6 MODULAR: Creator Studio (trang tao khao sat 2 cot: sidebar, bo loc doi tuong, image picker,
        Forms sync, kinh te ky quy, question builder, Smart Paste) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/creatorStudio.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/creatorStudio.js?v=4.9.28_mwg_dialog"></script>
   <!-- WAVE 7 MODULAR: Mien RESPONDENT (trinh lam bai khao sat phan doan + review TYPEFORM ZEN,
        ho so 5 tab, nhan khau hoc, avatar, xoa du lieu) tach tu app.js, nap truoc app.js -->
-  <script src="/js/modules/respondent.js?v=4.9.27_mwg_ui"></script>
+  <script src="/js/modules/respondent.js?v=4.9.28_mwg_dialog"></script>
 
   <!-- Application Main Script -->
-  <script src="/app.js?v=4.9.27_mwg_ui"></script>
+  <script src="/app.js?v=4.9.28_mwg_dialog"></script>
 </body>
 </html>
