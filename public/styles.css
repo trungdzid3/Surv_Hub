@@ -2340,7 +2340,7 @@ select:focus-visible,
 .survhub-tour-popover {
   position: fixed;
   z-index: 99992;
-  width: min(340px, calc(100vw - 24px));
+  width: min(430px, calc(100vw - 24px));
   background-color: #ffffff;
   color: #09090b;
   border: 1px solid #e7e5e4;
@@ -2364,7 +2364,16 @@ html.dark .survhub-tour-popover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 10px;
+}
+
+.survhub-tour-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .survhub-tour-step-badge {
@@ -2386,6 +2395,19 @@ html.dark .survhub-tour-step-badge {
   border-color: rgba(234, 88, 12, 0.32);
 }
 
+.survhub-tour-section-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #71717a;
+  line-height: 1.2;
+}
+
+html.dark .survhub-tour-section-tag {
+  color: #a1a1aa;
+}
+
 .survhub-tour-close-btn {
   display: inline-flex;
   align-items: center;
@@ -2397,6 +2419,7 @@ html.dark .survhub-tour-step-badge {
   background: transparent;
   color: #71717a;
   cursor: pointer;
+  flex-shrink: 0;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
@@ -2415,7 +2438,81 @@ html.dark .survhub-tour-close-btn:hover {
 }
 
 .survhub-tour-popover-body {
+  max-height: min(58vh, 390px);
+  overflow-y: auto;
+  padding-right: 4px;
   margin-bottom: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(113, 113, 122, 0.35) transparent;
+}
+
+.survhub-tour-popover-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.survhub-tour-popover-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.survhub-tour-popover-body::-webkit-scrollbar-thumb {
+  background-color: rgba(113, 113, 122, 0.35);
+  border-radius: 9999px;
+}
+
+html.dark .survhub-tour-popover-body {
+  scrollbar-color: rgba(161, 161, 170, 0.35) transparent;
+}
+
+html.dark .survhub-tour-popover-body::-webkit-scrollbar-thumb {
+  background-color: rgba(161, 161, 170, 0.35);
+}
+
+.survhub-tour-step-jumper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.survhub-tour-step-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  background-color: #f4f4f5;
+  color: #52525b;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.survhub-tour-step-pill:hover {
+  background-color: #e4e4e7;
+  color: #18181b;
+}
+
+html.dark .survhub-tour-step-pill {
+  background-color: #27272a;
+  color: #a1a1aa;
+}
+
+html.dark .survhub-tour-step-pill:hover {
+  background-color: #3f3f46;
+  color: #ffffff;
+}
+
+.survhub-tour-step-pill.is-active,
+html.dark .survhub-tour-step-pill.is-active {
+  background-color: #ea580c;
+  color: #ffffff;
 }
 
 .survhub-tour-title {
@@ -2440,6 +2537,70 @@ html.dark .survhub-tour-title {
 
 html.dark .survhub-tour-desc {
   color: #e4e4e7;
+}
+
+.survhub-tour-bullets {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.survhub-tour-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #3f3f46;
+}
+
+html.dark .survhub-tour-bullet-item {
+  color: #d4d4d8;
+}
+
+.survhub-tour-bullet-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: #ea580c;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+html.dark .survhub-tour-bullet-dot {
+  background-color: #fb923c;
+}
+
+.survhub-tour-tip {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border-left: 3px solid #ea580c;
+  background-color: #fff7ed;
+  color: #9a3412;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+html.dark .survhub-tour-tip {
+  background-color: rgba(234, 88, 12, 0.1);
+  color: #fdba74;
+}
+
+.survhub-tour-tip svg {
+  flex-shrink: 0;
+  color: #ea580c;
+  margin-top: 2px;
+}
+
+html.dark .survhub-tour-tip svg {
+  color: #fb923c;
 }
 
 .survhub-tour-popover-footer {
@@ -2552,4 +2713,21 @@ html.dark .survhub-tour-btn-secondary:hover:not(:disabled) {
 .survhub-tour-btn-primary:active {
   background-color: #c2410c;
   border-color: #c2410c;
+}
+
+@media (max-width: 639px) {
+  .survhub-tour-popover {
+    width: min(430px, calc(100vw - 24px));
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .survhub-tour-popover-body {
+    max-height: min(48vh, 320px);
+  }
+
+  .survhub-tour-popover-footer {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
 }

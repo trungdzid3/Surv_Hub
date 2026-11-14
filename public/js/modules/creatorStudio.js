@@ -277,8 +277,8 @@
 
     return `
       <!-- Segmented Switcher chuyển đổi 2 Tab Cột Phải: BUDGET & SETTINGS -->
-      <div class="flex items-center p-1 bg-stone-100 dark:bg-stone-800/90 rounded-xl border border-stone-200 dark:border-stone-700 shadow-xs">
-        <button type="button" onclick="VibeApp.setStudioSidebarSubTab('BUDGET')" 
+      <div id="studio-sidebar-switcher" class="flex items-center p-1 bg-stone-100 dark:bg-stone-800/90 rounded-xl border border-stone-200 dark:border-stone-700 shadow-xs">
+        <button type="button" id="studio-sidebar-tab-budget" onclick="VibeApp.setStudioSidebarSubTab('BUDGET')" 
                 class="flex-1 py-2 px-2 rounded-lg text-[11px] sm:text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${(this.state.studioSidebarSubTab || 'BUDGET') === 'BUDGET'
         ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-sm'
         : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
@@ -286,7 +286,7 @@
           <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
           <span>Ngân Sách & Giá</span>
         </button>
-        <button type="button" onclick="VibeApp.setStudioSidebarSubTab('SETTINGS')" 
+        <button type="button" id="studio-sidebar-tab-settings" onclick="VibeApp.setStudioSidebarSubTab('SETTINGS')" 
                 class="flex-1 py-2 px-2 rounded-lg text-[11px] sm:text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${this.state.studioSidebarSubTab === 'SETTINGS'
         ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-sm'
         : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'
@@ -2340,6 +2340,10 @@
               <i data-lucide="arrow-left" class="w-4 h-4"></i>
               <span>Khảo Sát Của Tôi</span>
             </button>
+            <button type="button" id="studio-guide-btn" onclick="VibeApp.startContextualTour(true, 'create-survey')" class="h-9 px-3 sm:px-3.5 bg-orange-50 hover:bg-orange-100 dark:bg-stone-800 dark:hover:bg-stone-700 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-stone-700 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer" title="Xem hướng dẫn chi tiết từng bước tạo khảo sát">
+              <i data-lucide="book-open" class="w-4 h-4"></i>
+              <span>Hướng Dẫn Studio</span>
+            </button>
             <button onclick="VibeApp.submitFastCreate(true)" class="h-9 px-3 sm:px-3.5 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 text-stone-700 dark:text-stone-200 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-all flex items-center gap-1.5 shadow-xs">
               <i data-lucide="save" class="w-4 h-4 text-stone-500"></i>
               <span>Lưu Bản Nháp</span>
@@ -2378,7 +2382,7 @@
           <div id="studio-canvas-scroll" class="${(this.state.mobileStudioActiveTab || 'CANVAS') === 'CANVAS' ? 'block' : 'hidden'} lg:block lg:col-span-8 space-y-5 lg:border-r lg:border-stone-200 dark:lg:border-stone-800 pr-10 sm:pr-12 lg:pr-12 xl:pr-14 lg:h-[calc(100vh-175px)] overflow-x-hidden overflow-y-auto overscroll-contain pb-8">
             
             <!-- THẺ TIÊU ĐỀ BIỂU MẪU (FORM HEADER CARD CHUẨN GOOGLE FORMS) -->
-            <div class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-sm relative overflow-visible">
+            <div id="studio-header-card" class="bg-white dark:bg-[#18181B] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-sm relative overflow-visible">
               ${this.state.draftCoverImageUrl ? `
                 <!-- Ảnh bìa biểu mẫu (Form Cover Banner) -->
                 <div class="relative w-full h-32 sm:h-40 rounded-t-2xl overflow-hidden group bg-stone-950 flex items-center justify-center">
@@ -2425,14 +2429,14 @@
                 <div class="pt-2 border-t border-stone-100 dark:border-stone-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-bold text-stone-500 dark:text-stone-400">Chế độ tạo:</span>
-                    <div class="inline-flex p-1 bg-stone-100 dark:bg-stone-800/90 rounded-xl text-xs font-bold">
-                      <button type="button" onclick="VibeApp.switchCreateSurveyTab('BUILDER')" class="py-1.5 px-3 rounded-lg transition-all ${this.state.createSurveyTab === 'BUILDER' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
+                    <div id="studio-mode-switcher" class="inline-flex p-1 bg-stone-100 dark:bg-stone-800/90 rounded-xl text-xs font-bold">
+                      <button type="button" id="studio-tab-btn-builder" onclick="VibeApp.switchCreateSurveyTab('BUILDER')" class="py-1.5 px-3 rounded-lg transition-all ${this.state.createSurveyTab === 'BUILDER' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
                         Soạn Trực Tiếp
                       </button>
-                      <button type="button" onclick="VibeApp.switchCreateSurveyTab('SMART_PASTE')" class="py-1.5 px-3 rounded-lg transition-all ${this.state.createSurveyTab === 'SMART_PASTE' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
+                      <button type="button" id="studio-tab-btn-smart-paste" onclick="VibeApp.switchCreateSurveyTab('SMART_PASTE')" class="py-1.5 px-3 rounded-lg transition-all ${this.state.createSurveyTab === 'SMART_PASTE' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
                         Dán Text Nhanh
                       </button>
-                      <button type="button" onclick="VibeApp.switchCreateSurveyTab('EXTERNAL_URL')" class="py-1.5 px-3 rounded-lg transition-all ${this.state.createSurveyTab === 'EXTERNAL_URL' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
+                      <button type="button" id="studio-tab-btn-external-url" onclick="VibeApp.switchCreateSurveyTab('EXTERNAL_URL')" class="py-1.5 px-3 rounded-lg transition-all ${this.state.createSurveyTab === 'EXTERNAL_URL' ? 'bg-white dark:bg-stone-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200'}">
                         Google / MS Forms
                       </button>
                     </div>
@@ -2473,7 +2477,7 @@
               </div>
 
               <div class="pt-1 flex justify-center">
-                <button type="button" onclick="VibeApp.addBuilderQuestion('SINGLE_CHOICE')" class="py-2 px-4 bg-white dark:bg-stone-900 border border-dashed border-stone-300 dark:border-stone-700 hover:border-orange-500 dark:hover:border-orange-500 rounded-xl text-xs font-bold text-stone-500 dark:text-stone-400 hover:text-orange-600 flex items-center gap-1.5 transition-all shadow-xs">
+                <button type="button" id="studio-add-question-btn" onclick="VibeApp.addBuilderQuestion('SINGLE_CHOICE')" class="py-2 px-4 bg-white dark:bg-stone-900 border border-dashed border-stone-300 dark:border-stone-700 hover:border-orange-500 dark:hover:border-orange-500 rounded-xl text-xs font-bold text-stone-500 dark:text-stone-400 hover:text-orange-600 flex items-center gap-1.5 transition-all shadow-xs">
                   <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-orange-600"></i>
                   <span>Thêm câu hỏi mới vào cuối biểu mẫu</span>
                 </button>
