@@ -1468,6 +1468,14 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-0.5 transition-transform"></i>
         </button>
 
+        <button onclick="VibeApp.startContextualTour(true); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-between text-stone-800 dark:text-stone-200 font-medium transition-colors group">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="book-open" class="w-4 h-4 text-orange-600 dark:text-orange-500 group-hover:scale-110 transition-transform"></i>
+            <span>Hướng Dẫn Sử Dụng</span>
+          </div>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-stone-400 group-hover:translate-x-0.5 transition-transform"></i>
+        </button>
+
         <button onclick="VibeApp.openBugReportModal(); document.getElementById('user-profile-dropdown').classList.add('hidden')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center justify-between text-stone-800 dark:text-stone-200 font-medium transition-colors group">
           <div class="flex items-center gap-2.5">
             <i data-lucide="bug" class="w-4 h-4 text-stone-500 dark:text-stone-400 group-hover:scale-110 transition-transform"></i>
@@ -1682,6 +1690,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         const isActive = (tab.id === 'admin-overview' && adminSubTabs.includes(this.state.currentTab)) || (this.state.currentTab === tab.id);
         return `
           <button onclick="VibeApp.navigate('${tab.id}')" 
+                  data-tour-nav="${tab.id}"
                   ${isActive ? 'aria-current="page"' : ''}
                   class="nav-link whitespace-nowrap ${isActive ? 'active' : ''}">
             <i data-lucide="${tab.icon}" class="w-3.5 h-3.5 stroke-[2.2] flex-shrink-0"></i>
@@ -1749,6 +1758,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           return `
             <div class="mobile-nav-item">
               <button onclick="${clickAction}" 
+                      data-tour-mobile-nav="${tab.id}"
                       title="${tab.label}" 
                       aria-label="${tab.label}"
                       ${isActive ? 'aria-current="page"' : ''}
@@ -1765,6 +1775,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         return `
           <div class="mobile-nav-item">
             <button onclick="${clickAction}" 
+                    data-tour-mobile-nav="${tab.id}"
                     title="${tab.label}" 
                     aria-label="${tab.label}"
                     ${isActive ? 'aria-current="page"' : ''}
@@ -1897,6 +1908,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     if (window.lucide) window.lucide.createIcons();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof this.triggerAutoTourForTab === 'function' && !['take-survey', 'review-survey'].includes(tabId)) {
+      this.triggerAutoTourForTab(tabId);
+    }
   },
 
 
