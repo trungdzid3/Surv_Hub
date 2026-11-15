@@ -51,6 +51,9 @@ function verifyImageMagicBytes(buffer) {
 }
 
 class SurveyController {
+  constructor() {
+    this._publicStatsCache = null;
+  }
 
   /**
    * Helper chuẩn hóa câu hỏi từ cơ sở dữ liệu
@@ -552,20 +555,39 @@ class SurveyController {
       }
 
       const rawSurveys = db.prepare(`
+        WITH user_latest_responses AS (
+          SELECT r2.survey_id,
+                 r2.status,
+                 r2.points_rewarded,
+                 r2.id,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY r2.survey_id
+                   ORDER BY (CASE WHEN r2.status = 'VALIDATED' THEN 0 ELSE 1 END), r2.started_at DESC
+                 ) AS rn
+          FROM responses r2
+          WHERE r2.respondent_id = ?
+        ),
+        question_counts AS (
+          SELECT q.survey_id, COUNT(*) AS question_count
+          FROM questions q
+          GROUP BY q.survey_id
+        )
         SELECT s.id, s.title, s.description, s.category, s.target_responses, 
                s.collected_responses, s.reward_points_per_response, s.min_completion_time_sec,
                s.survey_source, s.external_form_url, s.academic_tags_json, s.target_demographics_json,
                s.reward_mode, s.sponsor_campaign_id, s.is_pinned, s.is_featured,
                vc.brand_name AS sponsor_brand_name, vc.brand_logo AS sponsor_brand_logo, vc.title AS sponsor_voucher_title, vc.face_value_vnd AS sponsor_face_value,
-               (SELECT r2.status FROM responses r2 WHERE r2.survey_id = s.id AND r2.respondent_id = ? ORDER BY (CASE WHEN r2.status = 'VALIDATED' THEN 0 ELSE 1 END), r2.started_at DESC LIMIT 1) AS user_response_status,
-               (SELECT r2.points_rewarded FROM responses r2 WHERE r2.survey_id = s.id AND r2.respondent_id = ? ORDER BY (CASE WHEN r2.status = 'VALIDATED' THEN 0 ELSE 1 END), r2.started_at DESC LIMIT 1) AS points_rewarded,
-               (SELECT r2.id FROM responses r2 WHERE r2.survey_id = s.id AND r2.respondent_id = ? ORDER BY (CASE WHEN r2.status = 'VALIDATED' THEN 0 ELSE 1 END), r2.started_at DESC LIMIT 1) AS user_response_id,
-               (SELECT COUNT(*) FROM questions q WHERE q.survey_id = s.id) AS question_count
+               ulr.status AS user_response_status,
+               ulr.points_rewarded AS points_rewarded,
+               ulr.id AS user_response_id,
+               COALESCE(qc.question_count, 0) AS question_count
         FROM surveys s
         LEFT JOIN voucher_campaigns vc ON s.sponsor_campaign_id = vc.id
+        LEFT JOIN user_latest_responses ulr ON ulr.survey_id = s.id AND ulr.rn = 1
+        LEFT JOIN question_counts qc ON qc.survey_id = s.id
         WHERE s.status = 'ACTIVE'
         ORDER BY s.created_at DESC
-      `).all(user.id, user.id, user.id);
+      `).all(user.id);
 
       const surveys = rawSurveys.map(s => {
         let academicTags = [];
@@ -3225,6 +3247,15 @@ class SurveyController {
    */
   getPublicStats(req, res) {
     try {
+      const isTestEnv = config.NODE_ENV === 'test' || process.env.NODE_ENV === 'test';
+      const now = Date.now();
+      if (!isTestEnv && this._publicStatsCache && now < this._publicStatsCache.expiresAt) {
+        return res.json({
+          success: true,
+          stats: { ...this._publicStatsCache.stats }
+        });
+      }
+
       // 1. Thống kê phản hồi và tỷ lệ hợp lệ
       const respStats = db.prepare(`
         SELECT 
@@ -3279,21 +3310,30 @@ class SurveyController {
         }
       }
 
+      const statsPayload = {
+        valid_data_rate: validRateText,
+        valid_rate_num: validRateNum,
+        total_responses: totalResponsesCount,
+        total_responses_formatted: totalResponsesCount.toLocaleString('vi-VN'),
+        avg_duration_sec: avgSec,
+        avg_time_formatted: avgTimeFormatted,
+        active_surveys: surveyStats.active_surveys || 0,
+        total_surveys: surveyStats.total_surveys || 0,
+        total_users: userStats.total_users || 0,
+        total_students: userStats.total_students || 0,
+        updated_at: new Date().toISOString()
+      };
+
+      if (!isTestEnv) {
+        this._publicStatsCache = {
+          stats: { ...statsPayload },
+          expiresAt: now + 15000
+        };
+      }
+
       return res.json({
         success: true,
-        stats: {
-          valid_data_rate: validRateText,
-          valid_rate_num: validRateNum,
-          total_responses: totalResponsesCount,
-          total_responses_formatted: totalResponsesCount.toLocaleString('vi-VN'),
-          avg_duration_sec: avgSec,
-          avg_time_formatted: avgTimeFormatted,
-          active_surveys: surveyStats.active_surveys || 0,
-          total_surveys: surveyStats.total_surveys || 0,
-          total_users: userStats.total_users || 0,
-          total_students: userStats.total_students || 0,
-          updated_at: new Date().toISOString()
-        }
+        stats: statsPayload
       });
     } catch (err) {
       console.error('Lỗi getPublicStats:', err);

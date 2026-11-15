@@ -5,6 +5,8 @@ const crypto = require('crypto');
 class AntiFraudService {
   constructor() {
     this.DEFAULT_INITIAL_TRUST_SCORE = 85.0;
+    this._bannedIpCache = new Map();
+    this._bannedIpCacheTtlMs = 30000;
   }
 
   /**
@@ -664,14 +666,56 @@ class AntiFraudService {
     return ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
   }
 
+  _invalidateBannedIpCache(rawIp) {
+    if (!rawIp) {
+      this._bannedIpCache.clear();
+      return;
+    }
+    const ip = this.cleanIpAddress(rawIp);
+    this._bannedIpCache.delete(ip);
+  }
+
   /**
    * Kiểm tra IP có bị cấm (Banned) hay không
    */
   checkIpBanned(rawIp) {
     const ip = this.cleanIpAddress(rawIp);
     if (this.isLocalhost(ip)) return null;
+
+    const isTestEnv = process.env.NODE_ENV === 'test' || config.NODE_ENV === 'test';
+    const now = Date.now();
+
+    if (!isTestEnv) {
+      const cached = this._bannedIpCache.get(ip);
+      if (cached) {
+        if (now < cached.expiresAt) {
+          return cached.value ? { ...cached.value } : null;
+        }
+        this._bannedIpCache.delete(ip);
+      }
+    }
+
     const row = db.prepare('SELECT ip_address, reason, banned_at FROM banned_ips WHERE ip_address = ?').get(ip);
-    return row || null;
+    const result = row || null;
+
+    if (!isTestEnv) {
+      if (this._bannedIpCache.size >= 5000) {
+        for (const [cachedIp, entry] of this._bannedIpCache) {
+          if (now >= entry.expiresAt) {
+            this._bannedIpCache.delete(cachedIp);
+          }
+        }
+        if (this._bannedIpCache.size >= 5000) {
+          this._bannedIpCache.clear();
+        }
+      }
+      this._bannedIpCache.set(ip, {
+        value: result ? { ...result } : null,
+        expiresAt: now + this._bannedIpCacheTtlMs
+      });
+    }
+
+    return result;
   }
 
   /**
@@ -762,6 +806,7 @@ class AntiFraudService {
           const countForMsg = ipDistinctUsers + (action === 'REGISTER_PRECHECK' ? 1 : 0);
           const banReason = `Tự động Ban: Phát hiện ${countForMsg} tài khoản đăng ký mới trên cùng một IP trong 24h (Tấn công Sybil / Cày lượt dùng thử)`;
           db.prepare('INSERT OR IGNORE INTO banned_ips (ip_address, reason) VALUES (?, ?)').run(ip, banReason);
+          this._invalidateBannedIpCache(ip);
 
           if (ipUserIds.length > 0) {
             const placeholders = ipUserIds.map(() => '?').join(',');
@@ -822,11 +867,26 @@ class AntiFraudService {
   }
 
   /**
+   * Cấm địa chỉ IP (Dành cho Admin)
+   */
+  banIp(rawIp, reason = 'Bị cấm bởi Quản trị viên') {
+    const ip = this.cleanIpAddress(rawIp);
+    if (this.isLocalhost(ip)) {
+      return { success: false, message: 'Không thể cấm địa chỉ localhost' };
+    }
+    const safeReason = String(reason || 'Bị cấm bởi Quản trị viên').trim();
+    db.prepare('INSERT OR REPLACE INTO banned_ips (ip_address, reason, banned_at) VALUES (?, ?, CURRENT_TIMESTAMP)').run(ip, safeReason);
+    this._invalidateBannedIpCache(ip);
+    return { success: true, ip_address: ip };
+  }
+
+  /**
    * Gỡ Ban cho địa chỉ IP (Dành cho Admin)
    */
   unbanIp(rawIp) {
     const ip = this.cleanIpAddress(rawIp);
     const result = db.prepare('DELETE FROM banned_ips WHERE ip_address = ?').run(ip);
+    this._invalidateBannedIpCache(ip);
     return { success: true, changes: result.changes };
   }
 

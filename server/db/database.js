@@ -170,6 +170,7 @@ function createTursoDatabase() {
     }
 
     rawDb.exec('PRAGMA foreign_keys = ON;');
+    rawDb.exec('PRAGMA busy_timeout = 5000;');
     // Kiểm tra thật: đọc dữ liệu + quyền điều khiển transaction đồng bộ mà
     // các repository hiện tại đang dùng (BEGIN IMMEDIATE / COMMIT / ROLLBACK).
     rawDb.prepare('SELECT 1 AS ok').get();
@@ -1060,6 +1061,28 @@ function initSchema() {
   } catch (err) {
     console.warn('[DB Migration] Nâng cấp bảng deposit_orders gặp chú ý:', err.message);
   }
+
+  // Bo sung va nang cap composite indexes toi uu hieu nang truy van (dat sau toan bo migration/rebuild)
+  try {
+    const existingQIdx = db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_questions_survey'").get();
+    if (existingQIdx && existingQIdx.sql && !existingQIdx.sql.includes('order_index')) {
+      db.exec('DROP INDEX IF EXISTS idx_questions_survey;');
+    }
+    const existingTxIdx = db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_transactions_user'").get();
+    if (existingTxIdx && existingTxIdx.sql && (!existingTxIdx.sql.includes('created_at') || existingTxIdx.sql.includes('created_at DESC'))) {
+      db.exec('DROP INDEX IF EXISTS idx_transactions_user;');
+    }
+  } catch (idxErr) {
+    console.warn('[DB Index] Canh bao kiem tra index cu:', idxErr.message);
+  }
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_questions_survey ON questions(survey_id, order_index);
+    CREATE INDEX IF NOT EXISTS idx_responses_survey_user ON responses(survey_id, respondent_id);
+    CREATE INDEX IF NOT EXISTS idx_transactions_user ON point_transactions(user_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_surveys_creator ON surveys(creator_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_surveys_status_created ON surveys(status, created_at DESC);
+  `);
 }
 
 // Tự động đảm bảo các tài khoản kiểm thử cốt lõi luôn tồn tại và đúng mật khẩu trên mọi môi trường (Local & Render)

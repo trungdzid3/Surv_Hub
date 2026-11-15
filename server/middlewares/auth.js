@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const db = require('../db/database');
 
+const LAST_ACTIVE_UPDATE_TTL_MS = 60000;
+const LAST_ACTIVE_MAP_MAX_SIZE = 5000;
+const _lastActiveUpdateMap = new Map();
+
 function verifyJwt(token, callback) {
   jwt.verify(token, config.JWT_SECRET, { algorithms: ['HS256'] }, callback);
 }
@@ -62,7 +66,30 @@ function authenticateToken(req, res, next) {
     }
 
     sanitizeUser(user);
-    db.prepare("UPDATE users SET last_active_at = datetime('now') WHERE id = ?").run(user.id);
+    try {
+      const now = Date.now();
+      const isTestEnv = process.env.NODE_ENV === 'test' || config.NODE_ENV === 'test';
+      const lastUpdatedAt = _lastActiveUpdateMap.get(user.id);
+      if (isTestEnv || !lastUpdatedAt || (now - lastUpdatedAt >= LAST_ACTIVE_UPDATE_TTL_MS)) {
+        db.prepare("UPDATE users SET last_active_at = datetime('now') WHERE id = ?").run(user.id);
+        if (!isTestEnv) {
+          if (_lastActiveUpdateMap.size >= LAST_ACTIVE_MAP_MAX_SIZE) {
+            for (const [uid, ts] of _lastActiveUpdateMap) {
+              if (now - ts >= LAST_ACTIVE_UPDATE_TTL_MS) {
+                _lastActiveUpdateMap.delete(uid);
+              }
+            }
+            if (_lastActiveUpdateMap.size >= LAST_ACTIVE_MAP_MAX_SIZE) {
+              _lastActiveUpdateMap.clear();
+            }
+          }
+          _lastActiveUpdateMap.delete(user.id);
+          _lastActiveUpdateMap.set(user.id, now);
+        }
+      }
+    } catch (e) {
+      // Khong chan request neu cap nhat last_active_at gap loi tam thoi
+    }
     req.user = user;
     next();
   });
