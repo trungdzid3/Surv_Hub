@@ -203,73 +203,6 @@
   }
 
   const TOUR_SCENARIOS = {
-    home: [
-      {
-        selectors: ['#home-survey-search-input', '#app-root section:first-of-type'],
-        sectionTag: 'TRANG CHỦ • TÌM KIẾM',
-        title: 'Tìm kiếm & lọc nhanh đề tài khảo sát',
-        description:
-          'Nhập từ khóa bất kỳ để tìm kiếm khảo sát đang mở hoặc chuyển nhanh sang Diễn Đàn trao đổi học thuật.',
-        bullets: [
-          'Gõ tên đề tài, ngành học hoặc nhấn Enter tại thanh tìm kiếm để mở ngay danh sách phù hợp.',
-          'Chọn nhanh các thẻ lĩnh vực bên dưới để lọc thẳng theo chuyên ngành quan tâm.'
-        ],
-        tip: 'Mẹo: Nếu bạn đang làm khóa luận hoặc nghiên cứu thị trường, hãy ghé Diễn Đàn để thảo luận thang đo.'
-      },
-      {
-        selectors: ['#bento-stat-valid-rate', '#bento-stat-total-responses', '#app-root section:nth-of-type(2)'],
-        sectionTag: 'TRANG CHỦ • MINH BẠCH',
-        title: 'Số liệu chất lượng theo thời gian thực',
-        description:
-          'Ba thẻ Bento thống kê trực tiếp dữ liệu thu thập thực tế trên sàn SurvHub, không dùng số liệu ảo.',
-        bullets: [
-          'Tỉ lệ dữ liệu xác thực phản ánh hiệu quả lọc IP, mã sinh viên và kiểm duyệt 5 lớp Anti-Fraud.',
-          'Tổng phản hồi giá trị và thời gian trung bình giúp Creator ước lượng tốc độ gom mẫu.'
-        ]
-      },
-      {
-        selectors: ['#app-root section:nth-of-type(3)', '#app-root section:last-of-type'],
-        sectionTag: 'TRANG CHỦ • NỔI BẬT',
-        title: 'Khảo sát tiêu biểu đang mở thưởng',
-        description:
-          'Theo dõi nhanh các đề tài mới nhất kèm mức thưởng Point, tiến độ số mẫu đã thu và nút tham gia.',
-        bullets: [
-          'Mỗi thẻ hiển thị rõ thù lao Point (1 Point = 1 VNĐ) và tỷ lệ hoàn thành hiện tại.',
-          'Nhấn Làm Khảo Sát Ngay (với đáp viên) hoặc Xem trước (với chủ đề tài).'
-        ]
-      },
-      {
-        selectors: ['[data-tour-nav="surveys"]', '[data-tour-mobile-nav="surveys"]'],
-        sectionTag: 'ĐIỀU HƯỚNG • KHẢO SÁT',
-        title: 'Mở kho khảo sát đầy đủ & bộ lọc nâng cao',
-        description:
-          'Chuyển sang mục Khảo Sát để duyệt toàn bộ chiến dịch, điểm danh chuỗi 7 ngày và tích lũy Point.',
-        bullets: [
-          'Lọc theo Thưởng cao, Làm nhanh, Dưới 10 câu hoặc có E-Voucher đi kèm.',
-          'Theo dõi tiến độ chạm mốc rút thẻ cào 10.000đ và rút tiền 50.000đ.'
-        ]
-      },
-      {
-        selectors: ['[data-tour-nav="create-survey"]', '[data-tour-mobile-nav="create-survey"]'],
-        sectionTag: 'ĐIỀU HƯỚNG • STUDIO',
-        title: 'Tạo khảo sát trực quan trong vài phút',
-        description:
-          'Mở Form Studio để soạn 12 định dạng câu hỏi, dán văn bản từ Word/Docs hoặc đồng bộ Google/MS Forms.',
-        bullets: [
-          'Hỗ trợ bảng giá ưu đãi riêng cho Sinh viên (.edu.vn), Cá nhân và Doanh nghiệp.',
-          'Ký quỹ minh bạch bằng Credit và tự động hoàn 100% tiền mẫu chưa thu được.'
-        ]
-      },
-      {
-        selectors: ['#header-guide-btn', '[data-tour-nav="home"]', '#app-root'],
-        sectionTag: 'TRỢ GIÚP NGỮ CẢNH',
-        title: 'Xem lại hướng dẫn mọi lúc trên từng màn hình',
-        description:
-          'Bấm nút Hướng dẫn trên thanh tiêu đề bất kỳ lúc nào để bật lại tour đúng với trang bạn đang thao tác.',
-        tip: 'Bạn có thể dùng phím mũi tên Trái/Phải hoặc thanh số bước ở trên để nhảy nhanh tới phần cần xem.'
-      }
-    ],
-
     surveys: [
       {
         selectors: [
@@ -1135,10 +1068,20 @@
     return findVisibleTarget(step.selectors);
   }
 
-  function resolveTourContext(app, rawTabId, allowFallbackHome = false) {
+  function resolveTourContext(app, rawTabId) {
     const state = (app && app.state) || (window.VibeApp && window.VibeApp.state) || {};
     const rawTab = rawTabId || state.currentTab || 'home';
     const normalizedTab = normalizeTourTabId(rawTab);
+
+    if (['home', 'take-survey', 'review-survey'].includes(normalizedTab)) {
+      return {
+        isGuestLocked: false,
+        targetTab: normalizedTab,
+        seenKey: normalizedTab,
+        scenario: null
+      };
+    }
+
     const isLoggedIn = Boolean(state.currentUser);
     const guestCandidate = rawTab === 'my-vouchers' ? 'my-vouchers' : normalizedTab;
 
@@ -1157,15 +1100,6 @@
         targetTab: normalizedTab,
         seenKey: normalizedTab,
         scenario: TOUR_SCENARIOS[normalizedTab]
-      };
-    }
-
-    if (allowFallbackHome) {
-      return {
-        isGuestLocked: false,
-        targetTab: 'home',
-        seenKey: 'home',
-        scenario: TOUR_SCENARIOS.home
       };
     }
 
@@ -1623,10 +1557,12 @@
 
   const OnboardingTourModule = {
     triggerAutoTourForTab(tabId) {
-      if (!tabId) return;
+      if (!tabId || ['home', 'take-survey', 'review-survey'].includes(normalizeTourTabId(tabId))) {
+        return;
+      }
       if (isAutoTourDisabled()) return;
 
-      const context = resolveTourContext(this, tabId, false);
+      const context = resolveTourContext(this, tabId);
       if (!context.scenario || context.scenario.length === 0) return;
 
       const seenMap = readSeenMap();
@@ -1646,8 +1582,11 @@
     },
 
     startContextualTour(forceManual = true, tabId = null) {
-      const context = resolveTourContext(this, tabId, Boolean(forceManual));
+      const context = resolveTourContext(this, tabId);
       if (!context.scenario || context.scenario.length === 0) {
+        if (forceManual && typeof this.showToast === 'function') {
+          this.showToast('Trang chủ giới thiệu không có hướng dẫn. Hãy mở Khảo Sát, Tạo Khảo Sát hoặc các mục chức năng để xem hướng dẫn chi tiết.', 'info');
+        }
         return;
       }
 

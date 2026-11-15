@@ -1790,6 +1790,13 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }).join('');
     }
 
+    const guideBtn = document.getElementById('header-guide-btn');
+    if (guideBtn) {
+      const hideGuide = ['home', 'take-survey', 'review-survey'].includes(this.state.currentTab);
+      guideBtn.classList.toggle('hidden', hideGuide);
+      guideBtn.classList.toggle('flex', !hideGuide);
+    }
+
     if (window.lucide) window.lucide.createIcons();
   },
 
@@ -1908,7 +1915,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     if (window.lucide) window.lucide.createIcons();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (typeof this.triggerAutoTourForTab === 'function' && !['take-survey', 'review-survey'].includes(tabId)) {
+    if (typeof this.triggerAutoTourForTab === 'function' && !['home', 'take-survey', 'review-survey'].includes(tabId)) {
       this.triggerAutoTourForTab(tabId);
     }
   },

@@ -80,7 +80,7 @@ Chi tiết đầy đủ theo Symbol: `docs/CODE_MAP.md` (SSOT điều hướng f
 | `modules/forum.js` (~1.8k) | Diễn đàn + WYSIWYG + đính kèm + share |
 | `modules/modalsTerms.js` (~1.8k) | Auth modal, Google auth, khung hiển thị 03 văn bản pháp lý dạng tab (nội dung đọc từ `policyContent.js`), streak, toast/modal/copy tiện ích |
 | `modules/wallet-ledger.js` (~1.3k) | Ví, swap Point→Credit, nạp VietQR, payout |
-| `modules/onboardingTour.js` (1.755 dòng) | Contextual Spotlight Onboarding Tour v2 (9 kịch bản `TOUR_SCENARIOS` gồm 10 bước chuyên sâu Form Studio `create-survey` + 5 `GUEST_LOCKED_SCENARIOS`, popover chi tiết + step pills `jumpToTourStep` + đồng bộ sub-tab `beforeStep`, `survhub_tour_seen_v2` / `survhub_tour_disabled_v1`, cache-buster `v=4.9.30_detailed_tour`) |
+| `modules/onboardingTour.js` (1.694 dòng) | Contextual Spotlight Onboarding Tour v2 (8 kịch bản `TOUR_SCENARIOS` chức năng gồm 10 bước chuyên sâu Form Studio `create-survey`, không bật ở trang chủ `home` + 5 `GUEST_LOCKED_SCENARIOS`, popover chi tiết + step pills `jumpToTourStep` + đồng bộ sub-tab `beforeStep`, `survhub_tour_seen_v2` / `survhub_tour_disabled_v1`, cache-buster `v=4.9.31_no_home_tour`) |
 | `modules/voucherMarket.js`, `pushNotifications.js`, `bugReportModule.js`, `adminAnalyticsModule.js`, `customDropdown.js`, `lightboxViewer.js` | Các miền nhỏ còn lại |
 - Quy ước module mới: Object.assign(window.VibeApp, X) + JSDoc banner + nạp trước app.js trong index.html + bump cache-buster.
 
