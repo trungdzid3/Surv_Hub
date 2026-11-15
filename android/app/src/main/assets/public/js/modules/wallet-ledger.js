@@ -24,32 +24,101 @@
   window.VibeApp = window.VibeApp || {};
 
   const formatMoney = (val) => (window.VibeUtils && window.VibeUtils.formatVND ? window.VibeUtils.formatVND(val) : Number(val || 0).toLocaleString('vi-VN'));
-  const refreshIcons = () => {
+  const refreshIcons = (scopeEl) => {
     if (window.VibeUtils && window.VibeUtils.refreshIcons) {
-      window.VibeUtils.refreshIcons();
+      window.VibeUtils.refreshIcons(scopeEl);
     } else if (window.lucide && window.lucide.createIcons) {
       window.lucide.createIcons();
     }
   };
 
+  const WALLET_CACHE_PREFIX = 'survhub_wallet_cache_';
+  const WALLET_MODAL_INPUT_IDS = [
+    'payout-card-phone',
+    'payout-recipient-bank',
+    'payout-recipient-acc',
+    'payout-recipient-name',
+    'payout-momo-phone',
+    'payout-momo-name',
+    'deposit-amount-input',
+    'swap-points-input'
+  ];
+
+  const getWalletCacheKey = (user) => {
+    const uid = user && user.id != null ? String(user.id) : 'anon';
+    return `${WALLET_CACHE_PREFIX}${uid}`;
+  };
+
+  const readWalletCache = (user) => {
+    try {
+      const raw = sessionStorage.getItem(getWalletCacheKey(user));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return {
+        wallet: parsed.wallet && typeof parsed.wallet === 'object' ? parsed.wallet : null,
+        transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+        payouts: Array.isArray(parsed.payouts) ? parsed.payouts : []
+      };
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const writeWalletCache = (user, wallet, transactions, payouts) => {
+    try {
+      sessionStorage.setItem(getWalletCacheKey(user), JSON.stringify({
+        wallet: wallet && typeof wallet === 'object' ? wallet : {},
+        transactions: Array.isArray(transactions) ? transactions : [],
+        payouts: Array.isArray(payouts) ? payouts : []
+      }));
+    } catch (_) {
+      // Bo qua loi quota sessionStorage
+    }
+  };
+
+  const buildWalletSnapshot = (wallet, transactions, payouts) => {
+    try {
+      return JSON.stringify({
+        wallet: wallet && typeof wallet === 'object' ? wallet : {},
+        transactions: Array.isArray(transactions) ? transactions : [],
+        payouts: Array.isArray(payouts) ? payouts : []
+      });
+    } catch (_) {
+      return '';
+    }
+  };
+
+  const isWalletFormInputActive = (root) => {
+    const activeEl = document.activeElement;
+    if (activeEl) {
+      if (WALLET_MODAL_INPUT_IDS.includes(activeEl.id)) return true;
+      if (root && root.contains(activeEl)) {
+        const tag = activeEl.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || activeEl.isContentEditable) {
+          return true;
+        }
+      }
+    }
+    return WALLET_MODAL_INPUT_IDS.some((id) => Boolean(document.getElementById(id)));
+  };
+
+  const syncWalletCacheFromState = (app) => {
+    if (!app || !app.state || !app.state.currentUser) return;
+    const w = app.state.wallet || {
+      point_balance: Number(app.state.currentUser.point_balance || 0),
+      credit_balance: Number(app.state.currentUser.credit_balance || 0)
+    };
+    writeWalletCache(app.state.currentUser, w, app.state.transactions || [], app.state.payouts || []);
+  };
+
   const WalletLedgerModule = {
   // ==================== VIEW 5: VÍ & RÚT TIỀN (MODERN FINTECH) ====================
-  async renderWalletView(root) {
-    if (!this.state.currentUser) {
-      this.renderGuestLockedView(root, 'Ví & Rút Tiền', 'Vui lòng đăng nhập để quản lý số dư điểm thưởng, lịch sử giao dịch và gửi yêu cầu đổi thưởng về tài khoản.');
-      return;
-    }
-
-    const [res, payoutsRes] = await Promise.all([
-      this.api('/wallet'),
-      this.api('/wallet/payouts').catch(() => ({ payouts: [] }))
-    ]);
-    const wallet = res.wallet || {};
-    const transactions = res.transactions || [];
-    const payouts = (payoutsRes && payoutsRes.payouts) || [];
-    this.state.wallet = wallet;
-    this.state.transactions = transactions;
-    this.state.payouts = payouts;
+  _paintWalletView(root, wallet = {}, transactions = [], payouts = []) {
+    if (!root) return;
+    wallet = wallet || {};
+    transactions = Array.isArray(transactions) ? transactions : [];
+    payouts = Array.isArray(payouts) ? payouts : [];
 
     const curPoints = Number(wallet.point_balance || 0);
     const curCredit = Number(wallet.credit_balance || 0);
@@ -294,7 +363,93 @@
       </div>
     `;
 
-    refreshIcons();
+    refreshIcons(root);
+  },
+
+  async renderWalletView(root) {
+    if (!root) return;
+    if (!this.state.currentUser) {
+      this.renderGuestLockedView(root, 'Ví & Rút Tiền', 'Vui lòng đăng nhập để quản lý số dư điểm thưởng, lịch sử giao dịch và gửi yêu cầu đổi thưởng về tài khoản.');
+      return;
+    }
+
+    const userId = this.state.currentUser && this.state.currentUser.id != null ? String(this.state.currentUser.id) : null;
+    const ownerChanged = Boolean(userId && this._walletCacheOwnerId && this._walletCacheOwnerId !== userId);
+    if (userId) this._walletCacheOwnerId = userId;
+
+    const cached = readWalletCache(this.state.currentUser);
+    if (ownerChanged) {
+      this.state.wallet = (cached && cached.wallet) || null;
+      this.state.transactions = (cached && cached.transactions) || [];
+      this.state.payouts = (cached && cached.payouts) || [];
+    } else if (cached) {
+      if (!this.state.wallet && cached.wallet) {
+        this.state.wallet = cached.wallet;
+      }
+      if ((!Array.isArray(this.state.transactions) || this.state.transactions.length === 0) && cached.transactions.length > 0) {
+        this.state.transactions = cached.transactions;
+      }
+      if ((!Array.isArray(this.state.payouts) || this.state.payouts.length === 0) && cached.payouts.length > 0) {
+        this.state.payouts = cached.payouts;
+      }
+    }
+
+    let prevSnapshot = '';
+    if (this.state.currentUser || this.state.wallet) {
+      const initialWallet = this.state.wallet || {
+        point_balance: Number(this.state.currentUser?.point_balance || 0),
+        credit_balance: Number(this.state.currentUser?.credit_balance || 0)
+      };
+      const initialTransactions = Array.isArray(this.state.transactions) ? this.state.transactions : [];
+      const initialPayouts = Array.isArray(this.state.payouts) ? this.state.payouts : [];
+      prevSnapshot = buildWalletSnapshot(initialWallet, initialTransactions, initialPayouts);
+      this._paintWalletView(root, initialWallet, initialTransactions, initialPayouts);
+    }
+
+    const fetchSeq = (this._walletFetchSeq || 0) + 1;
+    this._walletFetchSeq = fetchSeq;
+
+    try {
+      const [res, payoutsRes] = await Promise.all([
+        this.api('/wallet'),
+        this.api('/wallet/payouts').catch(() => ({ payouts: [] }))
+      ]);
+
+      if (this._walletFetchSeq !== fetchSeq) return;
+
+      const nextWallet = (res && res.wallet) || {};
+      const nextTransactions = (res && Array.isArray(res.transactions)) ? res.transactions : [];
+      const nextPayouts = (payoutsRes && Array.isArray(payoutsRes.payouts)) ? payoutsRes.payouts : [];
+      const nextSnapshot = buildWalletSnapshot(nextWallet, nextTransactions, nextPayouts);
+
+      this.state.wallet = nextWallet;
+      this.state.transactions = nextTransactions;
+      this.state.payouts = nextPayouts;
+      writeWalletCache(this.state.currentUser, nextWallet, nextTransactions, nextPayouts);
+
+      if (this.state.currentUser) {
+        const nextPt = Number(nextWallet.point_balance ?? this.state.currentUser.point_balance ?? 0);
+        const nextCr = Number(nextWallet.credit_balance ?? this.state.currentUser.credit_balance ?? 0);
+        if (this.state.currentUser.point_balance !== nextPt || this.state.currentUser.credit_balance !== nextCr) {
+          this.state.currentUser.point_balance = nextPt;
+          this.state.currentUser.credit_balance = nextCr;
+          if (typeof this.applyUserInterface === 'function') {
+            this.applyUserInterface();
+          }
+        }
+      }
+
+      if (
+        nextSnapshot !== prevSnapshot &&
+        this.state.currentTab === 'wallet' &&
+        root.isConnected &&
+        !isWalletFormInputActive(root)
+      ) {
+        this._paintWalletView(root, nextWallet, nextTransactions, nextPayouts);
+      }
+    } catch (_) {
+      // Giu nguyen giao dien SWR da ve neu fetch nen that bai
+    }
   },
 
   // ==================== TƯƠNG TÁC TRANG VÍ (WALLET INTERACTION ENGINE) ====================
@@ -502,7 +657,7 @@
 
     container.innerHTML = txList.slice(0, 15).map(tx => this.renderTransactionRowHtml(tx)).join('');
 
-    refreshIcons();
+    refreshIcons(container);
   },
 
   toggleWalletTimeDropdown(e) {
@@ -787,6 +942,13 @@
         if (this.state.currentUser && res.newPointBalance !== undefined) {
           this.state.currentUser.point_balance = res.newPointBalance;
         }
+        if (res.newPointBalance !== undefined) {
+          this.state.wallet = Object.assign({}, this.state.wallet || {
+            point_balance: Number(this.state.currentUser?.point_balance || 0),
+            credit_balance: Number(this.state.currentUser?.credit_balance || 0)
+          }, { point_balance: res.newPointBalance });
+          syncWalletCacheFromState(this);
+        }
 
         // Neu duoc Auto-Payout cap ma the cao ngay lap tuc
         if (res.isAutoPayout && res.cardDetails) {
@@ -950,8 +1112,13 @@
           this.state.currentUser.point_balance = res.newPointBalance;
           this.state.currentUser.credit_balance = res.newCreditBalance;
         }
+        this.state.wallet = Object.assign({}, this.state.wallet || {}, {
+          point_balance: res.newPointBalance,
+          credit_balance: res.newCreditBalance
+        });
+        syncWalletCacheFromState(this);
         this.applyUserInterface();
-        if (this.state.activeTab === 'wallet') {
+        if (this.state.currentTab === 'wallet' || this.state.activeTab === 'wallet') {
           await this.renderWalletView(document.getElementById('app-root'));
         }
       }
@@ -1254,9 +1421,7 @@
       `
     });
 
-    if (window.lucide && window.lucide.createIcons) {
-      window.lucide.createIcons();
-    }
+    refreshIcons(document.getElementById('app-modal') || undefined);
 
     // Khoi chay bo dem nguoc 15:00
     this._depositTimerInterval = setInterval(() => {
@@ -1297,6 +1462,15 @@
           if (this.state.currentUser) {
             this.state.currentUser.credit_balance = (this.state.currentUser.credit_balance || 0) + orderCreditAmount;
           }
+          if (this.state.wallet) {
+            this.state.wallet.credit_balance = Number(this.state.wallet.credit_balance || 0) + orderCreditAmount;
+          } else if (this.state.currentUser) {
+            this.state.wallet = {
+              point_balance: Number(this.state.currentUser.point_balance || 0),
+              credit_balance: Number(this.state.currentUser.credit_balance || 0)
+            };
+          }
+          syncWalletCacheFromState(this);
           this.applyUserInterface();
 
           // Cap nhat modal sang man hinh Chuc mung

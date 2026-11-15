@@ -37,6 +37,22 @@
 
   window.VibeApp = window.VibeApp || {};
 
+  const refreshForumIcons = (scopeEl) => {
+    if (window.VibeUtils && window.VibeUtils.refreshIcons) {
+      window.VibeUtils.refreshIcons(scopeEl);
+    } else if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
+  };
+
+  const isUserTypingInRoot = (root) => {
+    if (!root || typeof document === 'undefined') return false;
+    const activeEl = document.activeElement;
+    if (!activeEl || !root.contains(activeEl)) return false;
+    const tag = activeEl.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || Boolean(activeEl.isContentEditable);
+  };
+
   const ForumModule = {
   // ==================== XÓA BÀI VIẾT DIỄN ĐÀN THẬT HOẠT ĐỘNG HOÀN TOÀN ====================
   async deleteForumPostAction(postId) {
@@ -60,6 +76,9 @@
           const postsRes = await this.api('/forum/posts');
           if (postsRes && postsRes.posts) {
             this.state.forumPosts = postsRes.posts;
+            try {
+              sessionStorage.setItem('survhub_forum_posts_cache', JSON.stringify(postsRes.posts));
+            } catch (cacheErr) {}
           }
         } catch (e) {}
         const root = document.getElementById('app-root');
@@ -73,43 +92,56 @@
   },
 
   // ==================== PHÂN HỆ DIỄN ĐÀN THẢO LUẬN (COMMUNITY BOARD) ====================
-  async renderForumView(root) {
+  async renderForumView(root, options = {}) {
     if (!root) return;
-    const user = this.state.currentUser;
 
-    // Chỉ hiển thị skeleton loader lần đầu khi chưa có dữ liệu trong state
-    if (!this.state.forumPosts || this.state.forumPosts.length === 0) {
-      root.innerHTML = `
-        <div class="py-16 flex flex-col items-center justify-center text-stone-400 space-y-2">
-          <div class="animate-spin rounded-full h-8 w-8 border-2 border-stone-200 border-t-orange-600"></div>
-          <p class="text-xs text-stone-500 font-medium">Đang nạp dữ liệu diễn đàn...</p>
-        </div>
-      `;
-    }
-
-    try {
-      const [postsRes, lbRes] = await Promise.all([
-        this.api('/forum/posts'),
-        this.api('/forum/leaderboard').catch(() => ({ contributors: [], hotTopics: [] }))
-      ]);
-      this.state.forumPosts = (postsRes && postsRes.posts) || [];
-      this.state.forumLeaderboard = (lbRes && lbRes.contributors) || [];
-      this.state.forumHotTopics = (lbRes && lbRes.hotTopics) || [];
-    } catch (err) {
-      console.warn('Lỗi nạp bài viết diễn đàn:', err.message);
-      if (!this.state.forumPosts) this.state.forumPosts = [];
-    }
-
-    // Nạp khảo sát nếu chưa có
-    if (!this.state.surveys || this.state.surveys.length === 0) {
+    // 1. Khoi phuc cache tu sessionStorage neu RAM dang rong
+    if (!Array.isArray(this.state.forumPosts) || this.state.forumPosts.length === 0) {
       try {
-        await this.loadSurveys();
-      } catch (e) {
-        console.warn('Lỗi nạp khảo sát:', e.message);
-      }
+        const rawPosts = sessionStorage.getItem('survhub_forum_posts_cache');
+        if (rawPosts) {
+          const parsedPosts = JSON.parse(rawPosts);
+          if (Array.isArray(parsedPosts)) {
+            this.state.forumPosts = parsedPosts;
+          }
+        }
+      } catch (e) {}
     }
 
-    // Thiết lập trạng thái bộ lọc mặc định nếu chưa có
+    if (!Array.isArray(this.state.forumLeaderboard) || this.state.forumLeaderboard.length === 0 || !Array.isArray(this.state.forumHotTopics)) {
+      try {
+        const rawLb = sessionStorage.getItem('survhub_forum_leaderboard_cache');
+        if (rawLb) {
+          const parsedLb = JSON.parse(rawLb);
+          if (Array.isArray(parsedLb)) {
+            if (!Array.isArray(this.state.forumLeaderboard) || this.state.forumLeaderboard.length === 0) {
+              this.state.forumLeaderboard = parsedLb;
+            }
+          } else if (parsedLb && typeof parsedLb === 'object') {
+            if (Array.isArray(parsedLb.contributors) && (!Array.isArray(this.state.forumLeaderboard) || this.state.forumLeaderboard.length === 0)) {
+              this.state.forumLeaderboard = parsedLb.contributors;
+            }
+            if (Array.isArray(parsedLb.hotTopics) && (!Array.isArray(this.state.forumHotTopics) || this.state.forumHotTopics.length === 0)) {
+              this.state.forumHotTopics = parsedLb.hotTopics;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!Array.isArray(this.state.surveys) || this.state.surveys.length === 0) {
+      try {
+        const rawSurveys = sessionStorage.getItem('survhub_surveys_cache');
+        if (rawSurveys) {
+          const parsedSurveys = JSON.parse(rawSurveys);
+          if (Array.isArray(parsedSurveys)) {
+            this.state.surveys = parsedSurveys;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Thiet lap trang thai bo loc mac dinh truoc khi render
     if (!this.state.forumFilter) {
       this.state.forumFilter = {
         category: 'ALL',
@@ -121,7 +153,106 @@
       };
     }
 
-    this._renderForumLayout(root);
+    const hasCachedPosts = Array.isArray(this.state.forumPosts) && this.state.forumPosts.length > 0;
+    const shouldInstantRender = hasCachedPosts && !options.forceAwait;
+    const prevSnapshot = JSON.stringify({
+      posts: this.state.forumPosts || [],
+      contributors: this.state.forumLeaderboard || [],
+      hotTopics: this.state.forumHotTopics || [],
+      surveysCount: Array.isArray(this.state.surveys) ? this.state.surveys.length : 0
+    });
+
+    // 3. Neu da co du lieu trong RAM/cache, ve ngay lap tuc (0ms) khong block await
+    if (shouldInstantRender) {
+      this._renderForumLayout(root);
+    } else if (!hasCachedPosts) {
+      root.innerHTML = `
+        <div class="py-16 flex flex-col items-center justify-center text-stone-400 space-y-2">
+          <div class="animate-spin rounded-full h-8 w-8 border-2 border-stone-200 border-t-orange-600"></div>
+          <p class="text-xs text-stone-500 font-medium">Đang nạp dữ liệu diễn đàn...</p>
+        </div>
+      `;
+    }
+
+    const reqToken = (this._forumFetchSeq = (this._forumFetchSeq || 0) + 1);
+
+    const revalidateForum = async () => {
+      const results = await Promise.allSettled([
+        this.api('/forum/posts'),
+        this.api('/forum/leaderboard'),
+        typeof this.loadSurveys === 'function' ? this.loadSurveys() : Promise.resolve(this.state.surveys || [])
+      ]);
+
+      if (reqToken !== this._forumFetchSeq) return;
+
+      const postsResult = results[0];
+      if (postsResult.status === 'fulfilled' && postsResult.value) {
+        const latestPosts = Array.isArray(postsResult.value.posts) ? postsResult.value.posts : [];
+        this.state.forumPosts = latestPosts;
+        try {
+          sessionStorage.setItem('survhub_forum_posts_cache', JSON.stringify(latestPosts));
+        } catch (e) {}
+      } else if (!Array.isArray(this.state.forumPosts)) {
+        this.state.forumPosts = [];
+      }
+
+      const lbResult = results[1];
+      if (lbResult.status === 'fulfilled' && lbResult.value) {
+        const latestContributors = Array.isArray(lbResult.value.contributors) ? lbResult.value.contributors : [];
+        const latestHotTopics = Array.isArray(lbResult.value.hotTopics) ? lbResult.value.hotTopics : [];
+        this.state.forumLeaderboard = latestContributors;
+        this.state.forumHotTopics = latestHotTopics;
+        try {
+          sessionStorage.setItem('survhub_forum_leaderboard_cache', JSON.stringify({
+            contributors: latestContributors,
+            hotTopics: latestHotTopics
+          }));
+        } catch (e) {}
+      } else {
+        if (!Array.isArray(this.state.forumLeaderboard)) this.state.forumLeaderboard = [];
+        if (!Array.isArray(this.state.forumHotTopics)) this.state.forumHotTopics = [];
+      }
+
+      const nextSnapshot = JSON.stringify({
+        posts: this.state.forumPosts || [],
+        contributors: this.state.forumLeaderboard || [],
+        hotTopics: this.state.forumHotTopics || [],
+        surveysCount: Array.isArray(this.state.surveys) ? this.state.surveys.length : 0
+      });
+
+      if (!root.isConnected) return;
+
+      if (!shouldInstantRender) {
+        if (!this.state.currentTab || this.state.currentTab === 'forum') {
+          this._renderForumLayout(root);
+        }
+        return;
+      }
+
+      if (nextSnapshot !== prevSnapshot && this.state.currentTab === 'forum' && !isUserTypingInRoot(root)) {
+        this._renderForumLayout(root);
+        if (Array.isArray(this.state.openCommentPostIds) && this.state.openCommentPostIds.length > 0) {
+          this.state.openCommentPostIds.forEach(pid => this.loadForumComments(pid));
+        }
+      }
+    };
+
+    if (shouldInstantRender) {
+      revalidateForum().catch((err) => {
+        console.warn('Lỗi đồng bộ diễn đàn nền:', err && err.message ? err.message : err);
+      });
+      return;
+    }
+
+    try {
+      await revalidateForum();
+    } catch (err) {
+      console.warn('Lỗi nạp bài viết diễn đàn:', err && err.message ? err.message : err);
+      if (!Array.isArray(this.state.forumPosts)) this.state.forumPosts = [];
+      if (root.isConnected && (!this.state.currentTab || this.state.currentTab === 'forum')) {
+        this._renderForumLayout(root);
+      }
+    }
   },
 
   _renderForumLayout(root) {
@@ -435,7 +566,7 @@
     `;
 
     this._updateForumFeedInPlace();
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(root);
   },
 
   // ==================== CẬP NHẬT FEED BÀI VIẾT TẠI CHỖ (SMOOTH IN-PLACE FILTERING - ZERO JANK) ====================
@@ -547,7 +678,7 @@
       `;
     }
 
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(container);
   },
 
   setForumHub(hubId) {
@@ -598,7 +729,7 @@
     }
 
     this._updateForumFeedInPlace();
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(document.getElementById('app-root'));
   },
 
   handleForumSearchInPlace(val) {
@@ -636,7 +767,7 @@
         }
       }
     });
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(document.getElementById('forum-post-tag-pills'));
   },
 
   onForumAttachedSurveySelected(surveyId) {
@@ -673,7 +804,7 @@
       catSelect.value = catId;
     }
     this._updateForumFeedInPlace();
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(document.getElementById('app-root'));
   },
 
   setForumScopeFilter(scopeId) {
@@ -741,7 +872,7 @@
       stuBtn.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap text-stone-600 dark:text-stone-400 hover:text-stone-900 font-medium';
     }
     this._updateForumFeedInPlace();
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(document.getElementById('app-root'));
   },
 
   renderForumPostCardHtml(post, isOpenComments = false) {
@@ -1168,7 +1299,7 @@
       `
     });
 
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons();
   },
 
   async submitCreateForumPost(event) {
@@ -1232,7 +1363,7 @@
         if (this.state.forumFilter) {
           this.state.forumFilter.hub = post_type;
         }
-        await this.renderForumView(document.getElementById('app-root'));
+        await this.renderForumView(document.getElementById('app-root'), { forceAwait: true });
       } else {
         this.showToast(res.message || 'Lỗi khi đăng bài', 'error');
       }
@@ -1242,7 +1373,7 @@
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="send" class="w-3.5 h-3.5"></i><span>Đăng Bài Lên Diễn Đàn</span>';
-        if (window.lucide) window.lucide.createIcons();
+        refreshForumIcons(btn);
       }
     }
   },
@@ -1439,7 +1570,7 @@
     if (shortEl && fullEl) {
       shortEl.classList.toggle('hidden');
       fullEl.classList.toggle('hidden');
-      if (window.lucide) window.lucide.createIcons();
+      refreshForumIcons(document.getElementById(`forum-post-${postId}`));
     }
   },
 
@@ -1551,7 +1682,7 @@
       </div>
     `).join('');
 
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(container);
   },
 
   _renderForumPostImagesHtml(images, title = 'Ảnh minh họa bài viết') {
@@ -1643,6 +1774,12 @@
       if (res && res.success) {
         this.haptic('success');
         this.showToast('Đã xóa bài viết thành công!', 'success');
+        if (Array.isArray(this.state.forumPosts)) {
+          this.state.forumPosts = this.state.forumPosts.filter(p => p.id !== postId);
+          try {
+            sessionStorage.setItem('survhub_forum_posts_cache', JSON.stringify(this.state.forumPosts));
+          } catch (cacheErr) {}
+        }
         await this.renderForumView(document.getElementById('app-root'));
       }
     } catch (err) {
@@ -1745,7 +1882,7 @@
     } catch (err) {
       listEl.innerHTML = `<div class="py-2 text-center text-xs text-orange-500">${this.escapeHtml(err.message)}</div>`;
     }
-    if (window.lucide) window.lucide.createIcons();
+    refreshForumIcons(listEl);
   },
 
   async submitForumComment(postId) {

@@ -107,6 +107,22 @@
   window.VibeApp = window.VibeApp || {};
 
   const CreatorStudioModule = {
+  /**
+   * Cap nhat icon Lucide trong pham vi phan tu muc tieu (tranh quet toan DOM).
+   * @param {Element|null} targetEl - Phan tu DOM gioi han pham vi quet icon
+   */
+  _refreshStudioIcons(targetEl) {
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(targetEl);
+    } else if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      try {
+        window.lucide.createIcons(targetEl ? { root: targetEl } : undefined);
+      } catch (_) {
+        window.lucide.createIcons();
+      }
+    }
+  },
+
   renderStudioSidebarHtml() {
     const user = this.state.currentUser;
     const userCredit = Number(user?.credit_balance || 0);
@@ -1232,9 +1248,7 @@
       `;
     }).join('');
 
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-      window.lucide.createIcons({ root: listEl });
-    }
+    this._refreshStudioIcons(listEl);
   },
 
   setStudioTargetUniversity(uniName) {
@@ -1257,7 +1271,7 @@
           <i data-lucide="check" class="w-3.5 h-3.5 text-orange-600"></i>
         </div>
       `;
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshStudioIcons(listEl);
       return;
     }
 
@@ -1303,7 +1317,7 @@
     this.renderImagePickerModal();
     const modalEl = document.getElementById('image-picker-modal');
     if (modalEl) VibeApp.openDialog(modalEl);
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshStudioIcons(modalEl);
   },
 
   closeImagePickerModal() {
@@ -1318,7 +1332,7 @@
     if (!this.state.imagePicker) return;
     this.state.imagePicker.activeTab = tab;
     this.renderImagePickerModal();
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshStudioIcons(document.getElementById('image-picker-modal'));
   },
 
   async handleImagePickerFileChange(fileInput) {
@@ -1365,7 +1379,7 @@
     this.state.imagePicker.selectedFile = file;
     this.state.imagePicker.isCompressing = true;
     this.renderImagePickerModal();
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshStudioIcons(document.getElementById('image-picker-modal'));
 
     try {
       const result = await this.compressImageFile(file, {
@@ -1376,13 +1390,13 @@
       this.state.imagePicker.compressedResult = result;
       this.state.imagePicker.isCompressing = false;
       this.renderImagePickerModal();
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshStudioIcons(document.getElementById('image-picker-modal'));
     } catch (err) {
       console.error('Lỗi khi nén ảnh:', err);
       this.state.imagePicker.isCompressing = false;
       this.showToast('Không thể xử lý ảnh: ' + err.message, 'error');
       this.renderImagePickerModal();
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshStudioIcons(document.getElementById('image-picker-modal'));
     }
   },
 
@@ -1411,7 +1425,7 @@
 
     picker.isUploading = true;
     this.renderImagePickerModal();
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshStudioIcons(document.getElementById('image-picker-modal'));
 
     try {
       const payload = {
@@ -1447,7 +1461,7 @@
       picker.isUploading = false;
       this.showToast('Tải ảnh thất bại: ' + (err.message || 'Vui lòng thử lại'), 'error');
       this.renderImagePickerModal();
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshStudioIcons(document.getElementById('image-picker-modal'));
     }
   },
 
@@ -1839,7 +1853,7 @@
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = oldBtnHtml;
-        if (window.lucide) window.lucide.createIcons();
+        this._refreshStudioIcons(btn);
       }
     }
   },
@@ -1861,7 +1875,7 @@
     const sidebarRoot = document.getElementById('studio-sidebar-root');
     if (sidebarRoot) {
       sidebarRoot.innerHTML = this.renderStudioSidebarHtml();
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshStudioIcons(sidebarRoot);
       return true;
     }
     return false;
@@ -1954,7 +1968,7 @@
         </div>
       `
     });
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshStudioIcons(document.getElementById('modal-container'));
   },
 
   async disconnectGoogleForms() {
@@ -2246,12 +2260,32 @@
   },
 
   async renderCreateSurveyView(root) {
-    if (!this.state.velocityBenchmark || this.state.velocityBenchmark.completed_surveys_count === undefined) {
-      await this.fetchVelocityBenchmark();
-    }
+    if (!root) root = document.getElementById('app-root');
+    if (!root) return;
     if (!this.state.currentUser) {
       this.renderGuestLockedView(root, 'Tạo Khảo Sát', 'Vui lòng đăng nhập để bắt đầu thiết kế biểu mẫu khảo sát và thu thập dữ liệu từ cộng đồng.');
       return;
+    }
+
+    if (!this._velocityBenchmarkFetched && !this._velocityBenchmarkPending && (!this.state.velocityBenchmark || this.state.velocityBenchmark.completed_surveys_count === undefined)) {
+      this._velocityBenchmarkPending = true;
+      this.fetchVelocityBenchmark().then(() => {
+        this._velocityBenchmarkFetched = true;
+        this._velocityBenchmarkPending = false;
+        if ((this.state.currentTab === 'create-survey' || this.state.currentTab === 'fast-create') && typeof this.refreshStudioSidebarView === 'function') {
+          const sidebarRoot = document.getElementById('studio-sidebar-root');
+          const activeEl = document.activeElement;
+          const isTypingInSidebar = Boolean(
+            sidebarRoot && activeEl && sidebarRoot.contains(activeEl) &&
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName)
+          );
+          if (!isTypingInSidebar) {
+            this.refreshStudioSidebarView();
+          }
+        }
+      }).catch(() => {
+        this._velocityBenchmarkPending = false;
+      });
     }
 
     const user = this.state.currentUser;
@@ -2613,7 +2647,7 @@
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshStudioIcons(root);
   },
 
   async fetchVelocityBenchmark() {
@@ -4780,7 +4814,7 @@
     const countEl = document.getElementById('builder-q-count');
     if (container) {
       container.innerHTML = this.renderStudioQuestionsHtml();
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshStudioIcons(container);
     }
     if (countEl) {
       countEl.innerText = `${(this.state.builderQuestions || []).length} câu`;

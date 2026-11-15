@@ -738,6 +738,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   async init() {
     this.initTheme();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons();
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
 
     // Cơ chế Click Outside đóng toàn bộ Dropdown / Popover trong toàn hệ thống
     document.addEventListener('click', (e) => {
@@ -1096,7 +1101,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           if (gridSec) {
             const { pinnedSurveys, normalSurveys } = this.processSurveysList(latest);
             gridSec.innerHTML = this._renderSurveysContentHtml(pinnedSurveys, normalSurveys);
-            if (window.lucide) window.lucide.createIcons();
+            if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+              window.VibeUtils.refreshIcons(gridSec);
+            } else if (window.lucide) {
+              window.lucide.createIcons();
+            }
 
             if (hasNewSurvey) {
               this.haptic('light');
@@ -1493,7 +1502,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         </button>
       </div>
     `;
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(contentEl);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
   },
 
 
@@ -1602,12 +1615,27 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   logout() {
     this.haptic('light');
+    const prevUserId = this.state.currentUser && this.state.currentUser.id;
     this.state.token = null;
     this.state.currentUser = null;
+    this.state.creatorSurveys = [];
+    this._creatorSurveysUserId = null;
+    this.state.wallet = null;
+    this.state.transactions = [];
+    this.state.payouts = [];
+    this.state.myVouchers = [];
+    this.state._adminOverviewCache = null;
+    this.state._adminPayoutsCache = null;
+    this.state._adminFraudCache = null;
+
     localStorage.removeItem('survhub_token');
     localStorage.removeItem('vibesurvey_token');
     localStorage.removeItem('survhub_cached_user');
     localStorage.removeItem('vibesurvey_cached_user');
+    try {
+      if (prevUserId) sessionStorage.removeItem(`survhub_creator_surveys_cache_${prevUserId}`);
+      sessionStorage.removeItem('survhub_my_vouchers_cache');
+    } catch (e) { /* Ignore sessionStorage errors */ }
 
     const dropdown = document.getElementById('user-profile-dropdown');
     if (dropdown) dropdown.classList.add('hidden');
@@ -1621,6 +1649,67 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     const user = this.state.currentUser;
     const desktopNav = document.getElementById('desktop-nav');
     const mobileNav = document.getElementById('mobile-bottom-nav');
+    const adminSubTabs = ['admin-overview', 'admin-payouts', 'admin-fraud', 'admin-bug-reports', 'admin-audit-logs'];
+    const currentTab = this.state.currentTab;
+
+    const guideBtn = document.getElementById('header-guide-btn');
+    if (guideBtn) {
+      const hideGuide = ['home', 'take-survey', 'review-survey'].includes(currentTab);
+      guideBtn.classList.toggle('hidden', hideGuide);
+      guideBtn.classList.toggle('flex', !hideGuide);
+    }
+
+    const isEnterprise = typeof this.isEnterpriseUser === 'function' ? this.isEnterpriseUser() : false;
+    const navSig = [
+      user?.id || 'guest',
+      user?.role || '',
+      user?.account_tier || '',
+      this.state.adminViewMode || 'ADMIN',
+      isEnterprise ? '1' : '0'
+    ].join('|');
+
+    const hasDesktopButtons = !desktopNav || desktopNav.querySelectorAll('button[data-tour-nav]').length > 0;
+    const hasMobileButtons = !mobileNav || mobileNav.querySelectorAll('button[data-tour-mobile-nav]').length > 0;
+
+    if (this._lastNavSig === navSig && (desktopNav || mobileNav) && hasDesktopButtons && hasMobileButtons) {
+      if (desktopNav) {
+        desktopNav.querySelectorAll('button[data-tour-nav]').forEach(btn => {
+          const tabId = btn.getAttribute('data-tour-nav');
+          const isActive = (tabId === 'admin-overview' && adminSubTabs.includes(currentTab)) || (currentTab === tabId);
+          btn.classList.toggle('active', isActive);
+          if (isActive) {
+            btn.setAttribute('aria-current', 'page');
+          } else {
+            btn.removeAttribute('aria-current');
+          }
+        });
+      }
+
+      if (mobileNav) {
+        mobileNav.querySelectorAll('button[data-tour-mobile-nav]').forEach(btn => {
+          const tabId = btn.getAttribute('data-tour-mobile-nav');
+          const isActive = (tabId === 'admin-overview' && adminSubTabs.includes(currentTab)) || (currentTab === tabId);
+          btn.classList.toggle('is-active', isActive);
+          if (isActive) {
+            btn.setAttribute('aria-current', 'page');
+          } else {
+            btn.removeAttribute('aria-current');
+          }
+
+          if (btn.classList.contains('mobile-nav-action')) {
+            const actionIconWrap = btn.querySelector('.mobile-nav-action-icon');
+            if (actionIconWrap) actionIconWrap.classList.toggle('is-active', isActive);
+          } else {
+            const iconEl = btn.querySelector('.mobile-nav-icon svg, .mobile-nav-icon i');
+            if (iconEl) {
+              iconEl.classList.toggle('stroke-[2.4]', isActive);
+              iconEl.classList.toggle('stroke-[1.9]', !isActive);
+            }
+          }
+        });
+      }
+      return;
+    }
 
     let tabs = [];
     if (!user) {
@@ -1682,12 +1771,10 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }
     }
 
-    const adminSubTabs = ['admin-overview', 'admin-payouts', 'admin-fraud', 'admin-bug-reports', 'admin-audit-logs'];
-
     // Desktop Tabs (Pill Style)
     if (desktopNav) {
       desktopNav.innerHTML = tabs.map(tab => {
-        const isActive = (tab.id === 'admin-overview' && adminSubTabs.includes(this.state.currentTab)) || (this.state.currentTab === tab.id);
+        const isActive = (tab.id === 'admin-overview' && adminSubTabs.includes(currentTab)) || (currentTab === tab.id);
         return `
           <button onclick="VibeApp.navigate('${tab.id}')" 
                   data-tour-nav="${tab.id}"
@@ -1747,7 +1834,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }
 
       mobileNav.innerHTML = mobileItems.map(tab => {
-        const isActive = (tab.id === 'admin-overview' && adminSubTabs.includes(this.state.currentTab)) || (this.state.currentTab === tab.id);
+        const isActive = (tab.id === 'admin-overview' && adminSubTabs.includes(currentTab)) || (currentTab === tab.id);
         const clickAction = tab.isAuthAction ? `VibeApp.openAuthModal('login')` : `VibeApp.navigate('${tab.id}')`;
         const displayLabel = tab.mobileLabel || tab.label;
 
@@ -1790,14 +1877,69 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }).join('');
     }
 
-    const guideBtn = document.getElementById('header-guide-btn');
-    if (guideBtn) {
-      const hideGuide = ['home', 'take-survey', 'review-survey'].includes(this.state.currentTab);
-      guideBtn.classList.toggle('hidden', hideGuide);
-      guideBtn.classList.toggle('flex', !hideGuide);
-    }
+    this._lastNavSig = navSig;
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      if (desktopNav) window.VibeUtils.refreshIcons(desktopNav);
+      if (mobileNav) window.VibeUtils.refreshIcons(mobileNav);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  },
+
+  _hasWarmCache(key) {
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.length > 0;
+      if (parsed && typeof parsed === 'object') {
+        if (Array.isArray(parsed.data)) return parsed.data.length > 0;
+        if (Array.isArray(parsed.posts)) return parsed.posts.length > 0;
+        if (Array.isArray(parsed.surveys)) return parsed.surveys.length > 0;
+        if (Array.isArray(parsed.catalog)) return parsed.catalog.length > 0;
+        if (Array.isArray(parsed.vouchers)) return parsed.vouchers.length > 0;
+        return Object.keys(parsed).length > 0;
+      }
+      return Boolean(parsed);
+    } catch (e) {
+      return false;
+    }
+  },
+
+  _isWarmNavigationTab(tabId) {
+    const user = this.state.currentUser;
+    switch (tabId) {
+      case 'home':
+      case 'create-survey':
+      case 'fast-create':
+        return true;
+      case 'surveys':
+        return Boolean((this.state.surveys && this.state.surveys.length > 0) || this._hasWarmCache('survhub_surveys_cache'));
+      case 'forum':
+        return Boolean((this.state.forumPosts && this.state.forumPosts.length > 0) || this._hasWarmCache('survhub_forum_posts_cache'));
+      case 'voucher-market':
+        return Boolean((this.state.voucherCatalog && this.state.voucherCatalog.length > 0) || this._hasWarmCache('survhub_voucher_catalog_cache'));
+      case 'my-vouchers':
+        return Boolean((this.state.myVouchers && this.state.myVouchers.length > 0) || this._hasWarmCache('survhub_my_vouchers_cache'));
+      case 'wallet':
+        return Boolean(this.state.wallet || user);
+      case 'creator-surveys':
+      case 'my-surveys': {
+        const cacheKey = user && user.id ? `survhub_creator_surveys_cache_${user.id}` : null;
+        return Boolean((this.state.creatorSurveys && this.state.creatorSurveys.length > 0) || (cacheKey && this._hasWarmCache(cacheKey)));
+      }
+      case 'profile':
+        return Boolean(user);
+      case 'admin-overview':
+        return Boolean(this.state._adminOverviewCache || this._adminOverviewCache);
+      case 'admin-payouts':
+        return Boolean(this.state._adminPayoutsCache || this._adminPayoutsCache);
+      case 'admin-fraud':
+        return Boolean(this.state._adminFraudCache || this._adminFraudCache);
+      default:
+        return false;
+    }
   },
 
   // ==================== ROUTER ====================
@@ -1835,12 +1977,15 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     const root = document.getElementById('app-root');
     if (!root) return;
 
-    root.innerHTML = `
-      <div class="py-20 flex flex-col items-center justify-center text-slate-400 space-y-2">
-        <div class="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-orange-600"></div>
-        <p class="text-xs text-slate-400 font-medium">Đang tải...</p>
-      </div>
-    `;
+    const isWarmTab = this._isWarmNavigationTab(tabId);
+    if (!isWarmTab) {
+      root.innerHTML = `
+        <div class="py-20 flex flex-col items-center justify-center text-slate-400 space-y-2">
+          <div class="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-orange-600"></div>
+          <p class="text-xs text-slate-400 font-medium">Đang tải...</p>
+        </div>
+      `;
+    }
 
     try {
       switch (tabId) {
@@ -1913,8 +2058,12 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       `;
     }
 
-    if (window.lucide) window.lucide.createIcons();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(root);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
+    window.scrollTo(0, 0);
     if (typeof this.triggerAutoTourForTab === 'function' && !['home', 'take-survey', 'review-survey'].includes(tabId)) {
       this.triggerAutoTourForTab(tabId);
     }
@@ -1928,6 +2077,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       if (res && res.success && res.stats) {
         const s = res.stats;
         this.state.platformStats = s;
+        try {
+          sessionStorage.setItem('survhub_platform_stats', JSON.stringify(s));
+        } catch (e) {}
+
+        if (this.state.currentTab !== 'home') return;
 
         const elRate = document.getElementById('bento-stat-valid-rate');
         const elTotal = document.getElementById('bento-stat-total-responses');
@@ -1946,39 +2100,115 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     }
   },
 
+  _getHomeTrendingSurveys(surveys) {
+    return (surveys || [])
+      .filter(s => s.status === 'PUBLISHED' || s.status === 'ACTIVE' || !s.status)
+      .slice(0, 3);
+  },
+
+  _renderHomeTrendingCardsHtml(trendingSurveys) {
+    if (!trendingSurveys || trendingSurveys.length === 0) {
+      return `
+              <div class="col-span-3 text-center py-10 bg-stone-50 dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 text-xs text-stone-500">
+                Đang cập nhật danh sách khảo sát tiêu biểu...
+              </div>
+            `;
+    }
+    const user = this.state.currentUser;
+    return trendingSurveys.map(s => {
+      const currentResponses = s.current_responses || s.responses_count || s.responseCount || 0;
+      const targetResponses = s.target_responses || s.targetResponses || 100;
+      const pct = Math.min(100, Math.round((currentResponses / targetResponses) * 100));
+      const rewardPoints = s.reward_points || s.rewardPoints || 50;
+      const isCreatorOrOwner = user && (user.role === 'CREATOR' || s.creator_id === user.id);
+      return `
+                <div class="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-orange-500/50 transition-all">
+                  <div class="space-y-2.5">
+                    <div class="flex items-center justify-between text-[11px]">
+                      <span class="px-2 py-0.5 rounded-md font-bold bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
+                        ${this.escapeHtml(s.category || 'Nghiên cứu Học thuật')}
+                      </span>
+                      <span class="font-mono font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                        <i data-lucide="coins" class="w-3.5 h-3.5"></i>
+                        +${rewardPoints} Điểm
+                      </span>
+                    </div>
+                    <h3 class="text-sm font-black text-stone-900 dark:text-white line-clamp-2 leading-snug cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors" onclick="${isCreatorOrOwner ? `VibeApp.openSurveyPreviewModal('${s.id}')` : `VibeApp.handleOpenSurveyFromHome('${s.id}')`}">
+                      ${this.escapeHtml(s.title)}
+                    </h3>
+                    <p class="text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
+                      ${this.escapeHtml(s.description || 'Khảo sát phục vụ nghiên cứu khoa học và khóa luận tốt nghiệp thực tế.')}
+                    </p>
+                  </div>
+
+                  <div class="space-y-3 pt-2 border-t border-stone-100 dark:border-stone-800">
+                    <div class="space-y-1">
+                      <div class="flex items-center justify-between text-[11px] text-stone-500 font-mono">
+                        <span>Tiến độ: ${currentResponses}/${targetResponses} mẫu</span>
+                        <span>${pct}%</span>
+                      </div>
+                      <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-orange-600 h-full rounded-full" style="width: ${pct}%;"></div>
+                      </div>
+                    </div>
+
+                    ${isCreatorOrOwner ? `
+                    <button onclick="VibeApp.openSurveyPreviewModal('${s.id}')" class="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                      <span>Xem trước</span>
+                    </button>
+                    ` : `
+                    <button onclick="VibeApp.handleOpenSurveyFromHome('${s.id}')" class="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-stone-100 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
+                      <span>Làm Khảo Sát Ngay</span>
+                      <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                    `}
+                  </div>
+                </div>
+              `;
+    }).join('');
+  },
+
   // ==================== TRANG CHỦ MỞ ĐẦU (SURVHUB LANDING PAGE) ====================
   async renderHomeView(root) {
     if (!root) return;
 
-    // Nạp số liệu thống kê thực tế nếu chưa có
-    let initialStats = this.state.platformStats || {
+    // Nạp ngay stats từ RAM hoặc sessionStorage để vẽ 0ms
+    if (!this.state.platformStats) {
+      try {
+        const cachedStats = sessionStorage.getItem('survhub_platform_stats');
+        if (cachedStats) {
+          const parsedStats = JSON.parse(cachedStats);
+          if (parsedStats && typeof parsedStats === 'object') {
+            this.state.platformStats = parsedStats;
+          }
+        }
+      } catch (e) {}
+    }
+
+    const initialStats = this.state.platformStats || {
       valid_data_rate: '100%',
       total_responses: 0,
       avg_time_formatted: '~0 Phút'
     };
-    try {
-      const statsRes = await this.api('/public/stats');
-      if (statsRes && statsRes.success && statsRes.stats) {
-        initialStats = statsRes.stats;
-        this.state.platformStats = statsRes.stats;
-      }
-    } catch (e) {
-      console.warn('Lỗi nạp số liệu thống kê trang chủ:', e);
-    }
 
-    // Nạp danh sách khảo sát nếu chưa có
+    // Nạp ngay danh sách khảo sát từ sessionStorage nếu RAM chưa có
     if (!this.state.surveys || this.state.surveys.length === 0) {
       try {
-        await this.loadSurveys();
-      } catch (e) {
-        console.warn('Lỗi nạp danh sách khảo sát trang chủ:', e);
-      }
+        const cachedSurveys = sessionStorage.getItem('survhub_surveys_cache');
+        if (cachedSurveys) {
+          const parsedSurveys = JSON.parse(cachedSurveys);
+          if (Array.isArray(parsedSurveys)) {
+            this.state.surveys = parsedSurveys;
+          } else if (parsedSurveys && Array.isArray(parsedSurveys.surveys)) {
+            this.state.surveys = parsedSurveys.surveys;
+          }
+        }
+      } catch (e) {}
     }
 
-    const surveys = this.state.surveys || [];
-    const trendingSurveys = surveys
-      .filter(s => s.status === 'PUBLISHED' || s.status === 'ACTIVE' || !s.status)
-      .slice(0, 3);
+    const trendingSurveys = this._getHomeTrendingSurveys(this.state.surveys || []);
+    const initialTrendingJson = JSON.stringify(trendingSurveys);
 
     root.innerHTML = `
       <div class="space-y-12 sm:space-y-16 max-w-6xl mx-auto pb-20 px-2 sm:px-4">
@@ -2092,64 +2322,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             </button>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            ${trendingSurveys.length > 0 ? trendingSurveys.map(s => {
-              const currentResponses = s.current_responses || s.responses_count || s.responseCount || 0;
-              const targetResponses = s.target_responses || s.targetResponses || 100;
-              const pct = Math.min(100, Math.round((currentResponses / targetResponses) * 100));
-              const rewardPoints = s.reward_points || s.rewardPoints || 50;
-              const user = this.state.currentUser;
-              const isCreatorOrOwner = user && (user.role === 'CREATOR' || s.creator_id === user.id);
-              return `
-                <div class="bg-white dark:bg-[#18181B] rounded-3xl border border-stone-200/90 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-orange-500/50 transition-all">
-                  <div class="space-y-2.5">
-                    <div class="flex items-center justify-between text-[11px]">
-                      <span class="px-2 py-0.5 rounded-md font-bold bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300">
-                        ${this.escapeHtml(s.category || 'Nghiên cứu Học thuật')}
-                      </span>
-                      <span class="font-mono font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1">
-                        <i data-lucide="coins" class="w-3.5 h-3.5"></i>
-                        +${rewardPoints} Điểm
-                      </span>
-                    </div>
-                    <h3 class="text-sm font-black text-stone-900 dark:text-white line-clamp-2 leading-snug cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors" onclick="${isCreatorOrOwner ? `VibeApp.openSurveyPreviewModal('${s.id}')` : `VibeApp.handleOpenSurveyFromHome('${s.id}')`}">
-                      ${this.escapeHtml(s.title)}
-                    </h3>
-                    <p class="text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
-                      ${this.escapeHtml(s.description || 'Khảo sát phục vụ nghiên cứu khoa học và khóa luận tốt nghiệp thực tế.')}
-                    </p>
-                  </div>
-
-                  <div class="space-y-3 pt-2 border-t border-stone-100 dark:border-stone-800">
-                    <div class="space-y-1">
-                      <div class="flex items-center justify-between text-[11px] text-stone-500 font-mono">
-                        <span>Tiến độ: ${currentResponses}/${targetResponses} mẫu</span>
-                        <span>${pct}%</span>
-                      </div>
-                      <div class="w-full bg-stone-100 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
-                        <div class="bg-orange-600 h-full rounded-full" style="width: ${pct}%;"></div>
-                      </div>
-                    </div>
-
-                    ${isCreatorOrOwner ? `
-                    <button onclick="VibeApp.openSurveyPreviewModal('${s.id}')" class="w-full py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-                      <i data-lucide="eye" class="w-3.5 h-3.5"></i>
-                      <span>Xem trước</span>
-                    </button>
-                    ` : `
-                    <button onclick="VibeApp.handleOpenSurveyFromHome('${s.id}')" class="w-full py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-stone-100 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-xs font-bold transition-all shadow-xs active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer">
-                      <span>Làm Khảo Sát Ngay</span>
-                      <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                    </button>
-                    `}
-                  </div>
-                </div>
-              `;
-            }).join('') : `
-              <div class="col-span-3 text-center py-10 bg-stone-50 dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 text-xs text-stone-500">
-                Đang cập nhật danh sách khảo sát tiêu biểu...
-              </div>
-            `}
+          <div id="home-trending-surveys-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            ${this._renderHomeTrendingCardsHtml(trendingSurveys)}
           </div>
         </section>
 
@@ -2177,7 +2351,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(root);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
 
     // Kích hoạt cập nhật thời gian thực định kỳ cho 3 thẻ Bento
     if (this._homeStatsTimer) {
@@ -2185,7 +2363,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       this._homeStatsTimer = null;
     }
     this._homeStatsTimer = setInterval(() => {
-      if (this.state.currentView === 'home' && document.getElementById('bento-stat-valid-rate')) {
+      if (this.state.currentTab === 'home' && document.getElementById('bento-stat-valid-rate')) {
         this.updateHomeStatsLive();
       } else {
         clearInterval(this._homeStatsTimer);
@@ -2197,6 +2375,26 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     if (badgeEl) {
       badgeEl.textContent = `(${new Date().toLocaleTimeString('vi-VN')})`;
     }
+
+    // Revalidate ngầm stats và danh sách khảo sát (non-blocking)
+    this.updateHomeStatsLive();
+    this.loadSurveys().then(() => {
+      if (this.state.currentTab !== 'home') return;
+      const latestTrending = this._getHomeTrendingSurveys(this.state.surveys || []);
+      if (JSON.stringify(latestTrending) !== initialTrendingJson) {
+        const trendingGrid = document.getElementById('home-trending-surveys-grid');
+        if (trendingGrid) {
+          trendingGrid.innerHTML = this._renderHomeTrendingCardsHtml(latestTrending);
+          if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+            window.VibeUtils.refreshIcons(trendingGrid);
+          } else if (window.lucide) {
+            window.lucide.createIcons();
+          }
+        }
+      }
+    }).catch((err) => {
+      console.warn('Lỗi nạp ngầm khảo sát trang chủ:', err && err.message ? err.message : err);
+    });
   },
 
   handleHomeSearch(query) {
@@ -2951,7 +3149,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(root);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
 
     // 3. Nếu đã có dữ liệu và forceFetch = true: Revalidate ngầm ở background
     if (hasData && forceFetch) {
@@ -2970,7 +3172,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           if (gridSec) {
             const { pinnedSurveys: newPinned, normalSurveys: newNormal } = this.processSurveysList(latest);
             gridSec.innerHTML = this._renderSurveysContentHtml(newPinned, newNormal);
-            if (window.lucide) window.lucide.createIcons();
+            if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+              window.VibeUtils.refreshIcons(gridSec);
+            } else if (window.lucide) {
+              window.lucide.createIcons();
+            }
           }
         }
       }).catch((err) => {
@@ -3572,7 +3778,11 @@ if (totalCount === 0) {
     const { pinnedSurveys, normalSurveys } = this.processSurveysList(surveys);
 
     gridSection.innerHTML = this._renderSurveysContentHtml(pinnedSurveys, normalSurveys);
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(gridSection);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
   },
 
   resetAllFilters() {
@@ -3594,23 +3804,24 @@ if (totalCount === 0) {
   // ==================== VIEW 5: VÍ & RÚT TIỀN: ĐÃ TÁCH RA public/js/modules/wallet-ledger.js (WAVE 2 MODULAR) ====================
 
   // ==================== VIEW 6: KHẢO SÁT CỦA TÔI ====================
-  async renderCreatorSurveysView(root) {
-    if (!this.state.currentUser) {
-      this.renderGuestLockedView(root, 'Khảo Sát Của Tôi', 'Vui lòng đăng nhập để tạo khảo sát, theo dõi tiến độ thu thập dữ liệu và xuất báo cáo kết quả.');
-      return;
-    }
-
-    const user = this.state.currentUser;
-    const res = await this.api('/surveys');
-    let surveys = res.surveys || [];
-
+  _filterCreatorSurveysForUser(rawSurveys, user) {
+    let surveys = Array.isArray(rawSurveys) ? rawSurveys : [];
     // Nếu là RESPONDENT: Tự động lọc các khảo sát do chính user này tạo
     if (user && user.role === 'RESPONDENT') {
-      const storedIds = JSON.parse((localStorage.getItem('survhub_my_surveys') || localStorage.getItem('vibesurvey_my_surveys')) || '[]');
+      let storedIds = [];
+      try {
+        storedIds = JSON.parse((localStorage.getItem('survhub_my_surveys') || localStorage.getItem('vibesurvey_my_surveys')) || '[]');
+      } catch (e) {
+        storedIds = [];
+      }
       surveys = surveys.filter(s => (s.creator_id && s.creator_id === user.id) || storedIds.includes(s.id));
     }
+    return surveys;
+  },
 
-    this.state.creatorSurveys = surveys;
+  _renderCreatorSurveysHtml(root, surveys) {
+    if (!root) return;
+    const list = Array.isArray(surveys) ? surveys : [];
 
     root.innerHTML = `
       <div class="space-y-6">
@@ -3632,7 +3843,7 @@ if (totalCount === 0) {
           </div>
         </div>
 
-        ${surveys.length === 0 ? `
+        ${list.length === 0 ? `
           <div class="bento-card p-12 text-center space-y-3">
             <div class="w-12 h-12 rounded-2xl bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 border border-transparent dark:border-blue-800/50 flex items-center justify-center mx-auto mb-1">
               <i data-lucide="clipboard-list" class="w-6 h-6 stroke-[2]"></i>
@@ -3647,7 +3858,7 @@ if (totalCount === 0) {
           </div>
         ` : `
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            ${surveys.map(s => {
+            ${list.map(s => {
       const collected = s.collected_responses || 0;
       const target = s.target_responses || 100;
       const percent = Math.min(100, Math.round((collected / target) * 100));
@@ -3705,7 +3916,77 @@ if (totalCount === 0) {
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(root);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  },
+
+  async renderCreatorSurveysView(root) {
+    if (!root) return;
+    if (!this.state.currentUser) {
+      this.renderGuestLockedView(root, 'Khảo Sát Của Tôi', 'Vui lòng đăng nhập để tạo khảo sát, theo dõi tiến độ thu thập dữ liệu và xuất báo cáo kết quả.');
+      return;
+    }
+
+    const user = this.state.currentUser;
+    const cacheKey = user.id ? `survhub_creator_surveys_cache_${user.id}` : null;
+
+    let cachedSurveys = null;
+    if (Array.isArray(this.state.creatorSurveys) && this.state.creatorSurveys.length > 0 && (!this._creatorSurveysUserId || this._creatorSurveysUserId === user.id)) {
+      cachedSurveys = this.state.creatorSurveys;
+    } else if (cacheKey) {
+      try {
+        const raw = sessionStorage.getItem(cacheKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            cachedSurveys = parsed;
+            this.state.creatorSurveys = parsed;
+            this._creatorSurveysUserId = user.id;
+          }
+        }
+      } catch (e) {}
+    }
+
+    const hasWarmData = Array.isArray(cachedSurveys) && cachedSurveys.length > 0;
+    const prevJson = hasWarmData ? JSON.stringify(cachedSurveys) : null;
+
+    if (hasWarmData) {
+      this._renderCreatorSurveysHtml(root, cachedSurveys);
+
+      this.api('/surveys').then((res) => {
+        const latest = this._filterCreatorSurveysForUser((res && res.surveys) || [], user);
+        const newJson = JSON.stringify(latest);
+        this.state.creatorSurveys = latest;
+        this._creatorSurveysUserId = user.id;
+        if (cacheKey) {
+          try {
+            sessionStorage.setItem(cacheKey, newJson);
+          } catch (e) {}
+        }
+        if (newJson !== prevJson && (this.state.currentTab === 'creator-surveys' || this.state.currentTab === 'my-surveys')) {
+          const activeRoot = document.getElementById('app-root') || root;
+          this._renderCreatorSurveysHtml(activeRoot, latest);
+        }
+      }).catch((err) => {
+        console.warn('Lỗi revalidate creator surveys ngầm:', err && err.message ? err.message : err);
+      });
+      return;
+    }
+
+    const res = await this.api('/surveys');
+    const surveys = this._filterCreatorSurveysForUser((res && res.surveys) || [], user);
+    this.state.creatorSurveys = surveys;
+    this._creatorSurveysUserId = user.id;
+    if (cacheKey) {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(surveys));
+      } catch (e) {}
+    }
+
+    this._renderCreatorSurveysHtml(root, surveys);
   },
 
   async exportSurvey(surveyId) {
@@ -3754,7 +4035,24 @@ if (totalCount === 0) {
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    const deleteModalEl = document.getElementById('delete-survey-modal');
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(deleteModalEl || document.body);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  },
+
+  _patchCreatorSurveysCache(updater) {
+    if (Array.isArray(this.state.creatorSurveys) && this.state.creatorSurveys.length > 0) {
+      this.state.creatorSurveys = updater(this.state.creatorSurveys);
+      const user = this.state.currentUser;
+      if (user && user.id) {
+        try {
+          sessionStorage.setItem(`survhub_creator_surveys_cache_${user.id}`, JSON.stringify(this.state.creatorSurveys));
+        } catch (e) {}
+      }
+    }
   },
 
   async executeDeleteSurvey(surveyId) {
@@ -3782,6 +4080,14 @@ if (totalCount === 0) {
         this.state.currentUser.credit_balance = res.newCreditBalance;
       }
 
+      this._patchCreatorSurveysCache(list => list.filter(s => s.id !== surveyId));
+      if (Array.isArray(this.state.surveys)) {
+        this.state.surveys = this.state.surveys.filter(s => s.id !== surveyId);
+        try {
+          sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(this.state.surveys));
+        } catch (e) {}
+      }
+
       // Nếu đang ở màn hình sửa khảo sát đó, reset và về creator-surveys
       if (this.state.editingSurveyId === surveyId) {
         if (typeof this.resetStudioToNew === 'function') this.resetStudioToNew();
@@ -3795,7 +4101,11 @@ if (totalCount === 0) {
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = `<i data-lucide="trash-2" class="w-3.5 h-3.5"></i><span>Xác Nhận Xóa</span>`;
-        if (window.lucide) window.lucide.createIcons();
+        if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+          window.VibeUtils.refreshIcons(btn);
+        } else if (window.lucide) {
+          window.lucide.createIcons();
+        }
       }
     }
   },
@@ -3811,6 +4121,7 @@ if (totalCount === 0) {
           if (res.credit_balance !== undefined) this.state.currentUser.credit_balance = res.credit_balance;
           if (res.fast_track_tickets !== undefined) this.state.currentUser.fast_track_tickets = res.fast_track_tickets;
         }
+        this._patchCreatorSurveysCache(list => list.map(s => s.id === surveyId ? { ...s, is_pinned: 1 } : s));
         this.showToast(res.message || 'Đã ghim khảo sát lên vị trí VIP đầu trang!', 'success');
         const root = document.getElementById('app-root');
         if (root && typeof this.renderCreatorSurveysView === 'function') {
@@ -3828,6 +4139,7 @@ if (totalCount === 0) {
     try {
       const res = await this.api(`/surveys/${surveyId}/unpin`, { method: 'POST' });
       if (res && res.success) {
+        this._patchCreatorSurveysCache(list => list.map(s => s.id === surveyId ? { ...s, is_pinned: 0 } : s));
         this.showToast(res.message || 'Đã gỡ ghim khảo sát thành công!', 'success');
         const root = document.getElementById('app-root');
         if (root && typeof this.renderCreatorSurveysView === 'function') {
@@ -3917,7 +4229,11 @@ if (totalCount === 0) {
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(root);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
   },
 
   // ==================== CREATOR STUDIO: ĐÃ TÁCH RA public/js/modules/creatorStudio.js (WAVE 6 MODULAR) ====================

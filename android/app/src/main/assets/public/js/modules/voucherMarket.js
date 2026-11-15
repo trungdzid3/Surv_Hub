@@ -17,13 +17,26 @@
 
   window.VibeApp = window.VibeApp || {};
 
+  const refreshVoucherIcons = (scopeEl) => {
+    if (window.VibeUtils && window.VibeUtils.refreshIcons) {
+      window.VibeUtils.refreshIcons(scopeEl);
+    } else if (window.lucide && window.lucide.createIcons) {
+      window.lucide.createIcons();
+    }
+  };
+
+  const isUserTypingInRoot = (root) => {
+    if (!root || typeof document === 'undefined') return false;
+    const activeEl = document.activeElement;
+    if (!activeEl || !root.contains(activeEl)) return false;
+    const tag = activeEl.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || Boolean(activeEl.isContentEditable);
+  };
+
   const VoucherMarketModule = {
   // ==================== VIEW 3: CHỢ VOUCHER THƯƠNG HIỆU ====================
-  async renderVoucherMarketView(root) {
-    const res = await this.api('/vouchers/catalog');
-    const vouchers = res.vouchers || [];
-    this.state.voucherCatalog = vouchers;
-
+  _paintVoucherMarketView(root, vouchers = []) {
+    if (!root) return;
     const user = this.state.currentUser;
     const isEnterprise = this.isEnterpriseUser();
     const userPoints = user ? user.point_balance : 0;
@@ -123,10 +136,94 @@
       </div>
     `;
 
-    if (window.VibeUtils && window.VibeUtils.refreshIcons) {
-      window.VibeUtils.refreshIcons();
-    } else if (window.lucide && window.lucide.createIcons) {
-      window.lucide.createIcons();
+    refreshVoucherIcons(root);
+  },
+
+  async renderVoucherMarketView(root) {
+    if (!root) return;
+
+    let hasCatalogCache = Array.isArray(this.state.voucherCatalog) && (this.state.voucherCatalog.length > 0 || Boolean(this._voucherCatalogLoaded));
+    if (!hasCatalogCache) {
+      try {
+        const rawCatalog = sessionStorage.getItem('survhub_voucher_catalog_cache');
+        if (rawCatalog) {
+          const parsedCatalog = JSON.parse(rawCatalog);
+          if (Array.isArray(parsedCatalog)) {
+            this.state.voucherCatalog = parsedCatalog;
+            hasCatalogCache = true;
+          } else if (parsedCatalog && Array.isArray(parsedCatalog.vouchers)) {
+            this.state.voucherCatalog = parsedCatalog.vouchers;
+            hasCatalogCache = true;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!this.state.voucherDeals) {
+      try {
+        const rawDeals = sessionStorage.getItem('survhub_voucher_deals_cache');
+        if (rawDeals) {
+          const parsedDeals = JSON.parse(rawDeals);
+          if (parsedDeals && (Array.isArray(parsedDeals) || typeof parsedDeals === 'object')) {
+            this.state.voucherDeals = parsedDeals;
+          }
+        }
+      } catch (e) {}
+    }
+
+    const prevSnapshot = JSON.stringify({
+      vouchers: this.state.voucherCatalog || [],
+      deals: this.state.voucherDeals || null
+    });
+
+    const reqToken = (this._voucherCatalogFetchSeq = (this._voucherCatalogFetchSeq || 0) + 1);
+
+    if (hasCatalogCache) {
+      this._paintVoucherMarketView(root, this.state.voucherCatalog || []);
+
+      this.api('/vouchers/catalog')
+        .then((res) => {
+          if (reqToken !== this._voucherCatalogFetchSeq) return;
+          const latestVouchers = (res && res.vouchers) || [];
+          this.state.voucherCatalog = latestVouchers;
+          this._voucherCatalogLoaded = true;
+          try {
+            sessionStorage.setItem('survhub_voucher_catalog_cache', JSON.stringify(latestVouchers));
+            if (res && res.deals !== undefined) {
+              this.state.voucherDeals = res.deals;
+              sessionStorage.setItem('survhub_voucher_deals_cache', JSON.stringify(res.deals));
+            }
+          } catch (e) {}
+
+          const nextSnapshot = JSON.stringify({
+            vouchers: latestVouchers,
+            deals: this.state.voucherDeals || null
+          });
+          if (nextSnapshot !== prevSnapshot && this.state.currentTab === 'voucher-market' && root.isConnected && !isUserTypingInRoot(root)) {
+            this._paintVoucherMarketView(root, latestVouchers);
+          }
+        })
+        .catch((err) => {
+          console.warn('Lỗi đồng bộ chợ voucher nền:', err && err.message ? err.message : err);
+        });
+      return;
+    }
+
+    const res = await this.api('/vouchers/catalog');
+    if (reqToken !== this._voucherCatalogFetchSeq) return;
+    const vouchers = (res && res.vouchers) || [];
+    this.state.voucherCatalog = vouchers;
+    this._voucherCatalogLoaded = true;
+    try {
+      sessionStorage.setItem('survhub_voucher_catalog_cache', JSON.stringify(vouchers));
+      if (res && res.deals !== undefined) {
+        this.state.voucherDeals = res.deals;
+        sessionStorage.setItem('survhub_voucher_deals_cache', JSON.stringify(res.deals));
+      }
+    } catch (e) {}
+
+    if (root.isConnected && (!this.state.currentTab || this.state.currentTab === 'voucher-market')) {
+      this._paintVoucherMarketView(root, vouchers);
     }
   },
 
@@ -153,6 +250,29 @@
         this.haptic('success');
         if (this.state.currentUser && res.newPointBalance !== undefined) {
           this.state.currentUser.point_balance = res.newPointBalance;
+        }
+        if (Array.isArray(this.state.voucherCatalog)) {
+          const item = this.state.voucherCatalog.find(v => v.id === campaignId);
+          if (item && Number(item.remaining_quantity) > 0) {
+            item.remaining_quantity = Number(item.remaining_quantity) - 1;
+          }
+          try {
+            sessionStorage.setItem('survhub_voucher_catalog_cache', JSON.stringify(this.state.voucherCatalog));
+          } catch (e) {}
+        }
+        if (res.voucher && this.state.currentUser) {
+          const userId = String(this.state.currentUser.id || '');
+          const nextItem = { claimed_at: new Date().toISOString(), ...res.voucher };
+          if (Array.isArray(this.state.myVouchers)) {
+            this.state.myVouchers = [nextItem, ...this.state.myVouchers];
+          } else {
+            this.state.myVouchers = [nextItem];
+          }
+          this._myVouchersOwnerId = userId;
+          try {
+            sessionStorage.setItem('survhub_my_vouchers_cache', JSON.stringify(this.state.myVouchers));
+            if (userId) sessionStorage.setItem('survhub_my_vouchers_owner', userId);
+          } catch (e) {}
         }
         this.applyUserInterface();
 
@@ -189,16 +309,8 @@
   },
 
   // ==================== VIEW 4: VÍ VOUCHER ====================
-  async renderMyVouchersView(root) {
-    if (!this.state.currentUser) {
-      this.renderGuestLockedView(root, 'Ví Voucher Của Tôi', 'Vui lòng đăng nhập để xem và sao chép các mã voucher quà tặng bạn đã đổi.');
-      return;
-    }
-
-    const res = await this.api('/vouchers/my-vouchers');
-    const vouchers = res.vouchers || [];
-    this.state.myVouchers = vouchers;
-
+  _paintMyVouchersView(root, vouchers = []) {
+    if (!root) return;
     root.innerHTML = `
       <div class="space-y-6">
         
@@ -257,10 +369,88 @@
       </div>
     `;
 
-    if (window.VibeUtils && window.VibeUtils.refreshIcons) {
-      window.VibeUtils.refreshIcons();
-    } else if (window.lucide && window.lucide.createIcons) {
-      window.lucide.createIcons();
+    refreshVoucherIcons(root);
+  },
+
+  async renderMyVouchersView(root) {
+    if (!root) return;
+    if (!this.state.currentUser) {
+      this.renderGuestLockedView(root, 'Ví Voucher Của Tôi', 'Vui lòng đăng nhập để xem và sao chép các mã voucher quà tặng bạn đã đổi.');
+      return;
+    }
+
+    const userId = String(this.state.currentUser.id || '');
+    if (this._myVouchersOwnerId && userId && this._myVouchersOwnerId !== userId) {
+      this.state.myVouchers = [];
+      this._myVouchersLoaded = false;
+    }
+
+    let hasMyVouchersCache = Array.isArray(this.state.myVouchers) && (
+      this.state.myVouchers.length > 0 || (Boolean(this._myVouchersLoaded) && this._myVouchersOwnerId === userId)
+    );
+
+    if (!hasMyVouchersCache) {
+      try {
+        const cachedOwner = sessionStorage.getItem('survhub_my_vouchers_owner');
+        if (!cachedOwner || !userId || cachedOwner === userId) {
+          const rawMyVouchers = sessionStorage.getItem('survhub_my_vouchers_cache');
+          if (rawMyVouchers) {
+            const parsedMyVouchers = JSON.parse(rawMyVouchers);
+            if (Array.isArray(parsedMyVouchers)) {
+              this.state.myVouchers = parsedMyVouchers;
+              this._myVouchersOwnerId = userId;
+              hasMyVouchersCache = true;
+            }
+          }
+        } else {
+          sessionStorage.removeItem('survhub_my_vouchers_cache');
+          sessionStorage.removeItem('survhub_my_vouchers_owner');
+        }
+      } catch (e) {}
+    }
+
+    const prevJson = JSON.stringify(this.state.myVouchers || []);
+    const reqToken = (this._myVouchersFetchSeq = (this._myVouchersFetchSeq || 0) + 1);
+
+    if (hasMyVouchersCache) {
+      this._paintMyVouchersView(root, this.state.myVouchers || []);
+
+      this.api('/vouchers/my-vouchers')
+        .then((res) => {
+          if (reqToken !== this._myVouchersFetchSeq) return;
+          const latestVouchers = (res && res.vouchers) || [];
+          this.state.myVouchers = latestVouchers;
+          this._myVouchersLoaded = true;
+          this._myVouchersOwnerId = userId;
+          const nextJson = JSON.stringify(latestVouchers);
+          try {
+            sessionStorage.setItem('survhub_my_vouchers_cache', nextJson);
+            if (userId) sessionStorage.setItem('survhub_my_vouchers_owner', userId);
+          } catch (e) {}
+
+          if (nextJson !== prevJson && this.state.currentTab === 'my-vouchers' && root.isConnected && !isUserTypingInRoot(root)) {
+            this._paintMyVouchersView(root, latestVouchers);
+          }
+        })
+        .catch((err) => {
+          console.warn('Lỗi đồng bộ ví voucher nền:', err && err.message ? err.message : err);
+        });
+      return;
+    }
+
+    const res = await this.api('/vouchers/my-vouchers');
+    if (reqToken !== this._myVouchersFetchSeq) return;
+    const vouchers = (res && res.vouchers) || [];
+    this.state.myVouchers = vouchers;
+    this._myVouchersLoaded = true;
+    this._myVouchersOwnerId = userId;
+    try {
+      sessionStorage.setItem('survhub_my_vouchers_cache', JSON.stringify(vouchers));
+      if (userId) sessionStorage.setItem('survhub_my_vouchers_owner', userId);
+    } catch (e) {}
+
+    if (root.isConnected && (!this.state.currentTab || this.state.currentTab === 'my-vouchers')) {
+      this._paintMyVouchersView(root, vouchers);
     }
   },
   };
