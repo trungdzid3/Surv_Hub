@@ -2781,21 +2781,73 @@
   },
 
   // ==================== VIEW: TAB HỒ SƠ & XÁC THỰC (DEMOGRAPHICS, STUDENT .EDU.VN, ENTERPRISE) ====================
-  async renderProfileView(root) {
-    if (!this.state.currentUser) {
-      this.renderGuestLockedView(root, 'Hồ Sơ Tài Khoản', 'Vui lòng đăng nhập để xem và quản lý khảo sát cũng như cập nhật thông tin hồ sơ của bạn.');
-      return;
-    }
-
-    // 1. Lấy thông tin user mới nhất từ server
-    try {
-      const meRes = await this.api('/auth/me');
-      if (meRes && meRes.user) {
-        this.state.currentUser = meRes.user;
+  /**
+   * Lam moi icon Lucide trong pham vi container Profile (khong quet toan document).
+   * @param {Element|null} targetEl - Phan tu DOM muc tieu
+   */
+  _refreshProfileIcons(targetEl) {
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(targetEl);
+    } else if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      try {
+        window.lucide.createIcons(targetEl ? { root: targetEl } : undefined);
+      } catch (_) {
+        window.lucide.createIcons();
       }
-    } catch (e) { }
+    }
+  },
 
-    const user = this.state.currentUser;
+  /**
+   * Kiem tra nguoi dung co dang focus vao truong nhap lieu ben trong root hay khong.
+   * @param {Element|null} root - Vung DOM cua tab hien tai
+   * @returns {boolean}
+   */
+  _isEditingInputInRoot(root) {
+    const activeEl = document.activeElement;
+    if (!root || !activeEl || !root.contains(activeEl)) return false;
+    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName) || Boolean(activeEl.isContentEditable);
+  },
+
+  /**
+   * Doc mang cache an toan tu sessionStorage.
+   * @param {string} key - Khoa sessionStorage
+   * @returns {Array|null}
+   */
+  _readProfileSessionArray(key) {
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  },
+
+  /**
+   * Ghi mang cache an toan vao sessionStorage.
+   * @param {string} key - Khoa sessionStorage
+   * @param {Array} arr - Du lieu mang can luu
+   */
+  _writeProfileSessionArray(key, arr) {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(Array.isArray(arr) ? arr : []));
+    } catch (_) {}
+  },
+
+  /**
+   * Ve giao dien Ho so Tai khoan tu du lieu da nap (dung cho ca 0ms SWR cache va cap nhat nen).
+   * @param {Element} root - #app-root
+   * @param {Object} user - Thong tin nguoi dung
+   * @param {Array} myCreatedSurveys - Danh sach khao sat da tao
+   * @param {Array} myParticipatedSurveys - Lich su khao sat da tham gia
+   * @param {Array} myPosts - Danh sach bai viet dien dan cua user
+   */
+  _paintProfileView(root, user, myCreatedSurveys, myParticipatedSurveys, myPosts) {
+    const createdList = Array.isArray(myCreatedSurveys) ? myCreatedSurveys : [];
+    const historyList = Array.isArray(myParticipatedSurveys) ? myParticipatedSurveys : [];
+    const postList = Array.isArray(myPosts) ? myPosts : [];
+
     const isEnterprise = user.account_tier === 'ENTERPRISE' ||
       user.role === 'CREATOR' ||
       this.state.adminMode === 'CREATOR' ||
@@ -2837,47 +2889,18 @@
     const isLocked = user.demographic_locked_until && (new Date(user.demographic_locked_until).getTime() > Date.now());
     const lockDateStr = isLocked ? new Date(user.demographic_locked_until).toLocaleDateString('vi-VN') : '';
 
-    // 2. LIÊN KẾT 100% REAL DATA: Lấy danh sách khảo sát đã tạo, đã tham gia và bài viết từ Backend
-    let myCreatedSurveys = [];
-    let myParticipatedSurveys = [];
-    let myPosts = [];
-
-    try {
-      const [creatorRes, historyRes, postsRes] = await Promise.all([
-        this.api('/surveys/creator').catch(() => ({ surveys: [] })),
-        this.api('/surveys/history').catch(() => ({ history: [] })),
-        (this.state.forumPosts && this.state.forumPosts.length > 0)
-          ? Promise.resolve({ posts: this.state.forumPosts })
-          : this.api('/forum/posts').catch(() => ({ posts: [] }))
-      ]);
-
-      if (creatorRes && Array.isArray(creatorRes.surveys)) {
-        myCreatedSurveys = creatorRes.surveys;
-      } else if (this.state.surveys) {
-        myCreatedSurveys = this.state.surveys.filter(s => s.creator_id === user.id || s.author_id === user.id);
-      }
-
-      if (historyRes && Array.isArray(historyRes.history)) {
-        myParticipatedSurveys = historyRes.history;
-      }
-
-      const allPosts = (postsRes && Array.isArray(postsRes.posts)) ? postsRes.posts : (this.state.forumPosts || []);
-      this.state.forumPosts = allPosts;
-      myPosts = allPosts.filter(p => (p.author && p.author.id === user.id) || p.user_id === user.id || p.author_id === user.id);
-    } catch (dataErr) {
-      console.warn('Lỗi đồng bộ Real Data cho Hồ sơ:', dataErr);
-    }
-
-    if (!this.state.surveySubTab) {
-      this.state.surveySubTab = (myCreatedSurveys.length === 0 && myParticipatedSurveys.length > 0) ? 'filled' : 'created';
-    }
-    const surveySubTab = this.state.surveySubTab;
+    const surveySubTab = this.state.surveySubTab || ((createdList.length === 0 && historyList.length > 0) ? 'filled' : 'created');
 
     const activeTab = this.state.profileTab;
     const trustScore = Number(user.trust_score || 85.0);
     const balanceNum = isEnterprise ? Number(user.credit_balance || 0) : Number(user.point_balance || 0);
     const isAndroidApp = (typeof this._isAndroidCapacitor === 'function' && this._isAndroidCapacitor()) ||
       (typeof window.VibeApp?._isAndroidCapacitor === 'function' && window.VibeApp._isAndroidCapacitor());
+
+    // Gan lai ten bien cuc bo de giu nguyen template HTML ben duoi
+    myCreatedSurveys = createdList;
+    myParticipatedSurveys = historyList;
+    myPosts = postList;
 
     root.innerHTML = `
       <div class="max-w-6xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
@@ -3839,9 +3862,127 @@
       </div>
     `;
 
-    // Khởi tạo icons Lucide
-    if (window.lucide) {
-      window.lucide.createIcons();
+    this._refreshProfileIcons(root);
+  },
+
+  /**
+   * Render man hinh Ho so Tai khoan theo mo hinh SWR 0ms (xoa waterfall 2 tang).
+   * @param {Element|null} root - #app-root
+   */
+  async renderProfileView(root) {
+    if (!root) root = document.getElementById('app-root');
+    if (!root) return;
+    if (!this.state.currentUser) {
+      this.renderGuestLockedView(root, 'Hồ Sơ Tài Khoản', 'Vui lòng đăng nhập để xem và quản lý khảo sát cũng như cập nhật thông tin hồ sơ của bạn.');
+      return;
+    }
+
+    const initialUser = this.state.currentUser;
+    const userId = initialUser.id || 'me';
+
+    // Khoi phuc cache theo userId de tranh lech du lieu khi chuyen tai khoan
+    if (this.state._profileCacheUserId !== userId) {
+      this.state._profileCacheUserId = userId;
+      this.state._profileCreatedSurveys = this._readProfileSessionArray(`survhub_profile_created_${userId}`) || [];
+      this.state._profileHistorySurveys = this._readProfileSessionArray(`survhub_profile_history_${userId}`) || [];
+    } else {
+      if (!Array.isArray(this.state._profileCreatedSurveys)) {
+        this.state._profileCreatedSurveys = this._readProfileSessionArray(`survhub_profile_created_${userId}`) || [];
+      }
+      if (!Array.isArray(this.state._profileHistorySurveys)) {
+        this.state._profileHistorySurveys = this._readProfileSessionArray(`survhub_profile_history_${userId}`) || [];
+      }
+    }
+
+    if (!Array.isArray(this.state.forumPosts) || this.state.forumPosts.length === 0) {
+      const cachedForumPosts = this._readProfileSessionArray('survhub_forum_posts_cache');
+      if (cachedForumPosts) {
+        this.state.forumPosts = cachedForumPosts;
+      }
+    }
+
+    const cachedCreated = this.state._profileCreatedSurveys || [];
+    const cachedHistory = this.state._profileHistorySurveys || [];
+    const cachedAllPosts = Array.isArray(this.state.forumPosts) ? this.state.forumPosts : [];
+    const cachedMyPosts = cachedAllPosts.filter(
+      p => (p.author && p.author.id === initialUser.id) || p.user_id === initialUser.id || p.author_id === initialUser.id
+    );
+
+    // 1. Ve ngay lap tuc (0ms) tu du lieu cache san co
+    this._paintProfileView(root, initialUser, cachedCreated, cachedHistory, cachedMyPosts);
+
+    const prevSignature = JSON.stringify({
+      user: initialUser,
+      created: cachedCreated,
+      history: cachedHistory,
+      posts: cachedMyPosts
+    });
+
+    const reqSeq = (this._profileFetchSeq = (this._profileFetchSeq || 0) + 1);
+    const needForumFetch = !Array.isArray(this.state.forumPosts) || this.state.forumPosts.length === 0;
+
+    // 2. Dong bo du lieu moi trong nen bang 1 tang Promise.allSettled duy nhat
+    try {
+      const [meSettled, creatorSettled, historySettled, postsSettled] = await Promise.allSettled([
+        this.api('/auth/me'),
+        this.api('/surveys/creator'),
+        this.api('/surveys/history'),
+        needForumFetch ? this.api('/forum/posts') : Promise.resolve({ posts: this.state.forumPosts })
+      ]);
+
+      if (reqSeq !== this._profileFetchSeq) return;
+
+      let nextUser = this.state.currentUser || initialUser;
+      if (meSettled.status === 'fulfilled' && meSettled.value && meSettled.value.user) {
+        nextUser = meSettled.value.user;
+        this.state.currentUser = nextUser;
+      }
+
+      let nextCreated = cachedCreated;
+      if (creatorSettled.status === 'fulfilled' && creatorSettled.value && Array.isArray(creatorSettled.value.surveys)) {
+        nextCreated = creatorSettled.value.surveys;
+      } else if (creatorSettled.status === 'fulfilled' && Array.isArray(this.state.surveys) && nextCreated.length === 0) {
+        nextCreated = this.state.surveys.filter(s => s.creator_id === nextUser.id || s.author_id === nextUser.id);
+      }
+
+      let nextHistory = cachedHistory;
+      if (historySettled.status === 'fulfilled' && historySettled.value && Array.isArray(historySettled.value.history)) {
+        nextHistory = historySettled.value.history;
+      }
+
+      if (needForumFetch && postsSettled.status === 'fulfilled' && postsSettled.value && Array.isArray(postsSettled.value.posts)) {
+        this.state.forumPosts = postsSettled.value.posts;
+        this._writeProfileSessionArray('survhub_forum_posts_cache', this.state.forumPosts);
+      }
+
+      const allPosts = Array.isArray(this.state.forumPosts) ? this.state.forumPosts : [];
+      const nextMyPosts = allPosts.filter(
+        p => (p.author && p.author.id === nextUser.id) || p.user_id === nextUser.id || p.author_id === nextUser.id
+      );
+
+      const resolvedUserId = nextUser.id || userId;
+      this.state._profileCacheUserId = resolvedUserId;
+      this.state._profileCreatedSurveys = nextCreated;
+      this.state._profileHistorySurveys = nextHistory;
+      this._writeProfileSessionArray(`survhub_profile_created_${resolvedUserId}`, nextCreated);
+      this._writeProfileSessionArray(`survhub_profile_history_${resolvedUserId}`, nextHistory);
+
+      const nextSignature = JSON.stringify({
+        user: nextUser,
+        created: nextCreated,
+        history: nextHistory,
+        posts: nextMyPosts
+      });
+
+      if (
+        nextSignature !== prevSignature &&
+        this.state.currentTab === 'profile' &&
+        !this._isEditingInputInRoot(root)
+      ) {
+        this._paintProfileView(root, nextUser, nextCreated, nextHistory, nextMyPosts);
+      }
+    } catch (dataErr) {
+      console.warn('Lỗi đồng bộ Real Data cho Hồ sơ:', dataErr);
     }
   },
 
@@ -4310,6 +4451,11 @@
       if (res && res.success) {
         this.haptic('success');
         this.showToast(res.message || 'Đã xóa bài khảo sát thành công!', 'success');
+        if (Array.isArray(this.state._profileCreatedSurveys)) {
+          this.state._profileCreatedSurveys = this.state._profileCreatedSurveys.filter(s => String(s.id) !== String(surveyId));
+          const uid = this.state.currentUser?.id || 'me';
+          this._writeProfileSessionArray(`survhub_profile_created_${uid}`, this.state._profileCreatedSurveys);
+        }
         // Nạp lại dữ liệu và render lại
         const root = document.getElementById('app-root');
         await this.renderProfileView(root);

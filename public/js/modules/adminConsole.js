@@ -28,39 +28,61 @@
   window.VibeApp = window.VibeApp || {};
 
   const AdminConsoleModule = {
-  // ==================== VIEW 8: ADMIN DASHBOARD & GOVERNANCE ====================
-  async renderAdminOverviewView(root) {
-    if (!this.state.currentUser || this.state.currentUser.role !== 'ADMIN') {
-      this.showToast('Bạn không có quyền truy cập trang quản trị hệ thống', 'error');
-      this.navigate('surveys');
+  _refreshAdminIcons(targetEl) {
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(targetEl);
       return;
     }
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      try {
+        window.lucide.createIcons(targetEl ? { root: targetEl } : undefined);
+      } catch (_) {
+        window.lucide.createIcons();
+      }
+    }
+  },
 
+  _isEditingAdminInput(root) {
+    const active = document.activeElement;
+    if (!active || !root || !root.contains(active)) return false;
+    const tag = active.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    return Boolean(active.isContentEditable);
+  },
+
+  _safeJsonSignature(value) {
     try {
-      const res = await this.api('/admin/overview');
-      const fin = (res && res.overview && res.overview.financials) || {};
-      const analytics = (res && res.overview && res.overview.analytics) || {
-        activeUsersNow: 1,
-        fillingFormsNow: 0,
-        firstTimeRetentionRate: 0,
-        repeatRetentionRate: 0,
-        completionRatePct: 0,
-        avgCompletionTimeSec: 0,
-        avgTrustScore: 0,
-        totalActiveUsersSample: 0,
-        totalSessionsSample: 0
-      };
-      const dist = (res && res.overview && res.overview.surveyDistribution) || { student: 0, personal: 0, enterprise: 0, total: 0 };
-      const ledger = (res && res.overview && res.overview.recentLedgerTransactions) || [];
+      return JSON.stringify(value);
+    } catch (_) {
+      return '';
+    }
+  },
 
-      const totalSurveys = dist.total || (dist.student + dist.personal + dist.enterprise) || 1;
-      const pctStudent = Math.round((dist.student / totalSurveys) * 100);
-      const pctPersonal = Math.round((dist.personal / totalSurveys) * 100);
-      const pctEnterprise = Math.max(0, 100 - pctStudent - pctPersonal);
+  // ==================== VIEW 8: ADMIN DASHBOARD & GOVERNANCE ====================
+  _paintAdminOverviewView(root, res, isBackgroundRepaint = false) {
+    const fin = (res && res.overview && res.overview.financials) || {};
+    const analytics = (res && res.overview && res.overview.analytics) || {
+      activeUsersNow: 1,
+      fillingFormsNow: 0,
+      firstTimeRetentionRate: 0,
+      repeatRetentionRate: 0,
+      completionRatePct: 0,
+      avgCompletionTimeSec: 0,
+      avgTrustScore: 0,
+      totalActiveUsersSample: 0,
+      totalSessionsSample: 0
+    };
+    const dist = (res && res.overview && res.overview.surveyDistribution) || { student: 0, personal: 0, enterprise: 0, total: 0 };
+    const ledger = (res && res.overview && res.overview.recentLedgerTransactions) || [];
 
-      root.innerHTML = `
-        <div class="space-y-5">
-          ${this.renderAdminSubNav('admin-overview')}
+    const totalSurveys = dist.total || (dist.student + dist.personal + dist.enterprise) || 1;
+    const pctStudent = Math.round((dist.student / totalSurveys) * 100);
+    const pctPersonal = Math.round((dist.personal / totalSurveys) * 100);
+    const pctEnterprise = Math.max(0, 100 - pctStudent - pctPersonal);
+
+    root.innerHTML = `
+      <div class="space-y-5">
+        ${this.renderAdminSubNav('admin-overview')}
 
           <!-- 1. Header Dashboard Tinh Gọn -->
           <div class="pb-3 border-b border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -504,70 +526,114 @@
               </div>
             </div>
           </div>
-        </div>
-      `;
+      </div>
+    `;
 
-      this.renderAdminConsoleLogs(document.getElementById('adminConsoleOutput'));
-      this.loadAndRenderAdminTrendsChart('admin-trends-chart-container', (this._adminTrendsState && this._adminTrendsState.days) || 14);
-      if (window.lucide) window.lucide.createIcons();
-    } catch (err) {
-      console.error('Lỗi renderAdminOverviewView:', err);
-      this.showToast('Lỗi khi tải dữ liệu tổng quan kinh tế', 'error');
+    this.renderAdminConsoleLogs(document.getElementById('adminConsoleOutput'));
+    const trendDays = (this._adminTrendsState && this._adminTrendsState.days) || 14;
+    const trendsContainer = document.getElementById('admin-trends-chart-container');
+    if (
+      isBackgroundRepaint &&
+      trendsContainer &&
+      this._adminTrendsState &&
+      Array.isArray(this._adminTrendsState.data) &&
+      !this._adminTrendsState.isLoading &&
+      typeof this._renderTrendsSvg === 'function'
+    ) {
+      this._renderTrendsSvg(trendsContainer, this._adminTrendsState.data, this._adminTrendsState.summary || {}, trendDays);
+    } else {
+      this.loadAndRenderAdminTrendsChart('admin-trends-chart-container', trendDays);
     }
+    this._refreshAdminIcons(root);
   },
 
-  // ==================== VIEW 9: ADMIN PAYOUTS & AUDIT ====================
-  async renderAdminPayoutsView(root) {
+  async renderAdminOverviewView(root) {
+    if (!root) root = document.getElementById('app-root');
+    if (!root) return;
     if (!this.state.currentUser || this.state.currentUser.role !== 'ADMIN') {
-      this.showToast('Bạn không có quyền truy cập trang duyệt chi thưởng', 'error');
+      this.showToast('Bạn không có quyền truy cập trang quản trị hệ thống', 'error');
       this.navigate('surveys');
       return;
     }
 
-    if (!this._adminPayoutsState) {
-      this._adminPayoutsState = {
-        status: '',
-        type: '',
-        page: 1,
-        limit: 10
-      };
+    const fetchSeq = (this._adminOverviewFetchSeq = (this._adminOverviewFetchSeq || 0) + 1);
+    const cachedRes = this.state._adminOverviewCache || null;
+    const prevSignature = cachedRes ? this._safeJsonSignature(cachedRes) : '';
+    const hasCache = Boolean(cachedRes);
+
+    if (hasCache) {
+      this._paintAdminOverviewView(root, cachedRes, false);
     }
 
-    const { status, type, page, limit } = this._adminPayoutsState;
-    const queryParams = new URLSearchParams({
-      page: String(page),
-      limit: String(limit)
-    });
-    if (status) queryParams.append('status', status);
-    if (type) queryParams.append('type', type);
-
     try {
-      const res = await this.api(`/admin/payouts?${queryParams.toString()}`);
-      const payouts = (res && res.payouts) || [];
-      const pagination = (res && res.pagination) || { page: 1, limit: 10, totalItems: payouts.length, totalPages: 1 };
+      const res = await this.api('/admin/overview');
+      if (fetchSeq !== this._adminOverviewFetchSeq) return;
+      if (!res) return;
 
-      const totalPages = pagination.totalPages || 1;
-      this._adminPayoutsState.totalPages = totalPages;
-      if (this._adminPayoutsState.page > totalPages && totalPages > 0) {
-        this._adminPayoutsState.page = totalPages;
+      const nextSignature = this._safeJsonSignature(res);
+      this.state._adminOverviewCache = res;
+
+      if (!hasCache) {
+        if (this.state.currentTab === 'admin-overview') {
+          this._paintAdminOverviewView(root, res, false);
+        }
+        return;
       }
 
-      // Xác định nhãn hiển thị cho 3 Custom Dropdown
-      let typeLabel = 'Tất cả phương thức';
-      if (type === 'BANK_TRANSFER') typeLabel = 'Ngân hàng';
-      else if (type === 'MOMO') typeLabel = 'Ví MoMo';
-      else if (type === 'PHONE_CARD') typeLabel = 'Thẻ Cào';
+      if (nextSignature !== prevSignature && this.state.currentTab === 'admin-overview') {
+        const consoleInput = document.getElementById('adminConsoleInput');
+        const hasDraftCommand = Boolean(consoleInput && consoleInput.value.length > 0);
+        if (!this._isEditingAdminInput(root) && !hasDraftCommand) {
+          this._paintAdminOverviewView(root, res, true);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi renderAdminOverviewView:', err);
+      if (!hasCache) {
+        this.showToast('Lỗi khi tải dữ liệu tổng quan kinh tế', 'error');
+      }
+    }
+  },
 
-      let statusLabel = 'Tất cả trạng thái';
-      if (status === 'PENDING') statusLabel = 'Chờ duyệt';
-      else if (status === 'COMPLETED') statusLabel = 'Đã duyệt';
-      else if (status === 'REJECTED') statusLabel = 'Đã từ chối';
+  // ==================== VIEW 9: ADMIN PAYOUTS & AUDIT ====================
+  _buildAdminPayoutsQuery(payoutState) {
+    const state = payoutState || { status: '', type: '', page: 1, limit: 10 };
+    const queryParams = new URLSearchParams({
+      page: String(state.page || 1),
+      limit: String(state.limit || 10)
+    });
+    if (state.status) queryParams.append('status', state.status);
+    if (state.type) queryParams.append('type', state.type);
+    return queryParams.toString();
+  },
 
-      let limitLabel = `${limit} dòng`;
+  _paintAdminPayoutsView(root, res) {
+    const { status, type, page, limit } = this._adminPayoutsState;
+    const payouts = (res && res.payouts) || [];
+    const pagination = (res && res.pagination) || { page: 1, limit: 10, totalItems: payouts.length, totalPages: 1 };
 
-      root.innerHTML = `
-        <div class="space-y-6">
-          ${this.renderAdminSubNav('admin-payouts')}
+    const totalPages = pagination.totalPages || 1;
+    this._adminPayoutsState.totalPages = totalPages;
+    if (this._adminPayoutsState.page > totalPages && totalPages > 0) {
+      this._adminPayoutsState.page = totalPages;
+    }
+
+    // Xác định nhãn hiển thị cho 3 Custom Dropdown
+    let typeLabel = 'Tất cả phương thức';
+    if (type === 'BANK_TRANSFER') typeLabel = 'Ngân hàng';
+    else if (type === 'MOMO') typeLabel = 'Ví MoMo';
+    else if (type === 'PHONE_CARD') typeLabel = 'Thẻ Cào';
+
+    let statusLabel = 'Tất cả trạng thái';
+    if (status === 'PENDING') statusLabel = 'Chờ duyệt';
+    else if (status === 'COMPLETED') statusLabel = 'Đã duyệt';
+    else if (status === 'REJECTED') statusLabel = 'Đã từ chối';
+
+    let limitLabel = `${limit} dòng`;
+
+    root.innerHTML = `
+      <div class="space-y-6">
+        ${this.renderAdminSubNav('admin-payouts')}
 
           <div class="pb-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -877,13 +943,81 @@
               </div>
             </div>
           </div>
-        </div>
-      `;
+      </div>
+    `;
 
-      if (window.lucide) window.lucide.createIcons();
+    this._refreshAdminIcons(root);
+  },
+
+  async renderAdminPayoutsView(root) {
+    if (!root) root = document.getElementById('app-root');
+    if (!root) return;
+    if (!this.state.currentUser || this.state.currentUser.role !== 'ADMIN') {
+      this.showToast('Bạn không có quyền truy cập trang duyệt chi thưởng', 'error');
+      this.navigate('surveys');
+      return;
+    }
+
+    if (!this._adminPayoutsState) {
+      this._adminPayoutsState = {
+        status: '',
+        type: '',
+        page: 1,
+        limit: 10
+      };
+    }
+
+    const queryKey = this._buildAdminPayoutsQuery(this._adminPayoutsState);
+    const fetchSeq = (this._adminPayoutsFetchSeq = (this._adminPayoutsFetchSeq || 0) + 1);
+    const cachedQueries =
+      (this.state._adminPayoutsCache && this.state._adminPayoutsCache.queries) || {};
+    const cachedRes = cachedQueries[queryKey] || null;
+    const prevSignature = cachedRes ? this._safeJsonSignature(cachedRes) : '';
+    const hasCache = Boolean(cachedRes);
+
+    if (hasCache) {
+      this._paintAdminPayoutsView(root, cachedRes);
+    }
+
+    try {
+      const res = await this.api(`/admin/payouts?${queryKey}`);
+      if (fetchSeq !== this._adminPayoutsFetchSeq) return;
+      if (!res) return;
+
+      const nextSignature = this._safeJsonSignature(res);
+      const currentQueries =
+        (this.state._adminPayoutsCache && this.state._adminPayoutsCache.queries) || {};
+      const updatedQueries = { ...currentQueries };
+      delete updatedQueries[queryKey];
+      updatedQueries[queryKey] = res;
+      const keys = Object.keys(updatedQueries);
+      while (keys.length > 20) {
+        const oldestKey = keys.shift();
+        delete updatedQueries[oldestKey];
+      }
+      this.state._adminPayoutsCache = {
+        queryKey,
+        res,
+        queries: updatedQueries
+      };
+
+      if (!hasCache) {
+        if (this.state.currentTab === 'admin-payouts') {
+          this._paintAdminPayoutsView(root, res);
+        }
+        return;
+      }
+
+      if (nextSignature !== prevSignature && this.state.currentTab === 'admin-payouts') {
+        if (!this._isEditingAdminInput(root)) {
+          this._paintAdminPayoutsView(root, res);
+        }
+      }
     } catch (err) {
       console.error('Lỗi renderAdminPayoutsView:', err);
-      this.showToast('Lỗi khi tải danh sách yêu cầu rút tiền', 'error');
+      if (!hasCache) {
+        this.showToast('Lỗi khi tải danh sách yêu cầu rút tiền', 'error');
+      }
     }
   },
 
@@ -926,6 +1060,7 @@
           admin_note: isApproved ? 'Đã duyệt qua ngân hàng / cổng thanh toán' : 'Từ chối giải ngân và hoàn trả điểm thưởng'
         })
       });
+      this.state._adminPayoutsCache = null;
       this.haptic('success');
       this.showToast(isApproved ? 'Đã phê duyệt lệnh rút thưởng!' : 'Đã từ chối lệnh rút thưởng và hoàn điểm', 'success');
       const root = document.getElementById('app-root');
@@ -937,43 +1072,30 @@
   },
 
   // ==================== VIEW 10: ADMIN FRAUD & GOVERNANCE ====================
-  async renderAdminFraudView(root) {
-    if (!this.state.currentUser || this.state.currentUser.role !== 'ADMIN') {
-      this.showToast('Bạn không có quyền truy cập trang quản trị gian lận', 'error');
-      this.navigate('surveys');
-      return;
+  _paintAdminFraudView(root, resStats, resLogs, resBanned) {
+    const stats = (resStats && resStats.stats) || { traps: {} };
+    const traps = stats.traps || {};
+    const logs = (resLogs && resLogs.logs) || [];
+    const bannedIps = (resBanned && resBanned.bannedIps) || [];
+
+    // Kiểm tra xem có kết quả tìm kiếm user đang được lưu tạm không
+    const searchResults = this._adminSearchedUsers || null;
+
+    // Phân trang cho bảng Nhật ký cảnh báo khả nghi & gian lận (Mặc định 5 dòng/trang theo chuẩn tối giản)
+    const fraudLimit = Number(this.state.fraudLogLimit) || 5;
+    const totalFraudLogs = logs.length;
+    const totalFraudPages = Math.max(1, Math.ceil(totalFraudLogs / fraudLimit));
+    if (!this.state.fraudLogPage || this.state.fraudLogPage < 1) {
+      this.state.fraudLogPage = 1;
+    } else if (this.state.fraudLogPage > totalFraudPages) {
+      this.state.fraudLogPage = totalFraudPages;
     }
+    this._lastFraudLogsCount = totalFraudLogs;
 
-    try {
-      const [resStats, resLogs, resBanned] = await Promise.all([
-        this.api('/admin/fraud-stats').catch(() => ({ stats: { traps: {} } })),
-        this.api('/admin/fraud-logs').catch(() => ({ logs: [] })),
-        this.api('/admin/banned-ips').catch(() => ({ bannedIps: [] }))
-      ]);
+    const startFraudIdx = (this.state.fraudLogPage - 1) * fraudLimit;
+    const pagedLogs = logs.slice(startFraudIdx, startFraudIdx + fraudLimit);
 
-      const stats = (resStats && resStats.stats) || { traps: {} };
-      const traps = stats.traps || {};
-      const logs = (resLogs && resLogs.logs) || [];
-      const bannedIps = (resBanned && resBanned.bannedIps) || [];
-
-      // Kiểm tra xem có kết quả tìm kiếm user đang được lưu tạm không
-      const searchResults = this._adminSearchedUsers || null;
-
-      // Phân trang cho bảng Nhật ký cảnh báo khả nghi & gian lận (Mặc định 5 dòng/trang theo chuẩn tối giản)
-      const fraudLimit = Number(this.state.fraudLogLimit) || 5;
-      const totalFraudLogs = logs.length;
-      const totalFraudPages = Math.max(1, Math.ceil(totalFraudLogs / fraudLimit));
-      if (!this.state.fraudLogPage || this.state.fraudLogPage < 1) {
-        this.state.fraudLogPage = 1;
-      } else if (this.state.fraudLogPage > totalFraudPages) {
-        this.state.fraudLogPage = totalFraudPages;
-      }
-      this._lastFraudLogsCount = totalFraudLogs;
-
-      const startFraudIdx = (this.state.fraudLogPage - 1) * fraudLimit;
-      const pagedLogs = logs.slice(startFraudIdx, startFraudIdx + fraudLimit);
-
-      root.innerHTML = `
+    root.innerHTML = `
         <div class="space-y-6">
           ${this.renderAdminSubNav('admin-fraud')}
 
@@ -1441,13 +1563,86 @@
               </div>
             </div>
           </div>
-        </div>
-      `;
+      </div>
+    `;
 
-      if (window.lucide) window.lucide.createIcons();
+    this._refreshAdminIcons(root);
+  },
+
+  async renderAdminFraudView(root) {
+    if (!root) root = document.getElementById('app-root');
+    if (!root) return;
+    if (!this.state.currentUser || this.state.currentUser.role !== 'ADMIN') {
+      this.showToast('Bạn không có quyền truy cập trang quản trị gian lận', 'error');
+      this.navigate('surveys');
+      return;
+    }
+
+    const fetchSeq = (this._adminFraudFetchSeq = (this._adminFraudFetchSeq || 0) + 1);
+    const cached = this.state._adminFraudCache || null;
+    const hasCache = Boolean(cached && (cached.resStats || cached.resLogs || cached.resBanned));
+    const prevSignature = hasCache
+      ? this._safeJsonSignature({
+          resStats: cached.resStats || { stats: { traps: {} } },
+          resLogs: cached.resLogs || { logs: [] },
+          resBanned: cached.resBanned || { bannedIps: [] }
+        })
+      : '';
+
+    if (hasCache) {
+      this._paintAdminFraudView(
+        root,
+        cached.resStats || { stats: { traps: {} } },
+        cached.resLogs || { logs: [] },
+        cached.resBanned || { bannedIps: [] }
+      );
+    }
+
+    try {
+      const [fetchedStats, fetchedLogs, fetchedBanned] = await Promise.all([
+        this.api('/admin/fraud-stats').catch(() => null),
+        this.api('/admin/fraud-logs').catch(() => null),
+        this.api('/admin/banned-ips').catch(() => null)
+      ]);
+      if (fetchSeq !== this._adminFraudFetchSeq) return;
+
+      if (!fetchedStats && !fetchedLogs && !fetchedBanned) {
+        if (!hasCache && this.state.currentTab === 'admin-fraud') {
+          this._paintAdminFraudView(root, { stats: { traps: {} } }, { logs: [] }, { bannedIps: [] });
+        }
+        return;
+      }
+
+      const nextStats = fetchedStats || (cached && cached.resStats) || { stats: { traps: {} } };
+      const nextLogs = fetchedLogs || (cached && cached.resLogs) || { logs: [] };
+      const nextBanned = fetchedBanned || (cached && cached.resBanned) || { bannedIps: [] };
+      const nextPayload = { resStats: nextStats, resLogs: nextLogs, resBanned: nextBanned };
+      const nextSignature = this._safeJsonSignature(nextPayload);
+      this.state._adminFraudCache = nextPayload;
+
+      if (!hasCache) {
+        if (this.state.currentTab === 'admin-fraud') {
+          this._paintAdminFraudView(root, nextStats, nextLogs, nextBanned);
+        }
+        return;
+      }
+
+      if (nextSignature !== prevSignature && this.state.currentTab === 'admin-fraud') {
+        const searchInput = document.getElementById('adminUserSearchInput');
+        const hasSearchDraft = Boolean(
+          searchInput &&
+          searchInput.value.length > 0 &&
+          searchInput.value !== (this._adminFraudSearchQuery || '')
+        );
+        if (!this._isEditingAdminInput(root) && !hasSearchDraft) {
+          this._paintAdminFraudView(root, nextStats, nextLogs, nextBanned);
+        }
+      }
     } catch (err) {
       console.error('Lỗi renderAdminFraudView:', err);
-      this.showToast('Lỗi khi tải trang quản trị gian lận', 'error');
+      if (!hasCache) {
+        this.showToast('Lỗi khi tải trang quản trị gian lận', 'error');
+      }
     }
   },
 
@@ -1529,6 +1724,21 @@
         method: 'POST',
         body: JSON.stringify({ ip_address: ip })
       });
+      if (
+        this.state._adminFraudCache &&
+        this.state._adminFraudCache.resBanned &&
+        Array.isArray(this.state._adminFraudCache.resBanned.bannedIps)
+      ) {
+        this.state._adminFraudCache = {
+          ...this.state._adminFraudCache,
+          resBanned: {
+            ...this.state._adminFraudCache.resBanned,
+            bannedIps: this.state._adminFraudCache.resBanned.bannedIps.filter(
+              (item) => (typeof item === 'string' ? item !== ip : item && item.ip_address !== ip && item.ip !== ip)
+            )
+          }
+        };
+      }
       this.showToast(res.message || 'Đã gỡ cấm IP thành công', 'success');
       this.navigate('admin-fraud');
     } catch (err) {
@@ -1955,7 +2165,7 @@
     `;
 
     this.openDialog(container);
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshAdminIcons(container);
     this.renderAdminConsoleLogs(document.getElementById('modalAdminConsoleOutput'));
     const input = document.getElementById('modalAdminConsoleInput');
     if (input) setTimeout(() => input.focus(), 100);
