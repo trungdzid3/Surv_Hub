@@ -1006,14 +1006,17 @@ class LedgerService {
    * Tao don nap tien VietQR dong chuan Napas247
    * @param {string} userId ID nguoi dung
    * @param {number} amountVnd So tien nap VND
+   * @param {Object|null} [preloadedUser=null] Thong tin user da xac thuc san tu middleware
    */
-  createDepositOrder(userId, amountVnd) {
+  createDepositOrder(userId, amountVnd, preloadedUser = null) {
     const amount = Math.floor(Number(amountVnd));
     if (!Number.isFinite(amount) || amount < 20000 || amount > 1000000000) {
       throw new Error('So tien nap toi thieu la 20,000 VND va toi da 1,000,000,000 VND');
     }
 
-    const user = db.prepare('SELECT id, name, email, credit_balance FROM users WHERE id = ?').get(userId);
+    const user = (preloadedUser && String(preloadedUser.id) === String(userId))
+      ? preloadedUser
+      : db.prepare('SELECT id, name, email, credit_balance FROM users WHERE id = ?').get(userId);
     if (!user) throw new Error('Nguoi dung khong ton tai');
 
     const bonusInfo = this.calculateDepositBonus(amount);
@@ -1059,6 +1062,8 @@ class LedgerService {
       accountName: gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG'
     });
 
+    const qrDataUrl = vietQrService.generateQrDataUrl(qrPayload);
+
     const qrUrl = vietQrService.generateQrUrl({
       bankBin: gatewayConfig.BANK_BIN || '963388',
       accountNumber: gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
@@ -1066,6 +1071,14 @@ class LedgerService {
       orderCode,
       accountName: gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG',
       template: gatewayConfig.TEMPLATE || 'compact'
+    });
+
+    const qrFastUrl = vietQrService.generateFastQrUrl({
+      bankBin: gatewayConfig.BANK_BIN || '963388',
+      accountNumber: gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      amount,
+      orderCode,
+      accountName: gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG'
     });
 
     const bankAccountInfo = {
@@ -1082,6 +1095,10 @@ class LedgerService {
       orderCode,
       amount_vnd: amount,
       amountVnd: amount,
+      qr_data_url: qrDataUrl,
+      qrDataUrl,
+      qr_fast_url: qrFastUrl,
+      qrFastUrl,
       qr_url: qrUrl,
       qrUrl,
       qr_payload: qrPayload,
@@ -1117,6 +1134,8 @@ class LedgerService {
       tier: bonusInfo.tier,
       fastTrackTickets: bonusInfo.bonusTickets || 0,
       enterprisePerks,
+      qrDataUrl,
+      qrFastUrl,
       qrUrl,
       qrPayload,
       bankAccountInfo,
@@ -1189,6 +1208,14 @@ class LedgerService {
       orderCode: order.order_code,
       accountName: (bankInfo && (bankInfo.account_name || bankInfo.accountName)) || gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG'
     });
+    const qrDataUrl = (bankInfo && (bankInfo.qr_data_url || bankInfo.qrDataUrl)) ? (bankInfo.qr_data_url || bankInfo.qrDataUrl) : vietQrService.generateQrDataUrl(qrPayload);
+    const qrFastUrl = (bankInfo && (bankInfo.qr_fast_url || bankInfo.qrFastUrl)) ? (bankInfo.qr_fast_url || bankInfo.qrFastUrl) : vietQrService.generateFastQrUrl({
+      bankBin: (bankInfo && (bankInfo.bank_bin || bankInfo.bankBin)) || gatewayConfig.BANK_BIN || '963388',
+      accountNumber: (bankInfo && (bankInfo.account_number || bankInfo.accountNumber)) || gatewayConfig.ACCOUNT_NUMBER || '9021773148754',
+      amount: order.amount_vnd,
+      orderCode: order.order_code,
+      accountName: (bankInfo && (bankInfo.account_name || bankInfo.accountName)) || gatewayConfig.ACCOUNT_NAME || 'NGUYEN THANH TRUNG'
+    });
 
     return {
       success: true,
@@ -1201,6 +1228,8 @@ class LedgerService {
       paymentMethod: order.payment_method,
       bankInfo,
       bankAccountInfo: bankInfo,
+      qrDataUrl,
+      qrFastUrl,
       qrUrl,
       qrPayload,
       paidAt: order.paid_at,

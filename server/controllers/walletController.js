@@ -288,7 +288,7 @@ class WalletController {
         return res.status(400).json({ success: false, message: 'Số tiền nạp tối thiểu là 20,000 VNĐ và tối đa 1,000,000,000 VNĐ' });
       }
 
-      const order = ledgerService.createDepositOrder(user.id, amount);
+      const order = ledgerService.createDepositOrder(user.id, amount, user);
       return res.status(201).json({
         success: true,
         message: 'Tạo đơn nạp tiền VietQR thành công',

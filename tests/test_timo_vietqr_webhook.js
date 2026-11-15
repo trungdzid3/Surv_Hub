@@ -80,6 +80,18 @@ async function runTimoVietQrWebhookTests() {
     assert(qrUrl.includes('accountName=NGUYEN%20THANH%20TRUNG'), 'URL fallback chua ten chu tai khoan');
     console.log('  [PASS] 1.2 Sinh link anh QR URL fallback chinh xac');
 
+    // 1.2b Sinh SVG QR cuc bo (<50ms) va fast fallback URL
+    const qrStartMs = Date.now();
+    const qrSvg = vietQrService.generateQrSvg(payload);
+    const qrElapsedMs = Date.now() - qrStartMs;
+    const qrDataUrl = vietQrService.generateQrDataUrl(payload);
+    const qrFastUrl = vietQrService.generateFastQrUrl(qrParams);
+    assert(qrSvg.startsWith('<svg') && qrSvg.includes('viewBox='), 'generateQrSvg phai tra ve SVG hop le co viewBox');
+    assert(qrDataUrl.startsWith('data:image/svg+xml;utf8,'), 'generateQrDataUrl phai tra ve Data URL SVG');
+    assert(qrFastUrl.includes('img.vietqr.io/image/963388-9021773148754-qr_only.svg'), 'generateFastQrUrl phai tro den img.vietqr.io qr_only.svg');
+    assert(qrElapsedMs < 200, `Sinh QR SVG cuc bo qua cham (${qrElapsedMs}ms)`);
+    console.log(`  [PASS] 1.2b Sinh QR SVG cuc bo (${qrElapsedMs}ms) va qrFastUrl chinh xac`);
+
     // 1.3 Kiem tra parsePayload
     const parsed = vietQrService.parsePayload(payload);
     assert.strictEqual(parsed.isValid, true, 'Ket qua parse phai hop le');
@@ -107,6 +119,8 @@ async function runTimoVietQrWebhookTests() {
     assert(/^SURV\d{6}$/.test(orderResult.orderCode), `Ma don [${orderResult.orderCode}] phai co tien to SURV + 6 chu so`);
     assert.strictEqual(orderResult.amountVnd, depositAmount, 'So tien VND phai la 50000');
     assert(orderResult.qrUrl && orderResult.qrUrl.includes('963388'), 'qrUrl phai chua bankBin');
+    assert(orderResult.qrDataUrl && orderResult.qrDataUrl.startsWith('data:image/svg+xml;utf8,'), 'orderResult.qrDataUrl phai la Data URL SVG cuc bo');
+    assert(orderResult.qrFastUrl && orderResult.qrFastUrl.includes('img.vietqr.io/image/963388-9021773148754-qr_only.svg'), 'orderResult.qrFastUrl phai tro den img.vietqr.io');
     assert(orderResult.qrPayload && orderResult.qrPayload.includes(orderResult.orderCode), 'qrPayload phai chua orderCode');
 
     // Kiem tra bankAccountInfo

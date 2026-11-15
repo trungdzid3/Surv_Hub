@@ -1082,6 +1082,8 @@ function initSchema() {
     CREATE INDEX IF NOT EXISTS idx_transactions_user ON point_transactions(user_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_surveys_creator ON surveys(creator_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_surveys_status_created ON surveys(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_deposit_orders_code ON deposit_orders(order_code);
+    CREATE INDEX IF NOT EXISTS idx_deposit_orders_user ON deposit_orders(user_id, created_at DESC);
   `);
 }
 

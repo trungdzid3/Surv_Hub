@@ -1190,17 +1190,101 @@
         btn.className = 'deposit-preset-btn py-2 px-2 border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 hover:border-orange-500 hover:text-orange-600 font-mono font-bold transition-all active:scale-[0.98]';
       }
     });
+
+    if (!this._skipNextDepositPrefetch) {
+      this._scheduleDepositOrderPrefetch(amount, false);
+    }
   },
 
   setDepositPreset(amount) {
     const input = document.getElementById('deposit-amount-input');
     if (input) {
       input.value = amount;
-      this.updateDepositCalc();
+      this._skipNextDepositPrefetch = true;
+      try {
+        this.updateDepositCalc();
+      } finally {
+        this._skipNextDepositPrefetch = false;
+      }
+      this._scheduleDepositOrderPrefetch(parseInt(amount, 10) || 0, true);
     }
   },
 
-  openDepositModal() {
+  _getDepositOrderCacheKey(amount) {
+    const userId = this.state.currentUser && this.state.currentUser.id != null ? String(this.state.currentUser.id) : 'guest';
+    return `${userId}:${amount}`;
+  },
+
+  _getOrCreateDepositOrder(amount) {
+    if (!this._prefetchedDepositOrders) {
+      this._prefetchedDepositOrders = new Map();
+    }
+    const cacheKey = this._getDepositOrderCacheKey(amount);
+    const now = Date.now();
+    const existing = this._prefetchedDepositOrders.get(cacheKey);
+    if (existing && (now - existing.createdAt < 90000)) {
+      if (existing.order) return Promise.resolve(existing.order);
+      if (existing.promise) return existing.promise;
+    }
+
+    if (this._prefetchedDepositOrders.size >= 10) {
+      const oldestKey = this._prefetchedDepositOrders.keys().next().value;
+      if (oldestKey) this._prefetchedDepositOrders.delete(oldestKey);
+    }
+
+    const entry = { promise: null, order: null, createdAt: now };
+    const promise = this.api('/wallet/create-deposit-order', {
+      method: 'POST',
+      body: JSON.stringify({ amount_vnd: amount })
+    }).then((res) => {
+      if (res && res.success) {
+        entry.order = res;
+        return res;
+      }
+      this._prefetchedDepositOrders.delete(cacheKey);
+      return res;
+    }).catch((err) => {
+      this._prefetchedDepositOrders.delete(cacheKey);
+      throw err;
+    });
+
+    entry.promise = promise;
+    this._prefetchedDepositOrders.set(cacheKey, entry);
+    return promise;
+  },
+
+  _scheduleDepositOrderPrefetch(amount, immediate = false) {
+    if (this._depositPrefetchTimer) {
+      clearTimeout(this._depositPrefetchTimer);
+      this._depositPrefetchTimer = null;
+    }
+    if (!this.state.currentUser || !Number.isFinite(amount) || amount < 20000 || amount > 1000000000) {
+      return;
+    }
+
+    const cacheKey = this._getDepositOrderCacheKey(amount);
+    const existing = this._prefetchedDepositOrders && this._prefetchedDepositOrders.get(cacheKey);
+    if (existing && (Date.now() - existing.createdAt < 90000)) {
+      return;
+    }
+
+    if (immediate) {
+      this._getOrCreateDepositOrder(amount).catch(() => {});
+      return;
+    }
+
+    this._depositPrefetchTimer = setTimeout(() => {
+      this._depositPrefetchTimer = null;
+      const input = document.getElementById('deposit-amount-input');
+      if (!input || parseInt(input.value, 10) !== amount) return;
+      this._getOrCreateDepositOrder(amount).catch(() => {});
+    }, 250);
+  },
+
+  openDepositModal(initialAmount = 1000000) {
+    const startAmount = (Number.isFinite(Number(initialAmount)) && Number(initialAmount) >= 20000)
+      ? Math.floor(Number(initialAmount))
+      : 1000000;
     this.haptic('light');
     this.showModal({
       title: 'Nạp Quỹ Tạo Khảo Sát',
@@ -1219,7 +1303,7 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">Số tiền nạp (VNĐ):</label>
-            <input type="number" id="deposit-amount-input" oninput="VibeApp.updateDepositCalc()" value="1000000" min="20000" step="10000"
+            <input type="number" id="deposit-amount-input" oninput="VibeApp.updateDepositCalc()" value="${startAmount}" min="20000" step="10000"
                    class="w-full p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-xs font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500">
           </div>
 
@@ -1258,10 +1342,10 @@
           </div>
 
           <div class="flex gap-2.5 pt-1">
-            <button onclick="VibeApp.submitDepositAction()" class="flex-1 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]">
+            <button type="button" onclick="VibeApp.submitDepositAction()" class="flex-1 py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]">
               Xác Nhận Nạp Quỹ
             </button>
-            <button onclick="VibeApp.closeModal()" class="py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
+            <button type="button" onclick="VibeApp.closeModal()" class="py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
               Hủy
             </button>
           </div>
@@ -1270,7 +1354,13 @@
       `
     });
 
-    this.updateDepositCalc();
+    this._skipNextDepositPrefetch = true;
+    try {
+      this.updateDepositCalc();
+    } finally {
+      this._skipNextDepositPrefetch = false;
+    }
+    this._scheduleDepositOrderPrefetch(startAmount, true);
   },
 
   async submitDepositAction() {
@@ -1281,28 +1371,189 @@
       this.showToast('Số tiền nạp tối thiểu là 20.000 VNĐ', 'warning');
       return;
     }
+    if (amount > 1000000000) {
+      this.showToast('Số tiền nạp tối đa là 1.000.000.000 VNĐ', 'warning');
+      return;
+    }
+
+    if (this._depositPrefetchTimer) {
+      clearTimeout(this._depositPrefetchTimer);
+      this._depositPrefetchTimer = null;
+    }
+
+    this.haptic('light');
+    const cacheKey = this._getDepositOrderCacheKey(amount);
+    const cachedEntry = this._prefetchedDepositOrders && this._prefetchedDepositOrders.get(cacheKey);
+    if (cachedEntry && cachedEntry.order && (Date.now() - cachedEntry.createdAt < 90000)) {
+      this._prefetchedDepositOrders.delete(cacheKey);
+      this.showVietQrPaymentModal(cachedEntry.order);
+      return;
+    }
+
+    const modalSeq = (this._activeDepositModalSeq || 0) + 1;
+    const calc = this.calculateDepositBonus(amount);
+    const optimisticOrder = {
+      orderCode: '',
+      amountVnd: amount,
+      creditAmount: calc.totalCredit,
+      bonusCreditVnd: calc.bonusVnd,
+      expiresInSec: 900,
+      qrDataUrl: '',
+      qrFastUrl: '',
+      qrUrl: '',
+      bankInfo: {
+        bank_name: 'Ngân hàng số Timo by BVBank',
+        account_name: 'NGUYEN THANH TRUNG',
+        account_number: '9021773148754',
+        bank_bin: '963388'
+      }
+    };
+
+    // Chuyen ngay lap tuc (0ms) sang man hinh Quet Ma VietQR, ma QR duoc cap nhat ngay khi API ve
+    this.showVietQrPaymentModal(optimisticOrder, { isPending: true, modalSeq });
 
     try {
-      this.haptic('light');
-      const res = await this.api('/wallet/create-deposit-order', {
-        method: 'POST',
-        body: JSON.stringify({ amount_vnd: amount })
-      });
+      const res = await this._getOrCreateDepositOrder(amount);
+      if (this._prefetchedDepositOrders) {
+        this._prefetchedDepositOrders.delete(cacheKey);
+      }
 
-      if (res.success) {
-        this.showVietQrPaymentModal(res);
+      if (!res || !res.success) {
+        throw new Error((res && res.message) || 'Không thể khởi tạo đơn nạp VietQR');
+      }
+
+      if (this._activeDepositModalSeq === modalSeq) {
+        this._hydrateVietQrModalOrder(res, modalSeq);
       }
     } catch (err) {
+      if (this._prefetchedDepositOrders) {
+        this._prefetchedDepositOrders.delete(cacheKey);
+      }
       this.showToast(err.message, 'error');
+      if (this._activeDepositModalSeq === modalSeq) {
+        this.openDepositModal(amount);
+      }
     }
   },
 
-  showVietQrPaymentModal(order) {
+  _handleVietQrImgLoad() {
+    const loadingEl = document.getElementById('deposit-qr-loading');
+    const imgEl = document.getElementById('deposit-vietqr-img');
+    const logoEl = document.getElementById('deposit-qr-center-logo');
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (imgEl) imgEl.classList.remove('opacity-0');
+    if (logoEl) logoEl.classList.remove('hidden');
+  },
+
+  _handleVietQrImgError() {
+    const imgEl = document.getElementById('deposit-vietqr-img');
+    const order = this._activeQrOrder;
+    if (!imgEl || !order) return;
+
+    const step = parseInt(imgEl.dataset.fallbackStep || '0', 10);
+    const fastUrl = order.qrFastUrl || order.qr_fast_url || '';
+    const legacyUrl = order.qrUrl || order.qr_url || '';
+    const candidates = [fastUrl, legacyUrl].filter((u) => u && u !== imgEl.getAttribute('src'));
+
+    if (step < candidates.length) {
+      imgEl.dataset.fallbackStep = String(step + 1);
+      imgEl.src = candidates[step];
+    } else {
+      const loadingEl = document.getElementById('deposit-qr-loading');
+      if (loadingEl) {
+        loadingEl.innerHTML = '<span class="text-[10px] font-semibold text-stone-500 px-2">Chuyển khoản bằng thông tin bên cạnh</span>';
+        loadingEl.classList.remove('hidden');
+      }
+    }
+  },
+
+  _startDepositPolling(orderCode) {
+    if (this._depositPollInterval) {
+      clearInterval(this._depositPollInterval);
+      this._depositPollInterval = null;
+    }
+    if (!orderCode) return;
+    this._depositPollInterval = setInterval(() => {
+      if (!document.getElementById('deposit-vietqr-img')) {
+        clearInterval(this._depositPollInterval);
+        this._depositPollInterval = null;
+        return;
+      }
+      this.checkDepositStatus(orderCode, true);
+    }, 2500);
+  },
+
+  _hydrateVietQrModalOrder(order, modalSeq = null) {
+    if (modalSeq !== null && this._activeDepositModalSeq !== modalSeq) return;
+    const imgEl = document.getElementById('deposit-vietqr-img');
+    if (!imgEl || !order) return;
+
+    this._activeQrOrder = order;
+    const orderCode = order.orderCode || order.order_code || '';
+    const qrSrc = order.qrDataUrl || order.qr_data_url || order.qrFastUrl || order.qr_fast_url || order.qrUrl || order.qr_url || '';
+    const creditAmount = order.creditAmount !== undefined ? order.creditAmount : (order.credit_amount !== undefined ? order.credit_amount : 0);
+    const bonusCreditVnd = order.bonusCreditVnd !== undefined ? order.bonusCreditVnd : (order.bonus_credit_vnd !== undefined ? order.bonus_credit_vnd : 0);
+
+    if (qrSrc) {
+      imgEl.dataset.fallbackStep = '0';
+      imgEl.src = qrSrc;
+      if (qrSrc.startsWith('data:image/svg+xml') || (imgEl.complete && imgEl.naturalWidth > 0)) {
+        this._handleVietQrImgLoad();
+      }
+    }
+
+    const codeTextEl = document.getElementById('deposit-order-code-text');
+    if (codeTextEl) {
+      codeTextEl.textContent = orderCode || 'Đang cấp mã...';
+      codeTextEl.classList.remove('text-stone-400', 'animate-pulse');
+    }
+
+    const copyBtn = document.getElementById('deposit-copy-memo-btn');
+    if (copyBtn && orderCode) {
+      copyBtn.disabled = false;
+      copyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      copyBtn.onclick = () => this.copyValue(orderCode, 'Nội dung chuyển khoản');
+    }
+
+    const noteEl = document.getElementById('deposit-order-code-note');
+    if (noteEl && orderCode) {
+      noteEl.innerHTML = `Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và nội dung <strong>${orderCode}</strong>. Tổng Credit nhận: <strong>${formatMoney(creditAmount)} Credit</strong>${bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(bonusCreditVnd) + ' Credit thưởng)' : ''}.`;
+    }
+
+    const checkBtn = document.getElementById('deposit-check-status-btn');
+    if (checkBtn && orderCode) {
+      checkBtn.disabled = false;
+      checkBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      checkBtn.onclick = () => this.checkDepositStatus(orderCode, false);
+    }
+
+    const simBtn = document.getElementById('deposit-simulate-btn');
+    if (simBtn && orderCode) {
+      simBtn.disabled = false;
+      simBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      simBtn.onclick = () => this.simulatePaymentSuccess(orderCode);
+    }
+
+    if (orderCode) {
+      this._startDepositPolling(orderCode);
+    }
+  },
+
+  showVietQrPaymentModal(order, options = {}) {
     if (this._depositPollInterval) clearInterval(this._depositPollInterval);
     if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
 
-    const bank = order.bankInfo || {};
+    const isPending = Boolean(options.isPending || !order.orderCode);
+    this._activeDepositModalSeq = options.modalSeq || ((this._activeDepositModalSeq || 0) + 1);
+    this._activeQrOrder = order;
+
+    const bank = order.bankInfo || order.bankAccountInfo || {};
     let remainingSec = order.expiresInSec || 900;
+    const orderCode = order.orderCode || order.order_code || '';
+    const initialQrSrc = order.qrDataUrl || order.qr_data_url || order.qrFastUrl || order.qr_fast_url || order.qrUrl || order.qr_url || '';
+    const isInlineSvg = initialQrSrc.startsWith('data:image/svg+xml');
+    const disabledClass = isPending ? 'opacity-60 cursor-not-allowed' : '';
+    const copyDisabledClass = isPending ? 'opacity-50 cursor-not-allowed' : '';
 
     this.showModal({
       title: 'Thanh Toán Quét Mã VietQR Napas247',
@@ -1327,9 +1578,13 @@
             <!-- Cột trái: Mã VietQR động -->
             <div class="sm:col-span-5 flex flex-col items-center justify-center p-2.5 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-xs text-center">
               <div class="relative w-36 h-36 sm:w-40 sm:h-40 bg-white p-1.5 rounded-xl border border-stone-100 dark:border-stone-800 flex items-center justify-center overflow-hidden">
-                <img src="${order.qrUrl}" alt="VietQR Napas247" class="w-full h-full object-contain select-none">
+                <div id="deposit-qr-loading" class="${isInlineSvg ? 'hidden ' : ''}absolute inset-0 flex flex-col items-center justify-center bg-stone-50/90 text-stone-500 gap-1.5 z-10">
+                  <div class="animate-spin rounded-full h-6 w-6 border-2 border-stone-200 border-t-orange-600"></div>
+                  <span class="text-[10px] font-semibold">Đang tạo mã QR...</span>
+                </div>
+                <img id="deposit-vietqr-img" src="${initialQrSrc}" alt="VietQR Napas247" onload="VibeApp._handleVietQrImgLoad()" onerror="VibeApp._handleVietQrImgError()" class="w-full h-full object-contain select-none ${initialQrSrc ? '' : 'opacity-0'} transition-opacity duration-150">
                 <!-- Logo SurvHub ở tâm mã QR -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div id="deposit-qr-center-logo" class="${initialQrSrc ? '' : 'hidden '}absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div class="w-8 h-8 sm:w-9 sm:h-9 bg-white p-0.5 rounded-lg shadow-md border border-stone-200/80 flex items-center justify-center">
                     <img src="/logo-light.svg" alt="SurvHub" class="w-full h-full object-contain rounded-md">
                   </div>
@@ -1351,9 +1606,9 @@
                 <div class="p-2 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
                   <div class="min-w-0 pr-1">
                     <div class="text-[10px] text-stone-500 dark:text-stone-400 leading-none mb-1">Chủ tài khoản:</div>
-                    <div class="font-bold text-stone-900 dark:text-white text-xs truncate" title="${bank.account_name}">${bank.account_name}</div>
+                    <div class="font-bold text-stone-900 dark:text-white text-xs truncate" title="${bank.account_name || 'NGUYEN THANH TRUNG'}">${bank.account_name || 'NGUYEN THANH TRUNG'}</div>
                   </div>
-                  <button type="button" onclick="VibeApp.copyValue('${bank.account_name}', 'Tên chủ tài khoản')" title="Sao chép tên chủ tài khoản" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs">
+                  <button type="button" onclick="VibeApp.copyValue('${bank.account_name || 'NGUYEN THANH TRUNG'}', 'Tên chủ tài khoản')" title="Sao chép tên chủ tài khoản" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
@@ -1363,9 +1618,9 @@
               <div class="p-2 bg-stone-50 dark:bg-stone-900/90 rounded-xl border border-stone-200/80 dark:border-stone-800 flex items-center justify-between">
                 <div>
                   <div class="text-[10px] text-stone-500 dark:text-stone-400 leading-none mb-1">Số tài khoản:</div>
-                  <div class="font-mono font-bold text-stone-900 dark:text-white text-sm tracking-wide leading-none">${bank.account_number}</div>
+                  <div class="font-mono font-bold text-stone-900 dark:text-white text-sm tracking-wide leading-none">${bank.account_number || '9021773148754'}</div>
                 </div>
-                <button type="button" onclick="VibeApp.copyValue('${bank.account_number}', 'Số tài khoản')" title="Sao chép số tài khoản" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs">
+                <button type="button" onclick="VibeApp.copyValue('${bank.account_number || '9021773148754'}', 'Số tài khoản')" title="Sao chép số tài khoản" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-2xs">
                   <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
@@ -1385,9 +1640,9 @@
               <div class="p-2 bg-orange-50/70 dark:bg-stone-900 rounded-xl border border-orange-200/80 dark:border-stone-800 flex items-center justify-between">
                 <div>
                   <div class="text-[10px] text-orange-600 dark:text-orange-400 font-bold leading-none mb-1">Nội dung chuyển khoản (Memo):</div>
-                  <div class="font-mono font-black text-stone-900 dark:text-white text-sm tracking-wider leading-none">${order.orderCode}</div>
+                  <div id="deposit-order-code-text" class="font-mono font-black text-stone-900 dark:text-white text-sm tracking-wider leading-none ${isPending ? 'text-stone-400 animate-pulse' : ''}">${orderCode || 'Đang cấp mã...'}</div>
                 </div>
-                <button type="button" onclick="VibeApp.copyValue('${order.orderCode}', 'Nội dung chuyển khoản')" title="Sao chép nội dung chuyển khoản" class="w-7 h-7 rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-xs">
+                <button type="button" id="deposit-copy-memo-btn" ${isPending ? 'disabled' : ''} onclick="${orderCode ? `VibeApp.copyValue('${orderCode}', 'Nội dung chuyển khoản')` : ''}" title="Sao chép nội dung chuyển khoản" class="w-7 h-7 rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center transition-all shrink-0 active:scale-95 shadow-xs ${copyDisabledClass}">
                   <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
@@ -1400,16 +1655,16 @@
             LƯU Ý THỬ NGHIỆM: Đây là bản demo nghiệm thu tính năng. Vui lòng bấm nút <strong>Mô Phỏng Thanh Toán (Dev/Test)</strong> bên dưới để hệ thống tự động duyệt tiền tức thì. Không cần chuyển tiền thật từ ứng dụng ngân hàng.
           </div>
 
-          <div class="p-2 bg-stone-100/90 dark:bg-stone-900/90 rounded-xl border border-stone-200 dark:border-stone-800 text-[10.5px] text-stone-600 dark:text-stone-300 leading-normal">
-            Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và nội dung <strong>${order.orderCode}</strong>. Tổng Credit nhận: <strong>${formatMoney(order.creditAmount)} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(order.bonusCreditVnd) + ' Credit thưởng)' : ''}.
+          <div id="deposit-order-code-note" class="p-2 bg-stone-100/90 dark:bg-stone-900/90 rounded-xl border border-stone-200 dark:border-stone-800 text-[10.5px] text-stone-600 dark:text-stone-300 leading-normal">
+            ${orderCode ? `Hệ thống ngân hàng tự động đối soát trong 3 giây khi nhận đúng số tiền và nội dung <strong>${orderCode}</strong>. Tổng Credit nhận: <strong>${formatMoney(order.creditAmount)} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(order.bonusCreditVnd) + ' Credit thưởng)' : ''}.` : `Đang đồng bộ mã giao dịch với hệ thống... Tổng Credit nhận: <strong>${formatMoney(order.creditAmount)} Credit</strong>${order.bonusCreditVnd > 0 ? ' (Đã gồm +' + formatMoney(order.bonusCreditVnd) + ' Credit thưởng)' : ''}.`}
           </div>
 
           <!-- Nút hành động & Giả lập thanh toán -->
           <div class="flex flex-col sm:flex-row gap-2 pt-0.5">
-            <button type="button" onclick="VibeApp.checkDepositStatus('${order.orderCode}', false)" class="flex-1 py-2 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
+            <button type="button" id="deposit-check-status-btn" ${isPending ? 'disabled' : ''} onclick="${orderCode ? `VibeApp.checkDepositStatus('${orderCode}', false)` : ''}" class="flex-1 py-2 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98] ${disabledClass}">
               Kiểm Tra Trạng Thái
             </button>
-            <button type="button" onclick="VibeApp.simulatePaymentSuccess('${order.orderCode}')" class="py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
+            <button type="button" id="deposit-simulate-btn" ${isPending ? 'disabled' : ''} onclick="${orderCode ? `VibeApp.simulatePaymentSuccess('${orderCode}')` : ''}" class="py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98] ${disabledClass}">
               Mô Phỏng Thanh Toán (Dev/Test)
             </button>
             <button type="button" onclick="VibeApp.closeModal()" class="py-2 px-3 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
@@ -1421,29 +1676,49 @@
       `
     });
 
-    refreshIcons(document.getElementById('app-modal') || undefined);
+    refreshIcons(document.getElementById('modal-card') || undefined);
+
+    if (isInlineSvg) {
+      this._handleVietQrImgLoad();
+    } else if (initialQrSrc) {
+      const imgEl = document.getElementById('deposit-vietqr-img');
+      if (imgEl && imgEl.complete && imgEl.naturalWidth > 0) {
+        this._handleVietQrImgLoad();
+      }
+    }
 
     // Khoi chay bo dem nguoc 15:00
     this._depositTimerInterval = setInterval(() => {
+      const timerEl = document.getElementById('deposit-countdown-timer');
+      if (!timerEl) {
+        clearInterval(this._depositTimerInterval);
+        this._depositTimerInterval = null;
+        if (this._depositPollInterval) {
+          clearInterval(this._depositPollInterval);
+          this._depositPollInterval = null;
+        }
+        return;
+      }
       remainingSec--;
       const min = Math.floor(remainingSec / 60);
       const sec = remainingSec % 60;
-      const timerEl = document.getElementById('deposit-countdown-timer');
-      if (timerEl) {
-        timerEl.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-      }
+      timerEl.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
       if (remainingSec <= 0) {
         clearInterval(this._depositTimerInterval);
-        clearInterval(this._depositPollInterval);
+        this._depositTimerInterval = null;
+        if (this._depositPollInterval) {
+          clearInterval(this._depositPollInterval);
+          this._depositPollInterval = null;
+        }
         const statusEl = document.getElementById('deposit-status-text');
         if (statusEl) statusEl.textContent = 'Đơn nạp đã hết hạn thanh toán';
       }
     }, 1000);
 
-    // Khoi chay Polling tu dong kiem tra trang thai don nap moi 2.5 giay
-    this._depositPollInterval = setInterval(() => {
-      this.checkDepositStatus(order.orderCode, true);
-    }, 2500);
+    // Khoi chay Polling tu dong kiem tra trang thai don nap moi 2.5 giay khi da co orderCode
+    if (!isPending && orderCode) {
+      this._startDepositPolling(orderCode);
+    }
   },
 
   async checkDepositStatus(orderCode, isSilent = false) {
@@ -1454,6 +1729,7 @@
         if (order.status === 'COMPLETED') {
           if (this._depositPollInterval) clearInterval(this._depositPollInterval);
           if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
+          if (this._prefetchedDepositOrders) this._prefetchedDepositOrders.clear();
 
           const orderAmountVnd = order.amountVnd !== undefined ? order.amountVnd : (order.amount_vnd !== undefined ? order.amount_vnd : 0);
           const orderCreditAmount = order.creditAmount !== undefined ? order.creditAmount : (order.credit_amount !== undefined ? order.credit_amount : orderAmountVnd);
@@ -1509,6 +1785,7 @@
         } else if (order.status === 'PENDING_MISMATCH') {
           if (this._depositPollInterval) clearInterval(this._depositPollInterval);
           if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
+          if (this._prefetchedDepositOrders) this._prefetchedDepositOrders.clear();
 
           const statusEl = document.getElementById('deposit-status-text');
           if (statusEl) statusEl.textContent = 'Số tiền chuyển khoản không khớp (Tạm giữ)';
