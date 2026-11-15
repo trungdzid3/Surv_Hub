@@ -45,10 +45,24 @@
 
   /**
    * Lam moi bo icon Lucide sau khi render HTML dong.
-   * Helper moi (WAVE 1): dich ky vong dai thay dan 66 cho window.lucide.createIcons() lap lai trong app.js.
+   * Khi co rootEl thi chi quet ben trong rootEl (fallback ve quet toan trang neu loi).
+   * @param {Element|Document} [rootEl] - Phan tu goc can quet icon (tuy chon)
    * @returns {void}
    */
-  window.VibeUtils.refreshIcons = function () {
-    if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+  window.VibeUtils.refreshIcons = function (rootEl) {
+    if (!window.lucide || typeof window.lucide.createIcons !== 'function') return;
+    if (rootEl) {
+      try {
+        window.lucide.createIcons({ root: rootEl });
+        return;
+      } catch (err) {
+        // Fallback ve quet toan trang neu tuy chon root khong hop le hoac khong duoc ho tro
+      }
+    }
+    try {
+      window.lucide.createIcons();
+    } catch (err) {
+      // Bo qua loi render icon tranh gian doan luong UI
+    }
   };
 })();
