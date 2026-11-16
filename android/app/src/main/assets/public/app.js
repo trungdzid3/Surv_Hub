@@ -416,6 +416,13 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   // ==================== HTTP CLIENT ====================
   async api(endpoint, options = {}) {
+    if (options && options.actionKey && window.VibeUtils && typeof window.VibeUtils.beginLatestAction === 'function') {
+      const actionCtx = window.VibeUtils.beginLatestAction(options.actionKey, options.abortPrevious !== false);
+      if (!options.signal && actionCtx.signal) {
+        options = { ...options, signal: actionCtx.signal };
+      }
+    }
+
     const headers = {
       'Content-Type': 'application/json',
       ...(options.headers || {})
@@ -426,7 +433,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     // Tự động chuyển đổi body thành chuỗi JSON nếu truyền dạng object thông thường
     if (options.body && typeof options.body === 'object' && !(typeof FormData !== 'undefined' && options.body instanceof FormData)) {
-      options.body = JSON.stringify(options.body);
+      options = { ...options, body: JSON.stringify(options.body) };
     }
 
     try {
@@ -450,6 +457,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       }
       return data;
     } catch (err) {
+      if (err && (err.name === 'AbortError' || err.code === 20)) {
+        err.isAborted = true;
+        err.superseded = true;
+        throw err;
+      }
       console.error('API Error:', err);
       throw err;
     }
@@ -1285,6 +1297,31 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       this.state.streakInfo = null;
     }
 
+    if (!this._streakDayRolloverBound) {
+      this._streakDayRolloverBound = true;
+      const handleStreakDayRollover = () => {
+        if (document.visibilityState === 'hidden') return;
+        if (this.state.currentUser && !this.isEnterpriseUser() && this.state.streakInfo) {
+          if (typeof this._isStreakCheckedInToday === 'function' && !this._isStreakCheckedInToday(this.state.streakInfo)) {
+            const streakBtnEl = document.getElementById('header-streak-btn');
+            const isUiLit = Boolean(streakBtnEl && streakBtnEl.classList.contains('text-orange-600'));
+            if (this.state.streakInfo.has_checked_in_today === true || isUiLit) {
+              this.state.streakInfo.has_checked_in_today = false;
+              if (typeof this.updateStreakHeaderUI === 'function') {
+                this.updateStreakHeaderUI(this.state.streakInfo);
+              }
+              this.renderUserProfileDropdown();
+              if (typeof this.fetchStreakInfo === 'function') {
+                this.fetchStreakInfo();
+              }
+            }
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', handleStreakDayRollover);
+      window.addEventListener('focus', handleStreakDayRollover);
+    }
+
     const shortName = user.name ? (user.name.split(' ').pop() || user.name) : 'User';
     if (nameEl) nameEl.textContent = shortName;
     if (avatarEl) {
@@ -1345,6 +1382,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     }
 
     const firstLetter = (user.name || user.email || 'U').charAt(0).toUpperCase();
+    const hasCheckedInToday = typeof this._isStreakCheckedInToday === 'function'
+      ? this._isStreakCheckedInToday(this.state.streakInfo)
+      : Boolean(this.state.streakInfo && this.state.streakInfo.has_checked_in_today);
 
     contentEl.innerHTML = `
       <!-- User Info Header: Gọn gàng, thoáng đãng -->
@@ -1442,9 +1482,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
             <div class="flex items-center justify-between text-[11px] pt-1.5 border-t border-stone-200/60 dark:border-stone-800">
               <span class="inline-flex items-center gap-1 text-stone-600 dark:text-stone-400 font-medium cursor-pointer hover:text-orange-600" onclick="VibeApp.toggleProfileDropdown(); VibeApp.openStreakModal()">
-                <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-600"></i>
+                <i data-lucide="flame" class="w-3.5 h-3.5 ${hasCheckedInToday ? 'text-orange-600' : 'text-stone-400 dark:text-stone-500'}"></i>
                 <span>Chuỗi ngày:</span>
-                <span class="font-mono font-bold text-orange-600 dark:text-orange-400 ml-0.5">
+                <span class="font-mono font-bold ${hasCheckedInToday ? 'text-orange-600 dark:text-orange-400' : 'text-stone-500 dark:text-stone-400'} ml-0.5">
                   ${this.state.streakInfo ? this.state.streakInfo.current_streak + ' ngày' : 'Điểm danh'}
                 </span>
               </span>
@@ -1516,16 +1556,22 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   async switchAdminMode(mode) {
     this.haptic('medium');
+    const modeAction = (window.VibeUtils && typeof window.VibeUtils.beginLatestAction === 'function')
+      ? window.VibeUtils.beginLatestAction('admin:switchMode', true)
+      : { isLatest: () => true };
+
     this.state.adminViewMode = mode;
     this.state.adminMode = mode;
     localStorage.setItem('survhub_admin_view_mode', mode);
 
     if (mode === 'RESPONDENT') {
-      this.showToast('Đã chuyển sang góc nhìn Người Điền (Đáp Viên)', 'info');
       // Người điền chỉ là Người Điền Thường (PERSONAL) hoặc Sinh Viên (STUDENT), tuyệt đối không nhận Doanh Nghiệp
       if (this.state.currentUser && this.state.currentUser.account_tier === 'ENTERPRISE') {
         await this.switchAdminTier('PERSONAL', true);
       }
+      if (!modeAction.isLatest()) return;
+
+      this.showToast('Đã chuyển sang góc nhìn Người Điền (Đáp Viên)', 'info');
       this.renderNavigation();
       this.renderUserProfileDropdown();
 
@@ -1539,9 +1585,11 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         await this.navigate(this.state.currentTab);
       }
     } else if (mode === 'CREATOR') {
-      this.showToast('Đã chuyển sang góc nhìn Doanh Nghiệp', 'info');
       // Tự động chuyển gói tài khoản sang Doanh Nghiệp (ENTERPRISE) nhưng tắt toast thứ 2 để không bị thông báo kép
       await this.switchAdminTier('ENTERPRISE', true);
+      if (!modeAction.isLatest()) return;
+
+      this.showToast('Đã chuyển sang góc nhìn Doanh Nghiệp', 'info');
       this.renderNavigation();
       this.renderUserProfileDropdown();
 
@@ -1555,6 +1603,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         await this.navigate(this.state.currentTab);
       }
     } else {
+      if (!modeAction.isLatest()) return;
+
       this.showToast('Đã quay lại góc nhìn Quản Trị Viên (Toàn quyền)', 'info');
       this.renderNavigation();
       this.renderUserProfileDropdown();
@@ -1571,11 +1621,18 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   async switchAdminTier(tier, silent = false) {
     this.haptic('medium');
+    const tierAction = (window.VibeUtils && typeof window.VibeUtils.beginLatestAction === 'function')
+      ? window.VibeUtils.beginLatestAction('admin:switchTier', true)
+      : { isLatest: () => true };
+
     try {
       const res = await this.api('/admin/switch-tier', {
         method: 'POST',
-        body: JSON.stringify({ tier })
+        body: JSON.stringify({ tier }),
+        actionKey: 'admin:switchTier'
       });
+      if (!tierAction.isLatest()) return;
+
       if (res && res.success) {
         if (this.state.currentUser) {
           this.state.currentUser.account_tier = res.tier;
@@ -1607,6 +1664,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         }
       }
     } catch (err) {
+      if ((err && err.isAborted) || !tierAction.isLatest()) return;
       if (!silent) {
         this.showToast(err.message || 'Lỗi chuyển đổi phân hạng gói tài khoản', 'error');
       }
@@ -1944,6 +2002,13 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
   // ==================== ROUTER ====================
   async navigate(tabId, params = {}) {
+    const navAction = (window.VibeUtils && typeof window.VibeUtils.beginLatestAction === 'function')
+      ? window.VibeUtils.beginLatestAction('router:navigate', true)
+      : (() => {
+          const seq = (this._navSeq = (this._navSeq || 0) + 1);
+          return { seq, isLatest: () => this._navSeq === seq };
+        })();
+
     this.haptic('light');
     this.state.currentTab = tabId;
     if (tabId !== 'take-survey') {
@@ -2048,6 +2113,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           await this.renderSurveysView(root);
       }
     } catch (err) {
+      if (!navAction.isLatest() || (err && err.isAborted)) {
+        return;
+      }
       root.innerHTML = `
         <div class="bento-card p-8 text-center max-w-md mx-auto my-12">
           <p class="text-xs text-red-600 font-semibold mb-3">${err.message}</p>
@@ -2056,6 +2124,10 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           </button>
         </div>
       `;
+    }
+
+    if (!navAction.isLatest()) {
+      return;
     }
 
     if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
@@ -2100,9 +2172,18 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     }
   },
 
+  isSurveyCompletedByUser(s) {
+    if (!s) return false;
+    const st = String(s.user_response_status || '').toUpperCase();
+    if (['VALIDATED', 'COMPLETED', 'FLAGGED_MANUAL', 'SCREENED_OUT', 'REJECTED_FRAUD'].includes(st)) {
+      return true;
+    }
+    return false;
+  },
+
   _getHomeTrendingSurveys(surveys) {
     return (surveys || [])
-      .filter(s => s.status === 'PUBLISHED' || s.status === 'ACTIVE' || !s.status)
+      .filter(s => s && (s.status === 'PUBLISHED' || s.status === 'ACTIVE') && !this.isSurveyCompletedByUser(s))
       .slice(0, 3);
   },
 
@@ -2432,9 +2513,14 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     const currentUser = this.state.currentUser;
     const targetSurvey = (this.state.surveys && this.state.surveys.find(s => s.id === surveyId)) || null;
-    const isOwner = targetSurvey && targetSurvey.creator_id === currentUser.id;
+    const isOwner = targetSurvey && String(targetSurvey.creator_id) === String(currentUser.id);
 
-    if (currentUser.role === 'CREATOR' || isOwner) {
+    if (isOwner) {
+      await this.openSurveyPreviewModal(surveyId);
+      return;
+    }
+
+    if (currentUser.role === 'CREATOR') {
       this.showToast('Tài khoản Doanh nghiệp / Người tạo khảo sát chỉ có quyền Xem trước cấu trúc câu hỏi.', 'info');
       await this.openSurveyPreviewModal(surveyId);
       return;
@@ -2632,21 +2718,19 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     const hasData = Array.isArray(this.state.surveys) && this.state.surveys.length > 0;
 
-    // 2. Nếu chưa có dữ liệu nào (lần đầu tiên, không có cache), bắt buộc fetch từ API
+    // 2. Neu chua co du lieu nao (lan dau tien, khong co cache), bat buoc fetch tu API; neu da co cache, revalidate ngam theo SWR
     if (!hasData && forceFetch) {
-      try {
-        const res = await this.api('/surveys');
-        this.state.surveys = (res && res.surveys) || [];
-        try {
-          sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(this.state.surveys));
-        } catch (e) {}
-      } catch (err) {
-        console.warn('Không thể nạp danh sách khảo sát:', err.message);
-        if (!this.state.surveys) this.state.surveys = [];
-      }
+      await this.loadSurveys();
+    } else if (hasData && forceFetch) {
+      this.loadSurveys().then(() => {
+        if (this.state.currentTab === 'surveys') {
+          const activeRoot = document.getElementById('app-root');
+          if (activeRoot) this.renderSurveysView(activeRoot, false);
+        }
+      }).catch(() => {});
     }
 
-    const surveys = this.state.surveys;
+    const surveys = (this.state.surveys || []).filter(s => s && s.status !== 'DRAFT');
     const user = this.state.currentUser;
 
     if (user && (!this.state.streakInfo || forceFetch)) {
@@ -2668,8 +2752,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     // Lọc & Phân nhóm: Ghim luôn cố định trên đầu, bài thường ở dưới
     const { pinnedSurveys, normalSurveys } = this.processSurveysList(surveys);
     const allCount = (surveys || []).length;
-    const answeredCount = (surveys || []).filter(s => s.user_response_status === 'VALIDATED').length;
-    const unansweredCount = (surveys || []).filter(s => s.user_response_status !== 'VALIDATED' && (s.collected_responses || 0) < (s.target_responses || 100) && s.status !== 'COMPLETED' && s.status !== 'CLOSED').length;
+    const answeredCount = (surveys || []).filter(s => this.isSurveyCompletedByUser(s)).length;
+    const unansweredCount = (surveys || []).filter(s => !this.isSurveyCompletedByUser(s) && (s.collected_responses || 0) < (s.target_responses || 100) && s.status !== 'COMPLETED' && s.status !== 'CLOSED').length;
     const totalAllCount = this.state.categoryFilter === 'ALL'
       ? (pinnedSurveys.length + normalSurveys.length)
       : (this.state.hideFinished ? surveys.filter(s => (s.collected_responses || 0) < (s.target_responses || 100) && s.status !== 'COMPLETED' && s.status !== 'CLOSED').length : surveys.length);
@@ -3334,7 +3418,7 @@ if (totalCount === 0) {
 
   renderCompactSurveyCard(s, isPinned = false) {
     const user = this.state.currentUser;
-    const isCompleted = s.user_response_status === 'VALIDATED';
+    const isCompleted = this.isSurveyCompletedByUser(s);
     const isCreatorOrOwner = user && (user.role === 'CREATOR' || s.creator_id === user.id);
     const collected = s.collected_responses || 0;
     const target = s.target_responses || 100;
@@ -3477,7 +3561,7 @@ if (totalCount === 0) {
 
   renderListSurveyRow(s, isPinned = false) {
     const user = this.state.currentUser;
-    const isCompleted = s.user_response_status === 'VALIDATED';
+    const isCompleted = this.isSurveyCompletedByUser(s);
     const isCreatorOrOwner = user && (user.role === 'CREATOR' || s.creator_id === user.id);
     const collected = s.collected_responses || 0;
     const target = s.target_responses || 100;
@@ -3568,7 +3652,7 @@ if (totalCount === 0) {
   },
 
   filterSurveys(surveys) {
-    let list = [...(surveys || [])];
+    let list = (surveys || []).filter(s => s && s.status !== 'DRAFT');
     const cat = this.state.categoryFilter;
     const catCode = this.state.surveyCategoryFilter;
     const statusFilter = this.state.surveyStatusFilter || 'ALL';
@@ -3582,11 +3666,11 @@ if (totalCount === 0) {
         const tar = s.target_responses || 100;
         const isFull = col >= tar;
         const isClosed = s.status === 'COMPLETED' || s.status === 'CLOSED';
-        const isUserDone = s.user_response_status === 'VALIDATED';
+        const isUserDone = this.isSurveyCompletedByUser(s);
         return !isFull && !isClosed && !isUserDone;
       });
     } else if (statusFilter === 'ANSWERED') {
-      list = list.filter(s => s.user_response_status === 'VALIDATED');
+      list = list.filter(s => this.isSurveyCompletedByUser(s));
     } else {
       // statusFilter === 'ALL'
       if (this.state.hideFinished) {
@@ -3595,7 +3679,7 @@ if (totalCount === 0) {
           const tar = s.target_responses || 100;
           const isFull = col >= tar;
           const isClosed = s.status === 'COMPLETED' || s.status === 'CLOSED';
-          const isUserDone = s.user_response_status === 'VALIDATED';
+          const isUserDone = this.isSurveyCompletedByUser(s);
           return !isFull && !isClosed && !isUserDone;
         });
       }
@@ -3956,7 +4040,7 @@ if (totalCount === 0) {
     if (hasWarmData) {
       this._renderCreatorSurveysHtml(root, cachedSurveys);
 
-      this.api('/surveys').then((res) => {
+      this.api('/surveys?scope=created').then((res) => {
         const latest = this._filterCreatorSurveysForUser((res && res.surveys) || [], user);
         const newJson = JSON.stringify(latest);
         this.state.creatorSurveys = latest;
@@ -3976,7 +4060,7 @@ if (totalCount === 0) {
       return;
     }
 
-    const res = await this.api('/surveys');
+    const res = await this.api('/surveys?scope=created');
     const surveys = this._filterCreatorSurveysForUser((res && res.surveys) || [], user);
     this.state.creatorSurveys = surveys;
     this._creatorSurveysUserId = user.id;

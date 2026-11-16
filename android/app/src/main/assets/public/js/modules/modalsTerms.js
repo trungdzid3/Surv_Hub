@@ -1207,58 +1207,65 @@
     return null;
   },
 
+  _getVnTodayDateStr() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date());
+    } catch (e) {
+      return new Date().toISOString().slice(0, 10);
+    }
+  },
+
+  _isStreakCheckedInToday(streak) {
+    if (!streak || !streak.has_checked_in_today) return false;
+    const todayVn = this._getVnTodayDateStr();
+    if (streak.last_checkin_date) {
+      return String(streak.last_checkin_date).slice(0, 10) === todayVn;
+    }
+    if (streak.today_date) {
+      return String(streak.today_date).slice(0, 10) === todayVn && Boolean(streak.has_checked_in_today);
+    }
+    return Boolean(streak.has_checked_in_today);
+  },
+
   /**
    * Tính toán Cấp bậc và Phong cách Màu sắc TikTok Streak
-   * - Level 0: Chuỗi = 0 -> Bạc xám tối giản (Inactive)
-   * - Level Risk: Chuỗi >= 1 nhưng Chưa điểm danh hôm nay -> Nguy cơ đứt chuỗi (Than hồng nhấp nháy Amber pulse)
-   * - Level 1: Chuỗi 1 - 2 ngày -> Lửa Hổ Phách Khởi Động (Amber Fire)
-   * - Level 2: Chuỗi 3 - 6 ngày -> Lửa Đỏ Rực Cháy (Crimson Sunset Flame)
-   * - Level 3: Chuỗi 7 - 29 ngày -> Siêu Chuỗi TikTok Neon (Iconic Electric Magenta & Hot Pink Neon)
-   * - Level 4: Chuỗi 30 - 99 ngày -> Lửa Băng Điện Quang (Cyber Ice Cyan & Blue)
-   * - Level 5: Chuỗi 100+ ngày -> Huyền Thoại Hoàng Kim Thạch Anh (Mythic Prismatic Gold & Violet)
+   * - Level 0 / Chưa điểm danh hôm nay: Bạc xám tối giản (Inactive)
+   * - Level 1: Chuỗi 1 - 10 ngày -> Lửa Khởi Động
+   * - Level 2: Chuỗi 11 - 50 ngày -> Lửa Bùng Cháy
+   * - Level 3: Chuỗi 51 - 100 ngày -> Hồng Neon Tím TikTok
+   * - Level 4: Chuỗi 101 - 200 ngày -> Băng Hỏa Điện Quang
+   * - Level 5: Chuỗi 201+ ngày -> Thần Thoại Hoàng Kim
    */
   getStreakTierInfo(streakCount, hasCheckedIn) {
     const count = Number(streakCount) || 0;
 
-    // 1. Chuỗi = 0: Chưa kích hoạt
-    if (count <= 0) {
+    // 1. Chưa điểm danh hôm nay (kể cả count === 0 hay qua ngày mới count >= 1): Toàn bộ màu xám xịt, không cam/amber, không glow, không animate-pulse
+    if (count <= 0 || !hasCheckedIn) {
       return {
-        id: 'dormant',
+        id: count > 0 ? 'pending_today' : 'dormant',
         level: 0,
-        name: 'Chưa Thắp Lửa',
-        shortBadge: 'Chưa Bật Lửa',
-        desc: 'Điểm danh để bắt đầu chuỗi ngày nhận thưởng',
-        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100/80 dark:bg-stone-800/60 text-stone-400 dark:text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 hover:border-stone-300 dark:hover:border-stone-700 transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-bold',
+        name: count > 0 ? 'Chưa Điểm Danh Hôm Nay' : 'Chưa Thắp Lửa',
+        shortBadge: count > 0 ? 'Chưa Điểm Danh' : 'Chưa Bật Lửa',
+        desc: count > 0
+          ? 'Hôm nay bạn chưa điểm danh, bấm Điểm Danh Ngay để giữ và nối tiếp chuỗi'
+          : 'Điểm danh để bắt đầu chuỗi ngày nhận thưởng',
+        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-stone-200 dark:border-stone-800 bg-stone-100/90 dark:bg-stone-800/70 text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 hover:border-stone-300 dark:hover:border-stone-700 transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-bold',
         flameSvg: '<i data-lucide="flame" class="w-3.5 h-3.5 stroke-[2] text-stone-400 dark:text-stone-500"></i>',
-        headerIconClass: 'w-11 h-11 rounded-2xl bg-stone-100 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-500 dark:text-stone-400 flex-shrink-0 shadow-xs',
-        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 stroke-[2.2]"></i>',
-        textClass: 'text-stone-400 dark:text-stone-500',
-        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700">Chưa Bật Lửa</span>',
-        bentoBorder: 'border-stone-200/80 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/60 text-stone-600 dark:text-stone-300',
-        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 text-stone-400"></i>',
-        bentoText: 'text-slate-800 dark:text-stone-200',
-        title: 'Điểm danh hàng ngày (Bấm để nhận 50 điểm)'
-      };
-    }
-
-    // 2. Chuỗi >= 1 nhưng HÔM NAY CHƯA ĐIỂM DANH: Than hồng nhấp nháy, cảnh báo giữ chuỗi
-    if (!hasCheckedIn) {
-      return {
-        id: 'risk',
-        level: -1,
-        name: 'Nguy Cơ Mất Chuỗi',
-        shortBadge: 'Cần Giữ Chuỗi',
-        desc: 'Hôm nay chưa điểm danh, chuỗi có nguy cơ bị reset về 0 lúc 00:00',
-        btnClass: 'h-8 flex items-center gap-1.5 px-2.5 rounded-full border border-amber-500/90 dark:border-amber-500/90 bg-amber-500/10 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.28)] hover:shadow-[0_0_16px_rgba(245,158,11,0.45)] transition-all active:scale-95 flex-shrink-0 cursor-pointer select-none text-xs font-mono font-black animate-pulse',
-        flameSvg: '<i data-lucide="flame" class="w-4 h-4 stroke-[2.4] text-amber-600 dark:text-amber-400 animate-pulse"></i>',
-        headerIconClass: 'w-11 h-11 rounded-2xl bg-amber-100 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0 shadow-xs animate-pulse',
-        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 stroke-[2.2]"></i>',
-        textClass: 'text-amber-600 dark:text-amber-400 font-black',
-        modalBadge: '<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 animate-pulse">Cần Giữ Chuỗi</span>',
-        bentoBorder: 'border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400',
-        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 text-amber-600 animate-pulse"></i>',
-        bentoText: 'text-amber-600 dark:text-amber-400',
-        title: `Chuỗi: ${count} ngày (Chưa điểm danh hôm nay - Bấm để giữ chuỗi!)`
+        headerIconClass: 'w-11 h-11 rounded-2xl bg-stone-100 dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-400 dark:text-stone-500 flex-shrink-0 shadow-xs',
+        headerIconSvg: '<i data-lucide="flame" class="w-6 h-6 stroke-[2.2] text-stone-400 dark:text-stone-500"></i>',
+        textClass: 'text-stone-400 dark:text-stone-500 font-bold',
+        modalBadge: `<span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-700">${count > 0 ? 'Chưa Điểm Danh' : 'Chưa Bật Lửa'}</span>`,
+        bentoBorder: 'border-stone-200/80 dark:border-stone-800 bg-stone-100/70 dark:bg-stone-900/60 text-stone-500 dark:text-stone-400',
+        bentoFlame: '<i data-lucide="flame" class="w-4 h-4 text-stone-400 dark:text-stone-500"></i>',
+        bentoText: 'text-stone-500 dark:text-stone-400',
+        title: count > 0
+          ? `Chuỗi: ${count} ngày (Chưa điểm danh hôm nay - Bấm để giữ chuỗi!)`
+          : 'Điểm danh hàng ngày (Bấm để nhận 50 điểm)'
       };
     }
 
@@ -1388,7 +1395,7 @@
     streakBtn.classList.add('flex');
 
     const streakCount = streak ? (streak.current_streak || 0) : 0;
-    const hasCheckedIn = streak ? streak.has_checked_in_today : false;
+    const hasCheckedIn = this._isStreakCheckedInToday(streak);
 
     // Luôn ẩn hoàn toàn chấm đỏ nhấp nháy theo chỉ đạo của người dùng
     if (streakDot) {
@@ -1429,7 +1436,14 @@
     const card = document.getElementById('modal-card');
     if (!container || !card) return;
 
-    if (!this.state.streakInfo) {
+    const todayVn = this._getVnTodayDateStr();
+    const isStaleStreak = Boolean(
+      this.state.streakInfo &&
+      this.state.streakInfo.today_date &&
+      String(this.state.streakInfo.today_date).slice(0, 10) !== todayVn
+    );
+
+    if (!this.state.streakInfo || isStaleStreak) {
       card.className = 'bg-white dark:bg-[#18181B] text-slate-800 dark:text-stone-100 rounded-3xl max-w-lg w-full p-8 shadow-2xl border border-stone-100 dark:border-stone-800 transform transition-all relative text-center py-12';
       card.innerHTML = `
         <div class="animate-spin rounded-full h-8 w-8 border-2 border-stone-300 dark:border-stone-700 border-t-orange-600 mx-auto mb-3"></div>
@@ -1458,11 +1472,44 @@
 
     card.className = 'bg-white dark:bg-[#18181B] text-slate-900 dark:text-stone-100 rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-stone-200/80 dark:border-stone-800 transform transition-all relative max-h-[92vh] overflow-y-auto no-scrollbar';
 
-    const tierInfo = this.getStreakTierInfo(streak.current_streak, streak.has_checked_in_today);
+    const hasCheckedInToday = this._isStreakCheckedInToday(streak);
+    const tierInfo = this.getStreakTierInfo(streak.current_streak, hasCheckedInToday);
 
     const roadmapHtml = (streak.roadmap || []).map(r => {
       // 1. Ngày 7: Mốc Vàng Đặc Biệt (Đặt chip bên trong card, tuyệt đối không bị đè chữ)
       if (r.is_milestone) {
+        if (!hasCheckedInToday) {
+          let milestoneClasses = 'border-stone-300 dark:border-stone-700 bg-stone-100/60 dark:bg-stone-900/40 text-stone-400 dark:text-stone-500';
+          let iconHtml = '<i data-lucide="crown" class="w-4 h-4 stroke-[2] text-stone-400 dark:text-stone-500"></i>';
+          let statusText = 'Mốc Vàng';
+
+          if (r.status === 'CLAIMED') {
+            milestoneClasses = 'border-stone-200 dark:border-stone-800 bg-stone-100/70 dark:bg-stone-900/50 text-stone-400 dark:text-stone-500';
+            iconHtml = '<i data-lucide="check-circle-2" class="w-4 h-4 stroke-[2.2] text-stone-400 dark:text-stone-500"></i>';
+            statusText = 'Đã nhận';
+          } else if (r.status === 'TODAY') {
+            milestoneClasses = 'border-2 border-stone-400 dark:border-stone-600 bg-stone-100 dark:bg-stone-800/90 text-stone-600 dark:text-stone-300';
+            iconHtml = '<i data-lucide="flame" class="w-4 h-4 stroke-[2.2] text-stone-400 dark:text-stone-500"></i>';
+            statusText = 'Hôm nay';
+          }
+
+          return `
+            <div class="flex flex-col items-center justify-between p-2 rounded-2xl border ${milestoneClasses} transition-all relative overflow-hidden group">
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-stone-200/80 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border border-stone-300 dark:border-stone-700 mb-0.5 whitespace-nowrap">
+                Mốc Vàng
+              </span>
+              <span class="text-[11px] font-bold text-stone-500 dark:text-stone-400">Ngày ${r.day}</span>
+              <div class="my-1 flex items-center justify-center">
+                ${iconHtml}
+              </div>
+              <span class="font-mono font-black text-xs text-stone-500 dark:text-stone-400">
+                +${r.points}
+              </span>
+              <span class="text-[9px] font-bold text-stone-400 dark:text-stone-500 mt-0.5">${statusText}</span>
+            </div>
+          `;
+        }
+
         let milestoneClasses = 'border-orange-400/80 bg-gradient-to-b from-orange-50/80 to-orange-50/40 dark:from-orange-950/30 dark:to-orange-950/20 text-orange-700 dark:text-orange-400';
         let iconHtml = '<i data-lucide="crown" class="w-4 h-4 stroke-[2.2] text-orange-600 dark:text-orange-400"></i>';
         let statusText = 'Mốc Vàng';
@@ -1495,6 +1542,37 @@
       }
 
       // 2. Các ngày 1 - 6
+      if (!hasCheckedInToday) {
+        let statusClasses = 'bg-stone-50/70 dark:bg-stone-900/40 border-stone-200/70 dark:border-stone-800 text-stone-400 dark:text-stone-500';
+        let iconHtml = '<i data-lucide="lock" class="w-3.5 h-3.5 stroke-[2] text-stone-400/70 dark:text-stone-600"></i>';
+        let statusText = 'Khóa';
+        let pointsColor = 'text-stone-400 dark:text-stone-500';
+
+        if (r.status === 'CLAIMED') {
+          statusClasses = 'bg-stone-100/70 dark:bg-stone-900/50 border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-500';
+          iconHtml = '<i data-lucide="check" class="w-3.5 h-3.5 stroke-[2.2] text-stone-400 dark:text-stone-500"></i>';
+          statusText = 'Đã nhận';
+        } else if (r.status === 'TODAY') {
+          statusClasses = 'bg-stone-100 dark:bg-stone-800/90 border-2 border-stone-400 dark:border-stone-600 text-stone-600 dark:text-stone-300';
+          iconHtml = '<i data-lucide="flame" class="w-4 h-4 stroke-[2.2] text-stone-400 dark:text-stone-500"></i>';
+          statusText = 'Hôm nay';
+          pointsColor = 'text-stone-600 dark:text-stone-300';
+        }
+
+        return `
+          <div class="flex flex-col items-center justify-between p-2.5 rounded-2xl border ${statusClasses} transition-all">
+            <span class="text-[11px] font-bold text-stone-500 dark:text-stone-400">Ngày ${r.day}</span>
+            <div class="my-1.5 flex items-center justify-center">
+              ${iconHtml}
+            </div>
+            <span class="font-mono font-black text-xs ${pointsColor}">
+              +${r.points}
+            </span>
+            <span class="text-[9px] font-semibold text-stone-400 dark:text-stone-500 mt-0.5">${statusText}</span>
+          </div>
+        `;
+      }
+
       let statusClasses = 'bg-stone-50/70 dark:bg-stone-900/40 border-stone-200/70 dark:border-stone-800 text-stone-400 dark:text-stone-600';
       let iconHtml = '<i data-lucide="lock" class="w-3.5 h-3.5 stroke-[2] text-stone-400/70 dark:text-stone-600"></i>';
       let statusText = 'Khóa';
@@ -1604,8 +1682,8 @@
           <div class="p-3 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800 text-center">
             <span class="block text-[11px] text-stone-500 dark:text-stone-400 font-medium">Tổng Đã Tích Lũy</span>
             <div class="flex items-center justify-center gap-1 mt-0.5">
-              <i data-lucide="coins" class="w-4 h-4 text-orange-600"></i>
-              <span class="font-mono font-black text-lg text-orange-600 dark:text-orange-400">+${(streak.total_points_earned || 0).toLocaleString('vi-VN')}</span>
+              <i data-lucide="coins" class="w-4 h-4 ${hasCheckedInToday ? 'text-orange-600 dark:text-orange-400' : 'text-stone-500 dark:text-stone-400'}"></i>
+              <span class="font-mono font-black text-lg ${hasCheckedInToday ? 'text-orange-600 dark:text-orange-400' : 'text-stone-500 dark:text-stone-400'}">+${(streak.total_points_earned || 0).toLocaleString('vi-VN')}</span>
             </div>
           </div>
         </div>
@@ -1652,7 +1730,7 @@
 
         <!-- Checkin Action Button -->
         <div class="pt-1">
-          ${!streak.has_checked_in_today ? `
+          ${!hasCheckedInToday ? `
             <button id="streak-modal-action-btn" onclick="VibeApp.performCheckin()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 via-rose-500 to-orange-600 hover:from-orange-700 hover:to-rose-600 text-white font-extrabold text-sm shadow-lg shadow-orange-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
               <i data-lucide="zap" class="w-4 h-4 fill-white"></i>
               <span>Điểm Danh Ngay (+${streak.today_reward_points} Điểm)</span>
@@ -1839,11 +1917,17 @@
    * Thực hiện điểm danh nhận thưởng Point
    */
   async performCheckin() {
+    if (this._isCheckingIn) return;
     this.haptic('medium');
     if (this.isEnterpriseUser()) {
       this.showToast('Chương trình điểm danh nhận thưởng chỉ áp dụng cho Người Điền', 'info');
       return;
     }
+
+    this._isCheckingIn = true;
+    const actionSeq = (this._checkinActionSeq || 0) + 1;
+    this._checkinActionSeq = actionSeq;
+
     const btn = document.getElementById('streak-modal-action-btn');
     if (btn) {
       btn.disabled = true;
@@ -1855,12 +1939,17 @@
 
     try {
       const res = await this.api('/users/checkin', { method: 'POST' });
+      if (this._checkinActionSeq !== actionSeq) return;
       if (!res || !res.success) {
         throw new Error((res && res.message) || 'Không thể thực hiện điểm danh');
       }
 
       this.haptic('success');
-      this.showToast(res.message, 'success');
+      const container = document.getElementById('modal-container');
+      const isModalOpen = Boolean(container && (container.open || !container.classList.contains('hidden')));
+      if (!isModalOpen) {
+        this.showToast(res.message, 'success');
+      }
 
       // Cập nhật số dư điểm người dùng trong state
       if (this.state.currentUser && res.streak && typeof res.streak.new_point_balance === 'number') {
@@ -1869,6 +1958,7 @@
 
       // Nạp lại thông tin streak
       await this.fetchStreakInfo();
+      if (this._checkinActionSeq !== actionSeq) return;
 
       // Cập nhật UI Header
       const pointsBadgeText = document.getElementById('header-points-text');
@@ -1878,14 +1968,14 @@
       this.renderUserProfileDropdown();
 
       // Nếu đang mở Modal, re-render modal với trạng thái mới
-      const container = document.getElementById('modal-container');
-      if (container && (container.open || !container.classList.contains('hidden'))) {
+      if (isModalOpen) {
         this.openStreakModal();
       }
 
       // Nếu vừa đạt mốc mở khóa Hộp Quà & Đặc Quyền mới, tự động bật popup vinh danh
       if (res.streak && res.streak.eligible_unclaimed_milestone && res.streak.milestone_gate_passed) {
         setTimeout(() => {
+          if (this._checkinActionSeq !== actionSeq) return;
           this.openMilestoneCelebrationPopup(res.streak.eligible_unclaimed_milestone.day, res.streak.eligible_unclaimed_milestone);
         }, 450);
       }
@@ -1896,6 +1986,7 @@
         if (root) this.renderSurveysView(root, false);
       }
     } catch (err) {
+      if (this._checkinActionSeq !== actionSeq) return;
       this.haptic('error');
       this.showToast(err.message || 'Lỗi xử lý điểm danh', 'error');
       if (btn) {
@@ -1906,6 +1997,10 @@
         `;
         if (window.lucide) lucide.createIcons();
       }
+    } finally {
+      if (this._checkinActionSeq === actionSeq) {
+        this._isCheckingIn = false;
+      }
     }
   },
 
@@ -1914,7 +2009,12 @@
    * KE_HOACH_UU_DAI_CHUOI_DIEM_DANH.md — backend chặn gate hoạt động (403) và chống nhận trùng (400).
    */
   async claimStreakMilestone(milestoneDay) {
+    if (this._isClaimingMilestone) return;
     this.haptic('medium');
+    this._isClaimingMilestone = true;
+    const actionSeq = (this._claimMilestoneSeq || 0) + 1;
+    this._claimMilestoneSeq = actionSeq;
+
     const btn = document.querySelector(`[data-milestone-btn="${milestoneDay}"]`);
     if (btn) {
       btn.disabled = true;
@@ -1929,6 +2029,7 @@
         method: 'POST',
         body: { milestone_day: milestoneDay }
       });
+      if (this._claimMilestoneSeq !== actionSeq) return;
       if (!res || !res.success) {
         throw new Error((res && res.message) || 'Không thể nhận Hộp Quà');
       }
@@ -1946,6 +2047,7 @@
       }
       this.renderUserProfileDropdown();
       await this.fetchStreakInfo();
+      if (this._claimMilestoneSeq !== actionSeq) return;
 
       // Re-render modal với trạng thái mới
       const container = document.getElementById('modal-container');
@@ -1953,6 +2055,7 @@
         this.openStreakModal();
       }
     } catch (err) {
+      if (this._claimMilestoneSeq !== actionSeq) return;
       this.haptic('error');
       this.showToast(err.message || 'Lỗi nhận Hộp Quà Cột Mốc', 'error');
       // Khôi phục nút nếu modal vẫn hiển thị
@@ -1962,6 +2065,10 @@
           <i data-lucide="gift" class="w-3 h-3"></i><span>Mở Quà Ngay</span>
         `;
         if (window.lucide) lucide.createIcons();
+      }
+    } finally {
+      if (this._claimMilestoneSeq === actionSeq) {
+        this._isClaimingMilestone = false;
       }
     }
   },
@@ -2085,7 +2192,82 @@
         return;
       }
       const s = res.survey;
-      const questions = s.questions || [];
+      const questions = Array.isArray(res.questions) ? res.questions : (Array.isArray(s.questions) ? s.questions : []);
+      const estMins = Math.max(1, Math.ceil((s.min_completion_time_sec || Math.max(15, questions.length * 5)) / 60));
+
+      const user = this.state.currentUser;
+      const isOwner = Boolean(user && String(s.creator_id) === String(user.id));
+      const isEnterprise = Boolean(user && (user.role === 'CREATOR' || (typeof this.isEnterpriseUser === 'function' && this.isEnterpriseUser())));
+
+      let ctaBannerHtml = '';
+      if (isOwner) {
+        ctaBannerHtml = `
+          <div class="p-4 rounded-2xl bg-stone-100 dark:bg-stone-800/90 border border-stone-200 dark:border-stone-700 space-y-2.5 text-center mt-3">
+            <div class="text-xs font-extrabold text-stone-900 dark:text-white">Đây là khảo sát do bạn tạo (${s.status === 'DRAFT' ? 'Bản Nháp' : 'Chế độ Xem Trước'})</div>
+            <p class="text-[11px] text-stone-600 dark:text-stone-300">Để đảm bảo tính khách quan của dữ liệu nghiên cứu, người tạo khảo sát sử dụng chế độ xem trước và không trực tiếp tự làm bài của chính mình.</p>
+            <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+              ${s.status === 'DRAFT' ? `
+                <button onclick="VibeApp.closeModal(); VibeApp.openEditSurvey('${s.id}')" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95">
+                  Chỉnh Sửa & Xuất Bản
+                </button>
+              ` : `
+                <button onclick="VibeApp.closeModal(); VibeApp.navigate('analytics', { surveyId: '${s.id}' })" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95">
+                  Xem Báo Cáo & Kết Quả
+                </button>
+              `}
+              <button onclick="VibeApp.closeModal(); VibeApp.navigate('creator-surveys')" class="px-4 py-2 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700 rounded-xl text-xs font-bold transition-all active:scale-95">
+                Quản Lý Khảo Sát Của Tôi
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (isEnterprise) {
+        ctaBannerHtml = `
+          <div class="p-4 rounded-2xl bg-stone-100 dark:bg-stone-800/90 border border-stone-200 dark:border-stone-700 space-y-2 text-center mt-3">
+            <div class="text-xs font-extrabold text-stone-900 dark:text-white">Chế độ Xem Trước Cấu Trúc Câu Hỏi</div>
+            <p class="text-[11px] text-stone-600 dark:text-stone-300">Tài khoản Doanh nghiệp đang ở chế độ xem trước biểu mẫu nghiên cứu.</p>
+            <div class="flex items-center justify-center gap-2 pt-1">
+              <button onclick="VibeApp.closeModal(); VibeApp.navigate('create-survey')" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95">
+                Tạo Khảo Sát Mới
+              </button>
+              <button onclick="VibeApp.closeModal()" class="px-4 py-2 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl text-xs font-bold transition-all active:scale-95">
+                Đóng
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (user) {
+        ctaBannerHtml = s.status === 'ACTIVE' ? `
+          <div class="p-4 rounded-2xl bg-orange-600 text-white space-y-2.5 text-center mt-3">
+            <div class="text-xs font-extrabold">Sẵn sàng tham gia khảo sát và nhận +${(s.reward_points_per_response || 0).toLocaleString()} Điểm</div>
+            <div class="flex items-center justify-center gap-2 pt-0.5">
+              <button onclick="VibeApp.closeModal(); VibeApp.startSurveySession('${s.id}')" class="px-5 py-2 bg-white text-orange-700 hover:bg-orange-50 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95">
+                Bắt Đầu Làm Bài Ngay (+${(s.reward_points_per_response || 0).toLocaleString()} Điểm)
+              </button>
+            </div>
+          </div>
+        ` : `
+          <div class="p-4 rounded-2xl bg-stone-100 dark:bg-stone-800/90 border border-stone-200 dark:border-stone-700 space-y-2 text-center mt-3">
+            <div class="text-xs font-extrabold text-stone-900 dark:text-white">Chế độ Xem Trước</div>
+            <p class="text-[11px] text-stone-600 dark:text-stone-300">Khảo sát này hiện ở trạng thái ${s.status} và chưa mở nhận câu trả lời.</p>
+          </div>
+        `;
+      } else {
+        ctaBannerHtml = `
+          <div class="p-4 rounded-2xl bg-orange-600 text-white space-y-2 text-center mt-3">
+            <div class="text-xs font-extrabold">Đăng nhập tài khoản để làm khảo sát và nhận ngay +${(s.reward_points_per_response || 0).toLocaleString()} Điểm</div>
+            <p class="text-[11px] text-zinc-100">Điểm thưởng có thể quy đổi sang thẻ cào Viettel, Vina, Mobi hoặc rút về tài khoản ngân hàng.</p>
+            <div class="flex items-center justify-center gap-2 pt-1">
+              <button onclick="VibeApp.closeModal(); VibeApp.openAuthModal('login')" class="px-5 py-2 bg-white text-orange-700 hover:bg-orange-50 dark:bg-stone-800 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95">
+                Đăng Nhập Để Làm Bài
+              </button>
+              <button onclick="VibeApp.closeModal(); VibeApp.openAuthModal('register')" class="px-5 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold transition-all active:scale-95">
+                Đăng Ký Tài Khoản Mới
+              </button>
+            </div>
+          </div>
+        `;
+      }
 
       this.showModal({
         title: s.title,
@@ -2106,7 +2288,7 @@
                 +${(s.reward_points_per_response || 0).toLocaleString()} Điểm (≈ ${(s.reward_points_per_response || 0).toLocaleString()}đ)
               </span>
               <span class="text-slate-500 dark:text-slate-400 font-medium">
-                ~${Math.ceil((s.min_completion_time_sec || 15) / 60)} phút • ${questions.length} câu hỏi
+                ~${estMins} phút • ${questions.length} câu hỏi
               </span>
             </div>
 
@@ -2143,18 +2325,7 @@
             </div>
 
             <!-- CTA Banner -->
-            <div class="p-4 rounded-2xl bg-orange-600 text-white space-y-2 text-center mt-3">
-              <div class="text-xs font-extrabold">Đăng nhập tài khoản để làm khảo sát và nhận ngay +${(s.reward_points_per_response || 0).toLocaleString()} Điểm</div>
-              <p class="text-[11px] text-zinc-100">Điểm thưởng có thể quy đổi sang thẻ cào Viettel, Vina, Mobi hoặc rút về tài khoản ngân hàng.</p>
-              <div class="flex items-center justify-center gap-2 pt-1">
-                <button onclick="VibeApp.closeModal(); VibeApp.openAuthModal('login')" class="px-5 py-2 bg-white text-orange-700 hover:bg-orange-50 dark:bg-stone-800 rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95">
-                  Đăng Nhập Để Làm Bài
-                </button>
-                <button onclick="VibeApp.closeModal(); VibeApp.openAuthModal('register')" class="px-5 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-bold transition-all active:scale-95">
-                  Đăng Ký Tài Khoản Mới
-                </button>
-              </div>
-            </div>
+            ${ctaBannerHtml}
           </div>
         `
       });
@@ -2214,44 +2385,29 @@
     let description = '';
 
     if (typeof messageOrConfig === 'object' && messageOrConfig !== null) {
-      title = messageOrConfig.title || '';
-      description = messageOrConfig.description || messageOrConfig.message || '';
+      title = messageOrConfig.title ? String(messageOrConfig.title) : '';
+      description = String(messageOrConfig.description || messageOrConfig.message || '');
       if (messageOrConfig.type) type = messageOrConfig.type;
     } else {
       const msg = String(messageOrConfig || '');
-
-      // Bộ phân loại ngôn ngữ thông minh (Smart Humanized Parser)
       if (msg.includes('không có quyền') || msg.includes('Yêu cầu vai trò') || msg.includes('không thuộc quyền')) {
         type = 'error';
-        title = 'Yêu Cầu Quyền Hạn';
         description = msg.includes('Yêu cầu vai trò')
           ? 'Thao tác này yêu cầu tài khoản phù hợp hoặc phiên làm việc tương ứng.'
           : msg;
-      } else if (type === 'error') {
-        title = 'Có Lỗi Xảy Ra';
-        description = msg;
       } else if (msg.includes('Số dư không đủ') || msg.includes('không đủ để ký quỹ')) {
         type = 'warning';
-        title = 'Số Dư Chưa Đủ Ký Quỹ';
-        description = msg;
-      } else if (type === 'success' || msg.includes('Chào mừng') || msg.includes('thành công') || msg.includes('Thành công')) {
-        type = 'success';
-        title = 'Thao Tác Thành Công';
         description = msg;
       } else if (type === 'info' && (msg.includes('Vui lòng') || msg.includes('cảnh báo') || msg.includes('chú ý'))) {
         type = 'warning';
-        title = 'Lưu Ý Thao Tác';
         description = msg;
       } else {
-        title = type === 'success' ? 'Thành Công' :
-          type === 'error' ? 'Có Lỗi Xảy Ra' :
-            type === 'warning' ? 'Thông Báo Cần Lưu Ý' : 'Thông Tin';
         description = msg;
       }
     }
 
     // Chống lặp thông báo giống nhau liên tiếp trong vòng 2.5 giây
-    const toastKey = `${type}:${description}`;
+    const toastKey = `${type}:${title}:${description}`;
     const now = Date.now();
     if (this._lastToastKey === toastKey && now - (this._lastToastTime || 0) < 2500) {
       return;
@@ -2301,15 +2457,18 @@
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'polite');
 
+    const contentHtml = title
+      ? `<h4 class="text-xs font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug">${title}</h4><p class="text-[11.5px] text-slate-600 dark:text-slate-300 leading-snug mt-0.5 break-words">${description}</p>`
+      : `<p class="text-xs font-semibold text-stone-800 dark:text-stone-100 leading-snug break-words">${description}</p>`;
+
     toast.innerHTML = `
-      <div class="w-8 h-8 rounded-xl ${cfg.iconBg} flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
-        <i data-lucide="${cfg.icon}" class="w-4 h-4 stroke-[2.4]"></i>
+      <div class="w-7 h-7 rounded-lg ${cfg.iconBg} flex items-center justify-center flex-shrink-0">
+        <i data-lucide="${cfg.icon}" class="w-3.5 h-3.5 stroke-[2.2]"></i>
       </div>
       <div class="flex-1 min-w-0 pr-1">
-        <h4 class="text-xs font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug">${title}</h4>
-        <p class="text-[11.5px] text-slate-600 dark:text-slate-300 leading-relaxed mt-0.5 break-words">${description}</p>
+        ${contentHtml}
       </div>
-      <button type="button" class="toast-close-btn p-1 -mr-1 -mt-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors flex-shrink-0" title="Đóng thông báo" aria-label="Đóng thông báo">
+      <button type="button" class="toast-close-btn w-6 h-6 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800/80 transition-colors flex-shrink-0" title="Đóng thông báo" aria-label="Đóng thông báo">
         <i data-lucide="x" class="w-3.5 h-3.5 stroke-[2.2]"></i>
       </button>
       <div class="toast-progress-bar ${cfg.progressBar}" style="animation-duration: ${durationMs}ms;"></div>
@@ -2342,7 +2501,11 @@
       } catch (e) {}
     }
     container.appendChild(toast);
-    if (window.lucide) window.lucide.createIcons();
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(toast);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
     this.haptic(type === 'error' ? 'warning' : type === 'success' ? 'success' : 'light');
   },
 

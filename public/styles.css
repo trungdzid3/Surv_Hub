@@ -963,40 +963,42 @@ dialog.vibe-dialog::backdrop {
   -webkit-backdrop-filter: blur(12px);
 }
 
-[popover]#toast-container {
-  margin: 0;
-  border: none;
-  padding: 0;
-  background: transparent;
-  position: fixed;
-  inset: auto 1.25rem 1.25rem auto;
+[popover]#toast-container,
+#toast-container {
+  margin: 0 !important;
+  border: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  position: fixed !important;
+  inset: auto 20px 20px auto !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: 99999 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+  width: max-content !important;
+  max-width: min(360px, calc(100vw - 32px)) !important;
   overflow: visible;
-  max-width: calc(100vw - 2rem);
 }
 
-[popover]:is(:popover-open, .\:popover-open) {
-  display: flex;
+[popover]#toast-container:not(:popover-open) {
+  display: none;
 }
 
 /* ==================== TOAST NOTIFICATION SYSTEM (UI-UX-PRO-MAX) ==================== */
-#toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 99999;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  pointer-events: none;
-  max-width: 380px;
-  width: calc(100% - 32px);
-}
 @media (max-width: 640px) {
+  [popover]#toast-container,
   #toast-container {
-    bottom: 84px;
-    left: 16px;
-    right: 16px;
-    width: auto;
+    inset: auto 16px 84px auto !important;
+    bottom: 84px !important;
+    right: 16px !important;
+    left: auto !important;
+    max-width: calc(100vw - 32px) !important;
   }
 }
 
@@ -1004,23 +1006,26 @@ dialog.vibe-dialog::backdrop {
   pointer-events: auto;
   position: relative;
   overflow: hidden;
-  border-radius: 18px;
-  padding: 13px 16px;
+  width: fit-content;
+  max-width: min(360px, calc(100vw - 32px));
+  min-width: 220px;
+  border-radius: 14px;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.16), 0 2px 6px -1px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(231, 229, 228, 0.95);
+  box-shadow: 0 10px 28px -6px rgba(15, 23, 42, 0.14), 0 2px 6px -1px rgba(15, 23, 42, 0.05);
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   animation: toastSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   transition: transform 0.22s ease, opacity 0.22s ease, margin-top 0.22s ease;
 }
 html.dark .toast-pro-card {
   background: rgba(24, 24, 27, 0.96);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(46, 46, 54, 0.95);
+  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 @keyframes toastSlideIn {

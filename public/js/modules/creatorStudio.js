@@ -5628,8 +5628,9 @@
           try { sessionStorage.removeItem('survhub_surveys_cache'); } catch (e) {}
           this.api('/surveys').then(sRes => {
             if (sRes && Array.isArray(sRes.surveys)) {
-              this.state.surveys = sRes.surveys;
-              try { sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(sRes.surveys)); } catch (e) {}
+              const activeSurveys = sRes.surveys.filter(s => !s.status || s.status === 'ACTIVE');
+              this.state.surveys = activeSurveys;
+              try { sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(activeSurveys)); } catch (e) {}
             }
           }).catch(() => {});
           this.resetStudioToNew(false);

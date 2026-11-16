@@ -65,7 +65,11 @@
     const currentUser = this.state.currentUser;
     const targetSurvey = (this.state.surveys && this.state.surveys.find(s => s.id === surveyId)) || null;
 
-    if (currentUser.role === 'CREATOR' || (targetSurvey && targetSurvey.creator_id === currentUser.id)) {
+    if (targetSurvey && String(targetSurvey.creator_id) === String(currentUser.id)) {
+      await this.openSurveyPreviewModal(surveyId);
+      return;
+    }
+    if (currentUser.role === 'CREATOR') {
       this.showToast('Tài khoản Doanh nghiệp / Người tạo khảo sát chỉ có quyền Xem trước cấu trúc câu hỏi.', 'info');
       await this.openSurveyPreviewModal(surveyId);
       return;
@@ -130,7 +134,7 @@
           currentIndex: 0,
           answers: res.existingAnswers || {},
           durationSec: 0,
-          minTimeSec: isEditing ? 0 : (res.minCompletionTimeSec || 15),
+          minTimeSec: isEditing ? 0 : (res.minCompletionTimeSec !== undefined ? res.minCompletionTimeSec : 3),
           rewardPoints: isEditing ? 0 : (res.rewardPoints || surveyDetail.reward_points_per_response || 0),
           isPacingLocked: false,
           isEditing: isEditing,
@@ -138,21 +142,19 @@
           timerId: null
         };
 
-        if (shouldStartDirectly) {
-          this.state.activeSession.timerId = setInterval(() => {
-            if (this.state.activeSession) {
-              this.state.activeSession.durationSec++;
-              this._saveActiveSessionToStorage();
-              const timerEl = document.getElementById('session-timer-text');
-              if (timerEl) {
-                const sec = this.state.activeSession.durationSec;
-                const mins = Math.floor(sec / 60);
-                const remSec = sec % 60;
-                timerEl.textContent = `${mins.toString().padStart(2, '0')}:${remSec.toString().padStart(2, '0')}`;
-              }
+        this.state.activeSession.timerId = setInterval(() => {
+          if (this.state.activeSession) {
+            this.state.activeSession.durationSec = (this.state.activeSession.durationSec || 0) + 1;
+            this._saveActiveSessionToStorage();
+            const timerEl = document.getElementById('session-timer-text');
+            if (timerEl) {
+              const sec = this.state.activeSession.durationSec;
+              const mins = Math.floor(sec / 60);
+              const remSec = sec % 60;
+              timerEl.textContent = `${mins.toString().padStart(2, '0')}:${remSec.toString().padStart(2, '0')}`;
             }
-          }, 1000);
-        }
+          }
+        }, 1000);
 
         this._saveActiveSessionToStorage();
         this.navigate('take-survey', { surveyId });
@@ -242,7 +244,7 @@
     };
     if (!session.timerId) {
       session.timerId = setInterval(() => {
-        if (this.state.activeSession && this.state.activeSession.hasStartedQuiz) {
+        if (this.state.activeSession) {
           this.state.activeSession.durationSec = (this.state.activeSession.durationSec || 0) + 1;
           this._saveActiveSessionToStorage();
           const timerEl = document.getElementById('session-timer-text');
@@ -2468,17 +2470,32 @@
 
     // Nhắc nhở nếu hoàn thành quá nhanh khi nộp bài lần đầu để bảo vệ người dùng không bị bẫy tốc độ
     if (!session.isEditing) {
-      const minSafeDuration = Math.max(5, session.minTimeSec || 15);
+      const answeredScorableCount = (session.questions || []).filter(q => {
+        if (!q) return false;
+        const qType = String(q.type || '').toUpperCase();
+        if (['OPEN_TEXT', 'SHORT_TEXT', 'PARAGRAPH', 'SECTION_HEADER', 'TEXT_BLOCK', 'VIDEO_BLOCK'].includes(qType)) return false;
+        const a = session.answers ? session.answers[q.id] : undefined;
+        return a !== undefined && a !== null && String(a).trim() !== '';
+      }).length;
+      const realisticMinSec = answeredScorableCount <= 0 ? 0
+        : (answeredScorableCount <= 3 ? answeredScorableCount * 1
+          : (answeredScorableCount <= 7 ? Math.ceil(answeredScorableCount * 1.5) : answeredScorableCount * 2));
+      const minSafeDuration = Math.min(
+        session.minTimeSec !== undefined ? session.minTimeSec : realisticMinSec,
+        realisticMinSec
+      );
       if (session.durationSec < minSafeDuration) {
         const waitSec = minSafeDuration - session.durationSec;
-        this.showToast(`Bạn hoàn thành khá nhanh! Vui lòng dành thêm ${waitSec} giây rà soát lại để đảm bảo đạt chuẩn 100/100 điểm chất lượng nhé.`, 'warning');
-        return;
+        if (waitSec <= 3) {
+          session.durationSec = minSafeDuration;
+        } else {
+          this.showToast(`Bạn hoàn thành khá nhanh! Vui lòng dành thêm ${waitSec} giây rà soát lại để đảm bảo đạt chuẩn 100/100 điểm chất lượng nhé.`, 'warning');
+          return;
+        }
       }
     }
 
     if (session.timerId) clearInterval(session.timerId);
-
-    this.showToast('Đang gửi bài và ghi nhận...', 'info');
 
     try {
       const res = await this.api(`/surveys/${session.surveyId}/submit`, {

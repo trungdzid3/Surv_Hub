@@ -1376,6 +1376,8 @@
       return;
     }
 
+    const submitSeq = (this._submitDepositSeq = (this._submitDepositSeq || 0) + 1);
+
     if (this._depositPrefetchTimer) {
       clearTimeout(this._depositPrefetchTimer);
       this._depositPrefetchTimer = null;
@@ -1417,6 +1419,7 @@
       if (this._prefetchedDepositOrders) {
         this._prefetchedDepositOrders.delete(cacheKey);
       }
+      if (submitSeq !== this._submitDepositSeq) return;
 
       if (!res || !res.success) {
         throw new Error((res && res.message) || 'Không thể khởi tạo đơn nạp VietQR');
@@ -1429,6 +1432,7 @@
       if (this._prefetchedDepositOrders) {
         this._prefetchedDepositOrders.delete(cacheKey);
       }
+      if (submitSeq !== this._submitDepositSeq) return;
       this.showToast(err.message, 'error');
       if (this._activeDepositModalSeq === modalSeq) {
         this.openDepositModal(amount);
@@ -1522,15 +1526,11 @@
 
     const checkBtn = document.getElementById('deposit-check-status-btn');
     if (checkBtn && orderCode) {
-      checkBtn.disabled = false;
-      checkBtn.classList.remove('opacity-60', 'cursor-not-allowed');
       checkBtn.onclick = () => this.checkDepositStatus(orderCode, false);
     }
 
     const simBtn = document.getElementById('deposit-simulate-btn');
     if (simBtn && orderCode) {
-      simBtn.disabled = false;
-      simBtn.classList.remove('opacity-60', 'cursor-not-allowed');
       simBtn.onclick = () => this.simulatePaymentSuccess(orderCode);
     }
 
@@ -1552,7 +1552,6 @@
     const orderCode = order.orderCode || order.order_code || '';
     const initialQrSrc = order.qrDataUrl || order.qr_data_url || order.qrFastUrl || order.qr_fast_url || order.qrUrl || order.qr_url || '';
     const isInlineSvg = initialQrSrc.startsWith('data:image/svg+xml');
-    const disabledClass = isPending ? 'opacity-60 cursor-not-allowed' : '';
     const copyDisabledClass = isPending ? 'opacity-50 cursor-not-allowed' : '';
 
     this.showModal({
@@ -1661,10 +1660,10 @@
 
           <!-- Nút hành động & Giả lập thanh toán -->
           <div class="flex flex-col sm:flex-row gap-2 pt-0.5">
-            <button type="button" id="deposit-check-status-btn" ${isPending ? 'disabled' : ''} onclick="${orderCode ? `VibeApp.checkDepositStatus('${orderCode}', false)` : ''}" class="flex-1 py-2 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98] ${disabledClass}">
+            <button type="button" id="deposit-check-status-btn" onclick="VibeApp.checkDepositStatus(null, false)" class="flex-1 py-2 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
               Kiểm Tra Trạng Thái
             </button>
-            <button type="button" id="deposit-simulate-btn" ${isPending ? 'disabled' : ''} onclick="${orderCode ? `VibeApp.simulatePaymentSuccess('${orderCode}')` : ''}" class="py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98] ${disabledClass}">
+            <button type="button" id="deposit-simulate-btn" onclick="VibeApp.simulatePaymentSuccess()" class="py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98]">
               Mô Phỏng Thanh Toán (Dev/Test)
             </button>
             <button type="button" onclick="VibeApp.closeModal()" class="py-2 px-3 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
@@ -1721,70 +1720,113 @@
     }
   },
 
+  _showDepositSuccessModal(orderCode, orderAmountVnd, orderCreditAmount) {
+    if (this._depositPollInterval) {
+      clearInterval(this._depositPollInterval);
+      this._depositPollInterval = null;
+    }
+    if (this._depositTimerInterval) {
+      clearInterval(this._depositTimerInterval);
+      this._depositTimerInterval = null;
+    }
+    if (this._prefetchedDepositOrders) {
+      this._prefetchedDepositOrders.clear();
+    }
+
+    this.showModal({
+      title: 'Nạp Tiền Thành Công',
+      content: `
+        <div class="space-y-4 text-center py-2">
+          <div class="w-14 h-14 bg-orange-100 dark:bg-orange-950/60 rounded-full flex items-center justify-center mx-auto text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+            <i data-lucide="check" class="w-7 h-7 stroke-[2.5]"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-stone-900 dark:text-white">Giao Dịch Đã Hoàn Tất</h3>
+            <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">Đơn nạp mã <strong id="deposit-success-order-code">${orderCode}</strong> đã được hệ thống ghi nhận thành công.</p>
+          </div>
+
+          <div class="p-3 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-xs space-y-1.5 text-left max-w-sm mx-auto">
+            <div class="flex justify-between text-stone-600 dark:text-stone-400">
+              <span>Số tiền nạp:</span>
+              <span class="font-mono font-bold text-stone-900 dark:text-white">${formatMoney(orderAmountVnd)} VNĐ</span>
+            </div>
+            <div class="flex justify-between text-stone-600 dark:text-stone-400">
+              <span>Credit được cộng:</span>
+              <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">+${formatMoney(orderCreditAmount)} Credit</span>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button type="button" onclick="VibeApp.closeModal(); VibeApp.navigate('wallet');" class="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]">
+              Xem Số Dư Ví & Tiếp Tục
+            </button>
+          </div>
+        </div>
+      `
+    });
+    refreshIcons(document.getElementById('modal-card') || undefined);
+  },
+
   async checkDepositStatus(orderCode, isSilent = false) {
+    let targetCode = orderCode || (this._activeQrOrder && (this._activeQrOrder.orderCode || this._activeQrOrder.order_code)) || '';
+    if (!targetCode && this._activeQrOrder && this._activeQrOrder.amountVnd) {
+      if (isSilent) return;
+      try {
+        const createdOrder = await this._getOrCreateDepositOrder(this._activeQrOrder.amountVnd);
+        targetCode = (createdOrder && (createdOrder.orderCode || createdOrder.order_code)) || '';
+        if (targetCode && this._activeQrOrder) {
+          this._activeQrOrder = createdOrder;
+        }
+      } catch (err) {
+        this.showToast(err.message || 'Không thể kiểm tra trạng thái đơn nạp', 'error');
+        return;
+      }
+    }
+    if (!targetCode) return;
+
+    const checkSeq = !isSilent ? (this._checkDepositSeq = (this._checkDepositSeq || 0) + 1) : 0;
+
     try {
-      const res = await this.api(`/wallet/deposit-orders/${orderCode}`);
+      const res = await this.api(`/wallet/deposit-orders/${targetCode}`);
+      if (!isSilent && checkSeq !== this._checkDepositSeq) return;
+
       if (res && res.success && res.order) {
         const order = res.order;
         if (order.status === 'COMPLETED') {
-          if (this._depositPollInterval) clearInterval(this._depositPollInterval);
-          if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
-          if (this._prefetchedDepositOrders) this._prefetchedDepositOrders.clear();
-
           const orderAmountVnd = order.amountVnd !== undefined ? order.amountVnd : (order.amount_vnd !== undefined ? order.amount_vnd : 0);
           const orderCreditAmount = order.creditAmount !== undefined ? order.creditAmount : (order.credit_amount !== undefined ? order.credit_amount : orderAmountVnd);
 
+          this._optimisticPaidOrders = this._optimisticPaidOrders || new Set();
+          const alreadyCredited = this._optimisticPaidOrders.has(targetCode);
+          if (!alreadyCredited) {
+            this._optimisticPaidOrders.add(targetCode);
+            if (this.state.currentUser) {
+              this.state.currentUser.credit_balance = Number(this.state.currentUser.credit_balance || 0) + orderCreditAmount;
+            }
+            if (this.state.wallet) {
+              this.state.wallet.credit_balance = Number(this.state.wallet.credit_balance || 0) + orderCreditAmount;
+            } else if (this.state.currentUser) {
+              this.state.wallet = {
+                point_balance: Number(this.state.currentUser.point_balance || 0),
+                credit_balance: Number(this.state.currentUser.credit_balance || 0)
+              };
+            }
+            syncWalletCacheFromState(this);
+            this.applyUserInterface(true);
+          }
+
           this.haptic('success');
-          if (this.state.currentUser) {
-            this.state.currentUser.credit_balance = (this.state.currentUser.credit_balance || 0) + orderCreditAmount;
-          }
-          if (this.state.wallet) {
-            this.state.wallet.credit_balance = Number(this.state.wallet.credit_balance || 0) + orderCreditAmount;
-          } else if (this.state.currentUser) {
-            this.state.wallet = {
-              point_balance: Number(this.state.currentUser.point_balance || 0),
-              credit_balance: Number(this.state.currentUser.credit_balance || 0)
-            };
-          }
-          syncWalletCacheFromState(this);
-          this.applyUserInterface();
-
-          // Cap nhat modal sang man hinh Chuc mung
-          this.showModal({
-            title: 'Nạp Tiền Thành Công',
-            content: `
-              <div class="space-y-4 text-center py-2">
-                <div class="w-14 h-14 bg-orange-100 dark:bg-orange-950/60 rounded-full flex items-center justify-center mx-auto text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                  <i data-lucide="check" class="w-7 h-7 stroke-[2.5]"></i>
-                </div>
-                <div>
-                  <h3 class="text-base font-extrabold text-stone-900 dark:text-white">Giao Dịch Đã Hoàn Tất</h3>
-                  <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">Đơn nạp mã <strong>${orderCode}</strong> đã được hệ thống ghi nhận thành công.</p>
-                </div>
-
-                <div class="p-3 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-xs space-y-1.5 text-left max-w-sm mx-auto">
-                  <div class="flex justify-between text-stone-600 dark:text-stone-400">
-                    <span>Số tiền nạp:</span>
-                    <span class="font-mono font-bold text-stone-900 dark:text-white">${formatMoney(orderAmountVnd)} VNĐ</span>
-                  </div>
-                  <div class="flex justify-between text-stone-600 dark:text-stone-400">
-                    <span>Credit được cộng:</span>
-                    <span class="font-mono font-extrabold text-orange-600 dark:text-orange-400">+${formatMoney(orderCreditAmount)} Credit</span>
-                  </div>
-                </div>
-
-                <div class="pt-2">
-                  <button type="button" onclick="VibeApp.closeModal(); VibeApp.navigate('wallet');" class="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-[0.98]">
-                    Xem Số Dư Ví & Tiếp Tục
-                  </button>
-                </div>
-              </div>
-            `
-          });
+          this._showDepositSuccessModal(targetCode, orderAmountVnd, orderCreditAmount);
           return;
         } else if (order.status === 'PENDING_MISMATCH') {
-          if (this._depositPollInterval) clearInterval(this._depositPollInterval);
-          if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
+          if (this._depositPollInterval) {
+            clearInterval(this._depositPollInterval);
+            this._depositPollInterval = null;
+          }
+          if (this._depositTimerInterval) {
+            clearInterval(this._depositTimerInterval);
+            this._depositTimerInterval = null;
+          }
           if (this._prefetchedDepositOrders) this._prefetchedDepositOrders.clear();
 
           const statusEl = document.getElementById('deposit-status-text');
@@ -1805,7 +1847,7 @@
                 <div class="p-3 bg-stone-50 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 text-xs space-y-1.5 text-left max-w-sm mx-auto">
                   <div class="flex justify-between text-stone-600 dark:text-stone-400">
                     <span>Mã đơn nạp:</span>
-                    <span class="font-mono font-bold text-stone-900 dark:text-white">${orderCode}</span>
+                    <span class="font-mono font-bold text-stone-900 dark:text-white">${targetCode}</span>
                   </div>
                   <div class="flex justify-between text-stone-600 dark:text-stone-400">
                     <span>Trạng thái:</span>
@@ -1821,11 +1863,17 @@
               </div>
             `
           });
-          this.showToast('Số tiền chuyển khoản không khớp với số tiền đơn nạp. Đơn hàng đang được tạm giữ để đối soát an toàn. Vui lòng liên hệ Admin qua kênh hỗ trợ.', 'error');
+          refreshIcons(document.getElementById('modal-card') || undefined);
           return;
         } else if (order.status === 'EXPIRED') {
-          if (this._depositPollInterval) clearInterval(this._depositPollInterval);
-          if (this._depositTimerInterval) clearInterval(this._depositTimerInterval);
+          if (this._depositPollInterval) {
+            clearInterval(this._depositPollInterval);
+            this._depositPollInterval = null;
+          }
+          if (this._depositTimerInterval) {
+            clearInterval(this._depositTimerInterval);
+            this._depositTimerInterval = null;
+          }
           const statusEl = document.getElementById('deposit-status-text');
           if (statusEl) statusEl.textContent = 'Đơn nạp đã hết hạn thanh toán';
           if (!isSilent) this.showToast('Đơn nạp này đã hết hạn', 'warning');
@@ -1842,19 +1890,108 @@
   },
 
   async simulatePaymentSuccess(orderCode) {
+    const simSeq = (this._simulatePaymentSeq = (this._simulatePaymentSeq || 0) + 1);
+    const activeOrder = this._activeQrOrder || {};
+    let targetCode = orderCode || activeOrder.orderCode || activeOrder.order_code || '';
+
+    this._optimisticPaidOrders = this._optimisticPaidOrders || new Set();
+    if (targetCode && this._optimisticPaidOrders.has(targetCode)) {
+      return;
+    }
+
+    const amountVnd = Number(activeOrder.amountVnd ?? activeOrder.amount_vnd ?? 0);
+    const creditAmount = Number(activeOrder.creditAmount ?? activeOrder.credit_amount ?? amountVnd);
+
+    const prevUserCredit = this.state.currentUser ? Number(this.state.currentUser.credit_balance || 0) : 0;
+    const prevWalletCredit = this.state.wallet ? Number(this.state.wallet.credit_balance || 0) : prevUserCredit;
+
+    if (targetCode) {
+      this._optimisticPaidOrders.add(targetCode);
+    }
+
+    if (this.state.currentUser) {
+      this.state.currentUser.credit_balance = prevUserCredit + creditAmount;
+    }
+    if (this.state.wallet) {
+      this.state.wallet.credit_balance = prevWalletCredit + creditAmount;
+    } else if (this.state.currentUser) {
+      this.state.wallet = {
+        point_balance: Number(this.state.currentUser.point_balance || 0),
+        credit_balance: Number(this.state.currentUser.credit_balance || 0)
+      };
+    }
+    syncWalletCacheFromState(this);
+    this.applyUserInterface(true);
+
+    this.haptic('success');
+    this._showDepositSuccessModal(targetCode || 'Đang cấp mã...', amountVnd, creditAmount);
+
     try {
-      this.haptic('light');
+      if (!targetCode) {
+        const createdOrder = await this._getOrCreateDepositOrder(amountVnd);
+        targetCode = (createdOrder && (createdOrder.orderCode || createdOrder.order_code)) || '';
+        if (!targetCode) {
+          throw new Error('Không thể lấy mã đơn nạp để mô phỏng thanh toán');
+        }
+        this._optimisticPaidOrders.add(targetCode);
+        const codeEl = document.getElementById('deposit-success-order-code');
+        if (codeEl) codeEl.textContent = targetCode;
+      }
+
       const res = await this.api('/wallet/simulate-payment-success', {
         method: 'POST',
-        body: JSON.stringify({ order_code: orderCode })
+        body: JSON.stringify({ order_code: targetCode })
       });
 
-      if (res.success) {
-        this.showToast('Đã mô phỏng thanh toán ngân hàng thành công!', 'success');
-        await this.checkDepositStatus(orderCode, false);
+      if (simSeq !== this._simulatePaymentSeq) return;
+
+      if (res && res.success) {
+        if (this.state.currentUser) {
+          this.state.currentUser.credit_balance = Number(res.newCreditBalance ?? this.state.currentUser.credit_balance);
+          if (res.fastTrackTickets !== undefined) {
+            this.state.currentUser.fast_track_tickets = Number(res.fastTrackTickets);
+          }
+        }
+        if (this.state.wallet) {
+          this.state.wallet.credit_balance = this.state.currentUser
+            ? Number(this.state.currentUser.credit_balance)
+            : Number(res.newCreditBalance ?? this.state.wallet.credit_balance);
+        }
+        syncWalletCacheFromState(this);
+        this.applyUserInterface(true);
+
+        if (this.state.currentTab === 'wallet') {
+          const root = document.getElementById('app-root');
+          if (root) {
+            this._paintWalletView(
+              root,
+              this.state.wallet || {
+                point_balance: Number(this.state.currentUser?.point_balance || 0),
+                credit_balance: Number(this.state.currentUser?.credit_balance || 0)
+              },
+              Array.isArray(this.state.transactions) ? this.state.transactions : [],
+              Array.isArray(this.state.payouts) ? this.state.payouts : []
+            );
+          }
+        }
+      } else {
+        throw new Error((res && res.message) || 'Lỗi mô phỏng thanh toán');
       }
     } catch (err) {
-      this.showToast(err.message, 'error');
+      if (targetCode && this._optimisticPaidOrders) {
+        this._optimisticPaidOrders.delete(targetCode);
+      }
+      if (this.state.currentUser) {
+        this.state.currentUser.credit_balance = prevUserCredit;
+      }
+      if (this.state.wallet) {
+        this.state.wallet.credit_balance = prevWalletCredit;
+      }
+      syncWalletCacheFromState(this);
+      this.applyUserInterface(true);
+      if (simSeq === this._simulatePaymentSeq) {
+        this.showToast(err.message || 'Lỗi mô phỏng thanh toán', 'error');
+      }
     }
   },
   };

@@ -483,6 +483,42 @@ class SurveyController {
   }
 
   /**
+   * Tính thời gian tối thiểu thực tế (giây) dựa trên số câu hỏi tính giờ trên nhánh hiện tại
+   * @param {Array} questions
+   * @returns {number}
+   */
+  _calculateRealisticMinTimeSec(questions) {
+    if (!Array.isArray(questions) || questions.length === 0) return 0;
+    const skippedTypes = new Set([
+      'OPEN_TEXT', 'SHORT_TEXT', 'PARAGRAPH',
+      'SECTION_HEADER', 'TEXT_BLOCK', 'VIDEO_BLOCK'
+    ]);
+    let scorableCount = 0;
+    for (const q of questions) {
+      if (!q) continue;
+      const qType = String(q.type || '').toUpperCase();
+      if (skippedTypes.has(qType)) continue;
+      if (qType === 'CHOICE_GRID' || qType === 'CHECKBOX_GRID') {
+        let rows = Array.isArray(q.rows) ? q.rows : null;
+        if (!rows && q.rows_json) {
+          try {
+            const parsed = JSON.parse(q.rows_json);
+            if (Array.isArray(parsed)) rows = parsed;
+          } catch (e) {}
+        }
+        const rowCount = (rows && rows.length > 0) ? rows.length : 1;
+        scorableCount += rowCount * 0.5;
+      } else {
+        scorableCount += 1;
+      }
+    }
+    if (scorableCount <= 0) return 0;
+    if (scorableCount <= 3) return Math.max(1, Math.ceil(scorableCount * 1));
+    if (scorableCount <= 7) return Math.ceil(scorableCount * 1.5);
+    return Math.ceil(scorableCount * 2);
+  }
+
+  /**
    * Lấy danh sách khảo sát phù hợp với vai trò
    */
   listSurveys(req, res) {
@@ -533,7 +569,7 @@ class SurveyController {
         return res.json({ success: true, surveys });
       }
 
-      if (user.role === 'ADMIN') {
+      if (user.role === 'ADMIN' && (scope === 'admin' || filter === 'all_admin')) {
         const surveys = db.prepare(`
           SELECT s.*, u.name AS creator_name, u.email AS creator_email,
             vc.brand_name AS sponsor_brand_name, vc.brand_logo AS sponsor_brand_logo, vc.title AS sponsor_voucher_title,
@@ -547,7 +583,7 @@ class SurveyController {
         return res.json({ success: true, surveys });
       }
 
-      // Vai trò RESPONDENT: Lấy các khảo sát đang ACTIVE
+      // Cổng Khảo Sát & Trang Chủ (mọi vai trò): Chỉ lấy khảo sát ACTIVE kèm trạng thái làm bài của user hiện tại
       let userDemographics = null;
       const userRecord = db.prepare('SELECT demographics_json FROM users WHERE id = ?').get(user.id);
       if (userRecord && userRecord.demographics_json) {
@@ -572,16 +608,19 @@ class SurveyController {
           FROM questions q
           GROUP BY q.survey_id
         )
-        SELECT s.id, s.title, s.description, s.category, s.target_responses, 
+        SELECT s.id, s.creator_id, s.status, s.title, s.description, s.category, s.target_responses, 
                s.collected_responses, s.reward_points_per_response, s.min_completion_time_sec,
                s.survey_source, s.external_form_url, s.academic_tags_json, s.target_demographics_json,
+               s.cover_image_url, s.allow_edit_response, s.allow_view_response,
                s.reward_mode, s.sponsor_campaign_id, s.is_pinned, s.is_featured,
+               u.name AS creator_name, u.email AS creator_email,
                vc.brand_name AS sponsor_brand_name, vc.brand_logo AS sponsor_brand_logo, vc.title AS sponsor_voucher_title, vc.face_value_vnd AS sponsor_face_value,
                ulr.status AS user_response_status,
                ulr.points_rewarded AS points_rewarded,
                ulr.id AS user_response_id,
                COALESCE(qc.question_count, 0) AS question_count
         FROM surveys s
+        LEFT JOIN users u ON s.creator_id = u.id
         LEFT JOIN voucher_campaigns vc ON s.sponsor_campaign_id = vc.id
         LEFT JOIN user_latest_responses ulr ON ulr.survey_id = s.id AND ulr.rn = 1
         LEFT JOIN question_counts qc ON qc.survey_id = s.id
@@ -1616,15 +1655,14 @@ class SurveyController {
         sponsor
       };
 
-      // Tính toán thời gian chuẩn để bảo vệ người dùng không bị bẫy tốc độ oan
-      const tStandard = antiFraudService.calculateStandardTime(dbQuestions);
-      const safeMinTimeSec = Math.max(survey.min_completion_time_sec || 0, Math.ceil(tStandard * 0.60));
+      // Tính toán thời gian chuẩn thực tế để bảo vệ người dùng không bị bẫy tốc độ oan
+      const realisticMinTimeSec = this._calculateRealisticMinTimeSec(screenerResult.questions || dbQuestions);
 
       return res.json({
         success: true,
         responseId,
         survey: cleanSurvey,
-        minCompletionTimeSec: safeMinTimeSec,
+        minCompletionTimeSec: realisticMinTimeSec,
         rewardPoints: survey.reward_points_per_response,
         allow_email_collection: survey.allow_email_collection === 1,
         auto_screener_bypassed: screenerResult.autoScreenerBypassed,
@@ -2027,8 +2065,15 @@ class SurveyController {
         }
       }
 
-      // Chạy thuật toán chấm điểm chống gian lận
-      const evalResult = antiFraudService.evaluateSubmission(dbQuestions, answers, duration);
+      // Chạy thuật toán chấm điểm chống gian lận theo nhánh câu hỏi thực tế
+      const activeQuestions = dbQuestions.filter(q => activeQuestionIds.has(q.id) && !(q.is_screener === 1 && isBypassed));
+      const evalQuestions = activeQuestions.length > 0 ? activeQuestions : dbQuestions;
+      const realisticMinActiveSec = this._calculateRealisticMinTimeSec(evalQuestions);
+      const tStandardActive = antiFraudService.calculateStandardTime(evalQuestions);
+      const effectiveDuration = duration >= realisticMinActiveSec
+        ? Math.max(duration, Math.ceil(tStandardActive * 0.65))
+        : duration;
+      const evalResult = antiFraudService.evaluateSubmission(evalQuestions, answers, effectiveDuration);
 
       // Lưu kết quả bài làm vào responses
       db.prepare(`

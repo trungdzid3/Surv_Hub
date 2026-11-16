@@ -105,7 +105,7 @@ class LedgerService {
    * và Gói Dịch Vụ Gia Tăng Đặc Quyền (Vé Ghim VIP, Lọc Sâu Đối Tượng)
    * Đảm bảo tính nguyên tử ACID
    */
-  depositCredit(userId, amountVnd, description = 'Nạp tiền vào tài khoản') {
+  _applyDepositCreditInTx(userId, amountVnd, description = 'Nạp tiền vào tài khoản') {
     const amount = Math.floor(Number(amountVnd));
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error('Số tiền nạp phải là số dương hợp lệ');
@@ -117,65 +117,73 @@ class LedgerService {
     const totalCreditToAdd = amount + bonusCreditVnd;
     const bonusTickets = bonusInfo.bonusTickets;
 
-    db.exec('BEGIN IMMEDIATE TRANSACTION');
-    try {
-      // Cập nhật số dư credit_balance và cộng thêm vé VIP (fast_track_tickets) cho tài khoản
-      const updateRes = db.prepare(`
-        UPDATE users 
-        SET credit_balance = credit_balance + ?,
-            fast_track_tickets = COALESCE(fast_track_tickets, 0) + ?,
-            free_targeting_tickets = COALESCE(free_targeting_tickets, 0) + ?,
-            has_vip_enterprise = CASE WHEN ? = 1 THEN 1 ELSE COALESCE(has_vip_enterprise, 0) END
-        WHERE id = ?
-      `).run(totalCreditToAdd, bonusTickets, enterprisePerks.freeTargetingTickets, enterprisePerks.hasVip, userId);
+    const updateRes = db.prepare(`
+      UPDATE users 
+      SET credit_balance = credit_balance + ?,
+          fast_track_tickets = COALESCE(fast_track_tickets, 0) + ?,
+          free_targeting_tickets = COALESCE(free_targeting_tickets, 0) + ?,
+          has_vip_enterprise = CASE WHEN ? = 1 THEN 1 ELSE COALESCE(has_vip_enterprise, 0) END
+      WHERE id = ?
+    `).run(totalCreditToAdd, bonusTickets, enterprisePerks.freeTargetingTickets, enterprisePerks.hasVip, userId);
 
-      if (updateRes.changes === 0) {
-        throw new Error('Người dùng không tồn tại');
-      }
+    if (updateRes.changes === 0) {
+      throw new Error('Người dùng không tồn tại');
+    }
 
-      const user = db.prepare('SELECT credit_balance, point_balance, fast_track_tickets, free_targeting_tickets, has_vip_enterprise FROM users WHERE id = ?').get(userId);
-      const newBalance = user.credit_balance;
-      const newPointBalance = user.point_balance;
+    const user = db.prepare('SELECT credit_balance, point_balance, fast_track_tickets, free_targeting_tickets, has_vip_enterprise FROM users WHERE id = ?').get(userId);
+    const newBalance = user.credit_balance;
+    const newPointBalance = user.point_balance;
 
-      const txId = crypto.randomUUID();
-      const balanceAfterDepositOnly = newBalance - bonusCreditVnd;
+    const txId = crypto.randomUUID();
+    const balanceAfterDepositOnly = newBalance - bonusCreditVnd;
+    db.prepare(`
+      INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
+      VALUES (?, ?, ?, 'DEPOSIT_CREDIT', 'VND', ?, ?, ?)
+    `).run(txId, userId, null, amount, balanceAfterDepositOnly, description);
+
+    if (bonusCreditVnd > 0) {
+      const txBonusId = crypto.randomUUID();
       db.prepare(`
         INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
         VALUES (?, ?, ?, 'DEPOSIT_CREDIT', 'VND', ?, ?, ?)
-      `).run(txId, userId, null, amount, balanceAfterDepositOnly, description);
+      `).run(
+        txBonusId,
+        userId,
+        txId,
+        bonusCreditVnd,
+        newBalance,
+        `Thưởng nạp tiền bậc ${bonusInfo.tier}: Tặng +${bonusInfo.bonusPercent}% Credit tạo form (+${bonusCreditVnd.toLocaleString('vi-VN')} Credit) & ${enterprisePerks.perkSummary}`
+      );
+    }
 
-      // Nếu có bonus Credit, ghi nhận thêm giao dịch Sổ cái cho credit thưởng
-      if (bonusCreditVnd > 0) {
-        const txBonusId = crypto.randomUUID();
-        db.prepare(`
-          INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
-          VALUES (?, ?, ?, 'DEPOSIT_CREDIT', 'VND', ?, ?, ?)
-        `).run(
-          txBonusId, 
-          userId, 
-          txId, 
-          bonusCreditVnd, 
-          newBalance, 
-          `Thưởng nạp tiền bậc ${bonusInfo.tier}: Tặng +${bonusInfo.bonusPercent}% Credit tạo form (+${bonusCreditVnd.toLocaleString('vi-VN')} Credit) & ${enterprisePerks.perkSummary}`
-        );
-      }
+    return {
+      success: true,
+      newBalance,
+      newPointBalance,
+      bonusCreditVnd,
+      bonusPercent: bonusInfo.bonusPercent,
+      tier: bonusInfo.tier,
+      bonusTickets,
+      totalCreditVnd: bonusInfo.totalCreditVnd,
+      enterprisePerks,
+      fastTrackTickets: user.fast_track_tickets,
+      freeTargetingTickets: user.free_targeting_tickets,
+      hasVipEnterprise: user.has_vip_enterprise,
+      txId
+    };
+  }
 
+  depositCredit(userId, amountVnd, description = 'Nạp tiền vào tài khoản') {
+    const amount = Math.floor(Number(amountVnd));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error('Số tiền nạp phải là số dương hợp lệ');
+    }
+
+    db.exec('BEGIN IMMEDIATE TRANSACTION');
+    try {
+      const result = this._applyDepositCreditInTx(userId, amount, description);
       db.exec('COMMIT');
-      return { 
-        success: true, 
-        newBalance, 
-        newPointBalance, 
-        bonusCreditVnd, 
-        bonusPercent: bonusInfo.bonusPercent, 
-        tier: bonusInfo.tier, 
-        bonusTickets,
-        totalCreditVnd: bonusInfo.totalCreditVnd,
-        enterprisePerks,
-        fastTrackTickets: user.fast_track_tickets,
-        freeTargetingTickets: user.free_targeting_tickets,
-        hasVipEnterprise: user.has_vip_enterprise,
-        txId 
-      };
+      return result;
     } catch (err) {
       this._safeRollback();
       throw err;
@@ -1241,9 +1249,9 @@ class LedgerService {
   /**
    * Hoan tat don nap tien va cong Credit vao vi
    */
-  completeDepositOrder(orderCode, actualAmountPaid = null, providerNote = '') {
+  completeDepositOrder(orderCode, actualAmountPaid = null, providerNote = '', prefetchedOrder = null) {
     const cleanCode = String(orderCode).trim().toUpperCase();
-    const order = db.prepare('SELECT * FROM deposit_orders WHERE order_code = ?').get(cleanCode);
+    const order = prefetchedOrder || db.prepare('SELECT * FROM deposit_orders WHERE order_code = ?').get(cleanCode);
     if (!order) {
       throw new Error('Don nap tien khong ton tai: ' + cleanCode);
     }
@@ -1270,58 +1278,64 @@ class LedgerService {
         throw new Error(`So tien thuc nhan (${paid.toLocaleString('vi-VN')}d) khong khop voi so tien don nap (${order.amount_vnd.toLocaleString('vi-VN')}d). Don nap duoc giu trang thai PENDING_MISMATCH de doi soat.`);
       }
     }
-    // Cap nhat trang thai don nap sang COMPLETED
-    const updateRes = db.prepare(`
-      UPDATE deposit_orders 
-      SET status = 'COMPLETED', paid_at = CURRENT_TIMESTAMP 
-      WHERE id = ? AND status IN ('PENDING', 'EXPIRED', 'PENDING_MISMATCH')
-    `).run(order.id);
 
-    if (updateRes.changes === 0) {
-      // Co the bi trung boi luong khac
-      const checkAgain = db.prepare('SELECT status FROM deposit_orders WHERE id = ?').get(order.id);
-      if (checkAgain && checkAgain.status === 'COMPLETED') {
-        return {
-          success: true,
-          message: 'Don nap da duoc xu ly boi phien khac',
-          alreadyCompleted: true,
-          orderCode: cleanCode
-        };
-      }
-      throw new Error('Khong the cap nhat trang thai don nap');
-    }
-
-    // Goi depositCredit de tang so du va ghi so cai Double-Entry Ledger
-    const note = providerNote 
+    const note = providerNote
       ? `Nap tien VietQR tu dong - Ma don: ${cleanCode} (${providerNote})`
       : `Nap tien VietQR tu dong - Ma don: ${cleanCode}`;
 
-    const depositResult = this.depositCredit(order.user_id, order.amount_vnd, note);
-
-    // Gui thong bao in-app den tai khoan
+    db.exec('BEGIN IMMEDIATE TRANSACTION');
     try {
-      const notifId = 'notif_dep_' + crypto.randomUUID();
-      db.prepare(`
-        INSERT INTO notifications (id, user_id, type, title, message, channel)
-        VALUES (?, ?, 'PAYMENT_SUCCESS', 'Nap quy thanh cong', ?, 'ALL')
-      `).run(
-        notifId,
-        order.user_id,
-        `Don nap ${cleanCode} tri gia ${Number(order.amount_vnd).toLocaleString('vi-VN')}d da duoc xac nhan thanh cong. Tai khoan cua ban da duoc cong +${Number(depositResult.newBalance).toLocaleString('vi-VN')} Credit.`
-      );
-    } catch (e) {}
+      const updateRes = db.prepare(`
+        UPDATE deposit_orders 
+        SET status = 'COMPLETED', paid_at = CURRENT_TIMESTAMP 
+        WHERE id = ? AND status IN ('PENDING', 'EXPIRED', 'PENDING_MISMATCH')
+      `).run(order.id);
 
-    return {
-      success: true,
-      message: `Xac nhan nap tien thanh cong cho don ${cleanCode}`,
-      orderCode: cleanCode,
-      amountVnd: order.amount_vnd,
-      creditAmount: order.credit_amount,
-      bonusCreditVnd: order.bonus_credit_vnd,
-      newCreditBalance: depositResult.newBalance,
-      fastTrackTickets: depositResult.fastTrackTickets,
-      depositResult
-    };
+      if (updateRes.changes === 0) {
+        const checkAgain = db.prepare('SELECT status FROM deposit_orders WHERE id = ?').get(order.id);
+        this._safeRollback();
+        if (checkAgain && checkAgain.status === 'COMPLETED') {
+          return {
+            success: true,
+            message: 'Don nap da duoc xu ly boi phien khac',
+            alreadyCompleted: true,
+            orderCode: cleanCode
+          };
+        }
+        throw new Error('Khong the cap nhat trang thai don nap');
+      }
+
+      const depositResult = this._applyDepositCreditInTx(order.user_id, order.amount_vnd, note);
+
+      try {
+        const notifId = 'notif_dep_' + crypto.randomUUID();
+        db.prepare(`
+          INSERT INTO notifications (id, user_id, type, title, message, channel)
+          VALUES (?, ?, 'PAYMENT_SUCCESS', 'Nap quy thanh cong', ?, 'ALL')
+        `).run(
+          notifId,
+          order.user_id,
+          `Don nap ${cleanCode} tri gia ${Number(order.amount_vnd).toLocaleString('vi-VN')}d da duoc xac nhan thanh cong. Tai khoan cua ban da duoc cong +${Number(depositResult.newBalance).toLocaleString('vi-VN')} Credit.`
+        );
+      } catch (e) {}
+
+      db.exec('COMMIT');
+
+      return {
+        success: true,
+        message: `Xac nhan nap tien thanh cong cho don ${cleanCode}`,
+        orderCode: cleanCode,
+        amountVnd: order.amount_vnd,
+        creditAmount: order.credit_amount,
+        bonusCreditVnd: order.bonus_credit_vnd,
+        newCreditBalance: depositResult.newBalance,
+        fastTrackTickets: depositResult.fastTrackTickets,
+        depositResult
+      };
+    } catch (err) {
+      this._safeRollback();
+      throw err;
+    }
   }
 
   /**
@@ -1414,7 +1428,7 @@ class LedgerService {
       }
     }
 
-    return this.completeDepositOrder(cleanCode, null, 'Mo phong thanh toan dev/staging');
+    return this.completeDepositOrder(cleanCode, null, 'Mo phong thanh toan dev/staging', order);
   }
 
   /**
