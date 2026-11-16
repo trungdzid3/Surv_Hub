@@ -732,7 +732,7 @@
                         </span>
                       </div>
                       <p class="text-[10px] text-stone-500 leading-tight">
-                        * Chi phí mua voucher được cộng tự động vào Tổng Ký Quỹ Escrow và giữ chỗ ngay khi xuất bản.
+                        * Chi phí mua voucher được cộng tự động vào Tổng Ngân Sách và giữ chỗ ngay khi xuất bản.
                       </p>
                     </div>
                   </div>
@@ -818,7 +818,7 @@
             <button type="button" onclick="VibeApp.submitFastCreate(false)" id="studio-sidebar-publish-btn"
                     class="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold tracking-wide shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2">
               <i data-lucide="send" class="w-4 h-4"></i>
-              <span>${calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản & Khóa Quỹ Ký Quỹ'}</span>
+              <span>${calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản & Thanh Toán'}</span>
             </button>
             <div class="flex gap-2">
               <button type="button" onclick="VibeApp.submitFastCreate(true)" class="flex-1 py-2 rounded-xl border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition-all">
@@ -1152,13 +1152,13 @@
     const topPublishBtn = document.getElementById('studio-top-publish-btn');
     if (topPublishBtn) {
       const span = topPublishBtn.querySelector('span');
-      if (span) span.innerText = calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản & Ký Quỹ';
+      if (span) span.innerText = calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản Khảo Sát';
     }
 
     const sidePublishBtn = document.getElementById('studio-sidebar-publish-btn');
     if (sidePublishBtn) {
       const span = sidePublishBtn.querySelector('span');
-      if (span) span.innerText = calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản & Khóa Quỹ Ký Quỹ';
+      if (span) span.innerText = calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản & Thanh Toán';
     }
   },
 
@@ -2360,7 +2360,7 @@
               <span class="text-xs text-stone-500 dark:text-stone-400">• 12 định dạng</span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">${this.state.editingSurveyId ? 'Chỉnh Sửa Khảo Sát' : 'Thiết Kế Khảo Sát Mới'}</h1>
-            <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-0.5">Soạn thảo trực quan & tính ký quỹ real-time.</p>
+            <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-0.5">Soạn thảo trực quan & tính chi phí real-time.</p>
           </div>
 
           <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -2384,7 +2384,7 @@
             </button>
             <button onclick="VibeApp.submitFastCreate(false)" id="studio-top-publish-btn" class="h-9 px-4 sm:px-4.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-extrabold whitespace-nowrap shadow-sm hover:shadow-orange-500/25 active:scale-95 transition-all flex items-center gap-2">
               <i data-lucide="send" class="w-4 h-4"></i>
-              <span>${calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản & Ký Quỹ'}</span>
+              <span>${calc.isZeroCost ? 'Xuất Bản Miễn Phí (0đ)' : 'Xuất Bản Khảo Sát'}</span>
             </button>
           </div>
         </div>
@@ -5485,7 +5485,7 @@
     }
 
     try {
-      this.showToast(isDraftOnly ? 'Đang lưu bản nháp...' : 'Đang xử lý xuất bản & ký quỹ...', 'info');
+      this.showToast(isDraftOnly ? 'Đang lưu bản nháp...' : 'Đang xử lý xuất bản khảo sát...', 'info');
 
       const targetDemographics = this.state.hasTargeting ? {
         gender: this.state.targetDemographics?.gender || 'ALL',
@@ -5607,7 +5607,7 @@
           return;
         }
 
-        // Xuất bản và Khóa Ký Quỹ
+        // Xuất bản và Thanh Toán
         try {
           const pubRes = await this.api(`/surveys/${surveyId}/publish`, {
             method: 'POST',
@@ -5618,7 +5618,7 @@
           });
 
           this.haptic('success');
-          this.showToast(pubRes.isFreeTrial ? 'Kích hoạt thành công khảo sát Miễn Phí!' : 'Xuất bản và ký quỹ khảo sát thành công!', 'success');
+          this.showToast(pubRes.isFreeTrial ? 'Kích hoạt thành công khảo sát Miễn Phí!' : 'Xuất bản khảo sát thành công!', 'success');
           if (this.state.currentUser) {
             if (pubRes.newCreditBalance !== undefined) this.state.currentUser.credit_balance = pubRes.newCreditBalance;
             if (pubRes.freeTrialSurveysAvailable !== undefined) this.state.currentUser.free_trial_surveys_available = pubRes.freeTrialSurveysAvailable;
@@ -5639,7 +5639,7 @@
           this.resetStudioToNew(false);
           this.navigate('creator-surveys');
           if (pubErr.message && pubErr.message.includes('Số dư không đủ')) {
-            this.showToast('Đã lưu bản nháp! Bạn cần nạp thêm Credit để ký quỹ xuất bản khảo sát này.', 'warning');
+            this.showToast('Đã lưu bản nháp! Bạn cần nạp thêm Credit để xuất bản khảo sát này.', 'warning');
             setTimeout(() => VibeApp.openDepositModal(), 600);
           } else {
             this.showToast(pubErr.message, 'error');

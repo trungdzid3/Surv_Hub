@@ -1150,7 +1150,7 @@ class SurveyController {
 
       if (req.body.target_responses !== undefined) {
         if (survey.status !== 'DRAFT') {
-          return res.status(400).json({ success: false, message: 'Không thể thay đổi số lượng mẫu mục tiêu sau khi khảo sát đã xuất bản ký quỹ' });
+          return res.status(400).json({ success: false, message: 'Không thể thay đổi số lượng mẫu mục tiêu sau khi khảo sát đã xuất bản' });
         }
         const nextTarget = Math.max(1, parseInt(req.body.target_responses, 10) || survey.target_responses);
         const existingQs = db.prepare('SELECT * FROM questions WHERE survey_id = ? ORDER BY order_index ASC').all(id);
@@ -1342,7 +1342,7 @@ class SurveyController {
         if ((freshUser.free_trial_surveys_available || 0) <= 0 && (freshUser.free_quota_remaining || 0) <= 0) {
           return res.status(400).json({
             success: false,
-            message: 'Bạn đã sử dụng hết lượt khảo sát dùng thử miễn phí. Vui lòng nạp thêm Credit để ký quỹ.'
+            message: 'Bạn đã sử dụng hết lượt khảo sát dùng thử miễn phí. Vui lòng nạp thêm Credit để xuất bản.'
           });
         }
       }
@@ -1372,7 +1372,7 @@ class SurveyController {
         success: true,
         message: result.isFreeTrial 
           ? `Xuất bản chiến dịch khảo sát Dùng Thử Miễn Phí thành công (Sàn tài trợ ${result.freeResponses || 25} lượt)!` 
-          : 'Xuất bản và ký quỹ chiến dịch khảo sát thành công!',
+          : 'Xuất bản chiến dịch khảo sát thành công!',
         isFreeTrial: !!result.isFreeTrial,
         freeResponses: result.freeResponses || 0,
         totalEscrowVnd: result.isFreeTrial ? 0 : totalEscrow,
@@ -2548,7 +2548,7 @@ class SurveyController {
       const result = ledgerService.refundRemainingEscrow(id, user.id);
       return res.json({
         success: true,
-        message: 'Đã đóng khảo sát và hoàn trả số tiền ký quỹ còn lại về tài khoản thành công',
+        message: 'Đã đóng khảo sát và hoàn trả số dư ngân sách còn lại về tài khoản thành công',
         refundedAmountVnd: result.refundedAmount,
         newCreditBalance: result.newCreditBalance
       });
@@ -3049,7 +3049,7 @@ class SurveyController {
       if (survey.status === 'CLOSED') {
         return res.status(400).json({
           success: false,
-          message: 'Khảo sát này đã được đóng và quyết toán ký quỹ trước đó, không thể mở lại bảo hành.'
+          message: 'Khảo sát này đã được đóng và quyết toán trước đó, không thể mở lại bảo hành.'
         });
       }
 

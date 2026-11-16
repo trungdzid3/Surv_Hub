@@ -577,7 +577,7 @@ class SurveyPricingService {
    */
   calculatePublishEscrow(survey, sponsorCampaign = null) {
     if (!survey) {
-      throw new Error('Dữ liệu khảo sát không hợp lệ để tính chi phí ký quỹ');
+      throw new Error('Dữ liệu khảo sát không hợp lệ để tính chi phí xuất bản');
     }
 
     if (survey.reward_mode === 'VOUCHER_ONLY') {

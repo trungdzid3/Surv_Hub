@@ -4454,7 +4454,7 @@
   // ==================== XÓA KHẢO SÁT THẬT HOẠT ĐỘNG HOÀN TOÀN ====================
   async deleteSurveyAction(surveyId) {
     if (!surveyId) return;
-    const confirmDelete = confirm('Bạn có chắc chắn muốn xóa bài khảo sát này vĩnh viễn không?\n\nNếu khảo sát còn số dư ký quỹ chưa dùng hết, hệ thống sẽ tự động hoàn trả về ví của bạn.');
+    const confirmDelete = confirm('Bạn có chắc chắn muốn xóa bài khảo sát này vĩnh viễn không?\n\nNếu khảo sát còn số dư ngân sách chưa dùng hết, hệ thống sẽ tự động hoàn trả về ví của bạn.');
     if (!confirmDelete) return;
 
     this.haptic('warning');

@@ -397,7 +397,7 @@
         sectionTag: 'STUDIO • BƯỚC 7/10',
         title: 'Thiết lập quy mô mẫu, giá sàn & thời hạn treo',
         description:
-          'Cột bên phải (hoặc tab Cài Đặt & Ngân Sách trên di động) tính toán ký quỹ theo thời gian thực.',
+          'Cột bên phải (hoặc tab Cài Đặt & Ngân Sách trên di động) tính toán chi phí chiến dịch theo thời gian thực.',
         bullets: [
           'Áp dụng đơn giá sàn theo phân khúc: Sinh viên (400-600đ), Cá nhân (800-1.200đ), Doanh nghiệp (1.500-2.500đ/mẫu).',
           'Chỉnh số mẫu mục tiêu và thời hạn treo sàn từ 1 đến 90 ngày; mẫu chưa thu đủ khi hết hạn được hoàn 100%.'
@@ -451,12 +451,12 @@
         },
         selectors: ['#studio-sidebar-publish-btn', '#studio-top-publish-btn', '#sidebar-escrow-amount'],
         sectionTag: 'STUDIO • BƯỚC 10/10',
-        title: 'Kiểm tra tổng ký quỹ & xuất bản chiến dịch',
+        title: 'Kiểm tra tổng chi phí & xuất bản chiến dịch',
         description:
           'Đối chiếu tổng Credit cần khóa sau khi khấu trừ lượt miễn phí và phát hành bài khảo sát lên sàn.',
         bullets: [
           'Nếu chưa đủ Credit, bạn có thể nhấn Lưu Bản Nháp hoặc bấm Nạp Quỹ ngay tại đây.',
-          'Bấm Xuất Bản & Khóa Quỹ Ký Quỹ để mở chiến dịch; dùng nút Hướng dẫn Studio khi cần xem lại.'
+          'Bấm Xuất Bản & Thanh Toán để mở chiến dịch; dùng nút Hướng dẫn Studio khi cần xem lại.'
         ]
       }
     ],
@@ -521,10 +521,10 @@
       },
       {
         selectors: ['#app-root button[onclick*="openDepositModal"]', '#app-root .grid > div:nth-child(2)', '#app-root'],
-        sectionTag: 'VÍ • CREDIT KÝ QUỸ',
+        sectionTag: 'VÍ • CREDIT KHẢO SÁT',
         title: 'Thẻ Credit: Nạp VietQR & đổi Point nhận +5%',
         description:
-          'Credit dùng riêng để ký quỹ tạo khảo sát và tài trợ E-Voucher (van 1 chiều, không rút ngược tiền mặt).',
+          'Credit dùng riêng để tạo khảo sát và tài trợ E-Voucher (van 1 chiều, không rút ngược tiền mặt).',
         bullets: [
           'Nạp trực tiếp bằng mã VietQR EMVCo Timo với tỷ lệ 1 Credit = 1 VNĐ.',
           'Có thể đổi Point sang Credit ngay trong ví để nhận thêm +5% giá trị thưởng điền chéo.'
@@ -548,7 +548,7 @@
         description:
           'Mỗi dòng hiển thị rõ nội dung, thời gian phát sinh, số tiền tăng/giảm và trạng thái hoàn tất.',
         bullets: [
-          'Ghi nhận đầy đủ tiền thưởng khảo sát, điểm danh, đổi thưởng, ký quỹ và hoàn tiền mẫu dư.'
+          'Ghi nhận đầy đủ tiền thưởng khảo sát, điểm danh, đổi thưởng, thanh toán chiến dịch và hoàn tiền mẫu dư.'
         ]
       },
       {
@@ -663,7 +663,7 @@
           'Điều chỉnh chiến dịch linh hoạt ngay trên từng thẻ quản lý theo diễn biến thu mẫu thực tế.',
         bullets: [
           'Nút Sửa đưa biểu mẫu vào lại Studio; Ghim VIP giúp đẩy khảo sát lên vị trí đầu trang.',
-          'Khi xóa khảo sát, toàn bộ tiền ký quỹ của số mẫu chưa thu được sẽ tự động hoàn 100% về ví.'
+          'Khi xóa khảo sát, toàn bộ ngân sách của số mẫu chưa thu được sẽ tự động hoàn 100% về ví.'
         ]
       },
       {
@@ -784,7 +784,7 @@
         description:
           'Chuyển đổi nhanh giữa Tổng Quan, Duyệt Tiền, Gian Lận, Báo Lỗi và Kiểm Toán trong cùng thanh điều hướng phụ.',
         bullets: [
-          'Giám sát luồng tiền ký quỹ Escrow, duyệt yêu cầu rút tiền VietQR/thẻ cào và xử lý vi phạm.'
+          'Giám sát luồng tiền tạm giữ chiến dịch, duyệt yêu cầu rút tiền VietQR/thẻ cào và xử lý vi phạm.'
         ]
       },
       {
@@ -807,7 +807,7 @@
         sectionTag: 'TẠO KHẢO SÁT • MỞ KHÓA',
         title: 'Đăng nhập để mở khóa Form Studio',
         description:
-          'Tạo khảo sát yêu cầu tài khoản để lưu bản nháp, ký quỹ Credit và quản lý dữ liệu thu thập an toàn.',
+          'Tạo khảo sát yêu cầu tài khoản để lưu bản nháp, dùng Credit tạo form và quản lý dữ liệu thu thập an toàn.',
         bullets: [
           'Hỗ trợ đăng nhập nhanh hoặc tạo tài khoản mới chỉ trong 30 giây.'
         ]

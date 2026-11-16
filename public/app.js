@@ -2787,7 +2787,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         <!-- ==================== BENTO GRID 2 CỘT: TIẾN ĐỘ & ĐIỂM DANH / THỐNG KÊ ==================== -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-3.5">
           ${user ? (this.isEnterpriseUser() ? `
-            <!-- CỘT 1 (DOANH NGHIỆP): SỐ DƯ CREDIT & QUẢN LÝ KÝ QUỸ -->
+            <!-- CỘT 1 (DOANH NGHIỆP): SỐ DƯ CREDIT & QUẢN LÝ NGÂN SÁCH -->
             <div class="bg-white dark:bg-[#18181B] rounded-2xl border border-stone-200/80 dark:border-stone-800/80 p-3.5 sm:p-4 shadow-xs flex flex-col justify-between h-full transition-all space-y-2.5">
               <!-- Header & KPI -->
               <div class="space-y-2">
@@ -2815,9 +2815,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                 </div>
               </div>
 
-              <!-- Action: Ký quỹ & Nạp Quỹ -->
+              <!-- Action: Thanh toán & Nạp Quỹ -->
               <div class="flex items-center justify-between gap-2 pt-0.5">
-                <span class="text-[11px] text-stone-500 dark:text-stone-400 truncate">Ký quỹ Escrow tự động</span>
+                <span class="text-[11px] text-stone-500 dark:text-stone-400 truncate">Thanh toán quỹ khảo sát tự động</span>
                 <button onclick="VibeApp.openDepositModal()" class="h-7 px-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold transition-all shadow-xs active:scale-95 flex items-center gap-1 shrink-0 cursor-pointer">
                   <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                   <span>Nạp Quỹ Ngay</span>
@@ -4101,7 +4101,7 @@ if (totalCount === 0) {
 
           <p class="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
             Bạn có chắc chắn muốn xóa bài khảo sát <strong class="text-stone-900 dark:text-white">"${surveyTitle || 'này'}"</strong> không? 
-            Mọi câu hỏi, dữ liệu phản hồi sẽ bị xóa vĩnh viễn và số dư ký quỹ chưa dùng (nếu có) sẽ được hoàn trả tự động về ví của bạn.
+            Mọi câu hỏi, dữ liệu phản hồi sẽ bị xóa vĩnh viễn và số dư ngân sách chưa dùng (nếu có) sẽ được hoàn trả tự động về ví của bạn.
           </p>
 
           <div class="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end gap-2.5">

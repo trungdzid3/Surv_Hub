@@ -197,7 +197,7 @@ class LedgerService {
   lockEscrowForSurvey(surveyId, userId, totalEscrowVnd, options = {}) {
     const escrowAmount = Math.floor(Number(totalEscrowVnd));
     if (!Number.isFinite(escrowAmount) || escrowAmount <= 0) {
-      throw new Error('Số tiền ký quỹ không hợp lệ');
+      throw new Error('Số tiền ngân sách xuất bản không hợp lệ');
     }
 
     db.exec('BEGIN IMMEDIATE TRANSACTION');
@@ -276,7 +276,7 @@ class LedgerService {
           db.prepare(`
             INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
             VALUES (?, ?, ?, 'ESCROW_LOCK', 'VND', ?, ?, ?)
-          `).run(txPaidId, userId, surveyId, -userPaidAmount, newBal, `Ký quỹ ${paidResponses} lượt khảo sát (vượt gói ${freeResponses} lượt miễn phí): ${surveyId}`);
+          `).run(txPaidId, userId, surveyId, -userPaidAmount, newBal, `Tạm giữ quỹ ${paidResponses} lượt khảo sát (vượt gói ${freeResponses} lượt miễn phí): ${surveyId}`);
         }
 
         db.exec('COMMIT');
@@ -325,7 +325,7 @@ class LedgerService {
       db.prepare(`
         INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
         VALUES (?, ?, ?, 'ESCROW_LOCK', 'VND', ?, ?, ?)
-      `).run(txId, userId, surveyId, -escrowAmount, updatedUser.credit_balance, `Ký quỹ chiến dịch khảo sát: ${surveyId}`);
+      `).run(txId, userId, surveyId, -escrowAmount, updatedUser.credit_balance, `Thanh toán xuất bản chiến dịch khảo sát: ${surveyId}`);
 
       db.exec('COMMIT');
       return { success: true, newCreditBalance: updatedUser.credit_balance, newEscrowBalance: updatedSurvey.escrow_locked_balance };
@@ -541,7 +541,7 @@ class LedgerService {
         `).run(surveyId, creatorId, refundAmount);
 
         if (updateSurvey.changes === 0) {
-          throw new Error('Quỹ ký quỹ đã thay đổi hoặc khảo sát đã bị đóng');
+          throw new Error('Ngân sách khảo sát đã thay đổi hoặc khảo sát đã bị đóng');
         }
 
         // Xác định số Credit thật mà Creator đã tự chi trả cho các lượt vượt mức miễn phí
@@ -603,7 +603,7 @@ class LedgerService {
       `).run(surveyId, creatorId, refundAmount);
 
       if (updateSurvey.changes === 0) {
-        throw new Error('Quỹ ký quỹ đã thay đổi hoặc khảo sát đã bị đóng');
+        throw new Error('Ngân sách khảo sát đã thay đổi hoặc khảo sát đã bị đóng');
       }
 
       // Hoàn tiền về tài khoản Creator
@@ -614,7 +614,7 @@ class LedgerService {
       db.prepare(`
         INSERT INTO point_transactions (id, user_id, reference_id, tx_type, currency, amount, balance_after, description)
         VALUES (?, ?, ?, 'ESCROW_REFUND', 'VND', ?, ?, ?)
-      `).run(txId, creatorId, surveyId, refundAmount, updatedUser.credit_balance, `Hoàn trả quỹ ký quỹ khảo sát: ${surveyId}`);
+      `).run(txId, creatorId, surveyId, refundAmount, updatedUser.credit_balance, `Hoàn trả ngân sách khảo sát còn dư: ${surveyId}`);
 
       db.exec('COMMIT');
       return { success: true, refundedAmount: refundAmount, newCreditBalance: updatedUser.credit_balance };

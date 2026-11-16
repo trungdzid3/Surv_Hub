@@ -1044,7 +1044,7 @@ class AdminController {
           const statsText = [
             'TỔNG QUAN HỆ THỐNG:',
             `  Tài khoản : ${uStats.total} (Đáp viên: ${uStats.respondents || 0}, Doanh nghiệp: ${uStats.creators || 0})`,
-            `  Khảo sát  : ${sStats.total} bài | Ký quỹ Escrow: ${(sStats.escrow || 0).toLocaleString('vi-VN')} đ`,
+            `  Khảo sát  : ${sStats.total} bài | Quỹ tạm giữ Escrow: ${(sStats.escrow || 0).toLocaleString('vi-VN')} đ`,
             `  Rút tiền  : ${pStats.total} yêu cầu đang chờ duyệt`,
             `  Thị trường: ${(uStats.circulating_points || 0).toLocaleString('vi-VN')} PTS điểm lưu hành`
           ].join('\n');
@@ -1067,7 +1067,7 @@ class AdminController {
             `  Gian lận test        : Đã xóa ${resCleanup.cleanedFraudLogs} nhật ký gian lận + ${resCleanup.cleanedDeviceLogs} log thiết bị`,
             `  Báo lỗi test         : Đã xóa ${resCleanup.cleanedBugReports} báo cáo lỗi kiểm thử`,
             `  Kiểm toán test       : Đã xóa ${resCleanup.cleanedAuditLogs} log thao tác kiểm toán test`,
-            `  Sổ cái & Giao dịch   : Đã xóa ${resCleanup.cleanedTransactions} giao dịch nạp ảo, ký quỹ & điểm danh test`,
+            `  Sổ cái & Giao dịch   : Đã xóa ${resCleanup.cleanedTransactions} giao dịch nạp ảo, tạm giữ quỹ & điểm danh test`,
             `  Diễn đàn thảo luận   : Đã xóa ${resCleanup.cleanedForumPosts} bài thảo luận test rác`,
             '  Đã cân bằng lại số dư Sổ cái Ledger và Ví tài khoản Quản trị sạch sẽ 100%!'
           ].join('\n');

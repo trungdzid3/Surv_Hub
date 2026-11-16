@@ -91,7 +91,7 @@
                 <h1 class="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-white">Tổng Quan Kinh Tế & Vận Hành Sàn</h1>
                 <span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60 text-[10px] font-mono font-bold rounded-md">LIVE</span>
               </div>
-              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Giám sát ký quỹ Escrow, công nợ điểm, biến động sổ cái kép và điều hành sàn.</p>
+              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">Giám sát quỹ tạm giữ chiến dịch, công nợ điểm, biến động sổ cái kép và điều hành sàn.</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
               <button type="button" onclick="VibeApp.openAdminConsoleModal()" class="px-3 py-1.5 bg-stone-900 hover:bg-black dark:bg-stone-800 dark:hover:bg-stone-700 text-white text-xs font-mono font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs border border-stone-800">

@@ -74,7 +74,7 @@
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Nhà tạo khảo sát / Creator</td><td class="py-1.5">Cá nhân, hộ kinh doanh hoặc doanh nghiệp sử dụng Credit để tạo, tài trợ và thu thập dữ liệu khảo sát.</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Point (Điểm)</td><td class="py-1.5">Đơn vị ghi nhận thù lao khảo sát của Đáp viên, quy ước 1 Point = 1 VNĐ khi đổi thưởng.</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Credit</td><td class="py-1.5">Đơn vị số dư nạp vào ví Nhà tạo khảo sát, quy ước 1 Credit = 1 VNĐ, chỉ dùng trong Nền tảng và không rút ra tiền mặt.</td></tr>
-                    <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Escrow (Ký quỹ)</td><td class="py-1.5">Khoản Credit được khóa tại thời điểm xuất bản khảo sát để bảo đảm khả năng chi trả thù lao cho Đáp viên.</td></tr>
+                    <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Quỹ tạm giữ (Escrow)</td><td class="py-1.5">Khoản Credit được khóa tại thời điểm xuất bản khảo sát để bảo đảm khả năng chi trả thù lao cho Đáp viên.</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Trust Score (Điểm uy tín)</td><td class="py-1.5">Chỉ số từ 0 đến 100 phản ánh chất lượng, mức độ trung thực và lịch sử tham gia của Đáp viên.</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Screen-out</td><td class="py-1.5">Trường hợp Đáp viên không thuộc nhóm đối tượng mục tiêu của khảo sát và được kết thúc sớm, không nhận thù lao.</td></tr>
                     <tr class="border-b border-stone-200 dark:border-stone-800"><td class="py-1.5 pr-3 font-bold">Validated</td><td class="py-1.5">Bài làm đã vượt qua toàn bộ kiểm duyệt chất lượng và được ghi nhận hợp lệ để trả thưởng.</td></tr>
@@ -132,7 +132,7 @@
               <ul>
                 <li><strong>Tỷ giá minh bạch:</strong> 1 Point = 1 VNĐ khi đổi thưởng; 1 Credit = 1 VNĐ khi nạp vào ví Nhà tạo khảo sát. Nền tảng không sử dụng token ảo, không áp dụng tỷ giá ẩn và không thu phí chuyển đổi ngoài các khoản đã công bố.</li>
                 <li><strong>Tính chất của Point:</strong> Point là quyền nhận thưởng có điều kiện, phát sinh từ bài làm hợp lệ. Point không phải tiền gửi, không sinh lãi, không được chuyển nhượng cho người khác và không được dùng để thanh toán bên ngoài Nền tảng.</li>
-                <li><strong>Tính chất của Credit:</strong> Credit là số dư dịch vụ dùng để tạo khảo sát. Credit không rút được ra tiền mặt, không chuyển nhượng và không được hoàn lại sau khi đã sử dụng, trừ trường hợp pháp luật bắt buộc hoặc theo chính sách hoàn ký quỹ tại Mục 9.</li>
+                <li><strong>Tính chất của Credit:</strong> Credit là số dư dịch vụ dùng để tạo khảo sát. Credit không rút được ra tiền mặt, không chuyển nhượng và không được hoàn lại sau khi đã sử dụng, trừ trường hợp pháp luật bắt buộc hoặc theo chính sách hoàn quỹ tại Mục 9.</li>
                 <li><strong>Đổi Point sang Credit:</strong> Đáp viên có thể đổi tối thiểu 1.000 Point sang Credit và nhận thêm 5% giá trị Credit (ví dụ 1.000 Point nhận 1.050 Credit). Số Credit này chỉ dùng để tạo khảo sát.</li>
                 <li><strong>Thay đổi tỷ giá:</strong> Mọi thay đổi tỷ giá hoặc đơn vị tính sẽ được thông báo trước ít nhất 07 ngày trên Nền tảng và không áp dụng hồi tố đối với số dư đã phát sinh.</li>
               </ul>
@@ -195,13 +195,13 @@
             `
           },
           {
-            title: '9. Nghĩa vụ của Nhà tạo khảo sát, ký quỹ và hoàn tiền',
+            title: '9. Nghĩa vụ của Nhà tạo khảo sát, quỹ tạm giữ và hoàn tiền',
             icon: 'layers',
             html: `
               <ul>
                 <li><strong>Nội dung hợp pháp:</strong> Nhà tạo khảo sát chịu trách nhiệm về tính hợp pháp, chính xác và không gây nhầm lẫn của nội dung khảo sát. Nghiêm cấm khảo sát vi phạm pháp luật, đồi trụy, cờ bạc, lừa đảo, xâm phạm quyền riêng tư hoặc yêu cầu cung cấp mật khẩu ngân hàng, mã OTP, số CCCD, thông tin thẻ và các dữ liệu nhạy cảm không cần thiết.</li>
-                <li><strong>Ký quỹ Escrow:</strong> Khi xuất bản khảo sát, ngân sách được khóa trong quỹ Escrow. Hệ thống chỉ giải ngân thù lao cho các bài làm đã được thẩm định hợp lệ.</li>
-                <li><strong>Hoàn tiền khi đóng khảo sát:</strong> Khi khảo sát kết thúc, đóng hoặc hủy, SurvHub hoàn lại <strong>toàn bộ số dư ký quỹ còn lại chưa giải ngân</strong> vào ví Credit của Nhà tạo khảo sát. Số tiền đã trả cho các bài làm hợp lệ không được hoàn lại. SurvHub không cam kết hoàn 100% tổng ngân sách ban đầu nếu đã có mẫu hợp lệ được thu thập.</li>
+                <li><strong>Quỹ tạm giữ Escrow:</strong> Khi xuất bản khảo sát, ngân sách được khóa trong quỹ Escrow. Hệ thống chỉ giải ngân thù lao cho các bài làm đã được thẩm định hợp lệ.</li>
+                <li><strong>Hoàn tiền khi đóng khảo sát:</strong> Khi khảo sát kết thúc, đóng hoặc hủy, SurvHub hoàn lại <strong>toàn bộ số dư ngân sách còn lại chưa giải ngân</strong> vào ví Credit của Nhà tạo khảo sát. Số tiền đã trả cho các bài làm hợp lệ không được hoàn lại. SurvHub không cam kết hoàn 100% tổng ngân sách ban đầu nếu đã có mẫu hợp lệ được thu thập.</li>
                 <li><strong>Miễn phí thử nghiệm:</strong> Tài khoản mới được cấp 25 lượt tạo khảo sát miễn phí (tương đương 50.000 VNĐ). Lượt miễn phí chưa sử dụng được hoàn lại khi khảo sát chưa thu được mẫu nào.</li>
                 <li><strong>Bảo hành dữ liệu:</strong> Gói Doanh nghiệp được bảo hành 1 đổi 1 trong 07 ngày kể từ khi hoàn thành hoặc đủ mẫu, với hạn mức tối đa 15% tổng số mẫu đã thu thập. Bảo hành chỉ áp dụng cho mẫu không đúng phân khúc mục tiêu hoặc không đạt tiêu chuẩn chất lượng đã công bố, không áp dụng cho việc thay đổi nhu cầu nghiên cứu hoặc đánh giá chủ quan.</li>
                 <li><strong>Dữ liệu trả về:</strong> Nhà tạo khảo sát chỉ nhận dữ liệu cấp phản hồi (response-level) gồm mã phản hồi, câu trả lời, thời gian làm bài, điểm chất lượng và thù lao. Họ tên, giới tính, khu vực, trường, ngành, độ tuổi và thu nhập của Đáp viên không được xuất ra ngoài. Địa chỉ email chỉ được chia sẻ khi Nhà tạo khảo sát bật chế độ thu thập email và Đáp viên đã được thông báo trước khi làm bài.</li>
@@ -676,7 +676,7 @@
         shortLabel: 'Quy chế',
         icon: 'list-checks',
         title: 'Quy Chế Hoạt Động Nền Tảng SurvHub',
-        subtitle: 'Quy trình đăng ký, tạo khảo sát, ký quỹ, làm bài, đổi thưởng, khiếu nại và xử lý vi phạm',
+        subtitle: 'Quy trình đăng ký, tạo khảo sát, thanh toán quỹ, làm bài, đổi thưởng, khiếu nại và xử lý vi phạm',
         sections: [
           {
             title: '1. Mục đích và phạm vi',
@@ -691,7 +691,7 @@
             icon: 'users',
             html: `
               <ul>
-                <li><strong>SurvHub:</strong> đơn vị vận hành nền tảng, cung cấp hạ tầng kỹ thuật, ví điểm, ví Credit, quỹ ký quỹ, hệ thống chống gian lận và kênh giải quyết khiếu nại.</li>
+                <li><strong>SurvHub:</strong> đơn vị vận hành nền tảng, cung cấp hạ tầng kỹ thuật, ví điểm, ví Credit, quỹ tạm giữ chiến dịch, hệ thống chống gian lận và kênh giải quyết khiếu nại.</li>
                 <li><strong>Đáp viên:</strong> người tham gia trả lời khảo sát, nhận Point và thực hiện quyền đổi thưởng theo quy định.</li>
                 <li><strong>Nhà tạo khảo sát:</strong> người nạp Credit, thiết kế khảo sát, lựa chọn đối tượng mục tiêu và nhận dữ liệu cấp phản hồi.</li>
               </ul>
@@ -718,7 +718,7 @@
               <ol>
                 <li><strong>Bước 1 - Tạo nháp:</strong> Nhà tạo khảo sát nhập tiêu đề, mô tả, danh mục, số mẫu mục tiêu, đối tượng mục tiêu và thiết kế câu hỏi.</li>
                 <li><strong>Bước 2 - Chọn gói và ngân sách:</strong> Hệ thống tính chi phí theo phân khúc (Sinh viên, Cá nhân, Doanh nghiệp), độ dài khảo sát và các tùy chọn lọc sâu. Chi phí được hiển thị rõ trước khi xác nhận.</li>
-                <li><strong>Bước 3 - Ký quỹ:</strong> Hệ thống khóa số Credit tương ứng vào quỹ Escrow. Khảo sát chỉ được xuất bản khi ký quỹ thành công.</li>
+                <li><strong>Bước 3 - Tạm giữ ngân sách:</strong> Hệ thống khóa số Credit tương ứng vào quỹ chiến dịch. Khảo sát chỉ được xuất bản khi đủ số dư Credit.</li>
                 <li><strong>Bước 4 - Kiểm duyệt:</strong> Khảo sát được kiểm tra tự động và có thể được kiểm duyệt thủ công về nội dung, tính hợp pháp và mức thù lao hợp lý.</li>
                 <li><strong>Bước 5 - Xuất bản:</strong> Khảo sát hiển thị tới Đáp viên phù hợp. Nhà tạo khảo sát có thể tạm dừng, chỉnh sửa hoặc đóng khảo sát theo quy định.</li>
                 <li><strong>Bước 6 - Thu mẫu và giải ngân:</strong> Mỗi bài làm hợp lệ được giải ngân thù lao từ Escrow cho Đáp viên và ghi nhận vào sổ cái.</li>
@@ -727,7 +727,7 @@
             `
           },
           {
-            title: '5. Ký quỹ, giải ngân và hoàn tiền',
+            title: '5. Tạm giữ quỹ, giải ngân và hoàn tiền',
             icon: 'landmark',
             html: `
               <ul>
