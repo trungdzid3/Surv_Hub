@@ -1,0 +1,2727 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SurvHub — Hồ Sơ Giới Thiệu Hệ Thống &amp; Mô Hình Kinh Doanh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,200&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --orange-primary: #EA580C;
+      --orange-hover: #F97316;
+      --orange-deep: #C2410C;
+      --orange-soft: #FFF7ED;
+      --orange-tint: rgba(234, 88, 12, 0.08);
+      --orange-tint-dark: rgba(234, 88, 12, 0.14);
+      --orange-border: rgba(234, 88, 12, 0.30);
+
+      --light-bg: #FAFAFA;
+      --light-surface: #FFFFFF;
+      --light-border: #E7E5E4;
+      --light-text: #09090B;
+      --light-text-body: #18181B;
+      --light-muted: #52525B;
+
+      --dark-bg: #121214;
+      --dark-surface: #1C1C20;
+      --dark-sub: #222228;
+      --dark-border: #2E2E36;
+      --dark-input: #161619;
+      --dark-text: #FFFFFF;
+      --dark-text-body: #E4E4E7;
+      --dark-muted: #A1A1AA;
+
+      --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-sans);
+      background: #09090B;
+      color: var(--dark-text);
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .caption-italic {
+      font-weight: 200;
+      font-style: italic;
+    }
+
+    /* Viewport & 16:9 Scaled Stage */
+    .deck-shell {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background: #09090B;
+    }
+
+    .stage-viewport {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 8px 12px;
+    }
+
+    .stage-frame {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      transform-origin: center center;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+      border: 1px solid #2E2E36;
+      flex-shrink: 0;
+    }
+
+    /* Slide Base */
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 1280px;
+      height: 720px;
+      padding: 40px 48px 36px 48px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      display: flex;
+      animation: slideFadeIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes slideFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide--dark {
+      background: var(--dark-bg);
+      color: var(--dark-text);
+    }
+
+    .slide--light {
+      background: var(--light-bg);
+      color: var(--light-text);
+    }
+
+    .slide--white {
+      background: var(--light-surface);
+      color: var(--light-text);
+    }
+
+    /* Subtle structural grid pattern for Cover & Dark slides */
+    .bg-grid-dark {
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .bg-grid-light {
+      background-image:
+        linear-gradient(to right, rgba(9, 9, 11, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(9, 9, 11, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Slide Header & Footer */
+    .slide-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      flex-shrink: 0;
+    }
+
+    .slide-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--orange-primary);
+      margin-bottom: 6px;
+    }
+
+    .slide-kicker-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 2px;
+      background: var(--orange-primary);
+      display: inline-block;
+    }
+
+    .slide-title {
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    .slide-subtitle {
+      margin-top: 4px;
+      font-size: 13.5px;
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .slide--light .slide-subtitle,
+    .slide--white .slide-subtitle {
+      color: var(--light-muted);
+    }
+
+    .slide--dark .slide-subtitle {
+      color: var(--dark-muted);
+    }
+
+    .slide-badge-num {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .slide--light .slide-badge-num,
+    .slide--white .slide-badge-num {
+      background: var(--light-surface);
+      border: 1px solid var(--light-border);
+      color: var(--light-text);
+    }
+
+    .slide--dark .slide-badge-num {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      color: var(--dark-text);
+    }
+
+    .slide-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+      margin: 16px 0 12px 0;
+    }
+
+    .slide-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+      padding-top: 10px;
+      border-top: 1px solid transparent;
+    }
+
+    .slide--light .slide-footer,
+    .slide--white .slide-footer {
+      color: var(--light-muted);
+      border-top-color: var(--light-border);
+    }
+
+    .slide--dark .slide-footer {
+      color: var(--dark-muted);
+      border-top-color: var(--dark-border);
+    }
+
+    /* Common Card & Pill primitives */
+    .card-light {
+      background: var(--light-surface);
+      border: 1px solid var(--light-border);
+      border-radius: 14px;
+    }
+
+    .card-dark {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 14px;
+    }
+
+    .card-sub-dark {
+      background: var(--dark-sub);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+    }
+
+    .chip-orange {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--orange-primary);
+      background: var(--orange-soft);
+      border: 1px solid var(--orange-border);
+    }
+
+    .slide--dark .chip-orange {
+      background: var(--orange-tint-dark);
+      color: #F97316;
+      border-color: var(--orange-border);
+    }
+
+    .icon-box {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: var(--orange-soft);
+      color: var(--orange-primary);
+      border: 1px solid var(--orange-border);
+    }
+
+    .slide--dark .icon-box {
+      background: var(--orange-tint-dark);
+      color: var(--orange-hover);
+      border-color: var(--orange-border);
+    }
+
+    .icon-box--solid {
+      background: var(--orange-primary);
+      color: #FFFFFF;
+      border-color: var(--orange-primary);
+    }
+
+    /* Slide 1: Cover */
+    .cover-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.95fr;
+      gap: 36px;
+      align-items: center;
+      height: 100%;
+    }
+
+    .cover-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .cover-logo-wrap {
+      width: 64px;
+      height: 64px;
+      padding: 10px;
+      border-radius: 16px;
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cover-h1 {
+      font-size: 62px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+      color: #FFFFFF;
+    }
+
+    .cover-h1 span {
+      color: var(--orange-primary);
+    }
+
+    .cover-tagline {
+      margin-top: 14px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #E4E4E7;
+      letter-spacing: -0.01em;
+    }
+
+    .cover-desc {
+      margin-top: 14px;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: var(--dark-muted);
+      max-width: 600px;
+    }
+
+    .cover-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .cover-kpi-stack {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .cover-kpi-card {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 146px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover-kpi-card--accent {
+      border-color: var(--orange-primary);
+      background: linear-gradient(155deg, rgba(234, 88, 12, 0.16) 0%, #1C1C20 65%);
+    }
+
+    .cover-kpi-val {
+      font-size: 32px;
+      font-weight: 900;
+      color: #FFFFFF;
+      line-height: 1.1;
+      margin-top: 10px;
+    }
+
+    .cover-kpi-val span {
+      color: var(--orange-hover);
+    }
+
+    .cover-kpi-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dark-muted);
+      margin-top: 6px;
+    }
+
+    /* Slide 2: Problem & SVG Chart */
+    .problem-split {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      height: 100%;
+      align-items: stretch;
+    }
+
+    .pain-rail {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .pain-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 15px 18px;
+      background: var(--light-surface);
+      border: 1px solid var(--light-border);
+      border-radius: 14px;
+    }
+
+    .pain-num {
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--orange-primary);
+      background: var(--orange-soft);
+      border: 1px solid var(--orange-border);
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pain-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--light-text);
+      margin-bottom: 4px;
+    }
+
+    .pain-desc {
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: var(--light-muted);
+    }
+
+    .chart-panel {
+      background: var(--dark-bg);
+      color: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid var(--dark-border);
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .chart-metric-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bar-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: #E4E4E7;
+    }
+
+    .bar-track {
+      height: 12px;
+      background: #222228;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .bar-fill-legacy {
+      height: 100%;
+      background: #52525B;
+      border-radius: 999px;
+    }
+
+    .bar-fill-survhub {
+      height: 100%;
+      background: linear-gradient(90deg, #EA580C 0%, #F97316 100%);
+      border-radius: 999px;
+    }
+
+    /* Slide 3: Solution Asymmetric Layout */
+    .sol-layout {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+      height: 100%;
+    }
+
+    .sol-sla-banner {
+      background: var(--dark-bg);
+      color: #FFFFFF;
+      border-radius: 16px;
+      padding: 18px 24px;
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 24px;
+      align-items: center;
+      border: 1px solid var(--dark-border);
+    }
+
+    .sla-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .sla-box {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .sla-box-time {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--orange-hover);
+    }
+
+    .sol-bottom {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .sol-cost-card {
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sol-warranty-card {
+      padding: 20px 22px;
+      background: var(--orange-soft);
+      border: 1px solid var(--orange-border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Slide 4: 2-Way Mechanism & Dual Wallet */
+    .flow-3col {
+      display: grid;
+      grid-template-columns: 1fr 42px 1.12fr 42px 1fr;
+      align-items: stretch;
+      height: 100%;
+    }
+
+    .flow-col {
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .flow-col--engine {
+      background: linear-gradient(180deg, rgba(234, 88, 12, 0.14) 0%, #1C1C20 40%);
+      border: 1.5px solid var(--orange-primary);
+    }
+
+    .flow-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--orange-hover);
+    }
+
+    .flow-step {
+      background: var(--dark-sub);
+      border: 1px solid var(--dark-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    /* Slide 5: Form Studio Wireframe + Specs */
+    .studio-split {
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      gap: 22px;
+      height: 100%;
+    }
+
+    .studio-wireframe {
+      background: var(--light-surface);
+      border: 1px solid var(--light-border);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(9, 9, 11, 0.04);
+    }
+
+    .wire-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--light-bg);
+      border: 1px solid var(--light-border);
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .wire-cols {
+      display: grid;
+      grid-template-columns: 65% 1fr;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .wire-canvas {
+      background: var(--light-bg);
+      border: 1px dashed #D4D4D8;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .wire-q-block {
+      background: #FFFFFF;
+      border: 1px solid var(--light-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .wire-sidebar {
+      background: var(--dark-bg);
+      color: #FFFFFF;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .spec-stack {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .spec-card {
+      padding: 13px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    /* Slide 6: Anti-Fraud 5 Layers & Trust Score */
+    .fraud-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 0.75fr;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .fraud-list {
+      display: grid;
+      grid-template-rows: repeat(5, 1fr);
+      gap: 9px;
+    }
+
+    .fraud-row {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 10px 16px;
+      display: grid;
+      grid-template-columns: 36px 185px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .trust-panel {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .trust-tier {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--dark-sub);
+      border-left: 3px solid var(--orange-primary);
+    }
+
+    /* Slide 7: Bento Mosaic */
+    .mosaic-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 14px;
+      height: 100%;
+    }
+
+    .mosaic-cell {
+      padding: 18px 20px;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Slide 8: Screener, Export & Legal */
+    .legal-layout {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 14px;
+      height: 100%;
+    }
+
+    .legal-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .legal-bottom {
+      background: var(--dark-bg);
+      color: #FFFFFF;
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 18px 24px;
+      display: grid;
+      grid-template-columns: 1.15fr 1.85fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    /* Slide 9: Business Model Canvas (True 9-Box Grid) */
+    .bmc-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      height: 100%;
+    }
+
+    .bmc-top {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .bmc-col-split {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .bmc-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      height: 122px;
+      flex-shrink: 0;
+    }
+
+    .bmc-box {
+      background: var(--light-bg);
+      border: 1px solid var(--light-border);
+      border-radius: 12px;
+      padding: 11px 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .bmc-box--accent {
+      background: var(--orange-soft);
+      border-color: var(--orange-border);
+    }
+
+    .bmc-box--dark {
+      background: var(--dark-bg);
+      color: #FFFFFF;
+      border-color: var(--dark-border);
+    }
+
+    .bmc-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--orange-primary);
+    }
+
+    .bmc-box--dark .bmc-title {
+      color: var(--orange-hover);
+    }
+
+    .bmc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 10.5px;
+      line-height: 1.35;
+      color: var(--light-text-body);
+    }
+
+    .bmc-box--dark .bmc-list {
+      color: #E4E4E7;
+    }
+
+    .bmc-list li::before {
+      content: "• ";
+      color: var(--orange-primary);
+      font-weight: 900;
+    }
+
+    /* Slide 10: Unit Economics & 3-Segment Table */
+    .econ-layout {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 14px;
+      height: 100%;
+    }
+
+    .pricing-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--light-surface);
+      border: 1px solid var(--light-border);
+      border-radius: 14px;
+      overflow: hidden;
+      font-size: 12px;
+    }
+
+    .pricing-table th {
+      background: var(--dark-bg);
+      color: #FFFFFF;
+      text-align: left;
+      padding: 11px 14px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .pricing-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--light-border);
+      vertical-align: middle;
+      color: var(--light-text-body);
+    }
+
+    .pricing-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .guardrails-strip {
+      display: grid;
+      grid-template-columns: 0.9fr 1.6fr;
+      gap: 14px;
+    }
+
+    /* Slide 11: Roadmap & Contact */
+    .roadmap-layout {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 16px;
+      height: 100%;
+    }
+
+    .phases-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .phase-card {
+      border-radius: 16px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .saas-tiers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .saas-tier-box {
+      background: var(--dark-sub);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      padding: 14px 12px;
+    }
+
+    .contact-bar {
+      background: var(--dark-surface);
+      border: 1px solid var(--orange-border);
+      border-radius: 14px;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    /* Bottom Minimal Control Bar */
+    .control-bar {
+      height: 44px;
+      background: #121214;
+      border-top: 1px solid #2E2E36;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 40;
+    }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid #2E2E36;
+      background: #1C1C20;
+      color: #E4E4E7;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .ctrl-btn:hover:not(:disabled) {
+      border-color: var(--orange-primary);
+      color: #FFFFFF;
+      background: #222228;
+    }
+
+    .ctrl-btn.is-active {
+      background: var(--orange-primary);
+      border-color: var(--orange-primary);
+      color: #FFFFFF;
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .progress-track {
+      flex: 1;
+      max-width: 460px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .progress-bar-bg {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      background: #222228;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--orange-primary);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    /* Speaker Notes Drawer */
+    .notes-drawer {
+      position: fixed;
+      right: 16px;
+      bottom: 56px;
+      width: 440px;
+      max-width: calc(100vw - 32px);
+      background: #1C1C20;
+      border: 1px solid #EA580C;
+      border-radius: 14px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+      padding: 16px 18px;
+      z-index: 60;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .notes-drawer.open {
+      display: flex;
+    }
+
+    .notes-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #2E2E36;
+      padding-bottom: 8px;
+    }
+
+    .notes-body {
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #E4E4E7;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    /* Overview Grid Modal */
+    .overview-modal {
+      position: fixed;
+      inset: 0 0 44px 0;
+      background: rgba(9, 9, 11, 0.94);
+      backdrop-filter: blur(8px);
+      z-index: 55;
+      display: none;
+      flex-direction: column;
+      padding: 28px 36px;
+      overflow-y: auto;
+    }
+
+    .overview-modal.open {
+      display: flex;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .overview-card {
+      background: #1C1C20;
+      border: 1px solid #2E2E36;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 118px;
+      transition: all 0.15s ease;
+    }
+
+    .overview-card:hover {
+      border-color: var(--orange-hover);
+      transform: translateY(-2px);
+    }
+
+    .overview-card.is-current {
+      border-color: var(--orange-primary);
+      background: linear-gradient(155deg, rgba(234, 88, 12, 0.16) 0%, #1C1C20 75%);
+    }
+
+    @media (max-width: 900px) {
+      .overview-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .ctrl-label-hide {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck-shell" id="deckShell">
+    <main class="stage-viewport" id="stageViewport">
+      <div class="stage-frame" id="stageFrame">
+
+        <!-- ================================================================
+             SLIDE 1: COVER (OBSIDIAN DARK)
+             ================================================================ -->
+        <section class="slide slide--dark bg-grid-dark active" data-slide="1" data-title="Trang Bìa — SurvHub">
+          <div class="slide-top">
+            <div class="chip-orange">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+              <span>HỒ SƠ GIỚI THIỆU HỆ THỐNG</span>
+            </div>
+            <div class="slide-badge-num mono">01 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="cover-grid">
+              <div>
+                <div class="cover-brand-row">
+                  <div class="cover-logo-wrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" fill="none">
+                      <title>SurvHub logo</title>
+                      <defs>
+                        <linearGradient id="vs-s" gradientUnits="userSpaceOnUse" x1="88.9" y1="465.1" x2="428.9" y2="46.9">
+                          <stop offset="0%" stop-color="#E75A5B"/>
+                          <stop offset="10%" stop-color="#FC5750"/>
+                          <stop offset="20%" stop-color="#FF614C"/>
+                          <stop offset="30%" stop-color="#FD6445"/>
+                          <stop offset="40%" stop-color="#FD6B3F"/>
+                          <stop offset="50%" stop-color="#F4783A"/>
+                          <stop offset="60%" stop-color="#FE7C31"/>
+                          <stop offset="70%" stop-color="#FF872E"/>
+                          <stop offset="80%" stop-color="#FE8C29"/>
+                          <stop offset="90%" stop-color="#FF9129"/>
+                          <stop offset="100%" stop-color="#FD9A22"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M 225.35 167.03 C 223.87 167.31 222.38 167.13 220.92 167.85 C 219.45 168.58 217.48 170.44 216.57 171.38 C 215.67 172.33 215.73 172.57 215.49 173.50 C 215.25 174.43 215.13 176.00 215.14 176.97 C 215.15 177.93 215.20 178.39 215.53 179.28 C 215.87 180.17 212.69 176.52 217.16 182.31 C 221.62 188.09 221.19 188.01 242.32 213.98 C 263.45 239.95 325.52 315.15 343.94 338.12 C 362.37 361.09 350.28 347.08 352.88 351.80 C 355.48 356.52 357.90 362.18 359.55 366.45 C 361.19 370.72 361.99 374.26 362.75 377.44 C 363.51 380.62 363.84 381.68 364.10 385.53 C 364.36 389.39 364.56 396.17 364.33 400.57 C 364.10 404.97 363.72 407.67 362.72 411.94 C 361.73 416.22 360.20 421.58 358.35 426.21 C 356.49 430.83 353.81 435.87 351.60 439.69 C 349.39 443.52 348.27 445.32 345.09 449.15 C 341.90 452.98 336.68 458.17 332.48 462.68 C 332.44 463.04 331.82 463.62 332.37 463.76 C 332.93 463.91 331.57 465.20 335.80 463.55 C 340.04 461.90 352.41 456.44 357.78 453.86 C 363.14 451.29 363.66 450.94 367.99 448.08 C 372.33 445.21 379.46 440.15 383.80 436.67 C 388.14 433.18 391.07 430.20 394.04 427.17 C 397.01 424.14 398.86 421.94 401.60 418.49 C 404.34 415.05 407.84 410.54 410.48 406.52 C 413.12 402.51 414.86 399.99 417.44 394.40 C 420.01 388.82 424.04 378.63 425.93 373.01 C 427.82 367.38 427.98 365.42 428.77 360.67 C 429.55 355.91 430.29 349.30 430.63 344.48 C 430.98 339.66 430.95 335.77 430.83 331.75 C 430.72 327.74 430.58 324.75 429.95 320.38 C 429.32 316.01 427.99 309.49 427.04 305.54 C 426.10 301.59 425.68 300.46 424.29 296.67 C 422.90 292.88 421.24 287.93 418.70 282.79 C 416.16 277.65 411.55 269.94 409.07 265.83 C 406.59 261.72 406.63 261.80 403.82 258.12 C 401.01 254.44 396.73 248.77 392.24 243.77 C 387.75 238.78 381.32 232.41 376.88 228.15 C 372.43 223.88 368.95 221.04 365.57 218.18 C 362.19 215.33 360.16 213.61 356.58 211.00 C 353.00 208.39 348.49 205.32 344.09 202.52 C 339.70 199.73 334.39 196.57 330.21 194.23 C 326.04 191.89 323.52 190.59 319.03 188.47 C 314.53 186.35 308.40 183.54 303.23 181.51 C 298.05 179.47 293.33 177.88 288.00 176.27 C 282.67 174.65 276.46 173.02 271.23 171.83 C 265.99 170.63 260.95 169.81 256.58 169.10 C 252.21 168.40 250.22 167.93 245.01 167.58 C 239.81 167.24 231.90 167.22 225.35 167.03 Z" fill="url(#vs-s)"/>
+                      <path d="M 179.09 47.90 C 176.20 48.87 173.97 49.39 170.41 50.79 C 166.86 52.19 161.90 54.25 157.75 56.29 C 153.61 58.32 149.67 60.47 145.55 63.00 C 141.43 65.53 136.59 68.83 133.04 71.47 C 129.49 74.11 127.19 76.12 124.24 78.84 C 121.28 81.56 118.59 84.03 115.29 87.78 C 111.99 91.53 107.47 97.15 104.43 101.35 C 101.39 105.55 99.66 108.07 97.04 113.00 C 94.43 117.92 91.08 124.61 88.75 130.90 C 86.42 137.19 84.26 145.71 83.07 150.75 C 81.87 155.80 81.88 156.92 81.56 161.16 C 81.25 165.40 81.15 171.60 81.17 176.20 C 81.18 180.79 81.35 185.10 81.66 188.73 C 81.96 192.36 82.06 193.64 82.99 197.98 C 83.93 202.32 85.44 209.32 87.28 214.75 C 89.12 220.18 91.91 226.06 94.05 230.56 C 96.19 235.05 97.72 237.78 100.13 241.74 C 102.54 245.69 105.45 250.06 108.51 254.27 C 111.57 258.47 114.68 262.63 118.48 266.99 C 122.28 271.34 127.34 276.45 131.32 280.40 C 135.30 284.34 138.43 287.26 142.38 290.65 C 146.34 294.05 150.57 297.44 155.05 300.76 C 159.53 304.07 163.71 307.09 169.26 310.55 C 174.81 314.00 182.56 318.46 188.34 321.48 C 194.12 324.49 196.79 325.88 203.95 328.62 C 211.12 331.37 223.58 335.69 231.33 337.95 C 239.07 340.21 245.53 341.24 250.41 342.20 C 255.29 343.16 255.65 343.19 260.63 343.70 C 265.61 344.21 275.47 345.06 280.29 345.24 C 285.11 345.42 286.46 344.94 289.54 344.79 C 290.53 344.29 291.81 343.89 292.51 343.29 C 293.22 342.69 293.55 341.93 293.75 341.20 C 293.95 340.47 293.98 339.75 293.73 338.89 C 293.48 338.02 299.56 344.90 292.24 336.00 C 284.92 327.09 269.04 308.84 249.80 285.48 C 230.55 262.12 190.99 213.57 176.78 195.84 C 162.57 178.10 168.00 184.39 164.55 179.09 C 161.10 173.79 158.21 168.55 156.08 164.05 C 153.95 159.56 152.94 155.99 151.77 152.10 C 150.60 148.21 149.78 144.52 149.08 140.73 C 148.37 136.94 147.79 133.57 147.54 129.36 C 147.28 125.15 147.25 119.88 147.56 115.48 C 147.87 111.08 148.41 107.48 149.39 102.95 C 150.36 98.42 151.98 92.48 153.40 88.30 C 154.82 84.12 155.63 82.10 157.90 77.89 C 160.17 73.68 164.39 66.84 167.04 63.05 C 169.69 59.26 171.53 57.53 173.79 55.15 C 176.05 52.77 178.32 50.91 180.59 48.79 C 180.51 48.49 180.60 48.05 180.35 47.90 C 180.10 47.76 179.51 47.90 179.09 47.90 Z" fill="url(#vs-s)"/>
+                      <path d="M 174.40 164.44 C 174.86 165.05 175.39 165.95 175.78 166.28 C 176.17 166.61 175.90 168.80 176.76 166.41 C 177.62 164.01 179.77 155.16 180.94 151.91 C 182.12 148.66 182.62 148.62 183.80 146.90 C 184.98 145.18 186.88 142.89 188.00 141.58 C 189.12 140.27 188.70 140.45 190.52 139.05 C 192.34 137.64 196.16 134.81 198.94 133.16 C 201.73 131.52 204.47 130.50 207.23 129.17 C 209.10 128.64 208.61 128.05 212.82 127.57 C 217.03 127.09 203.60 126.46 232.48 126.28 C 261.37 126.09 358.58 126.53 386.11 126.46 C 413.64 126.40 395.40 126.43 397.66 125.89 C 399.92 125.34 394.27 136.71 399.67 123.19 C 405.06 109.66 419.91 70.89 430.03 44.74 C 429.88 44.36 430.23 43.91 429.59 43.62 C 428.96 43.33 458.19 43.09 426.21 43.00 C 394.22 42.91 270.62 42.97 237.69 43.08 C 204.76 43.19 232.55 42.90 228.63 43.66 C 224.71 44.43 218.15 46.27 214.17 47.66 C 210.19 49.05 207.45 50.61 204.73 52.02 C 202.00 53.43 200.35 54.36 197.85 56.12 C 195.34 57.88 192.27 60.21 189.71 62.56 C 187.15 64.90 185.30 66.57 182.49 70.22 C 179.67 73.87 175.13 80.47 172.81 84.44 C 170.49 88.42 169.86 90.26 168.57 94.08 C 167.28 97.91 165.82 103.43 165.07 107.38 C 164.32 111.33 164.19 113.58 164.06 117.79 C 163.93 122.00 163.97 128.62 164.27 132.63 C 164.57 136.65 165.20 139.06 165.84 141.89 C 166.47 144.71 166.65 145.84 168.08 149.60 C 169.50 153.36 172.29 159.49 174.40 164.44 Z" fill="url(#vs-s)"/>
+                      <path d="M 334.21 352.81 C 332.57 356.65 330.78 361.45 329.30 364.33 C 327.81 367.21 326.61 368.45 325.27 370.08 C 323.94 371.70 322.93 372.72 321.31 374.09 C 319.69 375.45 317.90 376.89 315.56 378.26 C 313.22 379.63 310.49 381.13 307.27 382.30 C 304.06 383.46 328.40 384.63 296.29 385.23 C 264.18 385.83 175.17 385.67 114.61 385.90 C 113.72 387.58 116.71 379.17 111.94 390.93 C 107.18 402.70 90.94 443.94 86.03 456.47 C 81.12 469.00 83.10 464.13 82.51 466.11 C 81.91 468.08 82.11 467.84 82.47 468.32 C 82.82 468.80 52.85 468.89 84.64 469.00 C 116.42 469.11 239.81 469.15 273.16 468.99 C 306.50 468.82 281.86 468.38 284.72 468.01 C 287.58 467.64 286.87 467.91 290.31 466.76 C 293.75 465.61 301.97 462.52 305.35 461.11 C 308.72 459.70 307.95 460.01 310.54 458.32 C 313.14 456.64 317.82 453.59 320.92 451.00 C 324.02 448.41 326.83 445.33 329.15 442.77 C 331.47 440.21 333.20 438.00 334.84 435.65 C 336.48 433.31 337.64 431.25 339.01 428.71 C 340.38 426.17 341.98 423.08 343.08 420.41 C 344.17 417.75 344.80 416.66 345.60 412.71 C 346.40 408.76 347.61 401.50 347.89 396.71 C 348.17 391.93 347.60 387.24 347.27 383.99 C 346.95 380.75 346.88 380.56 345.93 377.25 C 344.99 373.94 343.02 367.70 341.61 364.14 C 340.19 360.57 338.83 358.61 337.45 355.85 C 336.73 354.91 335.85 353.55 335.31 353.04 C 334.77 352.54 334.57 352.89 334.21 352.81 Z" fill="url(#vs-s)"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style="font-size:12px;font-weight:800;letter-spacing:0.12em;color:#F97316;text-transform:uppercase;">NỀN TẢNG KHẢO SÁT HAI CHIỀU</div>
+                    <div style="font-size:12px;color:#A1A1AA;margin-top:2px;">Web SPA &amp; Android Native Capacitor</div>
+                  </div>
+                </div>
+
+                <h1 class="cover-h1">Surv<span>Hub</span></h1>
+                <p class="cover-tagline">“Share form, share yours insight”</p>
+                <p class="cover-desc">
+                  Hệ sinh thái thu thập dữ liệu khảo sát trực tuyến kết nối trực tiếp Người tạo khảo sát và Đáp viên thực, vận hành trên cơ chế Ví kép 1:1 VNĐ, Kiểm định chống gian lận 5 lớp và Cam kết SLA 2–48 giờ.
+                </p>
+
+                <div class="cover-pill-row">
+                  <span class="chip-orange">SQLite WAL ACID Ledger</span>
+                  <span class="chip-orange">Web SPA SWR 0ms</span>
+                  <span class="chip-orange">Luật BVDLCN 91/2025/QH15</span>
+                </div>
+              </div>
+
+              <div class="cover-kpi-stack">
+                <div class="cover-kpi-card cover-kpi-card--accent">
+                  <div class="icon-box icon-box--solid">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                  </div>
+                  <div>
+                    <div class="cover-kpi-val mono">1:1 <span>VNĐ</span></div>
+                    <div class="cover-kpi-label">Ví kép Point &amp; Credit ngang giá</div>
+                  </div>
+                </div>
+
+                <div class="cover-kpi-card">
+                  <div class="icon-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </div>
+                  <div>
+                    <div class="cover-kpi-val mono">5 <span>Lớp</span></div>
+                    <div class="cover-kpi-label">Chốt chặn Anti-Fraud Engine</div>
+                  </div>
+                </div>
+
+                <div class="cover-kpi-card">
+                  <div class="icon-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  </div>
+                  <div>
+                    <div class="cover-kpi-val mono">12 <span>Dạng</span></div>
+                    <div class="cover-kpi-label">Định dạng câu hỏi &amp; DAG 3 tầng</div>
+                  </div>
+                </div>
+
+                <div class="cover-kpi-card">
+                  <div class="icon-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <div>
+                    <div class="cover-kpi-val mono">2–48<span>h</span></div>
+                    <div class="cover-kpi-label">Cam kết SLA thu đủ mẫu</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB PLATFORM — PRESENTATION DECK</span>
+            <span class="caption-italic">Dùng phím mũi tên hoặc Space để điều hướng • Phím N: Ghi chú • Phím G: Toàn cảnh</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 2: ĐẶT VẤN ĐỀ
+             ================================================================ -->
+        <section class="slide slide--light" data-slide="2" data-title="Đặt Vấn Đề — Thực Trạng Thị Trường">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>01 — ĐẶT VẤN ĐỀ</div>
+              <h2 class="slide-title">Nỗi Đau Thu Thập Mẫu Khảo Sát Hiện Nay</h2>
+              <p class="slide-subtitle">Khoảng trống giữa rải form thủ công miễn phí và dịch vụ Agency đắt đỏ</p>
+            </div>
+            <div class="slide-badge-num mono">02 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="problem-split">
+              <div class="pain-rail">
+                <div class="pain-item">
+                  <div class="pain-num mono">01</div>
+                  <div>
+                    <div class="pain-title">Rải form rời rạc trên Facebook / Zalo</div>
+                    <p class="pain-desc">Bài đăng nhanh chóng bị trôi khỏi bảng tin, phải điền chéo thụ động hoặc nhờ người quen, không kiểm soát được nhân khẩu học.</p>
+                  </div>
+                </div>
+                <div class="pain-item">
+                  <div class="pain-num mono">02</div>
+                  <div>
+                    <div class="pain-title">Thời gian thu thập kéo dài 2–4 tuần</div>
+                    <p class="pain-desc">Thiếu cơ chế điều phối và nhắc lịch tự động khiến đề tài nghiên cứu khoa học và chiến dịch thử nghiệm sản phẩm bị trễ hạn.</p>
+                  </div>
+                </div>
+                <div class="pain-item">
+                  <div class="pain-num mono">03</div>
+                  <div>
+                    <div class="pain-title">Dữ liệu rác từ straight-lining và bot</div>
+                    <p class="pain-desc">Đáp viên tick một cột liên tiếp, điền siêu tốc dưới 10 giây hoặc nhập ký tự vô nghĩa làm sai lệch kết quả SPSS/phân tích.</p>
+                  </div>
+                </div>
+                <div class="pain-item">
+                  <div class="pain-num mono">04</div>
+                  <div>
+                    <div class="pain-title">Chi phí Agency đắt gấp 10–15 lần</div>
+                    <p class="pain-desc">Dịch vụ thuê ngoài thường thu 15.000đ–35.000đ/mẫu kèm hợp đồng tối thiểu hàng chục triệu, vượt quá khả năng của sinh viên và SME.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="chart-panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <div>
+                    <div style="font-size:14px;font-weight:800;">So Sánh Trực Quan: Truyền Thống vs SurvHub</div>
+                    <div style="font-size:11.5px;color:#A1A1AA;margin-top:2px;">Chuẩn hóa trên tập 200 mẫu khảo sát tiêu chuẩn</div>
+                  </div>
+                  <div style="display:flex;gap:12px;font-size:11px;font-weight:700;">
+                    <span style="display:inline-flex;align-items:center;gap:5px;color:#A1A1AA;"><span style="width:9px;height:9px;border-radius:2px;background:#52525B;display:inline-block;"></span>Cũ / Agency</span>
+                    <span style="display:inline-flex;align-items:center;gap:5px;color:#F97316;"><span style="width:9px;height:9px;border-radius:2px;background:#EA580C;display:inline-block;"></span>SurvHub</span>
+                  </div>
+                </div>
+
+                <div class="chart-metric-group">
+                  <div class="bar-row">
+                    <div class="bar-head">
+                      <span>Thời gian hoàn thành thu mẫu</span>
+                      <span class="mono" style="color:#F97316;">2–48 giờ vs 14–28 ngày</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill-legacy" style="width:92%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill-survhub" style="width:12%;"></div></div>
+                  </div>
+
+                  <div class="bar-row">
+                    <div class="bar-head">
+                      <span>Chi phí mỗi mẫu hợp lệ</span>
+                      <span class="mono" style="color:#F97316;">400–2.500đ vs 15.000–35.000đ</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill-legacy" style="width:95%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill-survhub" style="width:10%;"></div></div>
+                  </div>
+
+                  <div class="bar-row">
+                    <div class="bar-head">
+                      <span>Tỷ lệ dữ liệu sạch vượt kiểm định</span>
+                      <span class="mono" style="color:#F97316;">&gt;= 95% vs ~58%</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill-legacy" style="width:58%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill-survhub" style="width:96%;"></div></div>
+                  </div>
+                </div>
+
+                <div style="background:#1C1C20;border:1px solid #2E2E36;border-radius:12px;padding:12px 14px;margin-top:8px;">
+                  <svg viewBox="0 0 440 78" width="100%" height="78" aria-label="Biểu đồ vùng chi phí và tốc độ">
+                    <line x1="12" y1="62" x2="428" y2="62" stroke="#2E2E36" stroke-width="1.5"/>
+                    <line x1="12" y1="12" x2="12" y2="62" stroke="#2E2E36" stroke-width="1.5"/>
+                    <path d="M 18 52 Q 110 48, 190 36 T 420 14" fill="none" stroke="#52525B" stroke-width="2" stroke-dasharray="4 4"/>
+                    <path d="M 18 18 Q 110 38, 220 48 T 420 55" fill="none" stroke="#EA580C" stroke-width="3"/>
+                    <circle cx="420" cy="55" r="4.5" fill="#F97316"/>
+                    <circle cx="420" cy="14" r="4" fill="#71717A"/>
+                    <text x="20" y="14" fill="#A1A1AA" font-size="10" font-family="Montserrat" font-weight="700">Mất cân bằng Chi phí / Chất lượng ở mô hình cũ</text>
+                    <text x="255" y="47" fill="#F97316" font-size="10" font-family="Montserrat" font-weight="800">Tối ưu chi phí trên SurvHub</text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — PHÂN TÍCH THỊ TRƯỜNG</span>
+            <span>Loại bỏ điểm nghẽn chi phí 10–15x và rủi ro dữ liệu rác</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 3: GIẢI PHÁP SURVHUB
+             ================================================================ -->
+        <section class="slide slide--white" data-slide="3" data-title="Giải Pháp SurvHub — 3 Trụ Cột">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>02 — GIẢI PHÁP SURVHUB</div>
+              <h2 class="slide-title">Thu Mẫu Nhanh, Chi Phí Tối Ưu &amp; Bảo Hành Dữ Liệu</h2>
+              <p class="slide-subtitle">Kiến trúc điều phối chủ động thay thế hoàn toàn việc rải link thụ động</p>
+            </div>
+            <div class="slide-badge-num mono">03 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="sol-layout">
+              <!-- Band 1: Full width SLA Banner -->
+              <div class="sol-sla-banner">
+                <div>
+                  <div class="chip-orange" style="margin-bottom:8px;">TRỤ CỘT 1 — TỐC ĐỘ THU MẪU</div>
+                  <div style="font-size:21px;font-weight:900;line-height:1.2;">Cam Kết SLA 2–48 Giờ Với Push Đa Kênh</div>
+                  <p style="font-size:12px;color:#A1A1AA;margin-top:6px;line-height:1.45;">
+                    Khi dự án kích hoạt Escrow, hệ thống phát thông báo đẩy trực tiếp tới Android APK và Email đáp viên khớp nhân khẩu học ngay lập tức.
+                  </p>
+                </div>
+                <div class="sla-tiers">
+                  <div class="sla-box">
+                    <div style="font-size:11px;font-weight:700;color:#A1A1AA;">FORM NGẮN (1–10 CÂU)</div>
+                    <div class="sla-box-time mono">2–6h</div>
+                    <div style="font-size:11px;color:#E4E4E7;margin-top:4px;">Khớp nhanh qua Push APK</div>
+                  </div>
+                  <div class="sla-box">
+                    <div style="font-size:11px;font-weight:700;color:#A1A1AA;">FORM VỪA (11–25 CÂU)</div>
+                    <div class="sla-box-time mono">6–24h</div>
+                    <div style="font-size:11px;color:#E4E4E7;margin-top:4px;">Điều phối theo độ khớp %</div>
+                  </div>
+                  <div class="sla-box">
+                    <div style="font-size:11px;font-weight:700;color:#A1A1AA;">FORM DÀI / LỌC SÂU</div>
+                    <div class="sla-box-time mono">24–48h</div>
+                    <div style="font-size:11px;color:#E4E4E7;margin-top:4px;">Ưu tiên nhóm Trust Score cao</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Band 2: Asymmetric 55 / 45 Bottom Split -->
+              <div class="sol-bottom">
+                <div class="card-light sol-cost-card" style="background:var(--light-bg);">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                      <div class="icon-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size:11px;font-weight:800;color:var(--orange-primary);text-transform:uppercase;">TRỤ CỘT 2 — TỐI ƯU CHI PHÍ</div>
+                        <div style="font-size:17px;font-weight:900;">400đ – 2.500đ / Mẫu + Thưởng +5% Điền Chéo</div>
+                      </div>
+                    </div>
+                    <p style="font-size:12.5px;color:var(--light-muted);line-height:1.5;">
+                      Phân tầng đơn giá minh bạch theo 3 đối tượng (Sinh viên, Cá nhân, Doanh nghiệp). Đáp viên có thể chuyển đổi <strong style="color:var(--light-text);">Point sang Credit nhận thưởng thêm +5%</strong> để tự mở khảo sát mới không tốn tiền mặt.
+                    </p>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;">
+                    <div style="background:#FFF;border:1px solid var(--light-border);border-radius:10px;padding:10px;">
+                      <div style="font-size:10.5px;font-weight:700;color:var(--light-muted);">SINH VIÊN (.EDU.VN)</div>
+                      <div class="mono" style="font-size:16px;font-weight:900;color:var(--orange-primary);margin-top:2px;">400–600đ</div>
+                    </div>
+                    <div style="background:#FFF;border:1px solid var(--light-border);border-radius:10px;padding:10px;">
+                      <div style="font-size:10.5px;font-weight:700;color:var(--light-muted);">CÁ NHÂN</div>
+                      <div class="mono" style="font-size:16px;font-weight:900;color:var(--light-text);margin-top:2px;">800–1.200đ</div>
+                    </div>
+                    <div style="background:#FFF;border:1px solid var(--light-border);border-radius:10px;padding:10px;">
+                      <div style="font-size:10.5px;font-weight:700;color:var(--light-muted);">DOANH NGHIỆP</div>
+                      <div class="mono" style="font-size:16px;font-weight:900;color:var(--light-text);margin-top:2px;">1.500–2.500đ</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sol-warranty-card">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                      <div class="icon-box icon-box--solid">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size:11px;font-weight:800;color:var(--orange-deep);text-transform:uppercase;">TRỤ CỘT 3 — CHẤT LƯỢNG &amp; BẢO HÀNH</div>
+                        <div style="font-size:17px;font-weight:900;color:var(--light-text);">Dữ Liệu Uy Tín 5 Lớp &amp; Bảo Hành 1 Đổi 1</div>
+                      </div>
+                    </div>
+                    <p style="font-size:12.5px;color:var(--light-text-body);line-height:1.5;">
+                      Mỗi bài nộp đi qua 5 bộ lọc thời gian thực trước khi giải ngân Escrow. Nếu Creator phát hiện mẫu lọt lưới gian lận, hệ thống bù mẫu mới hoàn toàn miễn phí.
+                    </p>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+                    <div style="background:#FFFFFF;border:1px solid var(--orange-border);border-radius:10px;padding:10px 12px;">
+                      <div class="mono" style="font-size:20px;font-weight:900;color:var(--orange-primary);">15%</div>
+                      <div style="font-size:11px;font-weight:700;color:var(--light-muted);">Hạn mức bù mẫu tối đa</div>
+                    </div>
+                    <div style="background:#FFFFFF;border:1px solid var(--orange-border);border-radius:10px;padding:10px 12px;">
+                      <div class="mono" style="font-size:20px;font-weight:900;color:var(--orange-primary);">7 ngày</div>
+                      <div style="font-size:11px;font-weight:700;color:var(--light-muted);">Cửa sổ yêu cầu đổi 1-1</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — GIẢI PHÁP CÔNG NGHỆ</span>
+            <span>Nhanh hơn 10x • Rẻ hơn 10–15x • Bảo chứng chất lượng đầu ra</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 4: CƠ CHẾ VẬN HÀNH 2 CHIỀU & VÍ KÉP 1:1 VNĐ
+             ================================================================ -->
+        <section class="slide slide--dark bg-grid-dark" data-slide="4" data-title="Cơ Chế Vận Hành 2 Chieu & Ví Kép">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>03 — KIẾN TRÚC TÀI CHÍNH &amp; LUỒNG DỮ LIỆU</div>
+              <h2 class="slide-title">Cơ Chế Vận Hành 2 Chiều &amp; Ví Kép 1:1 VNĐ</h2>
+              <p class="slide-subtitle">Khóa van 1 chiều chống rửa tiền, ký quỹ Escrow minh bạch trên sổ cái kép ACID</p>
+            </div>
+            <div class="slide-badge-num mono">04 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="flow-3col">
+              <!-- Column 1: Creator -->
+              <div class="card-dark flow-col">
+                <div>
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                    <div class="icon-box">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div>
+                      <div style="font-size:15px;font-weight:900;">Creator / Doanh Nghiệp</div>
+                      <div style="font-size:11px;color:#A1A1AA;">Bên mua dữ liệu nghiên cứu</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#F97316;">1. Nạp Ví Credit (1:1 VNĐ)</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Khóa van 1 chiều: Credit chỉ dùng tạo khảo sát, không rút ngược ra tiền mặt.</div>
+                    </div>
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#FFFFFF;">2. Khóa Quỹ Ký Quỹ (Escrow)</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Tạm giữ toàn bộ ngân sách cho N mẫu trước khi mở phân phối.</div>
+                    </div>
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#FFFFFF;">3. Nhận Dữ Liệu Sạch</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Xuất CSV/SPSS hoặc đồng bộ Webhook Google Sheets theo thời gian thực.</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:11px;color:#A1A1AA;border-top:1px solid #2E2E36;padding-top:8px;">
+                  Quyền RBAC: Chỉ xem trước form, cấm tự điền
+                </div>
+              </div>
+
+              <!-- Arrow 1 -->
+              <div class="flow-connector">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <span class="mono" style="font-size:10px;font-weight:800;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:0.1em;">ESCROW</span>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </div>
+
+              <!-- Column 2: SurvHub Engine -->
+              <div class="card-dark flow-col flow-col--engine">
+                <div>
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                    <div class="icon-box icon-box--solid">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                    </div>
+                    <div>
+                      <div style="font-size:15px;font-weight:900;">SurvHub Core Engine</div>
+                      <div style="font-size:11px;color:#F97316;font-weight:700;">Trái tim điều phối &amp; đối soát</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div class="flow-step" style="border-color:rgba(234,88,12,0.35);">
+                      <div style="font-size:11.5px;font-weight:800;color:#FFFFFF;">SQLite WAL &amp; ACID Ledger</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Ghi sổ cái kép (Double-Entry), chống race condition khi giải ngân đồng thời.</div>
+                    </div>
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#FFFFFF;">Matching Engine 0–100%</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Chấm điểm độ khớp nhân khẩu học để đẩy bài đúng tệp mục tiêu.</div>
+                    </div>
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#FFFFFF;">Anti-Fraud 5 Lớp &amp; Take Rate</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Trích phí sàn 10–36% theo phân khúc; hoàn Escrow dư nếu đóng form sớm.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mono" style="font-size:11px;font-weight:800;color:#F97316;border-top:1px solid rgba(234,88,12,0.3);padding-top:8px;">
+                  Reward = floor(Escrow * (1 - TakeRate) / N)
+                </div>
+              </div>
+
+              <!-- Arrow 2 -->
+              <div class="flow-connector">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <span class="mono" style="font-size:10px;font-weight:800;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:0.1em;">POINT 1:1</span>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </div>
+
+              <!-- Column 3: Respondent -->
+              <div class="card-dark flow-col">
+                <div>
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                    <div class="icon-box">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                      <div style="font-size:15px;font-weight:900;">Respondent / Đáp Viên</div>
+                      <div style="font-size:11px;color:#A1A1AA;">Bên cung cấp dữ liệu thực</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#F97316;">1. Tích Ví Point (1:1 VNĐ)</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Nhận thù lao ngay khi vượt 5 chốt chặn kiểm định. Screen-out = 0đ.</div>
+                    </div>
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#FFFFFF;">2. Thanh Khoản Đa Kênh</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Đổi thẻ cào từ 10.000đ (0đ phí), E-Voucher 1:1, VietQR hoặc MoMo.</div>
+                    </div>
+                    <div class="flow-step">
+                      <div style="font-size:11.5px;font-weight:800;color:#FFFFFF;">3. Đổi Point sang Credit (+5%)</div>
+                      <div style="font-size:11px;color:#D4D4D8;margin-top:2px;">Tái nạp Credit với tỷ giá thưởng +5% để mở khảo sát riêng của mình.</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="font-size:11px;color:#A1A1AA;border-top:1px solid #2E2E36;padding-top:8px;">
+                  Tạo vòng tuần hoàn cung–cầu bền vững
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — KIẾN TRÚC VÍ KÉP</span>
+            <span>Point (Thanh khoản ra) &amp; Credit (Ký quỹ vào) tách bạch tuyệt đối</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 5: CHỨC NĂNG 1 — FORM STUDIO 2 CỘT & NHẬP KHẨU BIỂU MẪU
+             ================================================================ -->
+        <section class="slide slide--light" data-slide="5" data-title="Chức Năng 1 — Form Studio 2 Cột">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>04 — CHỨC NĂNG 1</div>
+              <h2 class="slide-title">Form Studio 2 Cột &amp; Nhập Khẩu Biểu Mẫu Thông Minh</h2>
+              <p class="slide-subtitle">Thiết kế trực quan vừa soạn câu hỏi vừa tính toán ngân sách Escrow theo thời gian thực</p>
+            </div>
+            <div class="slide-badge-num mono">05 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="studio-split">
+              <!-- Wireframe Preview -->
+              <div class="studio-wireframe">
+                <div class="wire-topbar">
+                  <span style="display:flex;align-items:center;gap:6px;color:var(--orange-primary);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    FORM STUDIO — BỐ CỤC 65% / 35%
+                  </span>
+                  <span class="mono" style="color:var(--light-muted);">12 ĐỊNH DẠNG • DAG 3 TẦNG</span>
+                </div>
+                <div class="wire-cols">
+                  <div class="wire-canvas">
+                    <div class="wire-q-block">
+                      <div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:var(--orange-primary);">
+                        <span>CÂU 01 • SINGLE CHOICE (NHÁNH GỐC)</span>
+                        <span class="mono">BẮT BUỘC</span>
+                      </div>
+                      <div style="font-size:12px;font-weight:700;margin-top:4px;">Bạn đang sử dụng nền tảng thương mại điện tử nào?</div>
+                      <div style="display:flex;gap:6px;margin-top:6px;font-size:10px;">
+                        <span style="padding:3px 8px;border:1px solid var(--orange-border);background:var(--orange-soft);border-radius:6px;font-weight:700;color:var(--orange-primary);">Shopee -> Nhánh 2A</span>
+                        <span style="padding:3px 8px;border:1px solid var(--light-border);border-radius:6px;color:var(--light-muted);">Khác -> Nhánh 2B</span>
+                      </div>
+                    </div>
+
+                    <div class="wire-q-block">
+                      <div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:var(--light-muted);">
+                        <span>CÂU 02 • LIKERT 1–5 &amp; MA TRẬN</span>
+                        <span class="mono">CHỐNG STRAIGHT-LINING</span>
+                      </div>
+                      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:7px;text-align:center;font-size:10px;font-weight:700;">
+                        <div style="padding:4px;border:1px solid var(--light-border);border-radius:6px;">1</div>
+                        <div style="padding:4px;border:1px solid var(--light-border);border-radius:6px;">2</div>
+                        <div style="padding:4px;border:1px solid var(--light-border);border-radius:6px;">3</div>
+                        <div style="padding:4px;border:1px solid var(--orange-primary);background:var(--orange-soft);color:var(--orange-primary);border-radius:6px;">4</div>
+                        <div style="padding:4px;border:1px solid var(--light-border);border-radius:6px;">5</div>
+                      </div>
+                    </div>
+
+                    <div class="wire-q-block" style="background:var(--orange-soft);border-color:var(--orange-border);">
+                      <div style="font-size:10.5px;font-weight:800;color:var(--orange-deep);">NHẬP KHẨU NHANH (IMPORTER)</div>
+                      <div style="font-size:11px;color:var(--light-text-body);margin-top:2px;">Dán link Google Forms / MS Forms hoặc Smart Paste toàn bộ văn bản đề thi để tự sinh cấu trúc.</div>
+                    </div>
+                  </div>
+
+                  <div class="wire-sidebar">
+                    <div>
+                      <div style="font-size:10.5px;font-weight:800;color:#F97316;letter-spacing:0.06em;">ESCROW STICKY</div>
+                      <div style="font-size:13px;font-weight:800;margin-top:4px;">Dự Toán Ngân Sách</div>
+                      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;font-size:11px;">
+                        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #2E2E36;padding-bottom:6px;">
+                          <span style="color:#A1A1AA;">Số mẫu (N)</span>
+                          <span class="mono" style="font-weight:800;">200</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #2E2E36;padding-bottom:6px;">
+                          <span style="color:#A1A1AA;">Độ dài form</span>
+                          <span class="mono" style="font-weight:800;">Vừa</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #2E2E36;padding-bottom:6px;">
+                          <span style="color:#A1A1AA;">Take Rate</span>
+                          <span class="mono" style="font-weight:800;">12%</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="background:#1C1C20;border:1px solid #EA580C;border-radius:10px;padding:10px;">
+                      <div style="font-size:10px;color:#A1A1AA;">TỔNG TẠM KHÓA</div>
+                      <div class="mono" style="font-size:18px;font-weight:900;color:#F97316;">100.000 đ</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Spec Stack -->
+              <div class="spec-stack">
+                <div class="card-light spec-card">
+                  <div class="icon-box">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:800;">12 Định Dạng Câu Hỏi (5 Nhóm)</div>
+                    <p style="font-size:11.5px;color:var(--light-muted);margin-top:3px;line-height:1.45;">Lựa chọn (Single/Multi/Dropdown), Thang đo (Likert/Linear/Matrix/Ranking), Tự luận &amp; Số, Ngày giờ &amp; Tệp tin, Điều hướng nhóm.</p>
+                  </div>
+                </div>
+
+                <div class="card-light spec-card">
+                  <div class="icon-box">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:800;">Rẽ Nhánh DAG 3 Tầng An Toàn</div>
+                    <p style="font-size:11.5px;color:var(--light-muted);margin-top:3px;line-height:1.45;">Kiểm tra đồ thị có hướng không chu trình (DAG) ở cả client và server, triệt tiêu lỗi lặp vô tận khi thiết lập điều kiện nhảy câu.</p>
+                  </div>
+                </div>
+
+                <div class="card-light spec-card">
+                  <div class="icon-box">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:800;">Google / MS Forms Importer &amp; Chống Trùng URL</div>
+                    <p style="font-size:11.5px;color:var(--light-muted);margin-top:3px;line-height:1.45;">Nhập form sẵn có qua link hoặc Smart Paste; chuẩn hóa canonical URL để ngăn đăng trùng lặp cùng một khảo sát.</p>
+                  </div>
+                </div>
+
+                <div class="card-light spec-card">
+                  <div class="icon-box">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </div>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:800;">Onboarding Spotlight Tour 10 Bước</div>
+                    <p style="font-size:11.5px;color:var(--light-muted);margin-top:3px;line-height:1.45;">Hướng dẫn tương tác từng điểm chạm giúp người dùng mới tạo xong khảo sát đầu tiên dưới 3 phút.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — FORM STUDIO</span>
+            <span>65% Canvas soạn thảo / 35% Escrow Sticky • Zero thẻ select nguyên thủy</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 6: CHỨC NĂNG 2 — ZEN FOCUS & CHỐNG GIAN LẬN 5 LỚP
+             ================================================================ -->
+        <section class="slide slide--dark bg-grid-dark" data-slide="6" data-title="Chức Năng 2 — Anti-Fraud 5 Lớp & Trust Score">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>05 — CHỨC NĂNG 2</div>
+              <h2 class="slide-title">Zen Focus &amp; Hệ Thống Chống Gian Lận 5 Lớp</h2>
+              <p class="slide-subtitle">Làm bài tập trung không xao nhãng kết hợp 5 tầng kiểm định dữ liệu và thang điểm uy tín động</p>
+            </div>
+            <div class="slide-badge-num mono">06 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="fraud-grid">
+              <div class="fraud-list">
+                <div class="fraud-row">
+                  <div class="icon-box mono" style="font-weight:900;font-size:12px;">01</div>
+                  <div style="font-size:13px;font-weight:800;">Speed Trap (Bẫy Tốc Độ)</div>
+                  <div style="font-size:11.5px;color:#D4D4D8;">Đo thời gian thực theo trọng số độ dài form; gán ngưỡng <strong style="color:#F97316;">0s cho câu tự luận</strong> để không phạt oan người gõ nhanh.</div>
+                </div>
+
+                <div class="fraud-row">
+                  <div class="icon-box mono" style="font-weight:900;font-size:12px;">02</div>
+                  <div style="font-size:13px;font-weight:800;">Dynamic Attention Check</div>
+                  <div style="font-size:11.5px;color:#D4D4D8;">Chèn bẫy tập trung ngẫu nhiên ở đoạn <strong style="color:#F97316;">30%–80%</strong> bài; áp dụng <strong style="color:#FFFFFF;">Second-Chance Grace</strong> (thêm 1 cơ hội sửa).</div>
+                </div>
+
+                <div class="fraud-row">
+                  <div class="icon-box mono" style="font-weight:900;font-size:12px;">03</div>
+                  <div style="font-size:13px;font-weight:800;">Straight-Lining Variance</div>
+                  <div style="font-size:11.5px;color:#D4D4D8;">Tính phương sai trên nhóm câu Likert, Single Choice và Dropdown; phát hiện hành vi chọn 1 cột lặp (<span class="mono" style="color:#F97316;">sigma^2 = 0</span>).</div>
+                </div>
+
+                <div class="fraud-row">
+                  <div class="icon-box mono" style="font-weight:900;font-size:12px;">04</div>
+                  <div style="font-size:13px;font-weight:800;">Entropy Lọc Tự Luận Rác</div>
+                  <div style="font-size:11.5px;color:#D4D4D8;">Chặn chuỗi lặp ký tự vô nghĩa ("aaaa", "asdfgh"), đồng thời <strong style="color:#F97316;">chấp nhận số '0'</strong> và từ ngắn hợp lệ ("Có", "Không").</div>
+                </div>
+
+                <div class="fraud-row">
+                  <div class="icon-box mono" style="font-weight:900;font-size:12px;">05</div>
+                  <div style="font-size:13px;font-weight:800;">Device Fingerprint</div>
+                  <div style="font-size:11.5px;color:#D4D4D8;">Cảnh báo/khóa khi <strong style="color:#F97316;">&gt;= 3 tài khoản trên cùng thiết bị</strong>; có cơ chế bảo vệ dải IP <strong style="color:#FFFFFF;">Wi-Fi Đại học / KTX</strong>.</div>
+                </div>
+              </div>
+
+              <div class="trust-panel">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:12px;font-weight:800;color:#F97316;text-transform:uppercase;">THANG TRUST SCORE</span>
+                    <span class="mono" style="font-size:11px;color:#A1A1AA;">0 – 100 ĐIỂM</span>
+                  </div>
+                  <div style="margin-top:10px;display:flex;align-items:baseline;gap:8px;">
+                    <span class="mono" style="font-size:38px;font-weight:900;color:#FFFFFF;">85</span>
+                    <span style="font-size:12px;color:#A1A1AA;font-weight:600;">Điểm khởi tạo mặc định</span>
+                  </div>
+
+                  <!-- Gauge Bar -->
+                  <div style="height:10px;border-radius:999px;background:#222228;margin-top:10px;overflow:hidden;display:flex;">
+                    <div style="width:40%;background:#C2410C;" title="<40 Ban"></div>
+                    <div style="width:20%;background:#EA580C;" title="40-59 Khoa rut"></div>
+                    <div style="width:20%;background:#F97316;" title="60-79 Tru thu lao"></div>
+                    <div style="width:20%;background:#FFFFFF;" title="80-100 Uu tien"></div>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                  <div class="trust-tier" style="border-left-color:#FFFFFF;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">
+                      <span>80 – 100 điểm</span><span style="color:#F97316;">100% Thù lao</span>
+                    </div>
+                    <div style="font-size:11px;color:#A1A1AA;margin-top:2px;">Ưu tiên nhận bài khảo sát Doanh nghiệp giá cao.</div>
+                  </div>
+
+                  <div class="trust-tier" style="border-left-color:#F97316;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">
+                      <span>60 – 79 điểm</span><span style="color:#F97316;">Trừ 1% / điểm</span>
+                    </div>
+                    <div style="font-size:11px;color:#A1A1AA;margin-top:2px;">Vùng cảnh báo; hoàn thành bài sạch để hồi phục điểm.</div>
+                  </div>
+
+                  <div class="trust-tier" style="border-left-color:#EA580C;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">
+                      <span>&lt; 60 điểm</span><span style="color:#EA580C;">Khóa Rút Tiền</span>
+                    </div>
+                    <div style="font-size:11px;color:#A1A1AA;margin-top:2px;">Tạm đình chỉ thanh khoản Point cho tới khi đạt lại &gt;= 60.</div>
+                  </div>
+
+                  <div class="trust-tier" style="border-left-color:#C2410C;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;">
+                      <span>&lt; 40 điểm</span><span style="color:#C2410C;">Auto-Ban Thiết Bị</span>
+                    </div>
+                    <div style="font-size:11px;color:#A1A1AA;margin-top:2px;">Khóa vĩnh viễn theo device_fingerprint, bảo toàn quỹ Escrow.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — ANTI-FRAUD &amp; ZEN FOCUS</span>
+            <span>Giảm tỷ lệ dữ liệu rác xuống dưới 5% • Không phạt nhầm người thật</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 7: CHỨC NĂNG 3 — GAMIFICATION, E-VOUCHER, VIETQR & ĐA NỀN TẢNG
+             ================================================================ -->
+        <section class="slide slide--white" data-slide="7" data-title="Chức Năng 3 — Gamification & Đa Nền Tảng">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>06 — CHỨC NĂNG 3</div>
+              <h2 class="slide-title">Gamification Streak, Chợ E-Voucher, VietQR 0ms &amp; Đa Nền Tảng</h2>
+              <p class="slide-subtitle">Giữ chân đáp viên tự nhiên bằng cơ chế thưởng chuỗi, thanh khoản 0đ phí và trải nghiệm mượt mà</p>
+            </div>
+            <div class="slide-badge-num mono">07 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="mosaic-grid">
+              <!-- Cell 1: Streak Gamification -->
+              <div class="mosaic-cell card-light" style="background:var(--light-bg);">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div class="icon-box icon-box--solid">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                      </div>
+                      <div style="font-size:15.5px;font-weight:900;">Chuỗi Điểm Danh Streak (5 Cấp Ngọn Lửa)</div>
+                    </div>
+                    <span class="chip-orange mono">+3% đến +10%</span>
+                  </div>
+                  <p style="font-size:12px;color:var(--light-muted);margin-top:8px;line-height:1.45;">
+                    Duy trì chuỗi làm bài sạch mỗi ngày để nâng cấp ngọn lửa thưởng thêm phần trăm Point. Tích hợp tối đa <strong style="color:var(--light-text);">2 Vé Cứu Chuỗi</strong> tránh mất công sức khi bận đột xuất.
+                  </p>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">
+                  <div style="background:#FFF;border:1px solid var(--light-border);border-radius:10px;padding:8px 10px;text-align:center;">
+                    <div style="font-size:10px;font-weight:700;color:var(--light-muted);">MỐC 10 NGÀY</div>
+                    <div class="mono" style="font-size:13px;font-weight:900;color:var(--orange-primary);">1.000 Pt</div>
+                  </div>
+                  <div style="background:#FFF;border:1px solid var(--light-border);border-radius:10px;padding:8px 10px;text-align:center;">
+                    <div style="font-size:10px;font-weight:700;color:var(--light-muted);">MỐC 50 NGÀY</div>
+                    <div class="mono" style="font-size:13px;font-weight:900;color:var(--orange-primary);">5.000 Pt</div>
+                  </div>
+                  <div style="background:#FFF;border:1px solid var(--light-border);border-radius:10px;padding:8px 10px;text-align:center;">
+                    <div style="font-size:10px;font-weight:700;color:var(--light-muted);">MỐC 100 NGÀY</div>
+                    <div class="mono" style="font-size:13px;font-weight:900;color:var(--orange-primary);">12.000 Pt</div>
+                  </div>
+                  <div style="background:#FFF;border:1px solid var(--orange-border);border-radius:10px;padding:8px 10px;text-align:center;">
+                    <div style="font-size:10px;font-weight:700;color:var(--orange-deep);">MỐC 200 NGÀY</div>
+                    <div class="mono" style="font-size:13px;font-weight:900;color:var(--orange-primary);">25.000 Pt</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cell 2: VietQR SVG < 4ms -->
+              <div class="mosaic-cell card-dark" style="background:var(--dark-bg);color:#FFFFFF;">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div class="icon-box">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3z"/><path d="M20 14v7h-6"/></svg>
+                      </div>
+                      <div style="font-size:15.5px;font-weight:900;">VietQR SVG Nội Sinh</div>
+                    </div>
+                    <span class="chip-orange mono">&lt; 4ms</span>
+                  </div>
+                  <p style="font-size:12px;color:#A1A1AA;margin-top:8px;line-height:1.45;">
+                    Sinh ma trận mã QR chuẩn EMVCo trực tiếp bằng SVG thuần phía client/server không phụ thuộc API bên thứ ba, hiển thị tức thì dưới 4 mili-giây cho cả nạp Credit và duyệt rút tiền.
+                  </p>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;background:#1C1C20;border:1px solid #2E2E36;border-radius:10px;padding:10px 14px;">
+                  <span style="font-size:11.5px;font-weight:700;color:#E4E4E7;">Không độ trễ mạng ngoài • Chống lỗi ảnh</span>
+                  <span class="mono" style="font-size:12px;font-weight:800;color:#F97316;">ZERO API DELAY</span>
+                </div>
+              </div>
+
+              <!-- Cell 3: E-Voucher Marketplace -->
+              <div class="mosaic-cell card-light">
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div class="icon-box">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                      </div>
+                      <div style="font-size:15.5px;font-weight:900;">Chợ E-Voucher 1:1 &amp; Thẻ Cào 0đ Phí</div>
+                    </div>
+                    <span class="chip-orange mono">NGANG GIÁ 1:1</span>
+                  </div>
+                  <p style="font-size:12px;color:var(--light-muted);margin-top:8px;line-height:1.45;">
+                    Quy đổi trực tiếp điểm thưởng ngang mệnh giá sang mã ưu đãi thương hiệu lớn và thẻ cào điện thoại các nhà mạng từ mốc tối thiểu 10.000đ.
+                  </p>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px;">
+                  <span class="chip-orange">Grab</span>
+                  <span class="chip-orange">Shopee</span>
+                  <span class="chip-orange">Phúc Long</span>
+                  <span class="chip-orange">Highlands</span>
+                  <span class="chip-orange">CGV</span>
+                  <span class="chip-orange">Thẻ cào 10K (0đ phí)</span>
+                </div>
+              </div>
+
+              <!-- Cell 4: Multi-Platform & Community -->
+              <div class="mosaic-cell card-light" style="background:var(--orange-soft);border-color:var(--orange-border);">
+                <div>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="icon-box icon-box--solid">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                    </div>
+                    <div style="font-size:15.5px;font-weight:900;">Đa Nền Tảng &amp; Diễn Đàn Gemini Sentinel</div>
+                  </div>
+                  <p style="font-size:12px;color:var(--light-text-body);margin-top:8px;line-height:1.45;">
+                    Đồng bộ trải nghiệm xuyên suốt giữa Web và di động cùng cộng đồng chia sẻ học thuật được kiểm duyệt tự động.
+                  </p>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                  <div style="background:#FFF;border:1px solid var(--orange-border);border-radius:10px;padding:9px;">
+                    <div class="mono" style="font-size:12px;font-weight:900;color:var(--orange-primary);">SWR 0ms</div>
+                    <div style="font-size:10.5px;color:var(--light-muted);margin-top:2px;">Web SPA cache tức thì</div>
+                  </div>
+                  <div style="background:#FFF;border:1px solid var(--orange-border);border-radius:10px;padding:9px;">
+                    <div class="mono" style="font-size:12px;font-weight:900;color:var(--orange-primary);">APK Native</div>
+                    <div style="font-size:10.5px;color:var(--light-muted);margin-top:2px;">Capacitor Android</div>
+                  </div>
+                  <div style="background:#FFF;border:1px solid var(--orange-border);border-radius:10px;padding:9px;">
+                    <div class="mono" style="font-size:12px;font-weight:900;color:var(--orange-primary);">Sentinel AI</div>
+                    <div style="font-size:10.5px;color:var(--light-muted);margin-top:2px;">Kiểm duyệt diễn đàn</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — TRẢI NGHIỆM &amp; THANH KHOẢN</span>
+            <span>Tỷ lệ quay lại cao nhờ Streak &amp; đổi quà không mất phí ẩn</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 8: CHỨC NĂNG 4 — LỌC ĐỐI TƯỢNG, XUẤT DỮ LIỆU & PHÁP LÝ
+             ================================================================ -->
+        <section class="slide slide--light" data-slide="8" data-title="Chức Năng 4 — Lọc Đối Tượng & Pháp Lý">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>07 — CHỨC NĂNG 4</div>
+              <h2 class="slide-title">Lọc Đối Tượng, Xuất Dữ Liệu &amp; Tuân Thủ Pháp Lý</h2>
+              <p class="slide-subtitle">Tối ưu trải nghiệm điền form, bảo vệ hạ tầng xuất dữ liệu và tuân thủ Luật Bảo vệ Dữ liệu Cá nhân</p>
+            </div>
+            <div class="slide-badge-num mono">08 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="legal-layout">
+              <div class="legal-top">
+                <!-- Left: Adaptive Auto-Screener -->
+                <div class="card-light" style="padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                      <div class="icon-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size:11px;font-weight:800;color:var(--orange-primary);text-transform:uppercase;">ADAPTIVE AUTO-SCREENER</div>
+                        <div style="font-size:16.5px;font-weight:900;">Smart Bypass &amp; Auto-Fill Ngầm</div>
+                      </div>
+                    </div>
+                    <p style="font-size:12.5px;color:var(--light-muted);line-height:1.5;">
+                      Đáp viên không phải trả lời lặp lại các câu nhân khẩu học đã xác thực (tuổi, giới tính, khu vực, thu nhập, ngành học).
+                    </p>
+                  </div>
+
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                    <div style="background:var(--light-bg);border:1px solid var(--light-border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:12px;font-weight:700;">Smart Bypass câu sàng lọc</span>
+                      <span class="chip-orange">Ẩn câu hỏi trùng</span>
+                    </div>
+                    <div style="background:var(--light-bg);border:1px solid var(--light-border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:12px;font-weight:700;">Auto-Fill ngầm vào dữ liệu xuất</span>
+                      <span class="chip-orange">Đủ biến cho Creator</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Export & SSRF Webhook -->
+                <div class="card-light" style="padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                      <div class="icon-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      </div>
+                      <div>
+                        <div style="font-size:11px;font-weight:800;color:var(--orange-primary);text-transform:uppercase;">EXPORT &amp; TÍCH HỢP</div>
+                        <div style="font-size:16.5px;font-weight:900;">CSV / SPSS &amp; Google Sheets Chống SSRF</div>
+                      </div>
+                    </div>
+                    <p style="font-size:12.5px;color:var(--light-muted);line-height:1.5;">
+                      Xuất tệp nghiên cứu tương thích trực tiếp SPSS/R/Excel (UTF-8 BOM) hoặc đẩy tự động sang Google Sheets qua Webhook bảo mật.
+                    </p>
+                  </div>
+
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                    <div style="background:var(--light-bg);border:1px solid var(--light-border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:12px;font-weight:700;">Định dạng xuất chuẩn học thuật</span>
+                      <span class="chip-orange mono">CSV / SPSS</span>
+                    </div>
+                    <div style="background:var(--light-bg);border:1px solid var(--light-border);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+                      <span style="font-size:12px;font-weight:700;">Kiểm tra DNS/IP Webhook</span>
+                      <span class="chip-orange">Chặn SSRF nội bộ</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom: Legal & Security Banner -->
+              <div class="legal-bottom">
+                <div>
+                  <div class="chip-orange" style="margin-bottom:8px;">LUẬT BVDLCN 91/2025/QH15 &amp; RBAC</div>
+                  <div style="font-size:18px;font-weight:900;line-height:1.25;">Bảo Vệ Dữ Liệu Cá Nhân &amp; Phân Quyền Chặt Chẽ</div>
+                  <p style="font-size:11.5px;color:#A1A1AA;margin-top:6px;line-height:1.45;">
+                    Thiết kế tuân thủ quyền chủ thể dữ liệu từ kiến trúc cốt lõi, tách rời danh tính người trả lời khỏi kết quả nghiên cứu.
+                  </p>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+                  <div style="background:var(--dark-surface);border:1px solid var(--dark-border);border-radius:10px;padding:10px 12px;">
+                    <div class="mono" style="font-size:11.5px;font-weight:800;color:#F97316;">_stripPrivateProfileFields()</div>
+                    <div style="font-size:11px;color:#D4D4D8;margin-top:3px;">Lọc bỏ hoàn toàn PII (email, SĐT, định danh) khỏi payload trả về.</div>
+                  </div>
+                  <div style="background:var(--dark-surface);border:1px solid var(--dark-border);border-radius:10px;padding:10px 12px;">
+                    <div class="mono" style="font-size:11.5px;font-weight:800;color:#F97316;">consent_logs</div>
+                    <div style="font-size:11px;color:#D4D4D8;margin-top:3px;">Lưu dấu thời gian &amp; phiên bản điều khoản người dùng đã đồng ý.</div>
+                  </div>
+                  <div style="background:var(--dark-surface);border:1px solid var(--dark-border);border-radius:10px;padding:10px 12px;">
+                    <div class="mono" style="font-size:11.5px;font-weight:800;color:#F97316;">/export-data &amp; /withdraw-consent</div>
+                    <div style="font-size:11px;color:#D4D4D8;margin-top:3px;">Cho phép người dùng tự xuất toàn bộ dữ liệu cá nhân hoặc rút sự đồng ý.</div>
+                  </div>
+                  <div style="background:var(--dark-surface);border:1px solid var(--dark-border);border-radius:10px;padding:10px 12px;">
+                    <div class="mono" style="font-size:11.5px;font-weight:800;color:#F97316;">RBAC Strict Lock</div>
+                    <div style="font-size:11px;color:#D4D4D8;margin-top:3px;">Cấm tuyệt đối Creator tự điền bài hoặc nhận thưởng trên chính dự án.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — BẢO MẬT &amp; PHÁP LÝ</span>
+            <span>Dữ liệu nghiên cứu ẩn danh hoàn toàn • Sẵn sàng kiểm toán doanh nghiệp</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 9: MÔ HÌNH KINH DOANH CANVAS (BUSINESS MODEL CANVAS)
+             ================================================================ -->
+        <section class="slide slide--white" data-slide="9" data-title="Mô Hình Kinh Doanh Canvas (9 Ô BMC)">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>08 — BUSINESS MODEL CANVAS</div>
+              <h2 class="slide-title">Mô Hình Kinh Doanh Canvas — SurvHub</h2>
+              <p class="slide-subtitle">Cấu trúc 9 khối vận hành đồng bộ hai phía thị trường và dòng tiền khép kín</p>
+            </div>
+            <div class="slide-badge-num mono">09 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="bmc-wrapper">
+              <div class="bmc-top">
+                <!-- 1. Key Partners -->
+                <div class="bmc-box">
+                  <div class="bmc-title">1. Đối Tác Chính</div>
+                  <ul class="bmc-list">
+                    <li>Trường Đại học, CLB Nghiên cứu khoa học (.edu.vn)</li>
+                    <li>Nhà cung cấp E-Voucher: Grab, Shopee, Phúc Long, Highlands, CGV</li>
+                    <li>Cổng thanh toán VietQR / MoMo &amp; đối tác Thẻ cào</li>
+                    <li>Hạ tầng: Oracle Cloud, Turso, Cloudflare, Gemini AI</li>
+                  </ul>
+                </div>
+
+                <!-- 2 & 3. Key Activities & Key Resources -->
+                <div class="bmc-col-split">
+                  <div class="bmc-box">
+                    <div class="bmc-title">2. Hoạt Động Chính</div>
+                    <ul class="bmc-list">
+                      <li>Vận hành Matching 0–100% &amp; Anti-Fraud 5 lớp</li>
+                      <li>Quản lý ký quỹ Escrow &amp; sổ cái ACID Ledger</li>
+                      <li>Kiểm duyệt diễn đàn &amp; xử lý bảo hành 1 đổi 1</li>
+                    </ul>
+                  </div>
+                  <div class="bmc-box">
+                    <div class="bmc-title">3. Tài Nguyên Chính</div>
+                    <ul class="bmc-list">
+                      <li>Cơ sở dữ liệu đáp viên định danh Trust Score</li>
+                      <li>Lõi Form Studio 12 định dạng &amp; DAG 3 tầng</li>
+                      <li>Công nghệ Device Fingerprint &amp; VietQR &lt;4ms</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- 4. Value Propositions -->
+                <div class="bmc-box bmc-box--accent">
+                  <div class="bmc-title">4. Giải Pháp Giá Trị</div>
+                  <ul class="bmc-list">
+                    <li><strong>Creator:</strong> Thu mẫu SLA 2–48h, giá 400–2.500đ/mẫu, dữ liệu sạch &gt;=95%, bảo hành 1 đổi 1 (15% / 7 ngày)</li>
+                    <li><strong>Đáp viên:</strong> Thù lao 1:1 VNĐ, rút thẻ cào 10K phí 0đ, VietQR/E-Voucher 1:1, thưởng +5% khi đổi sang Credit</li>
+                    <li><strong>Pháp lý:</strong> Tuân thủ BVDLCN 91/2025/QH15, lọc PII tự động</li>
+                  </ul>
+                </div>
+
+                <!-- 5 & 6. Customer Relationships & Channels -->
+                <div class="bmc-col-split">
+                  <div class="bmc-box">
+                    <div class="bmc-title">5. Quan Hệ KH</div>
+                    <ul class="bmc-list">
+                      <li>Self-serve Form Studio + Spotlight Tour 10 bước</li>
+                      <li>Gamification Streak 5 cấp &amp; Vé Cứu Chuỗi</li>
+                      <li>Cộng đồng Gemini Sentinel &amp; bảo hành tự động</li>
+                    </ul>
+                  </div>
+                  <div class="bmc-box">
+                    <div class="bmc-title">6. Kênh Phân Phối</div>
+                    <ul class="bmc-list">
+                      <li>Web SPA (SWR 0ms) đa thiết bị</li>
+                      <li>Ứng dụng Android Native (Capacitor APK)</li>
+                      <li>Push Notification &amp; Email điều phối mẫu</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- 7. Customer Segments -->
+                <div class="bmc-box">
+                  <div class="bmc-title">7. Phân Khúc KH</div>
+                  <ul class="bmc-list">
+                    <li><strong>Sinh viên (.edu.vn):</strong> Làm khóa luận, NCKH ngân sách thấp</li>
+                    <li><strong>Cá nhân / Startup:</strong> Thử nghiệm ý tưởng &amp; MVP nhanh</li>
+                    <li><strong>Doanh nghiệp / Agency:</strong> Nghiên cứu thị trường cần lọc sâu &amp; VAT</li>
+                    <li><strong>Đáp viên:</strong> Sinh viên, nhân viên văn phòng kiếm thu nhập phụ</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- 8 & 9. Cost Structure & Revenue Streams -->
+              <div class="bmc-bottom">
+                <div class="bmc-box">
+                  <div class="bmc-title">8. Cơ Cấu Chi Phí (Cost Structure)</div>
+                  <ul class="bmc-list">
+                    <li><strong>Thù lao đáp viên (64%–90% Escrow):</strong> Chỉ chi trả khi bài đạt kiểm định 5 lớp; Screen-out = 0đ</li>
+                    <li><strong>Chi phí thanh khoản &amp; quỹ thưởng:</strong> Hộp quà Streak, ưu đãi +5% đổi chéo, quỹ bảo hành trần 15%</li>
+                    <li><strong>Hạ tầng công nghệ tối ưu:</strong> Oracle Always Free + Cloudflare Tunnel + Turso giúp chi phí cố định cực thấp</li>
+                  </ul>
+                </div>
+                <div class="bmc-box bmc-box--dark">
+                  <div class="bmc-title">9. Dòng Doanh Thu (Revenue Streams)</div>
+                  <ul class="bmc-list">
+                    <li><strong>Take Rate trên Escrow:</strong> Sinh viên 10–12% • Cá nhân 25% • Doanh nghiệp 33–36%</li>
+                    <li><strong>Chiết khấu đối tác Voucher &amp; Thẻ cào:</strong> Chênh lệch B2B khi phát hành E-Voucher quy mô lớn</li>
+                    <li><strong>Gói thuê bao SaaS Giai đoạn 2:</strong> Học Thuật Pass (199K/3th), DN PRO (490K/th), AGENCY (1.490K/th)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — BUSINESS MODEL CANVAS</span>
+            <span>Thiết kế dòng tiền dương trên từng giao dịch ký quỹ Escrow</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 10: KINH TẾ HỌC ĐƠN VỊ & BẢNG GIÁ 3 PHÂN KHÚC
+             ================================================================ -->
+        <section class="slide slide--light" data-slide="10" data-title="Kinh Tế Học Đơn Vị & Bảng Giá">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>09 — UNIT ECONOMICS &amp; PRICING</div>
+              <h2 class="slide-title">Kinh Tế Học Đơn Vị &amp; Bảng Giá 3 Phân Khúc</h2>
+              <p class="slide-subtitle">Đơn giá phân tầng minh bạch đi kèm 3 chốt chặn toán học bảo vệ biên lợi nhuận tuyệt đối</p>
+            </div>
+            <div class="slide-badge-num mono">10 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="econ-layout">
+              <table class="pricing-table">
+                <thead>
+                  <tr>
+                    <th style="width:18%;">Phân Khúc</th>
+                    <th style="width:22%;">Đơn Giá (Ngắn / Vừa / Dài)</th>
+                    <th style="width:12%;">Take Rate</th>
+                    <th style="width:18%;">Hạn Mức &amp; Lượt Free</th>
+                    <th style="width:30%;">Đặc Quyền &amp; Chính Sách</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div style="font-weight:900;font-size:13.5px;color:var(--orange-primary);">Sinh Viên</div>
+                      <div class="mono" style="font-size:11px;color:var(--light-muted);">Xác thực .edu.vn</div>
+                    </td>
+                    <td class="mono" style="font-weight:800;font-size:13px;">400 / 500 / 600 đ</td>
+                    <td class="mono" style="font-weight:900;color:var(--orange-primary);">10–12%</td>
+                    <td>
+                      <div style="font-weight:700;">30 lượt / tháng</div>
+                      <div class="mono" style="font-size:11px;color:var(--light-muted);">Max 300 mẫu/bài</div>
+                    </td>
+                    <td style="font-size:11.5px;">Trợ giá nghiên cứu khoa học; tích hợp đổi Point sang Credit (+5%) để tự thu thập chéo không mất phí.</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div style="font-weight:900;font-size:13.5px;color:var(--light-text);">Cá Nhân</div>
+                      <div style="font-size:11px;color:var(--light-muted);">Freelancer / Startup</div>
+                    </td>
+                    <td class="mono" style="font-weight:800;font-size:13px;">800 / 1.000 / 1.200 đ</td>
+                    <td class="mono" style="font-weight:900;">25%</td>
+                    <td>
+                      <div style="font-weight:700;">25 lượt đầu</div>
+                      <div class="mono" style="font-size:11px;color:var(--light-muted);">Max 500 mẫu/bài</div>
+                    </td>
+                    <td style="font-size:11.5px;">Đầy đủ 12 định dạng câu hỏi, DAG 3 tầng, xuất CSV/SPSS và đồng bộ Google Sheets thời gian thực.</td>
+                  </tr>
+                  <tr style="background:var(--orange-soft);">
+                    <td>
+                      <div style="font-weight:900;font-size:13.5px;color:var(--orange-deep);">Doanh Nghiệp</div>
+                      <div style="font-size:11px;color:var(--light-text-body);">SME / Agency / Brand</div>
+                    </td>
+                    <td class="mono" style="font-weight:900;font-size:13px;color:var(--orange-deep);">1.500 / 2.000 / 2.500 đ</td>
+                    <td class="mono" style="font-weight:900;color:var(--orange-deep);">33–36%</td>
+                    <td>
+                      <div style="font-weight:700;">Lọc sâu miễn phí</div>
+                      <div class="mono" style="font-size:11px;color:var(--light-text-body);">Không giới hạn mẫu</div>
+                    </td>
+                    <td style="font-size:11.5px;color:var(--light-text-body);">
+                      Giảm <strong class="mono">10%</strong> (&gt;=300 mẫu) &amp; <strong class="mono">15%</strong> (&gt;=500 mẫu) • Xuất hóa đơn <strong>VAT</strong> • <strong>Bảo hành 1 đổi 1</strong> (15% / 7 ngày).
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="guardrails-strip">
+                <div class="card-dark" style="padding:16px 18px;background:var(--dark-bg);color:#FFFFFF;display:flex;flex-direction:column;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:11px;font-weight:800;color:#F97316;text-transform:uppercase;">CREATOR BOOST</span>
+                    <span class="mono" style="font-size:14px;font-weight:900;color:#FFFFFF;">80 / 20</span>
+                  </div>
+                  <div style="font-size:12px;color:#D4D4D8;margin-top:6px;line-height:1.45;">
+                    Phân bổ <strong style="color:#FFFFFF;">80%</strong> phụ phí tăng tốc trực tiếp vào thù lao đáp viên để bứt phá SLA và <strong style="color:#F97316;">20%</strong> cho hạ tầng điều phối.
+                  </div>
+                </div>
+
+                <div class="card-light" style="padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;">
+                  <div style="font-size:11px;font-weight:800;color:var(--orange-primary);text-transform:uppercase;">3 CHỐT CHẶN TOÁN HỌC CHỐNG LỖ (ZERO NEGATIVE MARGIN)</div>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;">
+                    <div style="background:var(--light-bg);border:1px solid var(--light-border);border-radius:10px;padding:9px 10px;">
+                      <div class="mono" style="font-size:11px;font-weight:900;color:var(--orange-primary);">CHỐT 1 — THÙ LAO ĐỘNG</div>
+                      <div style="font-size:11px;color:var(--light-muted);margin-top:2px;">Tính trên Credit thực thu sau khi trừ lượt miễn phí; làm tròn xuống <code>floor()</code>.</div>
+                    </div>
+                    <div style="background:var(--light-bg);border:1px solid var(--light-border);border-radius:10px;padding:9px 10px;">
+                      <div class="mono" style="font-size:11px;font-weight:900;color:var(--orange-primary);">CHỐT 2 — VAN 1 CHIỀU</div>
+                      <div style="font-size:11px;color:var(--light-muted);margin-top:2px;">Credit không rút ra tiền mặt; lượt bị Screen-out chi phí trả đáp viên = 0đ.</div>
+                    </div>
+                    <div style="background:var(--light-bg);border:1px solid var(--light-border);border-radius:10px;padding:9px 10px;">
+                      <div class="mono" style="font-size:11px;font-weight:900;color:var(--orange-primary);">CHỐT 3 — TRẦN BẢO HÀNH</div>
+                      <div style="font-size:11px;color:var(--light-muted);margin-top:2px;">Khấu trừ thù lao vùng Trust 60–79 bù cho trần bảo hành 15% trong 7 ngày.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — UNIT ECONOMICS</span>
+            <span>Không bao giờ âm biên lợi nhuận dù áp dụng gói miễn phí cho sinh viên</span>
+          </div>
+        </section>
+
+        <!-- ================================================================
+             SLIDE 11: TỔNG KẾT & LỘ TRÌNH PHÁT TRIỂN (OBSIDIAN DARK)
+             ================================================================ -->
+        <section class="slide slide--dark bg-grid-dark" data-slide="11" data-title="Tổng Kết & Lộ Trình Phát Triển">
+          <div class="slide-top">
+            <div>
+              <div class="slide-kicker"><span class="slide-kicker-dot"></span>10 — TỔNG KẾT &amp; LỘ TRÌNH</div>
+              <h2 class="slide-title">Kiến Trúc Sẵn Sàng Vận Hành &amp; Lộ Trình Tăng Trưởng</h2>
+              <p class="slide-subtitle">Từ nền tảng lõi đã kiểm thử toàn diện đến mở rộng các gói thuê bao SaaS định kỳ</p>
+            </div>
+            <div class="slide-badge-num mono">11 / 11</div>
+          </div>
+
+          <div class="slide-body">
+            <div class="roadmap-layout">
+              <div class="phases-grid">
+                <!-- Phase 1 -->
+                <div class="card-dark phase-card" style="border-color:var(--orange-primary);">
+                  <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                      <span class="chip-orange">GIAI ĐOẠN 1 — ĐÃ HOÀN THIỆN</span>
+                      <span class="mono" style="font-size:12px;font-weight:800;color:#F97316;">PRODUCTION READY</span>
+                    </div>
+                    <h3 style="font-size:20px;font-weight:900;margin-bottom:10px;">Nền Tảng Cốt Lõi &amp; Hạ Tầng Tối Ưu</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;">
+                      <div class="card-sub-dark" style="padding:12px;">
+                        <div style="font-size:12.5px;font-weight:800;color:#FFFFFF;">Core Web SPA + Android APK</div>
+                        <div style="font-size:11px;color:#A1A1AA;margin-top:3px;">SWR 0ms, Capacitor Android sẵn sàng xuất bản, UI chuẩn 3 màu.</div>
+                      </div>
+                      <div class="card-sub-dark" style="padding:12px;">
+                        <div class="mono" style="font-size:12.5px;font-weight:800;color:#F97316;">27 Suite Test Tự Hành</div>
+                        <div style="font-size:11px;color:#A1A1AA;margin-top:3px;">Kiểm chứng toàn diện Ledger, Anti-Fraud, RBAC, Pricing và Concurrency.</div>
+                      </div>
+                      <div class="card-sub-dark" style="padding:12px;">
+                        <div style="font-size:12.5px;font-weight:800;color:#FFFFFF;">Oracle Cloud Always Free</div>
+                        <div style="font-size:11px;color:#A1A1AA;margin-top:3px;">ARM64 Server tối ưu chi phí vận hành 0đ/tháng giai đoạn khởi động.</div>
+                      </div>
+                      <div class="card-sub-dark" style="padding:12px;">
+                        <div style="font-size:12.5px;font-weight:800;color:#FFFFFF;">Turso Replica + CF Tunnel</div>
+                        <div style="font-size:11px;color:#A1A1AA;margin-top:3px;">Turso Embedded Replica tốc độ nội bộ + Cloudflare Tunnel bảo mật.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="font-size:11.5px;color:#E4E4E7;border-top:1px solid #2E2E36;padding-top:10px;margin-top:10px;">
+                    Toàn bộ luồng nghiệp vụ hai chiều đã thông suốt từ tạo form đến thanh khoản.
+                  </div>
+                </div>
+
+                <!-- Phase 2 -->
+                <div class="card-dark phase-card">
+                  <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                      <span class="chip-orange">GIAI ĐOẠN 2 — MỞ RỘNG SAAS</span>
+                      <span class="mono" style="font-size:12px;font-weight:800;color:#A1A1AA;">RECURRING REVENUE</span>
+                    </div>
+                    <h3 style="font-size:20px;font-weight:900;margin-bottom:6px;">Thương Mại Hóa Các Gói Thuê Bao</h3>
+                    <p style="font-size:12px;color:#A1A1AA;line-height:1.45;">
+                      Mở rộng dòng doanh thu định kỳ song song với Take Rate giao dịch từ Escrow.
+                    </p>
+
+                    <div class="saas-tiers">
+                      <div class="saas-tier-box">
+                        <div style="font-size:11px;font-weight:800;color:#A1A1AA;">HỌC THUẬT PASS</div>
+                        <div class="mono" style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:6px;">199K</div>
+                        <div style="font-size:11px;color:#F97316;font-weight:700;">/ 3 tháng</div>
+                        <div style="font-size:10.5px;color:#A1A1AA;margin-top:6px;">Mở khóa quota mẫu học thuật &amp; xuất SPSS nâng cao.</div>
+                      </div>
+                      <div class="saas-tier-box" style="border-color:var(--orange-border);">
+                        <div style="font-size:11px;font-weight:800;color:#F97316;">DN PRO</div>
+                        <div class="mono" style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:6px;">490K</div>
+                        <div style="font-size:11px;color:#F97316;font-weight:700;">/ tháng</div>
+                        <div style="font-size:10.5px;color:#A1A1AA;margin-top:6px;">Ưu tiên SLA, lọc nhân khẩu học sâu &amp; Webhook không giới hạn.</div>
+                      </div>
+                      <div class="saas-tier-box">
+                        <div style="font-size:11px;font-weight:800;color:#A1A1AA;">AGENCY</div>
+                        <div class="mono" style="font-size:18px;font-weight:900;color:#FFFFFF;margin-top:6px;">1.490K</div>
+                        <div style="font-size:11px;color:#F97316;font-weight:700;">/ tháng</div>
+                        <div style="font-size:10.5px;color:#A1A1AA;margin-top:6px;">Quản lý đa dự án khách hàng, White-label &amp; API đối soát riêng.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="font-size:11.5px;color:#A1A1AA;border-top:1px solid #2E2E36;padding-top:10px;margin-top:10px;">
+                    Tăng LTV khách hàng doanh nghiệp và giảm phụ thuộc vào đơn hàng lẻ.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact Bar -->
+              <div class="contact-bar">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="width:36px;height:36px;padding:6px;border-radius:10px;background:#121214;border:1px solid #2E2E36;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" fill="none">
+                      <path d="M 225.35 167.03 C 223.87 167.31 222.38 167.13 220.92 167.85 C 219.45 168.58 217.48 170.44 216.57 171.38 C 215.67 172.33 215.73 172.57 215.49 173.50 C 215.25 174.43 215.13 176.00 215.14 176.97 C 215.15 177.93 215.20 178.39 215.53 179.28 C 215.87 180.17 212.69 176.52 217.16 182.31 C 221.62 188.09 221.19 188.01 242.32 213.98 C 263.45 239.95 325.52 315.15 343.94 338.12 C 362.37 361.09 350.28 347.08 352.88 351.80 C 355.48 356.52 357.90 362.18 359.55 366.45 C 361.19 370.72 361.99 374.26 362.75 377.44 C 363.51 380.62 363.84 381.68 364.10 385.53 C 364.36 389.39 364.56 396.17 364.33 400.57 C 364.10 404.97 363.72 407.67 362.72 411.94 C 361.73 416.22 360.20 421.58 358.35 426.21 C 356.49 430.83 353.81 435.87 351.60 439.69 C 349.39 443.52 348.27 445.32 345.09 449.15 C 341.90 452.98 336.68 458.17 332.48 462.68 C 332.44 463.04 331.82 463.62 332.37 463.76 C 332.93 463.91 331.57 465.20 335.80 463.55 C 340.04 461.90 352.41 456.44 357.78 453.86 C 363.14 451.29 363.66 450.94 367.99 448.08 C 372.33 445.21 379.46 440.15 383.80 436.67 C 388.14 433.18 391.07 430.20 394.04 427.17 C 397.01 424.14 398.86 421.94 401.60 418.49 C 404.34 415.05 407.84 410.54 410.48 406.52 C 413.12 402.51 414.86 399.99 417.44 394.40 C 420.01 388.82 424.04 378.63 425.93 373.01 C 427.82 367.38 427.98 365.42 428.77 360.67 C 429.55 355.91 430.29 349.30 430.63 344.48 C 430.98 339.66 430.95 335.77 430.83 331.75 C 430.72 327.74 430.58 324.75 429.95 320.38 C 429.32 316.01 427.99 309.49 427.04 305.54 C 426.10 301.59 425.68 300.46 424.29 296.67 C 422.90 292.88 421.24 287.93 418.70 282.79 C 416.16 277.65 411.55 269.94 409.07 265.83 C 406.59 261.72 406.63 261.80 403.82 258.12 C 401.01 254.44 396.73 248.77 392.24 243.77 C 387.75 238.78 381.32 232.41 376.88 228.15 C 372.43 223.88 368.95 221.04 365.57 218.18 C 362.19 215.33 360.16 213.61 356.58 211.00 C 353.00 208.39 348.49 205.32 344.09 202.52 C 339.70 199.73 334.39 196.57 330.21 194.23 C 326.04 191.89 323.52 190.59 319.03 188.47 C 314.53 186.35 308.40 183.54 303.23 181.51 C 298.05 179.47 293.33 177.88 288.00 176.27 C 282.67 174.65 276.46 173.02 271.23 171.83 C 265.99 170.63 260.95 169.81 256.58 169.10 C 252.21 168.40 250.22 167.93 245.01 167.58 C 239.81 167.24 231.90 167.22 225.35 167.03 Z" fill="url(#vs-s)"/>
+                      <path d="M 179.09 47.90 C 176.20 48.87 173.97 49.39 170.41 50.79 C 166.86 52.19 161.90 54.25 157.75 56.29 C 153.61 58.32 149.67 60.47 145.55 63.00 C 141.43 65.53 136.59 68.83 133.04 71.47 C 129.49 74.11 127.19 76.12 124.24 78.84 C 121.28 81.56 118.59 84.03 115.29 87.78 C 111.99 91.53 107.47 97.15 104.43 101.35 C 101.39 105.55 99.66 108.07 97.04 113.00 C 94.43 117.92 91.08 124.61 88.75 130.90 C 86.42 137.19 84.26 145.71 83.07 150.75 C 81.87 155.80 81.88 156.92 81.56 161.16 C 81.25 165.40 81.15 171.60 81.17 176.20 C 81.18 180.79 81.35 185.10 81.66 188.73 C 81.96 192.36 82.06 193.64 82.99 197.98 C 83.93 202.32 85.44 209.32 87.28 214.75 C 89.12 220.18 91.91 226.06 94.05 230.56 C 96.19 235.05 97.72 237.78 100.13 241.74 C 102.54 245.69 105.45 250.06 108.51 254.27 C 111.57 258.47 114.68 262.63 118.48 266.99 C 122.28 271.34 127.34 276.45 131.32 280.40 C 135.30 284.34 138.43 287.26 142.38 290.65 C 146.34 294.05 150.57 297.44 155.05 300.76 C 159.53 304.07 163.71 307.09 169.26 310.55 C 174.81 314.00 182.56 318.46 188.34 321.48 C 194.12 324.49 196.79 325.88 203.95 328.62 C 211.12 331.37 223.58 335.69 231.33 337.95 C 239.07 340.21 245.53 341.24 250.41 342.20 C 255.29 343.16 255.65 343.19 260.63 343.70 C 265.61 344.21 275.47 345.06 280.29 345.24 C 285.11 345.42 286.46 344.94 289.54 344.79 C 290.53 344.29 291.81 343.89 292.51 343.29 C 293.22 342.69 293.55 341.93 293.75 341.20 C 293.95 340.47 293.98 339.75 293.73 338.89 C 293.48 338.02 299.56 344.90 292.24 336.00 C 284.92 327.09 269.04 308.84 249.80 285.48 C 230.55 262.12 190.99 213.57 176.78 195.84 C 162.57 178.10 168.00 184.39 164.55 179.09 C 161.10 173.79 158.21 168.55 156.08 164.05 C 153.95 159.56 152.94 155.99 151.77 152.10 C 150.60 148.21 149.78 144.52 149.08 140.73 C 148.37 136.94 147.79 133.57 147.54 129.36 C 147.28 125.15 147.25 119.88 147.56 115.48 C 147.87 111.08 148.41 107.48 149.39 102.95 C 150.36 98.42 151.98 92.48 153.40 88.30 C 154.82 84.12 155.63 82.10 157.90 77.89 C 160.17 73.68 164.39 66.84 167.04 63.05 C 169.69 59.26 171.53 57.53 173.79 55.15 C 176.05 52.77 178.32 50.91 180.59 48.79 C 180.51 48.49 180.60 48.05 180.35 47.90 C 180.10 47.76 179.51 47.90 179.09 47.90 Z" fill="url(#vs-s)"/>
+                      <path d="M 174.40 164.44 C 174.86 165.05 175.39 165.95 175.78 166.28 C 176.17 166.61 175.90 168.80 176.76 166.41 C 177.62 164.01 179.77 155.16 180.94 151.91 C 182.12 148.66 182.62 148.62 183.80 146.90 C 184.98 145.18 186.88 142.89 188.00 141.58 C 189.12 140.27 188.70 140.45 190.52 139.05 C 192.34 137.64 196.16 134.81 198.94 133.16 C 201.73 131.52 204.47 130.50 207.23 129.17 C 209.10 128.64 208.61 128.05 212.82 127.57 C 217.03 127.09 203.60 126.46 232.48 126.28 C 261.37 126.09 358.58 126.53 386.11 126.46 C 413.64 126.40 395.40 126.43 397.66 125.89 C 399.92 125.34 394.27 136.71 399.67 123.19 C 405.06 109.66 419.91 70.89 430.03 44.74 C 429.88 44.36 430.23 43.91 429.59 43.62 C 428.96 43.33 458.19 43.09 426.21 43.00 C 394.22 42.91 270.62 42.97 237.69 43.08 C 204.76 43.19 232.55 42.90 228.63 43.66 C 224.71 44.43 218.15 46.27 214.17 47.66 C 210.19 49.05 207.45 50.61 204.73 52.02 C 202.00 53.43 200.35 54.36 197.85 56.12 C 195.34 57.88 192.27 60.21 189.71 62.56 C 187.15 64.90 185.30 66.57 182.49 70.22 C 179.67 73.87 175.13 80.47 172.81 84.44 C 170.49 88.42 169.86 90.26 168.57 94.08 C 167.28 97.91 165.82 103.43 165.07 107.38 C 164.32 111.33 164.19 113.58 164.06 117.79 C 163.93 122.00 163.97 128.62 164.27 132.63 C 164.57 136.65 165.20 139.06 165.84 141.89 C 166.47 144.71 166.65 145.84 168.08 149.60 C 169.50 153.36 172.29 159.49 174.40 164.44 Z" fill="url(#vs-s)"/>
+                      <path d="M 334.21 352.81 C 332.57 356.65 330.78 361.45 329.30 364.33 C 327.81 367.21 326.61 368.45 325.27 370.08 C 323.94 371.70 322.93 372.72 321.31 374.09 C 319.69 375.45 317.90 376.89 315.56 378.26 C 313.22 379.63 310.49 381.13 307.27 382.30 C 304.06 383.46 328.40 384.63 296.29 385.23 C 264.18 385.83 175.17 385.67 114.61 385.90 C 113.72 387.58 116.71 379.17 111.94 390.93 C 107.18 402.70 90.94 443.94 86.03 456.47 C 81.12 469.00 83.10 464.13 82.51 466.11 C 81.91 468.08 82.11 467.84 82.47 468.32 C 82.82 468.80 52.85 468.89 84.64 469.00 C 116.42 469.11 239.81 469.15 273.16 468.99 C 306.50 468.82 281.86 468.38 284.72 468.01 C 287.58 467.64 286.87 467.91 290.31 466.76 C 293.75 465.61 301.97 462.52 305.35 461.11 C 308.72 459.70 307.95 460.01 310.54 458.32 C 313.14 456.64 317.82 453.59 320.92 451.00 C 324.02 448.41 326.83 445.33 329.15 442.77 C 331.47 440.21 333.20 438.00 334.84 435.65 C 336.48 433.31 337.64 431.25 339.01 428.71 C 340.38 426.17 341.98 423.08 343.08 420.41 C 344.17 417.75 344.80 416.66 345.60 412.71 C 346.40 408.76 347.61 401.50 347.89 396.71 C 348.17 391.93 347.60 387.24 347.27 383.99 C 346.95 380.75 346.88 380.56 345.93 377.25 C 344.99 373.94 343.02 367.70 341.61 364.14 C 340.19 360.57 338.83 358.61 337.45 355.85 C 336.73 354.91 335.85 353.55 335.31 353.04 C 334.77 352.54 334.57 352.89 334.21 352.81 Z" fill="url(#vs-s)"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:900;">Thông Tin Liên Hệ &amp; Hợp Tác SurvHub</div>
+                    <div style="font-size:11px;color:#A1A1AA;">Share form, share yours insight</div>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-wrap:wrap;gap:18px;font-size:11.5px;font-weight:600;color:#E4E4E7;">
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <span class="mono">linharmykxbnvn@gmail.com</span>
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>KTX B3 ĐH Bách khoa Hà Nội</span>
+                  </span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                    <span class="mono">github.com/trungdzid3/Surv_Hub</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slide-footer">
+            <span>SURVHUB — TỔNG KẾT &amp; LỘ TRÌNH</span>
+            <span>Cảm ơn đã theo dõi • Sẵn sàng demo trực tiếp hệ thống</span>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Bottom Minimal Presenter Control Bar -->
+    <footer class="control-bar" id="controlBar">
+      <div class="ctrl-group">
+        <button class="ctrl-btn" id="btnPrev" title="Trang trước (Mũi tên trái)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span class="ctrl-label-hide">Trước</span>
+        </button>
+        <button class="ctrl-btn" id="btnNext" title="Trang sau (Mũi tên phải / Space)">
+          <span class="ctrl-label-hide">Sau</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <div class="progress-track">
+        <span class="mono" id="slideCounter" style="font-size:11.5px;font-weight:800;color:#F97316;min-width:52px;">01 / 11</span>
+        <div class="progress-bar-bg" id="progressTrack" title="Nhấn để chuyển nhanh">
+          <div class="progress-bar-fill" id="progressFill" style="width:9.09%;"></div>
+        </div>
+        <span id="slideTitleBar" class="ctrl-label-hide" style="font-size:11px;font-weight:600;color:#A1A1AA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px;">Trang Bìa — SurvHub</span>
+      </div>
+
+      <div class="ctrl-group">
+        <button class="ctrl-btn" id="btnNotes" title="Bật/Tắt Ghi chú diễn giả (Phím N)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span class="ctrl-label-hide">Ghi chú (N)</span>
+        </button>
+        <button class="ctrl-btn" id="btnGrid" title="Xem toàn bộ 11 slide (Phím G)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="ctrl-label-hide">Tổng quan (G)</span>
+        </button>
+        <button class="ctrl-btn" id="btnFullscreen" title="Toàn màn hình (Phím F)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          <span class="ctrl-label-hide">Toàn màn hình (F)</span>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Speaker Notes Drawer -->
+    <aside class="notes-drawer" id="notesDrawer" aria-hidden="true">
+      <div class="notes-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="mono" id="notesSlideNum" style="font-size:11px;font-weight:900;color:#F97316;">SLIDE 01</span>
+          <span style="font-size:12px;font-weight:800;color:#FFFFFF;">Ghi Chú Diễn Giả</span>
+        </div>
+        <button class="ctrl-btn" id="btnCloseNotes" style="height:24px;padding:0 8px;">Đóng (Esc)</button>
+      </div>
+      <div class="notes-body" id="notesContent"></div>
+    </aside>
+
+    <!-- 11-Slide Overview Grid Modal -->
+    <div class="overview-modal" id="overviewModal" aria-hidden="true">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:#F97316;letter-spacing:0.1em;text-transform:uppercase;">ĐIỀU HƯỚNG NHANH</div>
+          <h2 style="font-size:22px;font-weight:900;color:#FFFFFF;margin-top:2px;">Toàn Cảnh 11 Trang Thuyết Trình SurvHub</h2>
+        </div>
+        <button class="ctrl-btn" id="btnCloseGrid">Đóng Tổng Quan (G / Esc)</button>
+      </div>
+      <div class="overview-grid" id="overviewGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const SPEAKER_NOTES = {
+        1: "Giới thiệu SurvHub — nền tảng khảo sát trực tuyến hai chiều với thông điệp 'Share form, share yours insight'. Nhấn mạnh 4 chỉ số cốt lõi ngay trên trang bìa: Ví kép 1:1 VNĐ, 5 lớp chống gian lận thời gian thực, 12 định dạng câu hỏi kèm rẽ nhánh DAG và cam kết thu mẫu SLA 2–48 giờ.",
+        2: "Nêu bật 4 điểm nghẽn của thị trường khảo sát Việt Nam hiện nay: rải form lên Facebook/Zalo bị trôi bài, mất 2–4 tuần mới đủ mẫu, tỷ lệ dữ liệu rác (straight-lining/bot) lên tới hơn 40%, trong khi thuê Agency tốn kém gấp 10–15 lần. Chỉ vào biểu đồ đối chiếu bên phải để minh họa khoảng cách tốc độ và chi phí.",
+        3: "Trình bày 3 trụ cột giải pháp của SurvHub: (1) Tốc độ SLA 2–48h nhờ đẩy thông báo trực tiếp qua Android APK và Email theo 3 nấc độ dài form; (2) Chi phí tối ưu 400đ–2.500đ/mẫu kèm thưởng +5% khi đổi Point sang Credit; (3) Kiểm định 5 lớp và bảo hành 1 đổi 1 tối đa 15% trong 7 ngày.",
+        4: "Giải thích luồng tiền hai chiều và kiến trúc Ví kép: Creator nạp Credit (khóa van 1 chiều không rút tiền mặt) -> Khóa quỹ Escrow -> SurvHub Engine đối soát bằng SQLite WAL ACID Ledger, Matching 0–100%, trừ Take Rate 10–36% -> Giải ngân Point 1:1 cho Đáp viên để đổi thẻ cào 10K 0đ phí, E-Voucher, VietQR/MoMo hoặc đổi ngược sang Credit (+5%).",
+        5: "Demo luồng tạo khảo sát trong Form Studio 2 cột: 65% bên trái soạn câu hỏi với 12 định dạng (5 nhóm) và đồ thị rẽ nhánh DAG 3 tầng chống vòng lặp; 35% bên phải là thanh Escrow Sticky tính ngân sách tức thì. Nhắc thêm tính năng Google/MS Forms Importer, Smart Paste, chống trùng URL và Onboarding Tour 10 bước.",
+        6: "Phân tích chi tiết 5 chốt chặn Anti-Fraud bảo vệ dữ liệu sạch: Speed Trap (gán 0s cho câu tự luận), Dynamic Attention Check (30–80% + Second-Chance Grace), Straight-lining variance (sigma^2 = 0), Entropy lọc rác (chấp nhận số '0'), Device Fingerprint (>=3 nick/máy, bảo vệ Wi-Fi Đại học). Đối chiếu với thang Trust Score khởi tạo 85 điểm.",
+        7: "Giới thiệu động lực giữ chân người dùng và thanh khoản: 5 cấp ngọn lửa Streak (+3% đến +10%), hộp quà mốc 10/50/100/200 ngày (1K–25K Point) và tối đa 2 Vé Cứu Chuỗi; Chợ E-Voucher 1:1 (Grab, Shopee, Phúc Long, Highlands, CGV, thẻ cào 0đ phí); VietQR SVG nội sinh <4ms; Web SPA SWR 0ms + Android APK + diễn đàn Gemini Sentinel.",
+        8: "Làm rõ cơ chế nâng cao trải nghiệm và tuân thủ pháp lý: Adaptive Auto-Screener tự động ẩn câu trùng và Auto-Fill ngầm; xuất CSV/SPSS và Google Sheets Webhook có bộ lọc DNS/IP chống SSRF; tuân thủ Luật BVDLCN 91/2025/QH15 thông qua _stripPrivateProfileFields(), consent_logs, /export-data, /withdraw-consent và RBAC cấm Creator tự điền bài.",
+        9: "Tổng hợp bức tranh kinh doanh trên 9 ô Business Model Canvas chuẩn mực: từ đối tác E-Voucher/Trường ĐH, hoạt động lõi Matching/Escrow, giá trị song phương cho đến cơ cấu chi phí hạ tầng Oracle/Turso/Cloudflare siêu gọn và 3 dòng doanh thu chính.",
+        10: "Trình bày bảng giá 3 phân khúc (Sinh viên .edu.vn 400/500/600đ, Take Rate 10–12%; Cá nhân 800/1.000/1.200đ, 25%; Doanh nghiệp 1.500/2.000/2.500đ, 33–36%, giảm 10%/15%, VAT, bảo hành 1-1), cơ chế Creator Boost 80/20 và 3 chốt chặn toán học đảm bảo không bao giờ âm biên lợi nhuận.",
+        11: "Chốt hạ với hai giai đoạn phát triển: Giai đoạn 1 đã hoàn thiện Web SPA, Android APK, 27 suite test tự hành trên hạ tầng Oracle Always Free + Turso + Cloudflare Tunnel; Giai đoạn 2 mở rộng SaaS định kỳ (Học Thuật Pass 199K/3th, DN PRO 490K/th, AGENCY 1.490K/th). Kêu gọi hợp tác và cung cấp thông tin liên hệ."
+      };
+
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const total = slides.length;
+      let current = 0;
+
+      const stageViewport = document.getElementById('stageViewport');
+      const stageFrame = document.getElementById('stageFrame');
+      const btnPrev = document.getElementById('btnPrev');
+      const btnNext = document.getElementById('btnNext');
+      const slideCounter = document.getElementById('slideCounter');
+      const progressFill = document.getElementById('progressFill');
+      const progressTrack = document.getElementById('progressTrack');
+      const slideTitleBar = document.getElementById('slideTitleBar');
+      const btnNotes = document.getElementById('btnNotes');
+      const notesDrawer = document.getElementById('notesDrawer');
+      const notesSlideNum = document.getElementById('notesSlideNum');
+      const notesContent = document.getElementById('notesContent');
+      const btnCloseNotes = document.getElementById('btnCloseNotes');
+      const btnGrid = document.getElementById('btnGrid');
+      const overviewModal = document.getElementById('overviewModal');
+      const overviewGrid = document.getElementById('overviewGrid');
+      const btnCloseGrid = document.getElementById('btnCloseGrid');
+      const btnFullscreen = document.getElementById('btnFullscreen');
+
+      function scaleStage() {
+        const vw = stageViewport.clientWidth - 20;
+        const vh = stageViewport.clientHeight - 16;
+        const scale = Math.min(vw / 1280, vh / 720, 1.35);
+        stageFrame.style.transform = 'scale(' + Math.max(scale, 0.25) + ')';
+      }
+
+      function pad2(n) {
+        return n < 10 ? '0' + n : String(n);
+      }
+
+      function renderOverviewCards() {
+        overviewGrid.innerHTML = '';
+        slides.forEach(function (slide, idx) {
+          const num = idx + 1;
+          const title = slide.getAttribute('data-title') || ('Slide ' + num);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'overview-card' + (idx === current ? ' is-current' : '');
+          btn.innerHTML =
+            '<div style="display:flex;justify-content:space-between;align-items:center;width:100%;">' +
+            '<span class="mono" style="font-size:12px;font-weight:900;color:#F97316;">SLIDE ' + pad2(num) + '</span>' +
+            '<span style="font-size:10px;font-weight:700;color:#A1A1AA;">' + (slide.classList.contains('slide--dark') ? 'OBSIDIAN' : 'LIGHT') + '</span>' +
+            '</div>' +
+            '<div style="font-size:13px;font-weight:800;color:#FFFFFF;line-height:1.35;margin-top:10px;">' + title + '</div>';
+          btn.addEventListener('click', function () {
+            goTo(idx);
+            toggleGrid(false);
+          });
+          overviewGrid.appendChild(btn);
+        });
+      }
+
+      function goTo(index) {
+        const nextIdx = Math.max(0, Math.min(total - 1, index));
+        slides[current].classList.remove('active');
+        current = nextIdx;
+        slides[current].classList.add('active');
+
+        const num = current + 1;
+        slideCounter.textContent = pad2(num) + ' / ' + pad2(total);
+        progressFill.style.width = ((num / total) * 100).toFixed(2) + '%';
+        slideTitleBar.textContent = slides[current].getAttribute('data-title') || '';
+        btnPrev.disabled = current === 0;
+        btnNext.disabled = current === total - 1;
+
+        notesSlideNum.textContent = 'SLIDE ' + pad2(num);
+        notesContent.textContent = SPEAKER_NOTES[num] || '';
+
+        if (overviewModal.classList.contains('open')) {
+          renderOverviewCards();
+        }
+      }
+
+      function toggleNotes(force) {
+        const shouldOpen = typeof force === 'boolean' ? force : !notesDrawer.classList.contains('open');
+        notesDrawer.classList.toggle('open', shouldOpen);
+        notesDrawer.setAttribute('aria-hidden', String(!shouldOpen));
+        btnNotes.classList.toggle('is-active', shouldOpen);
+      }
+
+      function toggleGrid(force) {
+        const shouldOpen = typeof force === 'boolean' ? force : !overviewModal.classList.contains('open');
+        if (shouldOpen) {
+          renderOverviewCards();
+        }
+        overviewModal.classList.toggle('open', shouldOpen);
+        overviewModal.setAttribute('aria-hidden', String(!shouldOpen));
+        btnGrid.classList.toggle('is-active', shouldOpen);
+      }
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function () {});
+        } else {
+          document.exitFullscreen().catch(function () {});
+        }
+      }
+
+      btnPrev.addEventListener('click', function () { goTo(current - 1); });
+      btnNext.addEventListener('click', function () { goTo(current + 1); });
+      btnNotes.addEventListener('click', function () { toggleNotes(); });
+      btnCloseNotes.addEventListener('click', function () { toggleNotes(false); });
+      btnGrid.addEventListener('click', function () { toggleGrid(); });
+      btnCloseGrid.addEventListener('click', function () { toggleGrid(false); });
+      btnFullscreen.addEventListener('click', toggleFullscreen);
+
+      progressTrack.addEventListener('click', function (e) {
+        const rect = progressTrack.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const target = Math.min(total - 1, Math.floor(ratio * total));
+        goTo(target);
+      });
+
+      document.addEventListener('keydown', function (e) {
+        const key = e.key;
+        if (key === 'ArrowRight' || key === 'PageDown' || key === ' ') {
+          if (overviewModal.classList.contains('open')) return;
+          e.preventDefault();
+          goTo(current + 1);
+        } else if (key === 'ArrowLeft' || key === 'PageUp') {
+          if (overviewModal.classList.contains('open')) return;
+          e.preventDefault();
+          goTo(current - 1);
+        } else if (key === 'Home') {
+          e.preventDefault();
+          goTo(0);
+        } else if (key === 'End') {
+          e.preventDefault();
+          goTo(total - 1);
+        } else if (key === 'n' || key === 'N') {
+          e.preventDefault();
+          toggleNotes();
+        } else if (key === 'g' || key === 'G') {
+          e.preventDefault();
+          toggleGrid();
+        } else if (key === 'f' || key === 'F') {
+          e.preventDefault();
+          toggleFullscreen();
+        } else if (key === 'Escape') {
+          if (overviewModal.classList.contains('open')) toggleGrid(false);
+          if (notesDrawer.classList.contains('open')) toggleNotes(false);
+        }
+      });
+
+      // Touch swipe support
+      let touchStartX = 0;
+      let touchStartY = 0;
+      stageViewport.addEventListener('touchstart', function (e) {
+        if (e.touches && e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      stageViewport.addEventListener('touchend', function (e) {
+        if (!e.changedTouches || e.changedTouches.length === 0) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) goTo(current + 1);
+          else goTo(current - 1);
+        }
+      }, { passive: true });
+
+      window.addEventListener('resize', scaleStage);
+      scaleStage();
+      goTo(0);
+    })();
+  </script>
+</body>
+</html>
