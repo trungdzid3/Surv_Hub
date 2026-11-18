@@ -854,8 +854,8 @@ class VoucherService {
   releaseReservedSurveyVouchers(surveyId) {
     if (!surveyId) return { releasedCount: 0 };
 
-    db.exec('BEGIN IMMEDIATE TRANSACTION');
     try {
+      // Đọc danh sách mã cần giải phóng trước khi mở transaction để tránh round-trip ghi không cần thiết
       const reservedCodes = db.prepare(`
         SELECT vc.id, vc.campaign_id, c.voucher_type 
         FROM voucher_codes vc
@@ -864,34 +864,44 @@ class VoucherService {
       `).all(surveyId);
 
       if (reservedCodes.length === 0) {
-        db.exec('COMMIT');
         return { releasedCount: 0 };
       }
 
-      const releaseStmt = db.prepare(`
-        UPDATE voucher_codes 
-        SET survey_id = NULL, status = 'AVAILABLE' 
-        WHERE id = ?
-      `);
-
       const catalogCounts = {};
+      let catalogReleasedCount = 0;
       for (const item of reservedCodes) {
         if (item.voucher_type === 'PLATFORM_CATALOG') {
           catalogCounts[item.campaign_id] = (catalogCounts[item.campaign_id] || 0) + 1;
-          releaseStmt.run(item.id);
+          catalogReleasedCount += 1;
         }
       }
 
+      if (catalogReleasedCount === 0) {
+        return { releasedCount: 0 };
+      }
+
+      db.exec('BEGIN IMMEDIATE TRANSACTION');
+
+      db.prepare(`
+        UPDATE voucher_codes 
+        SET survey_id = NULL, status = 'AVAILABLE' 
+        WHERE survey_id = ? 
+          AND status = 'RESERVED_FOR_SURVEY' 
+          AND claimed_by_user_id IS NULL 
+          AND campaign_id IN (SELECT id FROM voucher_campaigns WHERE voucher_type = 'PLATFORM_CATALOG')
+      `).run(surveyId);
+
+      const updateCampStmt = db.prepare(`
+        UPDATE voucher_campaigns 
+        SET remaining_quantity = remaining_quantity + ? 
+        WHERE id = ?
+      `);
       for (const [campId, count] of Object.entries(catalogCounts)) {
-        db.prepare(`
-          UPDATE voucher_campaigns 
-          SET remaining_quantity = remaining_quantity + ? 
-          WHERE id = ?
-        `).run(count, campId);
+        updateCampStmt.run(count, campId);
       }
 
       db.exec('COMMIT');
-      return { releasedCount: reservedCodes.length };
+      return { releasedCount: catalogReleasedCount };
     } catch (err) {
       this._safeRollback();
       return { releasedCount: 0, error: err.message };

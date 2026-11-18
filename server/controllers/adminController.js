@@ -776,12 +776,18 @@ class AdminController {
           }
           if (args[0].toLowerCase() === 'all') {
             const countRow = db.prepare('SELECT COUNT(*) AS c FROM users WHERE point_balance > 0').get();
-            db.prepare('UPDATE users SET point_balance = 0').run();
-            db.prepare("DELETE FROM point_transactions WHERE currency = 'PTS' OR currency = 'POINT'").run();
+            const nonZeroRow = db.prepare('SELECT COUNT(*) AS c FROM users WHERE point_balance != 0').get();
+            if (nonZeroRow && nonZeroRow.c > 0) {
+              db.prepare('UPDATE users SET point_balance = 0 WHERE point_balance != 0').run();
+            }
+            const txCountRow = db.prepare("SELECT COUNT(*) AS c FROM point_transactions WHERE currency = 'PTS' OR currency = 'POINT'").get();
+            if (txCountRow && txCountRow.c > 0) {
+              db.prepare("DELETE FROM point_transactions WHERE currency = 'PTS' OR currency = 'POINT'").run();
+            }
             return res.json({
               success: true,
               command: rawCommand,
-              output: `Thành công: Đã xóa sạch 100% điểm thưởng đang lưu hành trên toàn bộ thị trường (${countRow.c} tài khoản đã được reset về 0 pts).`,
+              output: `Thành công: Đã xóa sạch 100% điểm thưởng đang lưu hành trên toàn bộ thị trường (${countRow ? countRow.c : 0} tài khoản đã được reset về 0 pts).`,
               type: 'SUCCESS'
             });
           }

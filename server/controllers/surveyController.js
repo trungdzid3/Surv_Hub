@@ -1625,14 +1625,18 @@ class SurveyController {
         }
       }
 
-      // Tạo hoặc cập nhật response IN_PROGRESS an toàn tranh chấp
-      let responseId = existing ? existing.id : crypto.randomUUID();
-      if (!existing) {
+      // Bỏ qua UPDATE khi mở lại phiên IN_PROGRESS; trên Turso ghi nền INSERT để trả response ngay lập tức
+      const responseId = existing ? existing.id : crypto.randomUUID();
+      const isTestEnv = process.env.NODE_ENV === 'test' || config.NODE_ENV === 'test';
+      const isTursoEngine = !isTestEnv && db.dbEngine === 'turso';
+
+      if (!existing && !isTursoEngine) {
         db.prepare(`
           INSERT INTO responses (id, survey_id, respondent_id, status, started_at)
           VALUES (?, ?, ?, 'IN_PROGRESS', CURRENT_TIMESTAMP)
+          ON CONFLICT(survey_id, respondent_id) DO NOTHING
         `).run(responseId, id, user.id);
-      } else {
+      } else if (existing && existing.status !== 'IN_PROGRESS') {
         db.prepare(`
           UPDATE responses SET started_at = CURRENT_TIMESTAMP WHERE id = ?
         `).run(responseId);
@@ -1658,7 +1662,7 @@ class SurveyController {
       // Tính toán thời gian chuẩn thực tế để bảo vệ người dùng không bị bẫy tốc độ oan
       const realisticMinTimeSec = this._calculateRealisticMinTimeSec(screenerResult.questions || dbQuestions);
 
-      return res.json({
+      const jsonResult = res.json({
         success: true,
         responseId,
         survey: cleanSurvey,
@@ -1669,6 +1673,22 @@ class SurveyController {
         auto_filled_demographics: screenerResult.autoFilledDemographics,
         questions: screenerResult.questions
       });
+
+      if (!existing && isTursoEngine) {
+        setImmediate(() => {
+          try {
+            db.prepare(`
+              INSERT INTO responses (id, survey_id, respondent_id, status, started_at)
+              VALUES (?, ?, ?, 'IN_PROGRESS', CURRENT_TIMESTAMP)
+              ON CONFLICT(survey_id, respondent_id) DO NOTHING
+            `).run(responseId, id, user.id);
+          } catch (bgErr) {
+            console.warn('[StartSession] Ghi nen response:', bgErr.message);
+          }
+        });
+      }
+
+      return jsonResult;
     } catch (err) {
       console.error('Lỗi startSession:', err);
       return res.status(500).json({ success: false, message: 'Lỗi bắt đầu khảo sát: ' + err.message });
@@ -1726,14 +1746,26 @@ class SurveyController {
         return res.status(403).json({ success: false, message: 'Tài khoản Người tạo khảo sát / Doanh nghiệp không được nộp bài nhận thù lao.' });
       }
 
-      const response = db.prepare(`
+      const findResponseStmt = db.prepare(`
         SELECT * FROM responses 
         WHERE survey_id = ? AND respondent_id = ? 
         ORDER BY (CASE WHEN status = 'IN_PROGRESS' THEN 0 WHEN status = 'VALIDATED' THEN 1 ELSE 2 END), started_at DESC 
         LIMIT 1
-      `).get(id, user.id);
+      `);
+      let response = findResponseStmt.get(id, user.id);
       if (!response) {
-        return res.status(400).json({ success: false, message: 'Không tìm thấy phiên làm bài hợp lệ. Vui lòng bấm làm khảo sát trước.' });
+        if (survey.status === 'ACTIVE' && survey.collected_responses < survey.target_responses) {
+          const fallbackRespId = crypto.randomUUID();
+          db.prepare(`
+            INSERT INTO responses (id, survey_id, respondent_id, status, started_at)
+            VALUES (?, ?, ?, 'IN_PROGRESS', CURRENT_TIMESTAMP)
+            ON CONFLICT(survey_id, respondent_id) DO NOTHING
+          `).run(fallbackRespId, id, user.id);
+          response = findResponseStmt.get(id, user.id);
+        }
+        if (!response) {
+          return res.status(400).json({ success: false, message: 'Không tìm thấy phiên làm bài hợp lệ. Vui lòng bấm làm khảo sát trước.' });
+        }
       }
       let isEditing = false;
       if (response.status === 'VALIDATED') {
@@ -2592,37 +2624,83 @@ class SurveyController {
         }
       }
 
-      // Nếu có mã voucher sàn đã giữ chỗ nhưng chưa phát, hoàn trả an toàn về kho sàn
-      try {
-        voucherService.releaseReservedSurveyVouchers(id);
-      } catch (vRelErr) {
-        console.warn('[DeleteSurvey] Hoàn voucher sàn chú ý:', vRelErr.message);
+      // Chỉ gọi releaseReservedSurveyVouchers khi khảo sát có dấu hiệu dùng voucher hoặc có mã gắn survey_id
+      const hasInitialVoucherCodes = Boolean(db.prepare('SELECT 1 FROM voucher_codes WHERE survey_id = ? LIMIT 1').get(id));
+      if (survey.sponsor_campaign_id || survey.reward_mode === 'POINTS_AND_VOUCHER' || hasInitialVoucherCodes) {
+        try {
+          voucherService.releaseReservedSurveyVouchers(id);
+        } catch (vRelErr) {
+          console.warn('[DeleteSurvey] Hoàn voucher sàn chú ý:', vRelErr.message);
+        }
       }
+
+      // Kiểm tra nhanh trên replica cục bộ để tránh gửi các lệnh ghi rỗng vào transaction
+      const hasForumPosts = Boolean(db.prepare('SELECT 1 FROM forum_posts WHERE survey_id = ? LIMIT 1').get(id));
+      const hasForumComments = hasForumPosts && Boolean(db.prepare('SELECT 1 FROM forum_comments WHERE post_id IN (SELECT id FROM forum_posts WHERE survey_id = ?) LIMIT 1').get(id));
+      const hasForumPostLikes = hasForumPosts && Boolean(db.prepare('SELECT 1 FROM forum_post_likes WHERE post_id IN (SELECT id FROM forum_posts WHERE survey_id = ?) LIMIT 1').get(id));
+      const hasVoucherCodes = hasInitialVoucherCodes
+        ? Boolean(db.prepare('SELECT 1 FROM voucher_codes WHERE survey_id = ? LIMIT 1').get(id))
+        : false;
+      const hasClaimedSurveyVouchers = hasVoucherCodes && Boolean(db.prepare("SELECT 1 FROM voucher_codes WHERE survey_id = ? AND status = 'CLAIMED' LIMIT 1").get(id));
+      const hasUnclaimedSurveyVouchers = hasVoucherCodes && Boolean(db.prepare("SELECT 1 FROM voucher_codes WHERE survey_id = ? AND (status IS NULL OR status != 'CLAIMED') LIMIT 1").get(id));
+      const hasFraudLogs = Boolean(db.prepare('SELECT 1 FROM fraud_logs WHERE survey_id = ? LIMIT 1').get(id));
+      const hasNotifications = Boolean(db.prepare('SELECT 1 FROM notifications WHERE survey_id = ? LIMIT 1').get(id));
+      const hasEmailLogs = Boolean(db.prepare('SELECT 1 FROM email_notifications_log WHERE survey_id = ? LIMIT 1').get(id));
+      const hasWarranty = Boolean(db.prepare('SELECT 1 FROM warranty_claims WHERE survey_id = ? LIMIT 1').get(id));
+      const hasResponses = Boolean(db.prepare('SELECT 1 FROM responses WHERE survey_id = ? LIMIT 1').get(id));
+      const hasClaimedResponseVouchers = hasResponses && Boolean(db.prepare('SELECT 1 FROM voucher_codes WHERE claimed_response_id IN (SELECT id FROM responses WHERE survey_id = ?) LIMIT 1').get(id));
+      const hasQuestions = Boolean(db.prepare('SELECT 1 FROM questions WHERE survey_id = ? LIMIT 1').get(id));
 
       // Xóa dữ liệu liên quan trong transaction ACID
       db.exec('BEGIN IMMEDIATE TRANSACTION');
       try {
         // 1. Dọn dẹp diễn đàn đính kèm khảo sát (forum_comments, forum_post_likes, forum_posts)
-        db.prepare('DELETE FROM forum_comments WHERE post_id IN (SELECT id FROM forum_posts WHERE survey_id = ?)').run(id);
-        db.prepare('DELETE FROM forum_post_likes WHERE post_id IN (SELECT id FROM forum_posts WHERE survey_id = ?)').run(id);
-        db.prepare('DELETE FROM forum_posts WHERE survey_id = ?').run(id);
+        if (hasForumPosts) {
+          if (hasForumComments) {
+            db.prepare('DELETE FROM forum_comments WHERE post_id IN (SELECT id FROM forum_posts WHERE survey_id = ?)').run(id);
+          }
+          if (hasForumPostLikes) {
+            db.prepare('DELETE FROM forum_post_likes WHERE post_id IN (SELECT id FROM forum_posts WHERE survey_id = ?)').run(id);
+          }
+          db.prepare('DELETE FROM forum_posts WHERE survey_id = ?').run(id);
+        }
 
         // 2. Gỡ bỏ khóa ngoại voucher_codes trỏ tới responses của khảo sát
-        db.prepare('UPDATE voucher_codes SET claimed_response_id = NULL WHERE claimed_response_id IN (SELECT id FROM responses WHERE survey_id = ?)').run(id);
+        if (hasClaimedResponseVouchers) {
+          db.prepare('UPDATE voucher_codes SET claimed_response_id = NULL WHERE claimed_response_id IN (SELECT id FROM responses WHERE survey_id = ?)').run(id);
+        }
 
         // 3. Xử lý voucher_codes gắn với survey_id: bảo toàn mã đã CLAIMED cho người nhận, xóa mã chưa phát
-        db.prepare("UPDATE voucher_codes SET survey_id = NULL WHERE survey_id = ? AND status = 'CLAIMED'").run(id);
-        db.prepare('DELETE FROM voucher_codes WHERE survey_id = ?').run(id);
+        if (hasVoucherCodes) {
+          if (hasClaimedSurveyVouchers) {
+            db.prepare("UPDATE voucher_codes SET survey_id = NULL WHERE survey_id = ? AND status = 'CLAIMED'").run(id);
+          }
+          if (hasUnclaimedSurveyVouchers) {
+            db.prepare('DELETE FROM voucher_codes WHERE survey_id = ?').run(id);
+          }
+        }
 
         // 4. Dọn dẹp logs, thông báo, khiếu nại bảo hành
-        db.prepare('DELETE FROM fraud_logs WHERE survey_id = ?').run(id);
-        db.prepare('DELETE FROM notifications WHERE survey_id = ?').run(id);
-        db.prepare('DELETE FROM email_notifications_log WHERE survey_id = ?').run(id);
-        db.prepare('DELETE FROM warranty_claims WHERE survey_id = ?').run(id);
+        if (hasFraudLogs) {
+          db.prepare('DELETE FROM fraud_logs WHERE survey_id = ?').run(id);
+        }
+        if (hasNotifications) {
+          db.prepare('DELETE FROM notifications WHERE survey_id = ?').run(id);
+        }
+        if (hasEmailLogs) {
+          db.prepare('DELETE FROM email_notifications_log WHERE survey_id = ?').run(id);
+        }
+        if (hasWarranty) {
+          db.prepare('DELETE FROM warranty_claims WHERE survey_id = ?').run(id);
+        }
 
         // 5. Xóa responses và questions
-        db.prepare('DELETE FROM responses WHERE survey_id = ?').run(id);
-        db.prepare('DELETE FROM questions WHERE survey_id = ?').run(id);
+        if (hasResponses) {
+          db.prepare('DELETE FROM responses WHERE survey_id = ?').run(id);
+        }
+        if (hasQuestions) {
+          db.prepare('DELETE FROM questions WHERE survey_id = ?').run(id);
+        }
         db.prepare('DELETE FROM surveys WHERE id = ?').run(id);
         db.exec('COMMIT');
       } catch (dbErr) {

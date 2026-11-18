@@ -4502,30 +4502,120 @@
     const confirmDelete = confirm('Bạn có chắc chắn muốn xóa bài khảo sát này vĩnh viễn không?\n\nNếu khảo sát còn số dư ngân sách chưa dùng hết, hệ thống sẽ tự động hoàn trả về ví của bạn.');
     if (!confirmDelete) return;
 
+    const user = this.state.currentUser;
+    const uid = (user && user.id) ? user.id : 'me';
+    const profileCreatedKey = `survhub_profile_created_${uid}`;
+    const creatorCacheKey = `survhub_creator_surveys_cache_${uid}`;
+
+    const prevProfileCreated = Array.isArray(this.state._profileCreatedSurveys) ? [...this.state._profileCreatedSurveys] : null;
+    const prevCreatorSurveys = Array.isArray(this.state.creatorSurveys) ? [...this.state.creatorSurveys] : null;
+    const prevSurveys = Array.isArray(this.state.surveys) ? [...this.state.surveys] : null;
+    const prevCreatorSession = this._readProfileSessionArray(creatorCacheKey);
+    const prevSurveysSession = this._readProfileSessionArray('survhub_surveys_cache');
+
+    const repaintProfileImmediate = () => {
+      const targetRoot = document.getElementById('app-root');
+      const activeUser = this.state.currentUser;
+      if (!targetRoot) return;
+      if (activeUser && typeof this._paintProfileView === 'function') {
+        if (!this.state.surveySubTab) {
+          this.state.surveySubTab = 'created';
+        }
+        const allPosts = Array.isArray(this.state.forumPosts) ? this.state.forumPosts : [];
+        const myPosts = allPosts.filter(
+          p => (p.author && p.author.id === activeUser.id) || p.user_id === activeUser.id || p.author_id === activeUser.id
+        );
+        this._paintProfileView(
+          targetRoot,
+          activeUser,
+          Array.isArray(this.state._profileCreatedSurveys) ? this.state._profileCreatedSurveys : [],
+          Array.isArray(this.state._profileHistorySurveys) ? this.state._profileHistorySurveys : [],
+          myPosts
+        );
+      } else {
+        const btn = targetRoot.querySelector(`button[onclick*="deleteSurveyAction('${surveyId}')"]`);
+        const card = btn ? (btn.closest('.rounded-3xl') || btn.closest('tr') || btn.closest('[data-survey-id]')) : null;
+        if (card) card.remove();
+      }
+    };
+
+    // Cập nhật Optimistic UI và toàn bộ cache liên quan ngay trong 0ms
+    if (Array.isArray(this.state._profileCreatedSurveys)) {
+      this.state._profileCreatedSurveys = this.state._profileCreatedSurveys.filter(s => String(s.id) !== String(surveyId));
+      this._writeProfileSessionArray(profileCreatedKey, this.state._profileCreatedSurveys);
+    }
+
+    if (Array.isArray(this.state.creatorSurveys)) {
+      this.state.creatorSurveys = this.state.creatorSurveys.filter(s => String(s.id) !== String(surveyId));
+      if (this.state.creatorSurveys.length > 0 || (prevCreatorSurveys && prevCreatorSurveys.length > 0)) {
+        this._writeProfileSessionArray(creatorCacheKey, this.state.creatorSurveys);
+      } else if (Array.isArray(prevCreatorSession)) {
+        this._writeProfileSessionArray(creatorCacheKey, prevCreatorSession.filter(s => String(s.id) !== String(surveyId)));
+      }
+    } else if (Array.isArray(prevCreatorSession)) {
+      this._writeProfileSessionArray(creatorCacheKey, prevCreatorSession.filter(s => String(s.id) !== String(surveyId)));
+    }
+
+    if (Array.isArray(this.state.surveys)) {
+      this.state.surveys = this.state.surveys.filter(s => String(s.id) !== String(surveyId));
+      if (this.state.surveys.length > 0 || (prevSurveys && prevSurveys.length > 0) || Array.isArray(prevSurveysSession)) {
+        this._writeProfileSessionArray('survhub_surveys_cache', this.state.surveys);
+      }
+    } else if (Array.isArray(prevSurveysSession)) {
+      this._writeProfileSessionArray('survhub_surveys_cache', prevSurveysSession.filter(s => String(s.id) !== String(surveyId)));
+    }
+
+    repaintProfileImmediate();
     this.haptic('warning');
-    this.showToast('Đang tiến hành xóa bài khảo sát...', 'info');
+    this.showToast('Đang xóa khảo sát...', 'info');
 
     try {
       const res = await this.api('/surveys/' + surveyId, {
         method: 'DELETE'
       });
 
-      if (res && res.success) {
-        this.haptic('success');
-        this.showToast(res.message || 'Đã xóa bài khảo sát thành công!', 'success');
-        if (Array.isArray(this.state._profileCreatedSurveys)) {
-          this.state._profileCreatedSurveys = this.state._profileCreatedSurveys.filter(s => String(s.id) !== String(surveyId));
-          const uid = this.state.currentUser?.id || 'me';
-          this._writeProfileSessionArray(`survhub_profile_created_${uid}`, this.state._profileCreatedSurveys);
-        }
-        // Nạp lại dữ liệu và render lại
-        const root = document.getElementById('app-root');
-        await this.renderProfileView(root);
-      } else {
-        this.showToast((res && res.message) || 'Không thể xóa bài khảo sát', 'error');
+      if (!res || !res.success) {
+        throw new Error((res && res.message) || 'Không thể xóa bài khảo sát');
       }
+
+      if (res.newCreditBalance !== undefined && this.state.currentUser) {
+        this.state.currentUser.credit_balance = res.newCreditBalance;
+        try {
+          localStorage.setItem('survhub_cached_user', JSON.stringify(this.state.currentUser));
+        } catch (_) {}
+        if (typeof this.renderUserProfileDropdown === 'function') {
+          this.renderUserProfileDropdown();
+        }
+        if (this.state.currentTab === 'profile') {
+          repaintProfileImmediate();
+        }
+      }
+
+      this.haptic('success');
+      this.showToast(res.message || 'Đã xóa bài khảo sát thành công!', 'success');
     } catch (err) {
-      this.showToast('Lỗi xóa khảo sát: ' + err.message, 'error');
+      this.state._profileCreatedSurveys = prevProfileCreated;
+      if (prevProfileCreated !== null) {
+        this._writeProfileSessionArray(profileCreatedKey, prevProfileCreated);
+      }
+
+      this.state.creatorSurveys = prevCreatorSurveys;
+      if (Array.isArray(prevCreatorSurveys) && prevCreatorSurveys.length > 0) {
+        this._writeProfileSessionArray(creatorCacheKey, prevCreatorSurveys);
+      } else if (Array.isArray(prevCreatorSession)) {
+        this._writeProfileSessionArray(creatorCacheKey, prevCreatorSession);
+      }
+
+      this.state.surveys = prevSurveys;
+      if (Array.isArray(prevSurveys) && (prevSurveys.length > 0 || Array.isArray(prevSurveysSession))) {
+        this._writeProfileSessionArray('survhub_surveys_cache', prevSurveys);
+      } else if (Array.isArray(prevSurveysSession)) {
+        this._writeProfileSessionArray('survhub_surveys_cache', prevSurveysSession);
+      }
+
+      repaintProfileImmediate();
+      this.haptic('error');
+      this.showToast('Lỗi xóa khảo sát: ' + (err && err.message ? err.message : 'Không xác định'), 'error');
     }
   },
 

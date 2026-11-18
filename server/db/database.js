@@ -22,6 +22,7 @@ function createLocalDatabase() {
     PRAGMA foreign_keys = ON;
     PRAGMA busy_timeout = 5000;
   `);
+  localDb.dbEngine = 'sqlite';
   return localDb;
 }
 
@@ -63,29 +64,156 @@ function sanitizeRow(row) {
   return row;
 }
 
-function wrapLibsqlStatement(statement) {
+function isWalConflictError(err) {
+  if (!err) return false;
+  const msg = err.message ? String(err.message) : '';
+  const code = err.code ? String(err.code) : '';
+  const full = String(err);
+  return msg.includes('WalConflict') || code.includes('WalConflict') || full.includes('WalConflict');
+}
+
+function cleanupReplicaFiles(basePath) {
+  if (!basePath) return;
+  const suffixes = ['', '-wal', '-shm', '-info', '-journal'];
+  for (const suffix of suffixes) {
+    const filePath = `${basePath}${suffix}`;
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (_) {
+      // Bỏ qua lỗi xóa file đang bị khóa hoặc không tồn tại
+    }
+  }
+}
+
+function hasAnyReplicaFile(basePath) {
+  if (!basePath) return false;
+  const suffixes = ['', '-wal', '-shm', '-info', '-journal'];
+  return suffixes.some((suffix) => {
+    try {
+      return fs.existsSync(`${basePath}${suffix}`);
+    } catch (_) {
+      return false;
+    }
+  });
+}
+
+function cleanupStaleTempReplicaFiles(dirPath) {
+  try {
+    const entries = fs.readdirSync(dirPath);
+    for (const entry of entries) {
+      if (/^vibesurvey_turso_replica_.+\.db/i.test(entry)) {
+        try {
+          fs.unlinkSync(path.join(dirPath, entry));
+        } catch (_) {
+          // Bỏ qua nếu file tạm đang bị giữ lock
+        }
+      }
+    }
+  } catch (_) {
+    // Bỏ qua lỗi đọc thư mục db
+  }
+}
+
+function buildFallbackReplicaPath() {
+  let candidate = path.join(dbDir, `vibesurvey_turso_replica_${Date.now()}.db`);
+  if (fs.existsSync(candidate)) {
+    candidate = path.join(dbDir, `vibesurvey_turso_replica_${Date.now()}_${process.hrtime.bigint()}.db`);
+  }
+  return candidate;
+}
+
+function wrapLibsqlStatement(statement, sql, recoveryCtx) {
+  let currentStmt = statement;
+  let boundRawDb = recoveryCtx ? recoveryCtx.getDb() : null;
+  let rawArgs = null;
+  let pluckArgs = null;
+  let safeIntegersArgs = null;
+
+  const reapplyModifiers = (stmt) => {
+    if (rawArgs !== null) stmt.raw(...rawArgs);
+    if (pluckArgs !== null) stmt.pluck(...pluckArgs);
+    if (safeIntegersArgs !== null) stmt.safeIntegers(...safeIntegersArgs);
+    return stmt;
+  };
+
+  const prepareFreshStmt = (rawDb) => reapplyModifiers(rawDb.prepare(sql));
+
+  const executeWithRecovery = (invoke) => {
+    if (recoveryCtx) {
+      const activeDb = recoveryCtx.getDb();
+      if (boundRawDb !== activeDb) {
+        boundRawDb = activeDb;
+        currentStmt = prepareFreshStmt(boundRawDb);
+      }
+    }
+    try {
+      return invoke(currentStmt);
+    } catch (err) {
+      if (!recoveryCtx || !isWalConflictError(err) || recoveryCtx.isRecovering()) {
+        throw err;
+      }
+      const { wasInTx } = recoveryCtx.recover();
+      if (!wasInTx) {
+        boundRawDb = recoveryCtx.getDb();
+        currentStmt = prepareFreshStmt(boundRawDb);
+        return invoke(currentStmt);
+      }
+      recoveryCtx.markAbortedTx();
+      throw err;
+    }
+  };
+
   let proxy;
   proxy = new Proxy(statement, {
-    get(target, prop) {
+    get(_target, prop) {
+      if (prop === 'run') {
+        return (...args) => executeWithRecovery((stmt) => stmt.run(...args));
+      }
       if (prop === 'get') {
-        return (...args) => sanitizeRow(target.get(...args));
+        return (...args) => executeWithRecovery((stmt) => sanitizeRow(stmt.get(...args)));
       }
       if (prop === 'all') {
-        return (...args) => {
-          const rows = target.all(...args);
+        return (...args) => executeWithRecovery((stmt) => {
+          const rows = stmt.all(...args);
           return Array.isArray(rows) ? rows.map(sanitizeRow) : rows;
-        };
+        });
       }
       if (prop === 'iterate') {
         return (...args) => {
-          const iterator = target.iterate(...args);
+          let yieldedAny = false;
+          let iterator = executeWithRecovery((stmt) => stmt.iterate(...args));
           return {
             next() {
-              const result = iterator.next();
-              if (!result.done) {
-                result.value = sanitizeRow(result.value);
+              try {
+                const result = iterator.next();
+                if (!result.done) {
+                  yieldedAny = true;
+                  result.value = sanitizeRow(result.value);
+                }
+                return result;
+              } catch (err) {
+                if (!recoveryCtx || !isWalConflictError(err) || recoveryCtx.isRecovering()) {
+                  throw err;
+                }
+                const { wasInTx } = recoveryCtx.recover();
+                if (!wasInTx && !yieldedAny) {
+                  boundRawDb = recoveryCtx.getDb();
+                  currentStmt = prepareFreshStmt(boundRawDb);
+                  iterator = currentStmt.iterate(...args);
+                  const retryResult = iterator.next();
+                  if (!retryResult.done) {
+                    yieldedAny = true;
+                    retryResult.value = sanitizeRow(retryResult.value);
+                  }
+                  return retryResult;
+                }
+                if (wasInTx) {
+                  recoveryCtx.markAbortedTx();
+                }
+                throw err;
               }
-              return result;
             },
             return(...returnArgs) {
               return typeof iterator.return === 'function'
@@ -99,30 +227,262 @@ function wrapLibsqlStatement(statement) {
         };
       }
       // Giữ khả năng chuỗi hóa như better-sqlite3: stmt.pluck().get(...)
-      if (prop === 'pluck' || prop === 'raw' || prop === 'safeIntegers') {
+      if (prop === 'pluck') {
         return (...args) => {
-          target[prop](...args);
+          if (recoveryCtx && boundRawDb !== recoveryCtx.getDb()) {
+            boundRawDb = recoveryCtx.getDb();
+            currentStmt = prepareFreshStmt(boundRawDb);
+          }
+          pluckArgs = args;
+          currentStmt.pluck(...args);
           return proxy;
         };
       }
-      const value = target[prop];
-      return typeof value === 'function' ? value.bind(target) : value;
+      if (prop === 'raw') {
+        return (...args) => {
+          if (recoveryCtx && boundRawDb !== recoveryCtx.getDb()) {
+            boundRawDb = recoveryCtx.getDb();
+            currentStmt = prepareFreshStmt(boundRawDb);
+          }
+          rawArgs = args;
+          currentStmt.raw(...args);
+          return proxy;
+        };
+      }
+      if (prop === 'safeIntegers') {
+        return (...args) => {
+          if (recoveryCtx && boundRawDb !== recoveryCtx.getDb()) {
+            boundRawDb = recoveryCtx.getDb();
+            currentStmt = prepareFreshStmt(boundRawDb);
+          }
+          safeIntegersArgs = args;
+          currentStmt.safeIntegers(...args);
+          return proxy;
+        };
+      }
+      if (recoveryCtx && boundRawDb !== recoveryCtx.getDb()) {
+        boundRawDb = recoveryCtx.getDb();
+        currentStmt = prepareFreshStmt(boundRawDb);
+      }
+      const value = currentStmt[prop];
+      return typeof value === 'function' ? value.bind(currentStmt) : value;
     }
   });
   return proxy;
 }
 
-function wrapLibsqlDatabase(rawDb) {
+function wrapLibsqlDatabase(rawDb, options = {}) {
+  const {
+    LibsqlDatabase = null,
+    useEmbeddedReplica = false,
+    activeReplicaPath = null
+  } = options;
+
+  let currentRawDb = rawDb;
+  let activePath = activeReplicaPath;
+  let isRecovering = false;
+  let isClosed = false;
+  let abortedTxByRecovery = false;
+  let syncTimer = null;
+
+  const openFreshRawDb = (replicaPath) => {
+    if (!LibsqlDatabase) {
+      throw new Error('Thiếu LibsqlDatabase constructor để phục hồi kết nối');
+    }
+    if (useEmbeddedReplica) {
+      return new LibsqlDatabase(replicaPath, {
+        syncUrl: config.TURSO.DATABASE_URL,
+        authToken: config.TURSO.AUTH_TOKEN,
+        syncPeriod: 0,
+        readYourWrites: true
+      });
+    }
+    return new LibsqlDatabase(config.TURSO.DATABASE_URL, {
+      authToken: config.TURSO.AUTH_TOKEN,
+      timeout: config.TURSO.TIMEOUT_MS
+    });
+  };
+
+  const recoverFromWalConflict = () => {
+    if (isRecovering) {
+      return { wasInTx: false, recovered: false };
+    }
+    isRecovering = true;
+    let nextDb = null;
+    try {
+      const wasInTx = Boolean(currentRawDb && currentRawDb.inTransaction);
+      try {
+        if (currentRawDb && typeof currentRawDb.close === 'function') {
+          currentRawDb.close();
+        }
+      } catch (_) {
+        // Bỏ qua lỗi đóng kết nối cũ
+      }
+
+      if (useEmbeddedReplica && activePath) {
+        cleanupReplicaFiles(activePath);
+        if (hasAnyReplicaFile(activePath)) {
+          activePath = buildFallbackReplicaPath();
+        }
+        try {
+          nextDb = openFreshRawDb(activePath);
+          if (typeof nextDb.sync === 'function') {
+            nextDb.sync();
+          }
+        } catch (openOrSyncErr) {
+          if (nextDb) {
+            try { nextDb.close(); } catch (_) {}
+            nextDb = null;
+          }
+          activePath = buildFallbackReplicaPath();
+          nextDb = openFreshRawDb(activePath);
+          if (typeof nextDb.sync === 'function') {
+            nextDb.sync();
+          }
+        }
+      } else {
+        nextDb = openFreshRawDb(null);
+      }
+
+      nextDb.exec('PRAGMA foreign_keys = ON;');
+      nextDb.exec('PRAGMA busy_timeout = 5000;');
+      currentRawDb = nextDb;
+      nextDb = null;
+      console.warn(`[DB] Đã tự phục hồi Turso khỏi WalConflict (replica: ${activePath || 'remote'}, wasInTx: ${wasInTx}).`);
+      return { wasInTx, recovered: true };
+    } catch (recoverErr) {
+      if (nextDb) {
+        try { nextDb.close(); } catch (_) {}
+      }
+      throw recoverErr;
+    } finally {
+      isRecovering = false;
+    }
+  };
+
+  const recoveryCtx = {
+    getDb: () => currentRawDb,
+    isRecovering: () => isRecovering,
+    recover: recoverFromWalConflict,
+    markAbortedTx: () => {
+      abortedTxByRecovery = true;
+    }
+  };
+
+  if (useEmbeddedReplica) {
+    const syncIntervalMs = (config.TURSO.SYNC_PERIOD_SEC || 60) * 1000;
+    syncTimer = setInterval(() => {
+      if (isClosed || isRecovering) return;
+      try {
+        if (currentRawDb && !currentRawDb.inTransaction && typeof currentRawDb.sync === 'function') {
+          currentRawDb.sync();
+        }
+      } catch (syncErr) {
+        if (isWalConflictError(syncErr) && !isRecovering) {
+          try {
+            recoverFromWalConflict();
+          } catch (_) {
+            // Bỏ qua lỗi tạm thời trong background sync; truy vấn tiếp theo sẽ tự xử lý
+          }
+        }
+      }
+    }, syncIntervalMs);
+    if (typeof syncTimer.unref === 'function') {
+      syncTimer.unref();
+    }
+  }
+
   return new Proxy(rawDb, {
-    get(target, prop) {
+    get(_target, prop) {
+      if (prop === 'dbEngine') {
+        return 'turso';
+      }
       if (prop === 'prepare') {
-        return (sql) => wrapLibsqlStatement(target.prepare(sql));
+        return (sql) => {
+          try {
+            const rawStmt = currentRawDb.prepare(sql);
+            return wrapLibsqlStatement(rawStmt, sql, recoveryCtx);
+          } catch (err) {
+            if (!isWalConflictError(err) || isRecovering) {
+              throw err;
+            }
+            const { wasInTx } = recoverFromWalConflict();
+            if (!wasInTx) {
+              const rawStmt = currentRawDb.prepare(sql);
+              return wrapLibsqlStatement(rawStmt, sql, recoveryCtx);
+            }
+            abortedTxByRecovery = true;
+            throw err;
+          }
+        };
+      }
+      if (prop === 'exec') {
+        return (sql) => {
+          const sqlText = String(sql || '');
+          const isBeginCmd = /^\s*BEGIN\b/i.test(sqlText);
+          const isRollbackCmd = /^\s*ROLLBACK\b/i.test(sqlText);
+
+          if (isRollbackCmd && abortedTxByRecovery && !currentRawDb.inTransaction) {
+            abortedTxByRecovery = false;
+            return;
+          }
+          if (isBeginCmd) {
+            abortedTxByRecovery = false;
+          }
+
+          try {
+            return currentRawDb.exec(sql);
+          } catch (err) {
+            if (!isWalConflictError(err) || isRecovering) {
+              throw err;
+            }
+            const { wasInTx } = recoverFromWalConflict();
+            if (!wasInTx || isBeginCmd) {
+              abortedTxByRecovery = false;
+              return currentRawDb.exec(sql);
+            }
+            abortedTxByRecovery = true;
+            throw err;
+          }
+        };
       }
       if (prop === 'sync') {
-        return typeof target.sync === 'function' ? target.sync.bind(target) : () => {};
+        return () => {
+          if (typeof currentRawDb.sync !== 'function') return undefined;
+          try {
+            return currentRawDb.sync();
+          } catch (err) {
+            if (!isWalConflictError(err) || isRecovering) {
+              throw err;
+            }
+            recoverFromWalConflict();
+            return typeof currentRawDb.sync === 'function' ? currentRawDb.sync() : undefined;
+          }
+        };
       }
-      const value = target[prop];
-      return typeof value === 'function' ? value.bind(target) : value;
+      if (prop === 'close') {
+        return () => {
+          isClosed = true;
+          if (syncTimer) {
+            clearInterval(syncTimer);
+            syncTimer = null;
+          }
+          if (currentRawDb && typeof currentRawDb.close === 'function') {
+            return currentRawDb.close();
+          }
+          return undefined;
+        };
+      }
+      const value = currentRawDb[prop];
+      return typeof value === 'function' ? value.bind(currentRawDb) : value;
+    },
+    set(_target, prop, value) {
+      currentRawDb[prop] = value;
+      return true;
+    },
+    has(_target, prop) {
+      if (prop === 'dbEngine') return true;
+      return prop in currentRawDb;
     }
   });
 }
@@ -143,15 +503,19 @@ function createTursoDatabase() {
 
   const useEmbeddedReplica = config.TURSO.USE_EMBEDDED_REPLICA !== false;
   let rawDb;
+  let activeReplicaPath = null;
+
+  const openReplicaDb = (replicaPath) => new LibsqlDatabase(replicaPath, {
+    syncUrl: config.TURSO.DATABASE_URL,
+    authToken: config.TURSO.AUTH_TOKEN,
+    syncPeriod: 0,
+    readYourWrites: true
+  });
 
   if (useEmbeddedReplica) {
-    const replicaPath = path.join(dbDir, 'vibesurvey_turso_replica.db');
-    rawDb = new LibsqlDatabase(replicaPath, {
-      syncUrl: config.TURSO.DATABASE_URL,
-      authToken: config.TURSO.AUTH_TOKEN,
-      syncPeriod: config.TURSO.SYNC_PERIOD_SEC,
-      readYourWrites: true
-    });
+    cleanupStaleTempReplicaFiles(dbDir);
+    activeReplicaPath = path.join(dbDir, 'vibesurvey_turso_replica.db');
+    rawDb = openReplicaDb(activeReplicaPath);
   } else {
     rawDb = new LibsqlDatabase(config.TURSO.DATABASE_URL, {
       authToken: config.TURSO.AUTH_TOKEN,
@@ -166,6 +530,17 @@ function createTursoDatabase() {
         rawDb.sync();
       } catch (syncErr) {
         console.warn('[DB] Cảnh báo đồng bộ ban đầu Turso replica:', syncErr.message);
+        try { rawDb.close(); } catch (_) { /* bỏ qua lỗi đóng kết nối */ }
+        cleanupReplicaFiles(activeReplicaPath);
+        if (hasAnyReplicaFile(activeReplicaPath)) {
+          activeReplicaPath = buildFallbackReplicaPath();
+        }
+        rawDb = openReplicaDb(activeReplicaPath);
+        try {
+          rawDb.sync();
+        } catch (retrySyncErr) {
+          console.warn('[DB] Cảnh báo đồng bộ lại Turso replica sau khi làm sạch:', retrySyncErr.message);
+        }
       }
     }
 
@@ -181,7 +556,11 @@ function createTursoDatabase() {
     throw new Error(`Turso/libSQL chưa sẵn sàng: ${err.message}`);
   }
 
-  return wrapLibsqlDatabase(rawDb);
+  return wrapLibsqlDatabase(rawDb, {
+    LibsqlDatabase,
+    useEmbeddedReplica,
+    activeReplicaPath
+  });
 }
 
 function createDatabase() {
@@ -207,7 +586,57 @@ const { db, engine: dbEngine } = createDatabase();
 console.log(`[DB] Driver: ${dbEngine}${dbEngine === 'turso' ? (config.TURSO.USE_EMBEDDED_REPLICA ? ' (embedded replica)' : ' (remote)') : ` (${config.DB_PATH})`}`);
 
 function initSchema() {
-  db.exec(`
+  const CORE_TABLES = [
+    'users',
+    'surveys',
+    'questions',
+    'responses',
+    'point_transactions',
+    'payout_requests',
+    'deposit_orders',
+    'fraud_logs',
+    'voucher_campaigns',
+    'voucher_codes',
+    'banned_ips',
+    'device_ip_logs',
+    'notifications',
+    'push_subscriptions',
+    'consent_logs',
+    'vat_invoices',
+    'email_notifications_log',
+    'daily_streaks',
+    'admin_audit_logs',
+    'forum_posts',
+    'forum_comments',
+    'forum_post_likes',
+    'media_storage'
+  ];
+  const NEW_SURVEY_INDEXES = [
+    'idx_fraud_logs_survey',
+    'idx_notifications_survey',
+    'idx_email_log_survey'
+  ];
+
+  const loadMasterSchema = () => {
+    const rows = db.prepare("SELECT name, type FROM sqlite_master WHERE type IN ('table', 'index')").all();
+    const tables = new Set();
+    const indexes = new Set();
+    for (const row of rows) {
+      if (!row || !row.name) continue;
+      const normalized = String(row.name).toLowerCase();
+      if (row.type === 'table') tables.add(normalized);
+      else if (row.type === 'index') indexes.add(normalized);
+    }
+    return { tables, indexes };
+  };
+
+  let { tables: existingTables, indexes: existingIndexes } = loadMasterSchema();
+  const needsInitialDdl =
+    CORE_TABLES.some((tbl) => !existingTables.has(tbl)) ||
+    NEW_SURVEY_INDEXES.some((idx) => !existingIndexes.has(idx));
+
+  if (needsInitialDdl) {
+    db.exec(`
     -- Bảng Người Dùng & Số Dư Ví
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -591,7 +1020,13 @@ function initSchema() {
       file_size INTEGER NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-  `);
+
+    CREATE INDEX IF NOT EXISTS idx_fraud_logs_survey ON fraud_logs(survey_id);
+    CREATE INDEX IF NOT EXISTS idx_notifications_survey ON notifications(survey_id);
+    CREATE INDEX IF NOT EXISTS idx_email_log_survey ON email_notifications_log(survey_id);
+    `);
+    ({ tables: existingTables, indexes: existingIndexes } = loadMasterSchema());
+  }
 
   // Migration v2: Bổ sung các cột mới cho Users, Surveys và Responses
   const migrations = [
@@ -847,6 +1282,8 @@ function initSchema() {
     'ALTER TABLE daily_streaks ADD COLUMN last_freeze_used_at TEXT DEFAULT NULL;'
   ];
 
+  let didRebuild = false;
+
   // Migration rebuild point_transactions: mở rộng CHECK constraint tx_type thêm 2 loại Streak
   // (SQLite không ALTER CHECK -> rebuild bảng có GUARD idempotent theo nội dung sqlite_master)
   try {
@@ -872,6 +1309,7 @@ function initSchema() {
         db.exec('DROP TABLE point_transactions;');
         db.exec('ALTER TABLE point_transactions_streak_v2 RENAME TO point_transactions;');
         db.exec('COMMIT');
+        didRebuild = true;
         console.log('[DB Migration] point_transactions da duoc rebuild mo rong CHECK tx_type (Streak Benefits).');
       } catch (rebuildErr) {
         db.exec('ROLLBACK');
@@ -882,7 +1320,66 @@ function initSchema() {
     console.error('[DB Migration] Loi kiem tra/rebuild point_transactions:', checkErr.message);
   }
 
+  const tableColumnsCache = new Map();
+  const getTableColumns = (tableName) => {
+    const key = String(tableName || '').toLowerCase();
+    if (!/^[a-z0-9_]+$/.test(key)) return new Set();
+    if (!tableColumnsCache.has(key)) {
+      const cols = db.prepare(`PRAGMA table_info(${key})`).all();
+      tableColumnsCache.set(
+        key,
+        new Set(cols.map((col) => String(col && col.name ? col.name : '').toLowerCase()))
+      );
+    }
+    return tableColumnsCache.get(key);
+  };
+
   for (const sql of migrations) {
+    const createTableMatch = sql.match(/^\s*CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+([a-zA-Z0-9_]+)/i);
+    if (createTableMatch) {
+      const tblName = createTableMatch[1].toLowerCase();
+      if (existingTables.has(tblName)) continue;
+      try {
+        db.exec(sql);
+        existingTables.add(tblName);
+        tableColumnsCache.delete(tblName);
+      } catch (e) {
+        // Bảng đã tồn tại, an toàn bỏ qua
+      }
+      continue;
+    }
+
+    const createIndexMatch = sql.match(/^\s*CREATE\s+(?:UNIQUE\s+)?INDEX\s+IF\s+NOT\s+EXISTS\s+([a-zA-Z0-9_]+)/i);
+    if (createIndexMatch) {
+      const idxName = createIndexMatch[1].toLowerCase();
+      if (existingIndexes.has(idxName)) continue;
+      try {
+        db.exec(sql);
+        existingIndexes.add(idxName);
+      } catch (e) {
+        // Chỉ mục đã tồn tại, an toàn bỏ qua
+      }
+      continue;
+    }
+
+    const alterColMatch = sql.match(/^\s*ALTER\s+TABLE\s+([a-zA-Z0-9_]+)\s+ADD\s+COLUMN\s+([a-zA-Z0-9_]+)/i);
+    if (alterColMatch) {
+      const tblName = alterColMatch[1].toLowerCase();
+      const colName = alterColMatch[2].toLowerCase();
+      if (existingTables.has(tblName) && getTableColumns(tblName).has(colName)) {
+        continue;
+      }
+      try {
+        db.exec(sql);
+        if (tableColumnsCache.has(tblName)) {
+          tableColumnsCache.get(tblName).add(colName);
+        }
+      } catch (e) {
+        // Cột đã tồn tại, an toàn bỏ qua
+      }
+      continue;
+    }
+
     try {
       db.exec(sql);
     } catch (e) {
@@ -920,6 +1417,7 @@ function initSchema() {
         CREATE INDEX IF NOT EXISTS idx_questions_survey ON questions(survey_id);
         PRAGMA foreign_keys = ON;
       `);
+      didRebuild = true;
       console.log('[DB Migration] Đã nâng cấp bảng questions hỗ trợ trọn vẹn 12 định dạng và cờ is_required.');
     }
   } catch (err) {
@@ -956,6 +1454,7 @@ function initSchema() {
         CREATE INDEX IF NOT EXISTS idx_responses_survey ON responses(survey_id);
         PRAGMA foreign_keys = ON;
       `);
+      didRebuild = true;
       console.log('[DB Migration] Đã nâng cấp bảng responses hỗ trợ SCREENED_OUT và WARRANTY_REPLACED.');
     }
   } catch (err) {
@@ -986,6 +1485,7 @@ function initSchema() {
         CREATE INDEX IF NOT EXISTS idx_transactions_user ON point_transactions(user_id);
         PRAGMA foreign_keys = ON;
       `);
+      didRebuild = true;
     }
   } catch (err) {
     console.warn('[DB Migration] Nâng cấp bảng point_transactions gặp chú ý:', err.message);
@@ -1022,6 +1522,7 @@ function initSchema() {
         CREATE INDEX IF NOT EXISTS idx_forum_posts_type ON forum_posts(post_type);
         PRAGMA foreign_keys = ON;
       `);
+      didRebuild = true;
       console.log('[DB Migration] Đã nâng cấp bảng forum_posts cho phép thảo luận tự do và phân khu sinh viên.');
     }
   } catch (err) {
@@ -1056,10 +1557,15 @@ function initSchema() {
         CREATE INDEX IF NOT EXISTS idx_deposit_orders_status ON deposit_orders(status);
         PRAGMA foreign_keys = ON;
       `);
+      didRebuild = true;
       console.log('[DB Migration] Đã nâng cấp bảng deposit_orders hỗ trợ trạng thái PENDING_MISMATCH.');
     }
   } catch (err) {
     console.warn('[DB Migration] Nâng cấp bảng deposit_orders gặp chú ý:', err.message);
+  }
+
+  if (didRebuild) {
+    ({ tables: existingTables, indexes: existingIndexes } = loadMasterSchema());
   }
 
   // Bo sung va nang cap composite indexes toi uu hieu nang truy van (dat sau toan bo migration/rebuild)
@@ -1067,24 +1573,35 @@ function initSchema() {
     const existingQIdx = db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_questions_survey'").get();
     if (existingQIdx && existingQIdx.sql && !existingQIdx.sql.includes('order_index')) {
       db.exec('DROP INDEX IF EXISTS idx_questions_survey;');
+      existingIndexes.delete('idx_questions_survey');
     }
     const existingTxIdx = db.prepare("SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_transactions_user'").get();
     if (existingTxIdx && existingTxIdx.sql && (!existingTxIdx.sql.includes('created_at') || existingTxIdx.sql.includes('created_at DESC'))) {
       db.exec('DROP INDEX IF EXISTS idx_transactions_user;');
+      existingIndexes.delete('idx_transactions_user');
     }
   } catch (idxErr) {
     console.warn('[DB Index] Canh bao kiem tra index cu:', idxErr.message);
   }
 
-  db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_questions_survey ON questions(survey_id, order_index);
-    CREATE INDEX IF NOT EXISTS idx_responses_survey_user ON responses(survey_id, respondent_id);
-    CREATE INDEX IF NOT EXISTS idx_transactions_user ON point_transactions(user_id, created_at);
-    CREATE INDEX IF NOT EXISTS idx_surveys_creator ON surveys(creator_id, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_surveys_status_created ON surveys(status, created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_deposit_orders_code ON deposit_orders(order_code);
-    CREATE INDEX IF NOT EXISTS idx_deposit_orders_user ON deposit_orders(user_id, created_at DESC);
-  `);
+  const requiredIndexes = [
+    ['idx_questions_survey', 'CREATE INDEX IF NOT EXISTS idx_questions_survey ON questions(survey_id, order_index);'],
+    ['idx_responses_survey_user', 'CREATE INDEX IF NOT EXISTS idx_responses_survey_user ON responses(survey_id, respondent_id);'],
+    ['idx_transactions_user', 'CREATE INDEX IF NOT EXISTS idx_transactions_user ON point_transactions(user_id, created_at);'],
+    ['idx_surveys_creator', 'CREATE INDEX IF NOT EXISTS idx_surveys_creator ON surveys(creator_id, created_at DESC);'],
+    ['idx_surveys_status_created', 'CREATE INDEX IF NOT EXISTS idx_surveys_status_created ON surveys(status, created_at DESC);'],
+    ['idx_deposit_orders_code', 'CREATE INDEX IF NOT EXISTS idx_deposit_orders_code ON deposit_orders(order_code);'],
+    ['idx_deposit_orders_user', 'CREATE INDEX IF NOT EXISTS idx_deposit_orders_user ON deposit_orders(user_id, created_at DESC);'],
+    ['idx_fraud_logs_survey', 'CREATE INDEX IF NOT EXISTS idx_fraud_logs_survey ON fraud_logs(survey_id);'],
+    ['idx_notifications_survey', 'CREATE INDEX IF NOT EXISTS idx_notifications_survey ON notifications(survey_id);'],
+    ['idx_email_log_survey', 'CREATE INDEX IF NOT EXISTS idx_email_log_survey ON email_notifications_log(survey_id);']
+  ];
+  const missingIndexSql = requiredIndexes
+    .filter(([idxName]) => !existingIndexes.has(idxName))
+    .map(([, idxSql]) => idxSql);
+  if (missingIndexSql.length > 0) {
+    db.exec(missingIndexSql.join('\n'));
+  }
 }
 
 // Tự động đảm bảo các tài khoản kiểm thử cốt lõi luôn tồn tại và đúng mật khẩu trên mọi môi trường (Local & Render)
@@ -1163,9 +1680,32 @@ function ensureEssentialAccounts() {
 
     for (const u of essentialUsers) {
       const seedPassword = seedPasswordMap[u.email.toLowerCase()];
-      const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(u.email);
+      const existing = db.prepare(`
+        SELECT id, role, status, is_email_verified, is_google_linked, account_tier,
+               student_email, fast_track_tickets, credit_balance,
+               free_trial_surveys_available, free_quota_remaining
+        FROM users
+        WHERE email = ?
+      `).get(u.email);
 
       if (u.role === 'ADMIN') {
+        if (
+          existing &&
+          !seedPassword &&
+          existing.role === 'ADMIN' &&
+          existing.status === 'ACTIVE' &&
+          existing.is_email_verified === 1 &&
+          existing.is_google_linked === 1 &&
+          Number(existing.credit_balance || 0) >= Number(u.credit_balance || 0) &&
+          Number(existing.fast_track_tickets || 0) >= Number(u.fast_track_tickets || 0) &&
+          existing.account_tier !== null &&
+          existing.free_trial_surveys_available !== null &&
+          existing.free_quota_remaining !== null &&
+          (u.student_email ? existing.student_email !== null : true)
+        ) {
+          continue;
+        }
+
         const hash = seedPassword
           ? bcrypt.hashSync(seedPassword, salt)
           : (!existing ? bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), salt) : null);

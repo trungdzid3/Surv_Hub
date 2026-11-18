@@ -4175,57 +4175,144 @@ if (totalCount === 0) {
   },
 
   async executeDeleteSurvey(surveyId) {
-    const btn = document.getElementById('confirm-delete-survey-btn');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = `<div class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div><span>Đang xóa...</span>`;
+    if (!surveyId) return;
+
+    // Đóng modal ngay lập tức trong 0ms
+    const modal = document.getElementById('delete-survey-modal');
+    if (modal) modal.remove();
+
+    const prevCreatorSurveys = Array.isArray(this.state.creatorSurveys) ? [...this.state.creatorSurveys] : null;
+    const prevSurveys = Array.isArray(this.state.surveys) ? [...this.state.surveys] : null;
+    const prevProfileCreated = Array.isArray(this.state._profileCreatedSurveys) ? [...this.state._profileCreatedSurveys] : null;
+    const wasEditingThisSurvey = this.state.editingSurveyId != null && String(this.state.editingSurveyId) === String(surveyId);
+
+    const user = this.state.currentUser;
+    const creatorCacheKey = user && user.id ? `survhub_creator_surveys_cache_${user.id}` : null;
+    const profileCreatedKey = user && user.id ? `survhub_profile_created_${user.id}` : null;
+    let prevCreatorSessionRaw = null;
+    if (creatorCacheKey) {
+      try {
+        prevCreatorSessionRaw = sessionStorage.getItem(creatorCacheKey);
+      } catch (e) {}
     }
 
+    // Cập nhật Optimistic UI ngay lập tức trong 0ms
+    this._patchCreatorSurveysCache(list => list.filter(s => String(s.id) !== String(surveyId)));
+    if ((!prevCreatorSurveys || prevCreatorSurveys.length === 0) && creatorCacheKey && prevCreatorSessionRaw) {
+      try {
+        const parsedCreator = JSON.parse(prevCreatorSessionRaw);
+        if (Array.isArray(parsedCreator)) {
+          sessionStorage.setItem(
+            creatorCacheKey,
+            JSON.stringify(parsedCreator.filter(s => String(s.id) !== String(surveyId)))
+          );
+        }
+      } catch (e) {}
+    }
+
+    if (Array.isArray(this.state.surveys)) {
+      this.state.surveys = this.state.surveys.filter(s => String(s.id) !== String(surveyId));
+      try {
+        sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(this.state.surveys));
+      } catch (e) {}
+    }
+
+    if (Array.isArray(this.state._profileCreatedSurveys)) {
+      this.state._profileCreatedSurveys = this.state._profileCreatedSurveys.filter(s => String(s.id) !== String(surveyId));
+      if (profileCreatedKey) {
+        try {
+          sessionStorage.setItem(profileCreatedKey, JSON.stringify(this.state._profileCreatedSurveys));
+        } catch (e) {}
+      }
+    }
+
+    if (wasEditingThisSurvey) {
+      if (typeof this.resetStudioToNew === 'function') this.resetStudioToNew(false);
+      this.navigate('creator-surveys');
+    } else {
+      const root = document.getElementById('app-root');
+      if (root && typeof this._renderCreatorSurveysHtml === 'function') {
+        this._renderCreatorSurveysHtml(root, Array.isArray(this.state.creatorSurveys) ? this.state.creatorSurveys : []);
+      } else if (root && typeof this.renderCreatorSurveysView === 'function') {
+        this.renderCreatorSurveysView(root);
+      }
+    }
+
+    this.haptic('light');
+    this.showToast('Đang xóa khảo sát...', 'info');
+
     try {
-      const res = await this.api(`/surveys/${surveyId}`, { method: 'DELETE' });
-      if (!res.success) {
-        throw new Error(res.message || 'Không thể xóa khảo sát');
+      const res = await this.api('/surveys/' + surveyId, { method: 'DELETE' });
+      if (!res || !res.success) {
+        throw new Error((res && res.message) || 'Không thể xóa khảo sát');
       }
 
-      this.haptic('success');
-      this.showToast(res.message || 'Đã xóa khảo sát thành công', 'success');
-
-      // Đóng modal
-      const modal = document.getElementById('delete-survey-modal');
-      if (modal) modal.remove();
+      // Chống race nếu revalidate ngầm vừa trả dữ liệu cũ khi DELETE đang chạy
+      if (Array.isArray(this.state.creatorSurveys) && this.state.creatorSurveys.some(s => String(s.id) === String(surveyId))) {
+        this._patchCreatorSurveysCache(list => list.filter(s => String(s.id) !== String(surveyId)));
+        if ((this.state.currentTab === 'creator-surveys' || this.state.currentTab === 'my-surveys') && typeof this._renderCreatorSurveysHtml === 'function') {
+          const activeRoot = document.getElementById('app-root');
+          if (activeRoot) this._renderCreatorSurveysHtml(activeRoot, this.state.creatorSurveys || []);
+        }
+      }
 
       // Cập nhật lại số dư ví nếu có hoàn quỹ
       if (res.newCreditBalance !== undefined && this.state.currentUser) {
         this.state.currentUser.credit_balance = res.newCreditBalance;
-      }
-
-      this._patchCreatorSurveysCache(list => list.filter(s => s.id !== surveyId));
-      if (Array.isArray(this.state.surveys)) {
-        this.state.surveys = this.state.surveys.filter(s => s.id !== surveyId);
         try {
-          sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(this.state.surveys));
+          localStorage.setItem('survhub_cached_user', JSON.stringify(this.state.currentUser));
         } catch (e) {}
       }
 
-      // Nếu đang ở màn hình sửa khảo sát đó, reset và về creator-surveys
-      if (this.state.editingSurveyId === surveyId) {
-        if (typeof this.resetStudioToNew === 'function') this.resetStudioToNew();
-        this.navigate('creator-surveys');
-      } else {
-        // Tải lại danh sách khảo sát của tôi
-        await this.renderCreatorSurveysView(document.getElementById('app-root'));
+      if (typeof this.renderUserProfileDropdown === 'function') {
+        this.renderUserProfileDropdown();
       }
+
+      this.haptic('success');
+      this.showToast(res.message || 'Đã xóa bài khảo sát thành công', 'success');
     } catch (err) {
-      this.showToast('Lỗi khi xóa khảo sát: ' + err.message, 'error');
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="trash-2" class="w-3.5 h-3.5"></i><span>Xác Nhận Xóa</span>`;
-        if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
-          window.VibeUtils.refreshIcons(btn);
-        } else if (window.lucide) {
-          window.lucide.createIcons();
+      this.state.creatorSurveys = prevCreatorSurveys;
+      if (creatorCacheKey) {
+        try {
+          if (Array.isArray(prevCreatorSurveys) && prevCreatorSurveys.length > 0) {
+            sessionStorage.setItem(creatorCacheKey, JSON.stringify(prevCreatorSurveys));
+          } else if (prevCreatorSessionRaw !== null) {
+            sessionStorage.setItem(creatorCacheKey, prevCreatorSessionRaw);
+          } else {
+            sessionStorage.removeItem(creatorCacheKey);
+          }
+        } catch (e) {}
+      }
+
+      this.state.surveys = prevSurveys;
+      try {
+        if (Array.isArray(prevSurveys)) {
+          sessionStorage.setItem('survhub_surveys_cache', JSON.stringify(prevSurveys));
+        } else {
+          sessionStorage.removeItem('survhub_surveys_cache');
+        }
+      } catch (e) {}
+
+      if (prevProfileCreated !== null) {
+        this.state._profileCreatedSurveys = prevProfileCreated;
+        if (profileCreatedKey) {
+          try {
+            sessionStorage.setItem(profileCreatedKey, JSON.stringify(prevProfileCreated));
+          } catch (e) {}
         }
       }
+
+      const root = document.getElementById('app-root');
+      if (root) {
+        if (typeof this._renderCreatorSurveysHtml === 'function' && ((Array.isArray(this.state.creatorSurveys) && this.state.creatorSurveys.length > 0) || !prevCreatorSessionRaw)) {
+          this._renderCreatorSurveysHtml(root, Array.isArray(this.state.creatorSurveys) ? this.state.creatorSurveys : []);
+        } else if (typeof this.renderCreatorSurveysView === 'function') {
+          this.renderCreatorSurveysView(root);
+        }
+      }
+
+      this.haptic('error');
+      this.showToast('Lỗi khi xóa khảo sát: ' + (err && err.message ? err.message : 'Không xác định'), 'error');
     }
   },
 

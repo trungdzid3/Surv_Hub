@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const db = require('../db/database');
 
-const LAST_ACTIVE_UPDATE_TTL_MS = 60000;
+const LAST_ACTIVE_UPDATE_TTL_MS = 900000;
 const LAST_ACTIVE_MAP_MAX_SIZE = 5000;
 const _lastActiveUpdateMap = new Map();
 
@@ -71,8 +71,9 @@ function authenticateToken(req, res, next) {
       const isTestEnv = process.env.NODE_ENV === 'test' || config.NODE_ENV === 'test';
       const lastUpdatedAt = _lastActiveUpdateMap.get(user.id);
       if (isTestEnv || !lastUpdatedAt || (now - lastUpdatedAt >= LAST_ACTIVE_UPDATE_TTL_MS)) {
-        db.prepare("UPDATE users SET last_active_at = datetime('now') WHERE id = ?").run(user.id);
-        if (!isTestEnv) {
+        if (isTestEnv) {
+          db.prepare("UPDATE users SET last_active_at = datetime('now') WHERE id = ?").run(user.id);
+        } else {
           if (_lastActiveUpdateMap.size >= LAST_ACTIVE_MAP_MAX_SIZE) {
             for (const [uid, ts] of _lastActiveUpdateMap) {
               if (now - ts >= LAST_ACTIVE_UPDATE_TTL_MS) {
@@ -85,6 +86,15 @@ function authenticateToken(req, res, next) {
           }
           _lastActiveUpdateMap.delete(user.id);
           _lastActiveUpdateMap.set(user.id, now);
+
+          const userIdToUpdate = user.id;
+          setImmediate(() => {
+            try {
+              db.prepare("UPDATE users SET last_active_at = datetime('now') WHERE id = ?").run(userIdToUpdate);
+            } catch (_) {
+              // Khong chan request neu cap nhat last_active_at gap loi tam thoi
+            }
+          });
         }
       }
     } catch (e) {
