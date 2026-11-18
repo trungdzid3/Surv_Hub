@@ -53,60 +53,99 @@
   const RespondentModule = {
   // ==================== VIEW 2: TRÌNH LÀM BÀI KHẢO SÁT (TYPEFORM ZEN FOCUS) ====================
   async startSurveySession(surveyId) {
+    if (this._startingSurveySessionId === surveyId) return;
+    this._startingSurveySessionId = surveyId;
     this.haptic('light');
 
-    if (!this.state.currentUser) {
-      this.state.pendingSurveyId = surveyId;
-      this.showToast('Vui lòng đăng nhập để bắt đầu làm bài khảo sát!', 'info');
-      this.openAuthModal('login');
-      return;
-    }
-
-    const currentUser = this.state.currentUser;
-    const targetSurvey = (this.state.surveys && this.state.surveys.find(s => s.id === surveyId)) || null;
-
-    if (targetSurvey && String(targetSurvey.creator_id) === String(currentUser.id)) {
-      await this.openSurveyPreviewModal(surveyId);
-      return;
-    }
-    if (currentUser.role === 'CREATOR') {
-      this.showToast('Tài khoản Doanh nghiệp / Người tạo khảo sát chỉ có quyền Xem trước cấu trúc câu hỏi.', 'info');
-      await this.openSurveyPreviewModal(surveyId);
-      return;
-    }
-
-    // Kiểm tra xem đã có bài làm dở của khảo sát này trong storage chưa để khôi phục
-    const cachedSessionJson = (localStorage.getItem('survhub_active_session') || localStorage.getItem('vibesurvey_active_session'));
-    if (cachedSessionJson) {
-      try {
-        const cached = JSON.parse(cachedSessionJson);
-        if (cached && cached.surveyId === surveyId && (Object.keys(cached.answers || {}).length > 0 || cached.currentIndex > 0)) {
-          this.state.activeSession = cached;
-          if (this.state.activeSession.timerId) clearInterval(this.state.activeSession.timerId);
-          this.state.activeSession.timerId = setInterval(() => {
-            if (this.state.activeSession) {
-              this.state.activeSession.durationSec = (this.state.activeSession.durationSec || 0) + 1;
-              this._saveActiveSessionToStorage();
-              const timerEl = document.getElementById('session-timer-text');
-              if (timerEl) {
-                const sec = this.state.activeSession.durationSec;
-                const mins = Math.floor(sec / 60);
-                const remSec = sec % 60;
-                timerEl.textContent = `${mins.toString().padStart(2, '0')}:${remSec.toString().padStart(2, '0')}`;
-              }
-            }
-          }, 1000);
-          this.showToast('Đang tiếp tục bài khảo sát của bạn...', 'info');
-          await this.navigate('take-survey', { surveyId });
-          return;
-        }
-      } catch (e) {
-        // bỏ qua nếu parse lỗi
+    let appRoot = null;
+    let prevHtml = null;
+    const restorePrevRoot = () => {
+      if (appRoot && prevHtml !== null) {
+        appRoot.innerHTML = prevHtml;
+        this._refreshProfileIcons(appRoot);
       }
-    }
+    };
 
     try {
-      this.showToast('Đang mở bài khảo sát...', 'info');
+      if (!this.state.currentUser) {
+        this.state.pendingSurveyId = surveyId;
+        this.showToast('Vui lòng đăng nhập để bắt đầu làm bài khảo sát!', 'info');
+        this.openAuthModal('login');
+        return;
+      }
+
+      const currentUser = this.state.currentUser;
+      const targetSurvey = (this.state.surveys && this.state.surveys.find(s => s.id === surveyId)) || null;
+
+      if (targetSurvey && String(targetSurvey.creator_id) === String(currentUser.id)) {
+        await this.openSurveyPreviewModal(surveyId);
+        return;
+      }
+      if (currentUser.role === 'CREATOR') {
+        this.showToast('Tài khoản Doanh nghiệp / Người tạo khảo sát chỉ có quyền Xem trước cấu trúc câu hỏi.', 'info');
+        await this.openSurveyPreviewModal(surveyId);
+        return;
+      }
+
+      // Kiểm tra xem đã có bài làm dở của khảo sát này trong storage chưa để khôi phục
+      const cachedSessionJson = (localStorage.getItem('survhub_active_session') || localStorage.getItem('vibesurvey_active_session'));
+      if (cachedSessionJson) {
+        try {
+          const cached = JSON.parse(cachedSessionJson);
+          if (cached && cached.surveyId === surveyId && (Object.keys(cached.answers || {}).length > 0 || cached.currentIndex > 0)) {
+            this.state.activeSession = cached;
+            if (this.state.activeSession.timerId) clearInterval(this.state.activeSession.timerId);
+            this.state.activeSession.timerId = setInterval(() => {
+              if (this.state.activeSession) {
+                this.state.activeSession.durationSec = (this.state.activeSession.durationSec || 0) + 1;
+                this._saveActiveSessionToStorage();
+                const timerEl = document.getElementById('session-timer-text');
+                if (timerEl) {
+                  const sec = this.state.activeSession.durationSec;
+                  const mins = Math.floor(sec / 60);
+                  const remSec = sec % 60;
+                  timerEl.textContent = `${mins.toString().padStart(2, '0')}:${remSec.toString().padStart(2, '0')}`;
+                }
+              }
+            }, 1000);
+            this.showToast('Đang tiếp tục bài khảo sát của bạn...', 'info');
+            await this.navigate('take-survey', { surveyId });
+            return;
+          }
+        } catch (e) {
+          // bỏ qua nếu parse lỗi
+        }
+      }
+
+      appRoot = document.getElementById('app-root');
+      if (appRoot) {
+        prevHtml = appRoot.innerHTML;
+        const safeSurveyTitle = this.escapeHtml((targetSurvey && targetSurvey.title) || 'Đang chuẩn bị khảo sát');
+        const rewardPts = Number((targetSurvey && targetSurvey.reward_points_per_response) || 0);
+        appRoot.innerHTML = `
+          <div class="max-w-2xl mx-auto my-8 sm:my-14 bento-card p-8 sm:p-10 text-center space-y-5">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800/70 flex items-center justify-center">
+              <span class="animate-spin inline-block w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full"></span>
+            </div>
+            <div class="space-y-2">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-[11px] font-bold text-stone-600 dark:text-stone-300">
+                <span>Đang khởi tạo phiên làm bài...</span>
+              </div>
+              <h2 class="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-white tracking-tight">${safeSurveyTitle}</h2>
+              ${rewardPts > 0 ? `
+                <div class="text-xs font-extrabold font-mono text-orange-600 dark:text-orange-400">
+                  Phần thưởng: +${rewardPts.toLocaleString()} Điểm (≈ ${rewardPts.toLocaleString()}đ)
+                </div>
+              ` : ''}
+            </div>
+            <div class="space-y-2.5 max-w-md mx-auto pt-2 animate-pulse">
+              <div class="h-3 w-full rounded bg-stone-200 dark:bg-stone-800"></div>
+              <div class="h-3 w-4/5 mx-auto rounded bg-stone-100 dark:bg-stone-800/70"></div>
+            </div>
+          </div>
+        `;
+      }
+
       const res = await this.api(`/surveys/${surveyId}/start-session`, { method: 'POST' });
       if (res.success) {
         // Tận dụng survey object trả về ngay từ backend start-session để bỏ qua RTT mạng thừa
@@ -159,6 +198,7 @@
         this._saveActiveSessionToStorage();
         this.navigate('take-survey', { surveyId });
       } else {
+        restorePrevRoot();
         const errMsg = (res && res.message) || 'Không thể bắt đầu khảo sát';
         this.showToast(errMsg, 'error');
         if (res.status === 403 || res.statusCode === 403 || errMsg.includes('Doanh nghiệp') || errMsg.includes('chủ sở hữu') || errMsg.includes('người tạo') || errMsg.includes('CREATOR') || errMsg.includes('Xem trước')) {
@@ -181,10 +221,15 @@
         await this.navigate('review-survey', { surveyId });
         return;
       }
+      restorePrevRoot();
       const errMsg = (err && err.message) || '';
       this.showToast(errMsg || 'Đã có lỗi xảy ra khi bắt đầu khảo sát', 'error');
       if (err.status === 403 || err.statusCode === 403 || (err.data && err.data.code === 403) || errMsg.includes('Doanh nghiệp') || errMsg.includes('chủ sở hữu') || errMsg.includes('người tạo') || errMsg.includes('CREATOR') || errMsg.includes('Xem trước')) {
         await this.openSurveyPreviewModal(surveyId);
+      }
+    } finally {
+      if (this._startingSurveySessionId === surveyId) {
+        this._startingSurveySessionId = null;
       }
     }
   },
@@ -483,7 +528,7 @@
 
         </div>
       `;
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshProfileIcons(root);
       return;
     }
 
@@ -744,7 +789,7 @@
       </div>
     `;
 
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshProfileIcons(root);
   },
 
   renderQuestionOptions(q, currentAnswer) {
@@ -1305,7 +1350,7 @@
       if (errEl) {
         errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${res.error || 'Giá trị không đúng định dạng'}</span>`;
         errEl.classList.remove('hidden');
-        if (window.lucide) window.lucide.createIcons({ root: errEl });
+        this._refreshProfileIcons(errEl);
       }
     } else {
       inputEl.classList.remove('border-orange-500', 'focus:border-orange-500', 'focus:ring-orange-500/20');
@@ -1400,7 +1445,7 @@
           if (errEl) {
             errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${this.escapeHtml ? this.escapeHtml(errorMsg) : errorMsg}</span>`;
             errEl.classList.remove('hidden');
-            if (window.lucide) window.lucide.createIcons({ root: errEl });
+            this._refreshProfileIcons(errEl);
           }
           if (!firstError) {
             firstError = {
@@ -1915,7 +1960,7 @@
             if (errEl) {
               errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
-              if (window.lucide) window.lucide.createIcons({ root: errEl });
+              this._refreshProfileIcons(errEl);
             }
             return;
           }
@@ -1931,7 +1976,7 @@
             if (errEl) {
               errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
-              if (window.lucide) window.lucide.createIcons({ root: errEl });
+              this._refreshProfileIcons(errEl);
             }
             return;
           }
@@ -1949,7 +1994,7 @@
               if (errEl) {
                 errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
-                if (window.lucide) window.lucide.createIcons({ root: errEl });
+                this._refreshProfileIcons(errEl);
               }
               return;
             }
@@ -1964,7 +2009,7 @@
               if (errEl) {
                 errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
-                if (window.lucide) window.lucide.createIcons({ root: errEl });
+                this._refreshProfileIcons(errEl);
               }
               return;
             }
@@ -1979,7 +2024,7 @@
               if (errEl) {
                 errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
-                if (window.lucide) window.lucide.createIcons({ root: errEl });
+                this._refreshProfileIcons(errEl);
               }
               return;
             }
@@ -1994,7 +2039,7 @@
               if (errEl) {
                 errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
-                if (window.lucide) window.lucide.createIcons({ root: errEl });
+                this._refreshProfileIcons(errEl);
               }
               return;
             }
@@ -2009,7 +2054,7 @@
               if (errEl) {
                 errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
                 errEl.classList.remove('hidden');
-                if (window.lucide) window.lucide.createIcons({ root: errEl });
+                this._refreshProfileIcons(errEl);
               }
               return;
             }
@@ -2025,7 +2070,7 @@
             if (errEl) {
               errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
-              if (window.lucide) window.lucide.createIcons({ root: errEl });
+              this._refreshProfileIcons(errEl);
             }
             return;
           }
@@ -2042,7 +2087,7 @@
             if (errEl) {
               errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
-              if (window.lucide) window.lucide.createIcons({ root: errEl });
+              this._refreshProfileIcons(errEl);
             }
             return;
           }
@@ -2056,7 +2101,7 @@
             if (errEl) {
               errEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-orange-500 shrink-0"></i><span>${msg}</span>`;
               errEl.classList.remove('hidden');
-              if (window.lucide) window.lucide.createIcons({ root: errEl });
+              this._refreshProfileIcons(errEl);
             }
             return;
           }
@@ -2406,7 +2451,7 @@
             </div>
           </div>
         `;
-        if (window.lucide) window.lucide.createIcons();
+        this._refreshProfileIcons(root);
       }
       this.applyUserInterface();
     } catch (err) {
@@ -2655,7 +2700,7 @@
             </button>
           </div>
         `;
-        if (window.lucide) window.lucide.createIcons();
+        this._refreshProfileIcons(root);
         return;
       }
 
@@ -2790,7 +2835,7 @@
         </div>
       `;
 
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshProfileIcons(root);
     } catch (err) {
       this.showToast('Lỗi tải bài làm: ' + err.message, 'error');
       this.navigate('surveys');

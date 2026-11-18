@@ -176,6 +176,24 @@ const testSuites = [
     name: 'Tầng 27: Streak Benefits Suite (Bonus + Hộp Quà + Vé Cứu Chuỗi)',
     description: 'Kiểm tra Freeze Engine lazy, claim milestone ACID chống farm, bonus khảo sát 2 dòng sổ cái và trần vé',
     file: 'test_streak_benefits.js'
+  },
+  {
+    id: 28,
+    name: 'Tầng 28: Bug Reports & Media Upload Suite',
+    description: 'Kiểm tra upload ảnh minh chứng, gửi báo cáo lỗi, xử lý Admin & lịch sử báo lỗi',
+    file: 'test_bug_reports.js'
+  },
+  {
+    id: 29,
+    name: 'Tầng 29: Survey Forum Community & Anti-URL Suite',
+    description: 'Kiểm tra diễn đàn nội bộ, phân khu sinh viên, chống chèn link ngoài & shadowban',
+    file: 'test_forum_community.js'
+  },
+  {
+    id: 30,
+    name: 'Tầng 30: Survey Data Export (CSV/JSON) Suite',
+    description: 'Kiểm tra phân quyền xuất dữ liệu, UTF-8 BOM, thoát ký tự CSV RFC 4180 & JSON',
+    file: 'test_export.js'
   }
 ];
 

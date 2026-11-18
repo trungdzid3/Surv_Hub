@@ -95,6 +95,8 @@
       this._dropdownListenersInitialized = true;
 
       document.addEventListener('click', (event) => {
+        if (!this._activeDropdownId) return;
+
         const option = event.target && event.target.closest
           ? event.target.closest('[role="option"]')
           : null;
@@ -106,7 +108,8 @@
             });
           }
         }
-        if (!this._activeDropdownId) return;
+
+        if (window.VibeApp && window.VibeApp._clickOutsideDropdownBound) return;
 
         const ddEl = document.getElementById(this._activeDropdownId);
         const triggerEl = this._activeDropdownTriggerId 

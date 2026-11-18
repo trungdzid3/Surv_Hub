@@ -528,7 +528,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             <i data-lucide="moon" class="w-4 h-4 stroke-[2.2]"></i>
           </span>
         `;
-        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+          window.VibeUtils.refreshIcons(btn);
+        } else if (window.lucide && typeof window.lucide.createIcons === 'function') {
           window.lucide.createIcons({ root: btn });
         }
       }
@@ -757,29 +759,39 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     }
 
     // Cơ chế Click Outside đóng toàn bộ Dropdown / Popover trong toàn hệ thống
+    this._clickOutsideDropdownBound = true;
+    const OPEN_DROPDOWN_SELECTOR = '.custom-dropdown-menu:not(.hidden), .vibe-popover:not(.hidden), .custom-dropdown-popover:not(.hidden), #user-profile-dropdown:not(.hidden), #header-notif-dropdown:not(.hidden), #survey-cat-dropdown-menu:not(.hidden), #studio-region-popover:not(.hidden), #studio-uni-popover:not(.hidden), #demo-uni-popover:not(.hidden)';
     document.addEventListener('click', (e) => {
-      // 1. Nếu click vào nút trigger hoặc bên trong menu/popover/input tìm kiếm thì không đóng tự động
-      const isTrigger = e.target.closest('.custom-dropdown-trigger') ||
-        e.target.closest('#user-profile-btn') ||
-        e.target.closest('#header-notif-btn') ||
-        e.target.closest('#studio-region-input') ||
-        e.target.closest('#studio-uni-input') ||
-        e.target.closest('#demo-university');
+      const hasActiveDropdown = Boolean(window.CustomDropdownModule && window.CustomDropdownModule._activeDropdownId);
+      if (!hasActiveDropdown && !document.querySelector(OPEN_DROPDOWN_SELECTOR)) {
+        return;
+      }
 
-      const isInsideMenu = e.target.closest('.custom-dropdown-menu') ||
-        e.target.closest('.vibe-popover') ||
-        e.target.closest('#user-profile-dropdown') ||
-        e.target.closest('#header-notif-dropdown') ||
-        e.target.closest('#survey-cat-dropdown-menu') ||
-        e.target.closest('#studio-region-popover') ||
-        e.target.closest('#studio-uni-popover') ||
-        e.target.closest('#demo-uni-popover') ||
-        e.target.closest('#studio-region-menu') ||
-        e.target.closest('#studio-category-menu') ||
-        e.target.closest('#studio-gender-menu') ||
-        e.target.closest('#studio-age-menu') ||
-        e.target.closest('#studio-occ-menu') ||
-        e.target.closest('#studio-duration-menu');
+      const target = e.target;
+      if (!target || typeof target.closest !== 'function') return;
+
+      // 1. Nếu click vào nút trigger hoặc bên trong menu/popover/input tìm kiếm thì không đóng tự động
+      const isTrigger = target.closest('.custom-dropdown-trigger') ||
+        target.closest('#user-profile-btn') ||
+        target.closest('#header-notif-btn') ||
+        target.closest('#studio-region-input') ||
+        target.closest('#studio-uni-input') ||
+        target.closest('#demo-university');
+
+      const isInsideMenu = target.closest('.custom-dropdown-menu') ||
+        target.closest('.vibe-popover') ||
+        target.closest('#user-profile-dropdown') ||
+        target.closest('#header-notif-dropdown') ||
+        target.closest('#survey-cat-dropdown-menu') ||
+        target.closest('#studio-region-popover') ||
+        target.closest('#studio-uni-popover') ||
+        target.closest('#demo-uni-popover') ||
+        target.closest('#studio-region-menu') ||
+        target.closest('#studio-category-menu') ||
+        target.closest('#studio-gender-menu') ||
+        target.closest('#studio-age-menu') ||
+        target.closest('#studio-occ-menu') ||
+        target.closest('#studio-duration-menu');
 
       if (isTrigger || isInsideMenu) {
         return;
@@ -973,11 +985,28 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
     if (!this.state.token) {
       this.state.currentTab = savedTab || 'home';
     }
+    const cachedSessionJson = (localStorage.getItem('survhub_active_session') || localStorage.getItem('vibesurvey_active_session'));
+    let isRestoringTakeSurvey = false;
+    if (savedTab === 'take-survey' && cachedSessionJson) {
+      try {
+        const previewSession = JSON.parse(cachedSessionJson);
+        if (previewSession && previewSession.surveyId && previewSession.questions?.length > 0) {
+          isRestoringTakeSurvey = true;
+        }
+      } catch (e) {}
+    }
+
+    let hasRenderedFromCache = false;
     if (this.state.token && cachedUserJson) {
       try {
         this.state.currentUser = JSON.parse(cachedUserJson);
-        this.state.currentTab = savedTab;
-        this.applyUserInterface(true); // silent restore
+        this.state.currentTab = savedTab || 'surveys';
+        if (!isRestoringTakeSurvey) {
+          this.applyUserInterface(false); // Render ca Header va View tu cache trong 0ms
+          hasRenderedFromCache = true;
+        } else {
+          this.applyUserInterface(true); // silent restore khi chuan bi khoi phuc take-survey
+        }
       } catch (err) {
         console.warn('Lỗi đọc cached user:', err);
       }
@@ -991,7 +1020,6 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
           this.state.currentUser = meRes.user;
           localStorage.setItem('survhub_cached_user', JSON.stringify(this.state.currentUser));
           // Kiểm tra xem có phiên làm bài khảo sát dở dang cần khôi phục khi người dùng đang làm mà F5
-          const cachedSessionJson = (localStorage.getItem('survhub_active_session') || localStorage.getItem('vibesurvey_active_session'));
           if (cachedSessionJson) {
             try {
               const restoredSession = JSON.parse(cachedSessionJson);
@@ -1001,7 +1029,7 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
                 // Chỉ tự động mở lại bài khảo sát nếu tab trước đó thực sự là 'take-survey' (người dùng đang làm mà F5 trang)
                 if (savedTab === 'take-survey') {
                   this.state.currentTab = 'take-survey';
-                  this.applyUserInterface(true); // silent = true để không kích hoạt navigate(savedTab) ghi đè giao diện!
+                  this.applyUserInterface(true, { skipBackgroundFetches: isRestoringTakeSurvey }); // silent = true để không kích hoạt navigate(savedTab) ghi đè giao diện!
 
                   // Khởi động lại timer
                   if (this.state.activeSession.timerId) clearInterval(this.state.activeSession.timerId);
@@ -1027,8 +1055,12 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
             }
           }
 
-          this.state.currentTab = savedTab;
-          this.applyUserInterface();
+          if (hasRenderedFromCache) {
+            this.applyUserInterface(true, { skipBackgroundFetches: true });
+          } else {
+            this.state.currentTab = savedTab || 'surveys';
+            this.applyUserInterface(false);
+          }
 
           this.checkDeepLinkSurvey();
           this.initPushNotifications();
@@ -1040,13 +1072,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
         console.warn('Phiên đăng nhập đã hết hạn');
         this.state.token = null;
         localStorage.removeItem('survhub_token');
-        localStorage.removeItem('survhub_token');
-    localStorage.removeItem('vibesurvey_token');
-    localStorage.removeItem('survhub_cached_user');
-    localStorage.removeItem('vibesurvey_cached_user');
+        localStorage.removeItem('vibesurvey_token');
         localStorage.removeItem('survhub_cached_user');
-    localStorage.removeItem('survhub_cached_user');
-    localStorage.removeItem('vibesurvey_cached_user');
+        localStorage.removeItem('vibesurvey_cached_user');
       }
     }
 
@@ -1237,7 +1265,8 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
       (user.role === 'ADMIN' && (this.state.adminViewMode || 'ADMIN') === 'CREATOR');
   },
 
-  applyUserInterface(silent = false) {
+  applyUserInterface(silent = false, options = {}) {
+    const skipBackgroundFetches = Boolean(options && options.skipBackgroundFetches);
     const user = this.state.currentUser;
     if (!user) {
       this.applyGuestInterface();
@@ -1292,7 +1321,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
 
     if (!isEnterprise) {
-      this.fetchStreakInfo();
+      if (!skipBackgroundFetches) {
+        this.fetchStreakInfo();
+      }
     } else {
       this.state.streakInfo = null;
     }
@@ -1343,7 +1374,9 @@ const VibeApp = window.VibeApp = Object.assign(window.VibeApp, {
 
     this.renderUserProfileDropdown();
     this.renderNavigation();
-    this.refreshNotificationBadge();
+    if (!skipBackgroundFetches) {
+      this.refreshNotificationBadge();
+    }
     if (!silent) {
       this.navigate(this.state.currentTab);
     }
@@ -3411,7 +3444,9 @@ if (totalCount === 0) {
       </div>
     `;
 
-    if (window.lucide) {
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons();
+    } else if (window.lucide) {
       window.lucide.createIcons();
     }
   },
@@ -4243,7 +4278,57 @@ if (totalCount === 0) {
       return;
     }
 
+    const cachedSurvey = (this.state.creatorSurveys || []).find(s => String(s.id) === String(surveyId))
+      || (this.state.surveys || []).find(s => String(s.id) === String(surveyId));
+
+    const headerTitle = cachedSurvey ? this.escapeHtml(cachedSurvey.title) : 'Đang tải báo cáo khảo sát...';
+    const headerMeta = cachedSurvey
+      ? `Đã thu thập ${cachedSurvey.completed_count || cachedSurvey.current_responses || 0}/${cachedSurvey.target_responses || 0} phản hồi hợp lệ`
+      : 'Đang đồng bộ dữ liệu thống kê chi tiết...';
+
+    root.innerHTML = `
+      <div class="space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+          <div>
+            <button onclick="VibeApp.navigate('creator-surveys')" class="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 mb-1 font-bold">
+              <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Quay lại
+            </button>
+            <h1 class="text-xl font-extrabold text-slate-900">${headerTitle}</h1>
+            <p class="text-xs text-slate-500 mt-0.5 font-mono">${headerMeta}</p>
+          </div>
+          <button onclick="VibeApp.exportSurvey('${this.escapeHtml(String(surveyId))}')" class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98]">
+            Xuất File Excel (CSV)
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bento-card p-6 space-y-3 animate-pulse">
+            <div class="h-3 w-28 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div class="h-5 w-2/3 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div class="space-y-2 pt-2">
+              <div class="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+              <div class="h-2.5 w-4/5 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+            </div>
+          </div>
+          <div class="bento-card p-6 space-y-3 animate-pulse">
+            <div class="h-3 w-28 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div class="h-5 w-1/2 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div class="space-y-2 pt-2">
+              <div class="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+              <div class="h-2.5 w-3/4 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(root);
+    } else if (window.lucide) {
+      window.lucide.createIcons();
+    }
+
     const res = await this.api(`/surveys/${surveyId}/analytics`);
+    if (this.state.currentTab !== 'analytics') return;
     const survey = res.survey;
     const stats = res.questionStats || [];
     const totalResp = res.totalValidatedResponses || 0;

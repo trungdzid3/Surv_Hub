@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server/app.js",
     "dev": "node --watch server/app.js",
-    "lint": "node -c server/app.js && node -c public/app.js",
+    "lint": "node -e \"const fs=require('fs'),path=require('path'),{execFileSync}=require('child_process');const files=[];function walk(d){if(!fs.existsSync(d))return;for(const e of fs.readdirSync(d,{withFileTypes:true})){if(e.isSymbolicLink()||e.name==='node_modules')continue;const p=path.join(d,e.name);if(e.isDirectory())walk(p);else if(e.isFile()&&e.name.endsWith('.js'))files.push(p);}}['server','public','tests','scripts'].forEach(walk);for(const f of files)execFileSync(process.execPath,['-c',f],{stdio:'inherit'});console.log('Syntax OK ('+files.length+' files)');\"",
     "test": "node tests/run_all_tests.js",
     "test:all": "node tests/run_all_tests.js",
     "test:anti-fraud": "node tests/test_anti_fraud.js",
@@ -14,7 +14,6 @@
     "test:api": "node tests/test_api_endpoints.js",
     "test:simulation": "node tests/test_simulation.js",
     "test:export": "node tests/test_export.js",
-    "test:vouchers": "node tests/test_vouchers_and_parser.js",
     "test:ai-agent": "python tests/ai_qa_agent.py",
     "db:backup": "node scripts/backup_db.js",
     "sync:android": "node scripts/sync_capacitor.js",

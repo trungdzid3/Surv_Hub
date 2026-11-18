@@ -65,6 +65,18 @@
     el.classList.add('hidden');
   },
 
+  _refreshModalIcons(targetEl) {
+    if (window.VibeUtils && typeof window.VibeUtils.refreshIcons === 'function') {
+      window.VibeUtils.refreshIcons(targetEl);
+    } else if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      try {
+        window.lucide.createIcons(targetEl ? { root: targetEl } : undefined);
+      } catch (_) {
+        window.lucide.createIcons();
+      }
+    }
+  },
+
   // ==================== AUTHENTICATION MODAL ====================
   openAuthModal(initialTab = 'login') {
     this.haptic('light');
@@ -120,7 +132,7 @@
     `;
 
     this.openDialog(container);
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshModalIcons(card);
   },
 
   switchAuthTab(tab) {
@@ -153,7 +165,7 @@
 
     if (formBody) {
       formBody.innerHTML = this.getAuthFormHtml(tab);
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshModalIcons(formBody);
       if (tab === 'register') {
         this._updateRegOtpBtnState();
       }
@@ -376,7 +388,7 @@
         </div>
       </form>
     `;
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshModalIcons(formBody);
     this._startLoginOtpCooldown(Number(response.resendAfter || 60));
     document.getElementById('auth-login-otp')?.focus();
   },
@@ -449,7 +461,7 @@
     const formBody = document.getElementById('auth-form-body');
     if (formBody) {
       formBody.innerHTML = this.getAuthFormHtml('login');
-      if (window.lucide) window.lucide.createIcons();
+      this._refreshModalIcons(formBody);
     }
   },
 
@@ -486,7 +498,7 @@
       if (submitButton) {
         submitButton.disabled = false;
         submitButton.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4"></i> Xác minh và đăng nhập';
-        if (window.lucide) window.lucide.createIcons();
+        this._refreshModalIcons(submitButton);
       }
       otpInput?.focus();
     }
@@ -530,7 +542,7 @@
       if (titleCreator) titleCreator.className = 'text-xs font-bold text-orange-600 dark:text-orange-400 flex items-center gap-1.5';
       if (titleResp) titleResp.className = 'text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5';
     }
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshModalIcons(document.getElementById('auth-form-body'));
   },
 
   togglePasswordVisibility(inputId, btnEl) {
@@ -589,7 +601,7 @@
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập';
-        if (window.lucide) window.lucide.createIcons();
+        this._refreshModalIcons(submitBtn);
       }
     }
   },
@@ -805,7 +817,7 @@
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i data-lucide="user-plus" class="w-4 h-4"></i> Tạo Tài Khoản & Bắt Đầu';
-        if (window.lucide) window.lucide.createIcons();
+        this._refreshModalIcons(submitBtn);
       }
     }
   },
@@ -1154,7 +1166,7 @@
     `;
 
     this.openDialog(modal);
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshModalIcons(modal);
   },
 
   closeTermsModal() {
@@ -1415,7 +1427,7 @@
     }
     streakBtn.title = tierInfo.title;
 
-    if (window.lucide) lucide.createIcons();
+    this._refreshModalIcons(streakBtn);
   },
 
   /**
@@ -1746,7 +1758,7 @@
     `;
 
     this.openDialog(container);
-    if (window.lucide) lucide.createIcons();
+    this._refreshModalIcons(card);
   },
 
   /**
@@ -1826,7 +1838,7 @@
     `;
 
     this.openDialog(container);
-    if (window.lucide) lucide.createIcons();
+    this._refreshModalIcons(card);
   },
 
   /**
@@ -1910,7 +1922,7 @@
     `;
 
     this.openDialog(container);
-    if (window.lucide) lucide.createIcons();
+    this._refreshModalIcons(card);
   },
 
   /**
@@ -1995,7 +2007,7 @@
           <i data-lucide="zap" class="w-4 h-4"></i>
           <span>Điểm Danh Ngay</span>
         `;
-        if (window.lucide) lucide.createIcons();
+        this._refreshModalIcons(btn);
       }
     } finally {
       if (this._checkinActionSeq === actionSeq) {
@@ -2064,7 +2076,7 @@
         btn.innerHTML = `
           <i data-lucide="gift" class="w-3 h-3"></i><span>Mở Quà Ngay</span>
         `;
-        if (window.lucide) lucide.createIcons();
+        this._refreshModalIcons(btn);
       }
     } finally {
       if (this._claimMilestoneSeq === actionSeq) {
@@ -2178,16 +2190,93 @@
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Xác Thực Ngay & Kích Hoạt Ưu Đãi';
-        if (window.lucide) window.lucide.createIcons();
+        this._refreshModalIcons(submitBtn);
       }
     }
   },
 
   async openSurveyPreviewModal(surveyId) {
     this.haptic('light');
+    this._previewModalSurveyId = surveyId;
+
+    const cachedSurvey = (Array.isArray(this.state.surveys) && this.state.surveys.find(s => String(s.id) === String(surveyId)))
+      || (Array.isArray(this.state.creatorSurveys) && this.state.creatorSurveys.find(s => String(s.id) === String(surveyId)))
+      || null;
+
+    const safeTitle = cachedSurvey && cachedSurvey.title
+      ? this.escapeHtml(cachedSurvey.title)
+      : 'Xem trước khảo sát';
+    const safeCategory = this.escapeHtml((cachedSurvey && cachedSurvey.category) || 'Khảo sát');
+    const cachedReward = Number((cachedSurvey && cachedSurvey.reward_points_per_response) || 0);
+    const cachedQuestionCount = Number((cachedSurvey && (cachedSurvey.question_count || (Array.isArray(cachedSurvey.questions) ? cachedSurvey.questions.length : 0))) || 0);
+    const cachedEstMins = cachedSurvey && (cachedSurvey.min_completion_time_sec || cachedQuestionCount > 0)
+      ? Math.max(1, Math.ceil((cachedSurvey.min_completion_time_sec || Math.max(15, cachedQuestionCount * 5)) / 60))
+      : null;
+    const safeDesc = cachedSurvey && cachedSurvey.description
+      ? this.escapeHtml(cachedSurvey.description)
+      : 'Đang tải mô tả chi tiết khảo sát...';
+
+    const skeletonItemsHtml = [1, 2, 3].map(() => `
+      <div class="p-3 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-800/40 space-y-2 animate-pulse">
+        <div class="flex items-center gap-2">
+          <div class="h-3.5 w-6 rounded bg-stone-200 dark:bg-stone-700"></div>
+          <div class="h-3.5 w-3/4 rounded bg-stone-200 dark:bg-stone-700"></div>
+        </div>
+        <div class="pl-6 grid grid-cols-2 gap-1.5">
+          <div class="h-2.5 w-4/5 rounded bg-stone-100 dark:bg-stone-800"></div>
+          <div class="h-2.5 w-3/5 rounded bg-stone-100 dark:bg-stone-800"></div>
+        </div>
+      </div>
+    `).join('');
+
+    this.showModal({
+      title: safeTitle,
+      content: `
+        <div class="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-orange-600 dark:text-orange-400 font-bold">
+              ${safeCategory}
+            </span>
+            <span class="px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 font-bold font-mono">
+              ${cachedSurvey ? `+${cachedReward.toLocaleString()} Điểm (≈ ${cachedReward.toLocaleString()}đ)` : 'Đang tính thưởng...'}
+            </span>
+            <span class="text-slate-500 dark:text-slate-400 font-medium">
+              ${cachedEstMins ? `~${cachedEstMins} phút` : 'Đang ước tính thời lượng'}${cachedQuestionCount ? ` • ${cachedQuestionCount} câu hỏi` : ''}
+            </span>
+          </div>
+
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+            ${safeDesc}
+          </p>
+
+          <div class="space-y-2.5 pt-1">
+            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+              <span>Nội dung các câu hỏi trong khảo sát:</span>
+              <span class="text-[11px] text-slate-400 font-normal">Đang tải...</span>
+            </div>
+            ${skeletonItemsHtml}
+          </div>
+        </div>
+      `
+    });
+
+    const isPreviewModalStillOpen = () => {
+      if (this._previewModalSurveyId !== surveyId) return false;
+      const modalContainer = document.getElementById('modal-container');
+      const modalCard = document.getElementById('modal-card');
+      return Boolean(
+        modalContainer &&
+        modalCard &&
+        !modalContainer.classList.contains('hidden') &&
+        (typeof modalContainer.open !== 'boolean' || modalContainer.open)
+      );
+    };
+
     try {
       const res = await this.api('/surveys/' + surveyId);
+      if (!isPreviewModalStillOpen()) return;
       if (!res.success || !res.survey) {
+        this.closeModal();
         this.showToast('Không thể tải thông tin khảo sát', 'error');
         return;
       }
@@ -2330,6 +2419,9 @@
         `
       });
     } catch (err) {
+      if (isPreviewModalStillOpen()) {
+        this.closeModal();
+      }
       this.showToast(err.message, 'error');
     }
   },
@@ -2356,7 +2448,7 @@
         </div>
       </div>
     `;
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshModalIcons(root);
   },
   fallbackCopyText(text) {
     try {
@@ -2527,7 +2619,7 @@
     `;
 
     this.openDialog(container);
-    if (window.lucide) window.lucide.createIcons();
+    this._refreshModalIcons(card);
   },
 
   closeModal() {

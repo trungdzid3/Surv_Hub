@@ -129,41 +129,73 @@ function runCleanup() {
     console.log(`[Thuc thi] Bang fraud_logs: da xoa ${deletedFrauds.changes} ban ghi nhat ky gian lan test.`);
 
     // 4.5. Don dep du lieu lien quan cua cac test users de dam bao toan ven khoa ngoai (Foreign Keys)
-    // - point_transactions
-    const deletedTxs = db.prepare(`
-      DELETE FROM point_transactions 
-      WHERE user_id IN (
-        SELECT id FROM users WHERE (${testUserWhereClause})
-      )
-    `).run(...TEST_EMAIL_PATTERNS);
-    console.log(`[Thuc thi] Bang point_transactions: da xoa ${deletedTxs.changes} giao dich test.`);
+    const userScopedTables = [
+      'point_transactions',
+      'notifications',
+      'email_notifications_log',
+      'device_ip_logs',
+      'deposit_orders',
+      'vat_invoices',
+      'bug_reports',
+      'push_subscriptions',
+      'daily_streaks',
+      'login_challenges',
+      'consent_logs',
+      'forum_post_likes',
+      'forum_comments',
+      'forum_posts'
+    ];
 
-    // - notifications
-    const deletedNotifs = db.prepare(`
-      DELETE FROM notifications 
-      WHERE user_id IN (
-        SELECT id FROM users WHERE (${testUserWhereClause})
-      )
-    `).run(...TEST_EMAIL_PATTERNS);
-    console.log(`[Thuc thi] Bang notifications: da xoa ${deletedNotifs.changes} thong bao test.`);
+    for (const table of userScopedTables) {
+      try {
+        const res = db.prepare(`
+          DELETE FROM ${table}
+          WHERE user_id IN (
+            SELECT id FROM users WHERE (${testUserWhereClause})
+          )
+        `).run(...TEST_EMAIL_PATTERNS);
+        console.log(`[Thuc thi] Bang ${table}: da xoa ${res.changes} ban ghi test.`);
+      } catch (e) {
+        console.warn(`[Canh bao] Bo qua bang ${table}: ${e.message}`);
+      }
+    }
 
-    // - email_notifications_log
-    const deletedEmailLogs = db.prepare(`
-      DELETE FROM email_notifications_log 
-      WHERE user_id IN (
-        SELECT id FROM users WHERE (${testUserWhereClause})
-      )
-    `).run(...TEST_EMAIL_PATTERNS);
-    console.log(`[Thuc thi] Bang email_notifications_log: da xoa ${deletedEmailLogs.changes} log email test.`);
+    const cleanSpecialTables = [
+      {
+        name: 'warranty_claims',
+        sql: `DELETE FROM warranty_claims WHERE creator_id IN (SELECT id FROM users WHERE (${testUserWhereClause}))`,
+        params: TEST_EMAIL_PATTERNS
+      },
+      {
+        name: 'admin_audit_logs',
+        sql: `DELETE FROM admin_audit_logs WHERE admin_id IN (SELECT id FROM users WHERE (${testUserWhereClause}))`,
+        params: TEST_EMAIL_PATTERNS
+      },
+      {
+        name: 'voucher_codes',
+        sql: `UPDATE voucher_codes SET status = 'AVAILABLE', claimed_by_user_id = NULL, claimed_response_id = NULL, claimed_at = NULL WHERE claimed_by_user_id IN (SELECT id FROM users WHERE (${testUserWhereClause}))`,
+        params: TEST_EMAIL_PATTERNS
+      },
+      {
+        name: 'registration_otps',
+        sql: `DELETE FROM registration_otps WHERE (${testUserWhereClause})`,
+        params: TEST_EMAIL_PATTERNS
+      },
+      {
+        name: 'banned_ips',
+        sql: `DELETE FROM banned_ips`,
+        params: []
+      }
+    ];
 
-    // - device_ip_logs
-    const deletedDeviceLogs = db.prepare(`
-      DELETE FROM device_ip_logs 
-      WHERE user_id IN (
-        SELECT id FROM users WHERE (${testUserWhereClause})
-      )
-    `).run(...TEST_EMAIL_PATTERNS);
-    console.log(`[Thuc thi] Bang device_ip_logs: da xoa ${deletedDeviceLogs.changes} log thiet bi test.`);
+    for (const item of cleanSpecialTables) {
+      try {
+        const res = db.prepare(item.sql).run(...item.params);
+        console.log(`[Thuc thi] Bang ${item.name}: da xu ly ${res.changes} ban ghi test.`);
+      } catch (e) {
+        console.warn(`[Canh bao] Bo qua bang ${item.name}: ${e.message}`);
+      }
+    }
 
     // 4.6. Don dep bang users (Yeu cau 3)
     // Xoa cac tai khoan test ao thuoc 5 patterns, bao ton 100% cac tai khoan cot loi

@@ -926,11 +926,43 @@
   // ==================== VIEW: TRANG TẠO KHẢO SÁT CHUYÊN DỤNG (GOOGLE FORMS STUDIO 2 CỘT) ====================
 
   async openEditSurvey(surveyId) {
+    if (this._openingEditSurveyId === surveyId) return;
+    this._openingEditSurveyId = surveyId;
+
+    const cachedSurvey = (Array.isArray(this.state.creatorSurveys) && this.state.creatorSurveys.find(s => String(s.id) === String(surveyId)))
+      || (Array.isArray(this.state.surveys) && this.state.surveys.find(s => String(s.id) === String(surveyId)))
+      || null;
+
+    const appRoot = document.getElementById('app-root');
+    if (appRoot) {
+      const safeTitle = this.escapeHtml((cachedSurvey && cachedSurvey.title) || 'Khảo sát của bạn');
+      const safeCategory = this.escapeHtml((cachedSurvey && cachedSurvey.category) || 'Form Studio');
+      appRoot.innerHTML = `
+        <div class="max-w-3xl mx-auto my-8 sm:my-14 bento-card p-8 sm:p-10 text-center space-y-5">
+          <div class="w-12 h-12 mx-auto rounded-2xl bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-800/70 flex items-center justify-center">
+            <span class="animate-spin inline-block w-6 h-6 border-2 border-orange-600 border-t-transparent rounded-full"></span>
+          </div>
+          <div class="space-y-2">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-[11px] font-bold text-stone-600 dark:text-stone-300">
+              <span>Đang nạp Form Studio...</span>
+              <span class="text-orange-600 dark:text-orange-400">${safeCategory}</span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-extrabold text-stone-900 dark:text-white tracking-tight">${safeTitle}</h2>
+          </div>
+          <div class="space-y-2.5 max-w-lg mx-auto pt-2 animate-pulse">
+            <div class="h-3.5 w-full rounded bg-stone-200 dark:bg-stone-800"></div>
+            <div class="h-3.5 w-5/6 mx-auto rounded bg-stone-100 dark:bg-stone-800/70"></div>
+            <div class="h-24 w-full rounded-2xl bg-stone-100 dark:bg-stone-800/50 mt-3"></div>
+          </div>
+        </div>
+      `;
+    }
+
     try {
-      this.showToast('Đang tải dữ liệu khảo sát...', 'info');
       const res = await this.api(`/surveys/${surveyId}`);
       if (!res.survey) {
         this.showToast('Không tìm thấy thông tin khảo sát!', 'error');
+        this.navigate('creator-surveys');
         return;
       }
 
@@ -1001,6 +1033,11 @@
       this.showToast('Đã nạp khảo sát để chỉnh sửa!', 'success');
     } catch (err) {
       this.showToast('Lỗi khi tải khảo sát: ' + err.message, 'error');
+      this.navigate('creator-surveys');
+    } finally {
+      if (this._openingEditSurveyId === surveyId) {
+        this._openingEditSurveyId = null;
+      }
     }
   },
 

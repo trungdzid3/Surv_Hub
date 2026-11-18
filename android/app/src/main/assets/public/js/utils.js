@@ -96,6 +96,8 @@
    */
   window.VibeUtils.refreshIcons = function (rootEl) {
     if (!window.lucide || typeof window.lucide.createIcons !== 'function') return;
+    const scope = (rootEl && typeof rootEl.querySelector === 'function') ? rootEl : document;
+    if (!scope.querySelector('i[data-lucide]')) return;
     if (rootEl) {
       try {
         window.lucide.createIcons({ root: rootEl });

@@ -2736,3 +2736,16 @@ html.dark .survhub-tour-btn-secondary:hover:not(:disabled) {
     row-gap: 8px;
   }
 }
+
+/* ==================== LOAI BO 300MS TAP DELAY (INP OPTIMIZATION) ==================== */
+button,
+a,
+[role="button"],
+[onclick],
+input,
+select,
+textarea,
+label,
+summary {
+  touch-action: manipulation;
+}
